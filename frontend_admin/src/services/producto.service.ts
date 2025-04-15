@@ -47,3 +47,12 @@ export const eliminarImagenProducto = async (id: number) => {
   const { data } = await api.delete(`/productos/imagenes/${id}`);
   return data;
 };
+
+export const importarProductosDesdeExcel = async (formData: FormData) => {
+  const { data } = await api.post('/productos/importar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return data;
+};

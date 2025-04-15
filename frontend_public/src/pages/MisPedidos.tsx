@@ -43,7 +43,7 @@ export default function MisPedidos() {
           <For each={banners()}>
             {(banner) => (
               <img
-                src={`${import.meta.env.VITE_BACKEND_URL}${banner.imagen}`}
+                src={`${import.meta.env.VITE_UPLOADS_URL}${banner.imagen}`}
                 alt="Banner"
                 class="w-full object-cover max-h-[800px]"
               />
@@ -86,7 +86,7 @@ export default function MisPedidos() {
                       {(detalle) => (
                         <div class="flex justify-between">
                           <span>{detalle.Producto?.nombre || "Producto"} x {detalle.cantidad}</span>
-                          <span>${detalle.subtotal.toFixed(2)}</span>
+                          <span>${detalle.subtotal}</span>
                         </div>
                       )}
                     </For>
@@ -94,7 +94,7 @@ export default function MisPedidos() {
 
                   <div class="flex justify-between mt-2 font-semibold text-sm">
                     <span>Total:</span>
-                    <span>${pedido.total.toFixed(2)}</span>
+                    <span>${pedido.total}</span>
                   </div>
 
                   <p class="mt-1 text-xs text-gray-500">Estado: {pedido.estado}</p>

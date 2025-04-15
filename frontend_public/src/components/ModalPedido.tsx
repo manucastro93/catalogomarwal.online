@@ -32,7 +32,7 @@ export default function ModalPedido({ pedido, onCerrar, onCancelar, onModificar 
             {(item) => (
               <div class="flex justify-between">
                 <span>{item.Producto?.nombre || 'Producto'} x {item.cantidad} bultos</span>
-                <span>${item.subtotal.toFixed(2)}</span>
+                <span>${item.subtotal}</span>
               </div>
             )}
           </For>
@@ -40,7 +40,7 @@ export default function ModalPedido({ pedido, onCerrar, onCancelar, onModificar 
           <hr class="my-2" />
           <div class="flex justify-between font-bold text-base">
             <span>Total:</span>
-            <span>${pedido.total.toFixed(2)}</span>
+            <span>${pedido.total}</span>
           </div>
         </div>
 

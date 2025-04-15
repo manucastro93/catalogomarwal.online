@@ -24,6 +24,10 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    fuente: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     ipClienteId: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -35,7 +39,10 @@ export default (sequelize, DataTypes) => {
   });
 
   LogCliente.associate = (models) => {
-    LogCliente.belongsTo(models.IpCliente, { foreignKey: 'IpClienteId' });
+    LogCliente.belongsTo(models.IpCliente, {
+      foreignKey: 'ipClienteId',
+      as: 'ipCliente',
+    });
   };
 
   return LogCliente;

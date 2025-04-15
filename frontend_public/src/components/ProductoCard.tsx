@@ -29,7 +29,7 @@ export default function ProductoCard({
     <div class="bg-white border p-2 flex flex-col relative shadow-sm">
       <div class="cursor-pointer" onClick={onVerDetalle}>
         <img
-          src={`${import.meta.env.VITE_BACKEND_URL}${imagen}`}
+          src={`${import.meta.env.VITE_UPLOADS_URL}${imagen}`}
           alt={nombre}
           class="object-contain h-70 w-full mb-2"
         />

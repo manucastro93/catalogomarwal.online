@@ -1,4 +1,6 @@
 import express from 'express';
+import uploadExcel from '../middlewares/uploadExcel.middleware.js';
+
 import {
   obtenerProductos,
   crearProducto,
@@ -7,7 +9,8 @@ import {
   crearProductoConImagenes,
   actualizarProductoConImagenes,
   eliminarImagenProducto,
-  obtenerProductoPorId
+  obtenerProductoPorId,
+  importarProductosDesdeExcel
 } from '../controllers/producto.controller.js';
 import { uploadImagenesProducto } from '../middlewares/upload.js';
 
@@ -17,6 +20,7 @@ router.get('/', obtenerProductos);
 router.get('/:id', obtenerProductoPorId);
 router.post('/', crearProducto);
 router.post('/con-imagenes',uploadImagenesProducto.array('imagenes'),crearProductoConImagenes);
+router.post('/importar', uploadExcel.single('archivo'), importarProductosDesdeExcel);
 router.put('/:id', actualizarProducto);
 router.put('/:id/con-imagenes',uploadImagenesProducto.array('imagenes'),actualizarProductoConImagenes);
 router.delete('/:id', eliminarProducto);

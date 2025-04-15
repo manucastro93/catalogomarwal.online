@@ -9,6 +9,7 @@ import { initSockets } from './sockets/index.js';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', true);
 
 // Rutas
 import productoRoutes from './routes/producto.routes.js';

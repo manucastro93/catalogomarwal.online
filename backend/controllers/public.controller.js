@@ -1,5 +1,6 @@
 import { Producto, Categoria, ImagenProducto, Provincia, Localidad, Banner, IpCliente } from '../models/index.js';
 import { Op } from 'sequelize';
+import { getClientIp } from '../utils/getClientIp.js';
 
 export const listarProductosPublicos = async (req, res, next) => {
   try {
@@ -88,8 +89,7 @@ export const listarBanners = async (req, res, next) => {
 
 export const obtenerClientePorIp = async (req, res, next) => {
   try {
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
-
+    const ip = getClientIp(req);
     const registro = await IpCliente.findOne({ where: { ip } });
 
     if (!registro) {

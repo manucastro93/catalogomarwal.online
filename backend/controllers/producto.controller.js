@@ -1,5 +1,6 @@
 import { Producto, Categoria, ImagenProducto } from '../models/index.js';
 import { Op } from 'sequelize';
+import { leerExcelProductos } from '../utils/leerExcel.js';
 
 export const obtenerProductos = async (req, res, next) => {
   try {
@@ -209,3 +210,53 @@ export const eliminarImagenProducto = async (req, res, next) => {
     next(error);
   }
 };
+
+export const importarProductosDesdeExcel = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se envió archivo' });
+    }
+
+    const filas = leerExcelProductos(req.file.path);
+
+    const productosCreados = [];
+    for (const fila of filas) {
+      const {
+        sku,
+        nombre,
+        descripcion,
+        hayStock,
+        precioUnitario,
+        precioPorBulto,
+        unidadPorBulto,
+        categoriaId,
+      } = fila;
+
+      if (!sku || isNaN(precioUnitario)) continue;
+
+      const yaExiste = await Producto.findOne({ where: { sku } });
+      if (yaExiste) continue;
+
+      const producto = await Producto.create({
+        sku,
+        nombre,
+        descripcion,
+        hayStock: hayStock === 'Sí',
+        precioUnitario,
+        precioPorBulto,
+        unidadPorBulto,
+        categoriaId,
+      });
+
+      productosCreados.push(producto);
+    }
+
+    res.json({
+      mensaje: `${productosCreados.length} productos importados correctamente`,
+      productos: productosCreados,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

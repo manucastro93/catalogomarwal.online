@@ -122,7 +122,7 @@ export default function Pedidos() {
                     <td class="p-3">{p.usuario?.nombre || '—'}</td>
                     <td class="p-3">{p.estado}</td>
                     <td class="p-3">{p.observaciones || '—'}</td>
-                    <td class="p-3">${p.total.toFixed(2)}</td>
+                    <td class="p-3">${p.total}</td>
                     <td class="p-3">{new Date(p.createdAt).toLocaleString()}</td>
                     <td class="p-3 flex gap-2">
                       <button class="text-blue-600 hover:underline" onClick={() => setVerPedido(p)}>

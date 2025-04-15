@@ -197,7 +197,7 @@ export const obtenerPedidosPorIp = async (req, res, next) => {
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
     const ipCliente = await IpCliente.findOne({
       where: { ip },
-      include: [{ model: Cliente }],
+      include: [{ model: Cliente, as: 'cliente' }]
     });
 
     if (!ipCliente || !ipCliente.clienteId) {

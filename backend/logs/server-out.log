@@ -146,3 +146,1084 @@
 2025-04-15T12:18:25: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
 2025-04-15T12:18:25: ➡️ GET /api/pagina/banners
 2025-04-15T12:18:25: ➡️ GET /api/productos
+2025-04-15T12:40:06: ➡️ GET /api/pagina
+2025-04-15T12:40:06: ➡️ GET /api/estadisticas/resumen
+2025-04-15T12:40:07: ➡️ GET /api/pagina
+2025-04-15T12:40:07: ➡️ GET /api/productos
+2025-04-15T12:40:07: ➡️ GET /api/categorias
+2025-04-15T12:40:07: ➡️ GET /api/categorias
+2025-04-15T12:40:08: ➡️ GET /api/pagina
+2025-04-15T12:40:08: ➡️ GET /api/public/provincias
+2025-04-15T12:40:08: ➡️ GET /api/clientes
+2025-04-15T12:40:08: ➡️ GET /api/usuarios/vendedores
+2025-04-15T12:40:08: ➡️ GET /api/public/provincias
+2025-04-15T12:40:09: ➡️ GET /api/productos
+2025-04-15T12:40:09: ➡️ GET /api/categorias
+2025-04-15T12:40:09: ➡️ GET /api/pagina
+2025-04-15T12:40:09: ➡️ GET /api/categorias
+2025-04-15T12:40:09: ➡️ GET /api/pagina
+2025-04-15T12:40:09: ➡️ GET /api/estadisticas/resumen
+2025-04-15T12:46:04: ➡️ POST /api/auth/login
+2025-04-15T12:46:04: ➡️ GET /api/pagina
+2025-04-15T12:46:04: ➡️ GET /api/estadisticas/resumen
+2025-04-15T12:46:06: ➡️ GET /api/pagina
+2025-04-15T12:46:06: ➡️ GET /api/categorias
+2025-04-15T12:46:06: ➡️ GET /api/pagina
+2025-04-15T12:46:06: ➡️ GET /api/estadisticas/resumen
+2025-04-15T12:46:07: ➡️ GET /api/pagina
+2025-04-15T12:46:07: ➡️ GET /api/usuarios/vendedores
+2025-04-15T12:46:18: ➡️ GET /api/productos
+2025-04-15T12:46:18: ➡️ GET /api/pagina
+2025-04-15T12:46:18: ➡️ GET /api/categorias
+2025-04-15T12:46:18: ➡️ GET /api/categorias
+2025-04-15T12:46:18: ➡️ GET /api/pagina
+2025-04-15T12:46:18: ➡️ GET /api/categorias
+2025-04-15T12:53:19: ➡️ POST /api/auth/login
+2025-04-15T12:53:20: ➡️ GET /api/pagina
+2025-04-15T12:53:20: ➡️ GET /api/estadisticas/resumen
+2025-04-15T12:53:22: ➡️ GET /api/productos
+2025-04-15T12:53:22: ➡️ GET /api/pagina
+2025-04-15T12:53:22: ➡️ GET /api/categorias
+2025-04-15T12:53:22: ➡️ GET /api/categorias
+2025-04-15T12:53:51: ➡️ POST /api/productos/con-imagenes
+2025-04-15T12:53:51: ➡️ GET /api/productos
+2025-04-15T12:54:55: ➡️ GET /api/pagina
+2025-04-15T12:54:55: ➡️ GET /api/categorias
+2025-04-15T12:54:55: ➡️ GET /api/productos
+2025-04-15T12:54:55: ➡️ GET /api/categorias
+2025-04-15T12:55:05: ➡️ POST /api/productos/con-imagenes
+2025-04-15T12:55:05: ➡️ GET /api/productos
+2025-04-15T12:57:49: ➡️ GET /api/categorias
+2025-04-15T12:57:49: ➡️ GET /api/pagina
+2025-04-15T12:57:49: ➡️ GET /api/categorias
+2025-04-15T12:57:49: ➡️ GET /api/productos
+2025-04-15T12:57:59: ➡️ GET /api/pagina
+2025-04-15T12:57:59: ➡️ GET /api/categorias
+2025-04-15T12:57:59: ➡️ GET /api/productos
+2025-04-15T12:57:59: ➡️ GET /api/categorias
+2025-04-15T13:04:37: ➡️ GET /api/productos
+2025-04-15T13:04:37: ➡️ GET /api/categorias
+2025-04-15T13:04:37: ➡️ GET /api/pagina
+2025-04-15T13:04:37: ➡️ GET /api/categorias
+2025-04-15T13:04:40: ➡️ GET /api/categorias
+2025-04-15T13:04:40: ➡️ GET /api/pagina
+2025-04-15T13:04:40: ➡️ GET /api/productos
+2025-04-15T13:04:40: ➡️ GET /api/categorias
+2025-04-15T13:05:03: ➡️ POST /api/productos/con-imagenes
+2025-04-15T13:05:03: ➡️ GET /api/productos
+2025-04-15T13:05:46: ➡️ GET /api/categorias
+2025-04-15T13:05:46: ➡️ GET /api/categorias
+2025-04-15T13:05:46: ➡️ GET /api/productos
+2025-04-15T13:05:46: ➡️ GET /api/pagina
+2025-04-15T13:06:57: ➡️ POST /api/productos/con-imagenes
+2025-04-15T13:06:57: ➡️ GET /api/productos
+2025-04-15T13:19:06: ➡️ GET /api/productos
+2025-04-15T13:19:06: ➡️ GET /api/categorias
+2025-04-15T13:19:06: ➡️ GET /api/categorias
+2025-04-15T13:19:06: ➡️ GET /api/pagina
+2025-04-15T13:19:24: ➡️ POST /api/productos/con-imagenes
+2025-04-15T13:19:24: ➡️ GET /api/productos
+2025-04-15T13:19:27: ➡️ GET /api/productos/1
+2025-04-15T13:19:31: ➡️ GET /api/productos/1
+2025-04-15T13:19:37: ➡️ PUT /api/productos/1/con-imagenes
+2025-04-15T13:19:37: ➡️ GET /api/productos
+2025-04-15T13:23:40: ➡️ GET /api/pagina
+2025-04-15T13:23:40: ➡️ GET /api/usuarios/vendedores
+2025-04-15T13:23:43: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T13:23:43: ➡️ GET /api/pagina/banners
+2025-04-15T13:23:43: ➡️ GET /api/productos
+2025-04-15T13:23:43: ➡️ GET /api/categorias
+2025-04-15T13:23:43: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:23:43: ➡️ POST /api/logs-cliente
+2025-04-15T13:24:50: ➡️ GET /api/pagina/banners
+2025-04-15T13:24:50: ➡️ GET /api/productos
+2025-04-15T13:24:50: ➡️ GET /api/categorias
+2025-04-15T13:24:50: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:24:50: ➡️ POST /api/logs-cliente
+2025-04-15T13:24:55: ➡️ GET /api/public/provincias
+2025-04-15T13:25:09: ➡️ GET /api/pagina/banners
+2025-04-15T13:25:09: ➡️ GET /api/productos
+2025-04-15T13:25:09: ➡️ GET /api/categorias
+2025-04-15T13:25:09: ➡️ POST /api/logs-cliente
+2025-04-15T13:25:09: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:25:27: ➡️ GET /api/public/provincias
+2025-04-15T13:29:38: ➡️ GET /api/pagina/banners
+2025-04-15T13:29:38: ➡️ GET /api/productos
+2025-04-15T13:29:38: ➡️ GET /api/categorias
+2025-04-15T13:29:38: ➡️ POST /api/logs-cliente
+2025-04-15T13:29:39: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:29:39: ➡️ GET /api/public/provincias
+2025-04-15T13:29:53: ➡️ GET /api/public/localidades
+2025-04-15T13:29:55: ➡️ GET /api/public/localidades
+2025-04-15T13:29:55: ➡️ GET /api/public/localidades
+2025-04-15T13:29:56: ➡️ GET /api/public/localidades
+2025-04-15T13:29:57: ➡️ POST /api/pedidos
+2025-04-15T13:32:14: ➡️ GET /api/pagina/banners
+2025-04-15T13:32:14: ➡️ GET /api/productos
+2025-04-15T13:32:14: ➡️ GET /api/categorias
+2025-04-15T13:32:14: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:32:14: ➡️ POST /api/logs-cliente
+2025-04-15T13:32:55: ➡️ GET /api/pagina
+2025-04-15T13:32:55: ➡️ GET /api/pedidos
+2025-04-15T13:33:00: ➡️ GET /api/pagina
+2025-04-15T13:33:00: ➡️ GET /api/usuarios/vendedores
+2025-04-15T13:33:00: ➡️ GET /api/clientes
+2025-04-15T13:33:00: ➡️ GET /api/public/provincias
+2025-04-15T13:33:00: ➡️ GET /api/public/provincias
+2025-04-15T13:33:02: ➡️ GET /api/usuarios/vendedores
+2025-04-15T13:33:02: ➡️ GET /api/clientes
+2025-04-15T13:33:02: ➡️ GET /api/public/provincias
+2025-04-15T13:33:02: ➡️ GET /api/pagina
+2025-04-15T13:33:02: ➡️ GET /api/public/provincias
+2025-04-15T13:33:03: ➡️ GET /api/clientes
+2025-04-15T13:33:03: ➡️ GET /api/pagina
+2025-04-15T13:33:03: ➡️ GET /api/public/provincias
+2025-04-15T13:33:03: ➡️ GET /api/usuarios/vendedores
+2025-04-15T13:33:03: ➡️ GET /api/public/provincias
+2025-04-15T13:33:04: ➡️ GET /api/pagina
+2025-04-15T13:33:04: ➡️ GET /api/categorias
+2025-04-15T13:33:04: ➡️ GET /api/productos
+2025-04-15T13:33:04: ➡️ GET /api/categorias
+2025-04-15T13:33:05: ➡️ GET /api/public/provincias
+2025-04-15T13:33:05: ➡️ GET /api/usuarios/vendedores
+2025-04-15T13:33:05: ➡️ GET /api/clientes
+2025-04-15T13:33:05: ➡️ GET /api/public/provincias
+2025-04-15T13:33:05: ➡️ GET /api/pagina
+2025-04-15T13:33:13: ➡️ GET /api/public/provincias
+2025-04-15T13:33:13: ➡️ GET /api/pagina
+2025-04-15T13:33:13: ➡️ GET /api/public/provincias
+2025-04-15T13:33:13: ➡️ GET /api/usuarios/vendedores
+2025-04-15T13:33:13: ➡️ GET /api/clientes
+2025-04-15T13:36:04: ➡️ GET /api/pagina
+2025-04-15T13:36:04: ➡️ GET /api/productos
+2025-04-15T13:36:04: ➡️ GET /api/categorias
+2025-04-15T13:36:04: ➡️ GET /api/categorias
+2025-04-15T13:36:12: ➡️ GET /api/productos
+2025-04-15T13:36:14: ➡️ GET /api/pedidos
+2025-04-15T13:36:14: ➡️ GET /api/pagina
+2025-04-15T13:36:30: ➡️ GET /api/pagina/banners
+2025-04-15T13:36:30: ➡️ GET /api/productos
+2025-04-15T13:36:30: ➡️ GET /api/categorias
+2025-04-15T13:36:30: ➡️ POST /api/logs-cliente
+2025-04-15T13:36:30: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:36:33: ➡️ GET /api/public/provincias
+2025-04-15T13:37:01: ➡️ GET /api/public/localidades
+2025-04-15T13:37:03: ➡️ GET /api/public/localidades
+2025-04-15T13:37:03: ➡️ GET /api/public/localidades
+2025-04-15T13:37:04: ➡️ GET /api/public/localidades
+2025-04-15T13:37:04: ➡️ POST /api/pedidos
+2025-04-15T13:40:23: 🟢 Conexión a la base de datos exitosa
+2025-04-15T13:40:23: 🗂️ Modelos sincronizados
+2025-04-15T13:40:23: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T13:40:59: ➡️ GET /api/pagina/banners
+2025-04-15T13:41:00: ➡️ GET /api/productos
+2025-04-15T13:41:00: ➡️ GET /api/categorias
+2025-04-15T13:41:00: ➡️ GET /api/pagina/banners
+2025-04-15T13:41:00: ➡️ GET /api/productos
+2025-04-15T13:41:00: ➡️ GET /api/categorias
+2025-04-15T13:41:00: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:41:00: ➡️ POST /api/logs-cliente
+2025-04-15T13:41:02: ➡️ GET /api/public/provincias
+2025-04-15T13:41:11: ➡️ GET /api/public/localidades
+2025-04-15T13:41:12: ➡️ GET /api/public/localidades
+2025-04-15T13:41:12: ➡️ GET /api/public/localidades
+2025-04-15T13:41:13: ➡️ GET /api/public/localidades
+2025-04-15T13:41:13: ➡️ POST /api/pedidos
+2025-04-15T13:41:13: 🌐 IP registrada: 127.0.0.1
+2025-04-15T13:41:19: ➡️ GET /api/pagina/banners
+2025-04-15T13:41:19: ➡️ GET /api/productos
+2025-04-15T13:41:19: ➡️ GET /api/categorias
+2025-04-15T13:41:19: ➡️ POST /api/logs-cliente
+2025-04-15T13:41:19: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:41:25: ➡️ GET /api/pedidos
+2025-04-15T13:41:25: ➡️ GET /api/pagina
+2025-04-15T13:41:26: ➡️ GET /api/pagina
+2025-04-15T13:41:26: ➡️ GET /api/public/provincias
+2025-04-15T13:41:26: ➡️ GET /api/usuarios/vendedores
+2025-04-15T13:41:26: ➡️ GET /api/clientes
+2025-04-15T13:41:26: ➡️ GET /api/public/provincias
+2025-04-15T13:41:30: ➡️ GET /api/pedidos
+2025-04-15T13:41:30: ➡️ GET /api/pagina
+2025-04-15T13:42:40: ➡️ GET /api/pagina
+2025-04-15T13:42:40: ➡️ GET /api/pedidos
+2025-04-15T13:45:03: ➡️ GET /api/pagina
+2025-04-15T13:45:03: ➡️ GET /api/pagina
+2025-04-15T13:45:06: ➡️ GET /api/pagina
+2025-04-15T13:45:06: ➡️ GET /api/estadisticas/resumen
+2025-04-15T13:45:15: ➡️ GET /api/pedidos
+2025-04-15T13:45:15: ➡️ GET /api/pagina
+2025-04-15T13:45:17: ➡️ GET /api/pagina
+2025-04-15T13:45:17: ➡️ GET /api/pedidos
+2025-04-15T13:48:43: ➡️ GET /api/pagina
+2025-04-15T13:48:43: ➡️ GET /api/pedidos
+2025-04-15T13:48:53: ➡️ GET /api/pedidos
+2025-04-15T13:48:53: ➡️ GET /api/pagina
+2025-04-15T13:48:56: ➡️ GET /api/pagina
+2025-04-15T13:48:56: ➡️ GET /api/pedidos
+2025-04-15T13:50:17: ➡️ GET /api/pagina
+2025-04-15T13:50:17: ➡️ GET /api/pedidos
+2025-04-15T13:50:19: ➡️ GET /api/pedidos
+2025-04-15T13:50:20: ➡️ GET /api/pagina
+2025-04-15T13:51:01: ➡️ GET /api/pagina
+2025-04-15T13:51:01: ➡️ GET /api/pedidos
+2025-04-15T13:53:09: ➡️ GET /api/pagina/banners
+2025-04-15T13:53:09: ➡️ GET /api/productos
+2025-04-15T13:53:09: ➡️ GET /api/categorias
+2025-04-15T13:53:09: ➡️ POST /api/logs-cliente
+2025-04-15T13:53:09: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:53:14: ➡️ GET /api/pagina/banners
+2025-04-15T13:53:14: ➡️ GET /api/productos
+2025-04-15T13:53:14: ➡️ GET /api/categorias
+2025-04-15T13:53:14: ➡️ POST /api/logs-cliente
+2025-04-15T13:53:14: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T13:58:49: ➡️ GET /api/pagina
+2025-04-15T13:58:49: ➡️ GET /api/productos
+2025-04-15T13:58:49: ➡️ GET /api/categorias
+2025-04-15T13:58:49: ➡️ GET /api/categorias
+2025-04-15T13:58:50: ➡️ GET /api/productos/1
+2025-04-15T13:58:53: ➡️ GET /api/productos/1
+2025-04-15T13:58:55: ➡️ GET /api/productos
+2025-04-15T13:58:58: ➡️ GET /api/pagina
+2025-04-15T13:58:58: ➡️ GET /api/pagina
+2025-04-15T13:59:01: ➡️ GET /api/estadisticas/resumen
+2025-04-15T13:59:01: ➡️ GET /api/pagina
+2025-04-15T14:00:06: ➡️ GET /api/pagina
+2025-04-15T14:00:06: ➡️ GET /api/usuarios/vendedores
+2025-04-15T14:00:45: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T14:00:46: ➡️ GET /api/pagina/banners
+2025-04-15T14:00:46: ➡️ GET /api/productos
+2025-04-15T14:00:46: ➡️ GET /api/categorias
+2025-04-15T14:00:46: ➡️ POST /api/logs-cliente
+2025-04-15T14:00:46: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:05:12: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:05:12: 🗂️ Modelos sincronizados
+2025-04-15T14:05:12: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:05:17: ➡️ GET /api/pagina/banners
+2025-04-15T14:05:17: ➡️ GET /api/productos
+2025-04-15T14:05:17: ➡️ GET /api/categorias
+2025-04-15T14:05:17: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:05:17: ➡️ POST /api/logs-cliente
+2025-04-15T14:05:23: ➡️ GET /api/pagina/banners
+2025-04-15T14:05:23: ➡️ GET /api/productos
+2025-04-15T14:05:23: ➡️ GET /api/categorias
+2025-04-15T14:05:23: ➡️ POST /api/logs-cliente
+2025-04-15T14:05:23: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:05:25: ➡️ GET /api/pagina/banners
+2025-04-15T14:05:25: ➡️ GET /api/productos
+2025-04-15T14:05:25: ➡️ GET /api/categorias
+2025-04-15T14:05:25: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:05:25: ➡️ POST /api/logs-cliente
+2025-04-15T14:05:30: ➡️ GET /api/pagina/banners
+2025-04-15T14:05:31: ➡️ GET /api/productos
+2025-04-15T14:05:31: ➡️ GET /api/productos
+2025-04-15T14:05:31: ➡️ GET /api/pagina/banners
+2025-04-15T14:05:31: ➡️ GET /api/categorias
+2025-04-15T14:05:31: ➡️ POST /api/logs-cliente
+2025-04-15T14:05:31: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:05:48: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:05:48: 🗂️ Modelos sincronizados
+2025-04-15T14:05:48: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:05:51: ➡️ GET /api/pagina/banners
+2025-04-15T14:05:51: ➡️ GET /api/productos
+2025-04-15T14:05:51: ➡️ GET /api/categorias
+2025-04-15T14:05:51: ➡️ POST /api/logs-cliente
+2025-04-15T14:05:51: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:05:54: ➡️ GET /api/productos
+2025-04-15T14:05:54: ➡️ GET /api/pagina/banners
+2025-04-15T14:05:54: ➡️ GET /api/categorias
+2025-04-15T14:05:54: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:05:54: ➡️ POST /api/logs-cliente
+2025-04-15T14:06:43: ➡️ GET /api/pagina/banners
+2025-04-15T14:06:43: ➡️ GET /api/productos
+2025-04-15T14:06:43: ➡️ GET /api/categorias
+2025-04-15T14:06:43: ➡️ POST /api/logs-cliente
+2025-04-15T14:06:43: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:06:51: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T14:06:51: ➡️ GET /api/pagina/banners
+2025-04-15T14:06:52: ➡️ GET /api/productos
+2025-04-15T14:06:52: ➡️ GET /api/categorias
+2025-04-15T14:06:53: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:06:53: ➡️ POST /api/logs-cliente
+2025-04-15T14:07:06: ➡️ GET /api/public/provincias
+2025-04-15T14:08:18: ➡️ GET /api/productos
+2025-04-15T14:08:18: ➡️ GET /api/pagina/banners
+2025-04-15T14:08:18: ➡️ GET /api/categorias
+2025-04-15T14:08:18: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:08:18: ➡️ POST /api/logs-cliente
+2025-04-15T14:08:56: ➡️ GET /api/productos
+2025-04-15T14:08:56: ➡️ GET /api/pagina/banners
+2025-04-15T14:08:56: ➡️ GET /api/categorias
+2025-04-15T14:08:56: ➡️ POST /api/logs-cliente
+2025-04-15T14:08:56: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:10:03: ➡️ GET /api/productos
+2025-04-15T14:10:03: ➡️ GET /api/pagina/banners
+2025-04-15T14:10:03: ➡️ GET /api/categorias
+2025-04-15T14:10:03: ➡️ POST /api/logs-cliente
+2025-04-15T14:10:03: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:10:04: ➡️ GET /api/pagina/banners
+2025-04-15T14:10:05: ➡️ GET /api/productos
+2025-04-15T14:10:05: ➡️ GET /api/categorias
+2025-04-15T14:10:05: ➡️ POST /api/logs-cliente
+2025-04-15T14:10:05: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:10:07: ➡️ GET /api/pagina/banners
+2025-04-15T14:10:07: ➡️ GET /api/productos
+2025-04-15T14:10:07: ➡️ GET /api/categorias
+2025-04-15T14:10:08: ➡️ POST /api/logs-cliente
+2025-04-15T14:10:08: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:16:24: ➡️ GET /api/pagina/banners
+2025-04-15T14:16:24: ➡️ GET /api/productos
+2025-04-15T14:16:24: ➡️ GET /api/categorias
+2025-04-15T14:16:24: ➡️ POST /api/logs-cliente
+2025-04-15T14:16:24: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:16:25: ➡️ GET /api/pagina/banners
+2025-04-15T14:16:25: ➡️ GET /api/productos
+2025-04-15T14:16:25: ➡️ GET /api/categorias
+2025-04-15T14:16:25: ➡️ POST /api/logs-cliente
+2025-04-15T14:16:25: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:16:25: ➡️ GET /api/pagina/banners
+2025-04-15T14:16:25: ➡️ GET /api/productos
+2025-04-15T14:16:25: ➡️ GET /api/categorias
+2025-04-15T14:16:25: ➡️ POST /api/logs-cliente
+2025-04-15T14:16:25: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:17:34: ➡️ GET /api/usuarios/vendedores
+2025-04-15T14:17:34: ➡️ GET /api/pagina
+2025-04-15T14:17:35: ➡️ GET /api/pagina/banners
+2025-04-15T14:17:35: ➡️ GET /api/productos
+2025-04-15T14:17:35: ➡️ GET /api/categorias
+2025-04-15T14:17:35: ➡️ POST /api/logs-cliente
+2025-04-15T14:17:35: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:17:36: ➡️ GET /api/pagina/banners
+2025-04-15T14:17:36: ➡️ GET /api/productos
+2025-04-15T14:17:36: ➡️ GET /api/categorias
+2025-04-15T14:17:36: ➡️ GET /api/pagina/banners
+2025-04-15T14:17:36: ➡️ GET /api/productos
+2025-04-15T14:17:36: ➡️ GET /api/categorias
+2025-04-15T14:17:36: ➡️ GET /api/pagina/banners
+2025-04-15T14:17:36: ➡️ GET /api/productos
+2025-04-15T14:17:36: ➡️ GET /api/categorias
+2025-04-15T14:17:36: ➡️ GET /api/pagina/banners
+2025-04-15T14:17:36: ➡️ GET /api/productos
+2025-04-15T14:17:36: ➡️ GET /api/categorias
+2025-04-15T14:17:37: ➡️ POST /api/logs-cliente
+2025-04-15T14:17:37: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:17:48: ➡️ GET /api/pagina/banners
+2025-04-15T14:17:48: ➡️ GET /api/productos
+2025-04-15T14:17:48: ➡️ GET /api/categorias
+2025-04-15T14:17:48: ➡️ POST /api/logs-cliente
+2025-04-15T14:17:48: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:17:49: ➡️ GET /api/productos
+2025-04-15T14:17:49: ➡️ GET /api/pagina/banners
+2025-04-15T14:17:49: ➡️ GET /api/categorias
+2025-04-15T14:17:49: ➡️ POST /api/logs-cliente
+2025-04-15T14:17:49: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:18:48: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:18:48: 🗂️ Modelos sincronizados
+2025-04-15T14:18:48: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:18:51: ➡️ GET /api/pagina/banners
+2025-04-15T14:18:51: ➡️ GET /api/productos
+2025-04-15T14:18:51: ➡️ GET /api/categorias
+2025-04-15T14:18:51: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:18:51: 127.0.0.1
+2025-04-15T14:18:51: ➡️ POST /api/logs-cliente
+2025-04-15T14:20:29: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:20:29: 🗂️ Modelos sincronizados
+2025-04-15T14:20:29: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:20:32: ➡️ GET /api/pagina/banners
+2025-04-15T14:20:32: ➡️ GET /api/productos
+2025-04-15T14:20:32: ➡️ GET /api/categorias
+2025-04-15T14:20:32: ➡️ POST /api/logs-cliente
+2025-04-15T14:20:32: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:20:32: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:20:34: ➡️ GET /api/pagina/banners
+2025-04-15T14:20:34: ➡️ GET /api/productos
+2025-04-15T14:20:34: ➡️ GET /api/categorias
+2025-04-15T14:20:34: ➡️ POST /api/logs-cliente
+2025-04-15T14:20:34: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:20:34: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:20:39: ➡️ GET /api/pagina/banners
+2025-04-15T14:20:39: ➡️ GET /api/productos
+2025-04-15T14:20:39: ➡️ GET /api/categorias
+2025-04-15T14:20:39: ➡️ POST /api/logs-cliente
+2025-04-15T14:20:39: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:20:39: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:20:40: ➡️ GET /api/pagina/banners
+2025-04-15T14:20:40: ➡️ GET /api/productos
+2025-04-15T14:20:40: ➡️ GET /api/categorias
+2025-04-15T14:20:40: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:20:40: ➡️ POST /api/logs-cliente
+2025-04-15T14:20:40: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:20:40: ➡️ GET /api/pagina/banners
+2025-04-15T14:20:40: ➡️ GET /api/productos
+2025-04-15T14:20:40: ➡️ GET /api/categorias
+2025-04-15T14:20:40: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:20:40: ➡️ POST /api/logs-cliente
+2025-04-15T14:20:40: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:20:59: ➡️ GET /api/pagina/banners
+2025-04-15T14:20:59: ➡️ GET /api/productos
+2025-04-15T14:20:59: ➡️ GET /api/categorias
+2025-04-15T14:20:59: ➡️ POST /api/logs-cliente
+2025-04-15T14:20:59: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:20:59: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:21:00: ➡️ GET /api/productos
+2025-04-15T14:21:00: ➡️ GET /api/pagina/banners
+2025-04-15T14:21:00: ➡️ GET /api/categorias
+2025-04-15T14:21:00: ➡️ POST /api/logs-cliente
+2025-04-15T14:21:00: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:21:00: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:21:42: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T14:21:42: ➡️ GET /api/pagina/banners
+2025-04-15T14:21:42: ➡️ GET /api/productos
+2025-04-15T14:21:43: ➡️ GET /api/categorias
+2025-04-15T14:21:43: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:21:43: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:21:43: ➡️ POST /api/logs-cliente
+2025-04-15T14:22:17: ➡️ GET /api/public/provincias
+2025-04-15T14:23:05: ➡️ GET /api/public/localidades
+2025-04-15T14:23:05: ➡️ GET /api/public/localidades
+2025-04-15T14:23:06: ➡️ GET /api/public/localidades
+2025-04-15T14:23:17: ➡️ POST /api/pedidos
+2025-04-15T14:23:17: 🌐 IP registrada: 127.0.0.1
+2025-04-15T14:23:20: ➡️ GET /api/pagina/banners
+2025-04-15T14:23:20: ➡️ GET /api/productos
+2025-04-15T14:23:20: ➡️ GET /api/categorias
+2025-04-15T14:23:20: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:23:20: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:23:20: ➡️ POST /api/logs-cliente
+2025-04-15T14:26:05: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:26:05: 🗂️ Modelos sincronizados
+2025-04-15T14:26:05: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:26:06: ➡️ GET /api/productos
+2025-04-15T14:26:06: ➡️ GET /api/pagina/banners
+2025-04-15T14:26:06: ➡️ GET /api/categorias
+2025-04-15T14:26:06: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:26:06: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:26:06: ➡️ POST /api/logs-cliente
+2025-04-15T14:26:47: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:26:47: 🗂️ Modelos sincronizados
+2025-04-15T14:26:47: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:26:50: ➡️ GET /api/productos
+2025-04-15T14:26:50: ➡️ GET /api/pagina/banners
+2025-04-15T14:26:50: ➡️ GET /api/categorias
+2025-04-15T14:26:50: ➡️ POST /api/logs-cliente
+2025-04-15T14:26:50: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:26:50: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:26:51: ➡️ GET /api/pagina/banners
+2025-04-15T14:26:51: ➡️ GET /api/productos
+2025-04-15T14:26:51: ➡️ GET /api/categorias
+2025-04-15T14:26:51: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:26:51: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:26:51: ➡️ POST /api/logs-cliente
+2025-04-15T14:26:53: ➡️ GET /api/pagina/banners
+2025-04-15T14:26:53: ➡️ GET /api/productos
+2025-04-15T14:26:53: ➡️ GET /api/categorias
+2025-04-15T14:26:53: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:26:53: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:26:53: ➡️ POST /api/logs-cliente
+2025-04-15T14:27:59: ➡️ GET /api/pagina/banners
+2025-04-15T14:27:59: ➡️ GET /api/productos
+2025-04-15T14:27:59: ➡️ GET /api/categorias
+2025-04-15T14:27:59: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:27:59: ➡️ POST /api/logs-cliente
+2025-04-15T14:27:59: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:28:18: ➡️ GET /api/pagina/banners
+2025-04-15T14:28:18: ➡️ GET /api/productos
+2025-04-15T14:28:18: ➡️ GET /api/categorias
+2025-04-15T14:28:18: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:28:18: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:28:18: ➡️ POST /api/logs-cliente
+2025-04-15T14:29:03: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:29:03: 🗂️ Modelos sincronizados
+2025-04-15T14:29:03: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:29:13: ➡️ GET /api/pagina/banners
+2025-04-15T14:29:13: ➡️ GET /api/productos
+2025-04-15T14:29:13: ➡️ GET /api/categorias
+2025-04-15T14:29:13: ➡️ POST /api/logs-cliente
+2025-04-15T14:29:13: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:29:13: 📡 Headers: {
+2025-04-15T14:29:13:   connection: 'upgrade',
+2025-04-15T14:29:13:   host: 'www.catalogomarwal.online',
+2025-04-15T14:29:13:   'sec-ch-ua-platform': '"macOS"',
+2025-04-15T14:29:13:   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+2025-04-15T14:29:13:   'sec-ch-ua': '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+2025-04-15T14:29:13:   'sec-ch-ua-mobile': '?0',
+2025-04-15T14:29:13:   accept: '*/*',
+2025-04-15T14:29:13:   'sec-fetch-site': 'same-origin',
+2025-04-15T14:29:13:   'sec-fetch-mode': 'cors',
+2025-04-15T14:29:13:   'sec-fetch-dest': 'empty',
+2025-04-15T14:29:13:   referer: 'https://www.catalogomarwal.online/',
+2025-04-15T14:29:13:   'accept-encoding': 'gzip, deflate, br, zstd',
+2025-04-15T14:29:13:   'accept-language': 'es-419,es;q=0.9',
+2025-04-15T14:29:13:   'if-none-match': 'W/"12-1GJBXDr0LzzSnf9HRPKVrJn5xFg"'
+2025-04-15T14:29:13: }
+2025-04-15T14:29:13: 📡 IP detectada: 127.0.0.1
+2025-04-15T14:31:41: ➡️ GET /api/pagina/banners
+2025-04-15T14:31:41: ➡️ GET /api/productos
+2025-04-15T14:31:41: ➡️ GET /api/categorias
+2025-04-15T14:31:41: ➡️ POST /api/logs-cliente
+2025-04-15T14:31:41: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:31:41: 📡 Headers: {
+2025-04-15T14:31:41:   connection: 'upgrade',
+2025-04-15T14:31:41:   host: 'www.catalogomarwal.online',
+2025-04-15T14:31:41:   'x-forwarded-for': '2803:9800:9016:4567:9565:5938:c6f:cb45',
+2025-04-15T14:31:41:   'sec-ch-ua-platform': '"macOS"',
+2025-04-15T14:31:41:   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+2025-04-15T14:31:41:   'sec-ch-ua': '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+2025-04-15T14:31:41:   'sec-ch-ua-mobile': '?0',
+2025-04-15T14:31:41:   accept: '*/*',
+2025-04-15T14:31:41:   'sec-fetch-site': 'same-origin',
+2025-04-15T14:31:41:   'sec-fetch-mode': 'cors',
+2025-04-15T14:31:41:   'sec-fetch-dest': 'empty',
+2025-04-15T14:31:41:   referer: 'https://www.catalogomarwal.online/',
+2025-04-15T14:31:41:   'accept-encoding': 'gzip, deflate, br, zstd',
+2025-04-15T14:31:41:   'accept-language': 'es-419,es;q=0.9',
+2025-04-15T14:31:41:   'if-none-match': 'W/"12-1GJBXDr0LzzSnf9HRPKVrJn5xFg"'
+2025-04-15T14:31:41: }
+2025-04-15T14:31:41: 📡 IP detectada: 2803:9800:9016:4567:9565:5938:c6f:cb45
+2025-04-15T14:31:41: ➡️ GET /api/pagina/banners
+2025-04-15T14:31:41: ➡️ GET /api/productos
+2025-04-15T14:31:41: ➡️ GET /api/categorias
+2025-04-15T14:31:42: ➡️ POST /api/logs-cliente
+2025-04-15T14:31:42: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:31:42: 📡 Headers: {
+2025-04-15T14:31:42:   connection: 'upgrade',
+2025-04-15T14:31:42:   host: 'www.catalogomarwal.online',
+2025-04-15T14:31:42:   'x-forwarded-for': '2803:9800:9016:4567:9565:5938:c6f:cb45',
+2025-04-15T14:31:42:   'sec-ch-ua-platform': '"macOS"',
+2025-04-15T14:31:42:   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+2025-04-15T14:31:42:   'sec-ch-ua': '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+2025-04-15T14:31:42:   'sec-ch-ua-mobile': '?0',
+2025-04-15T14:31:42:   accept: '*/*',
+2025-04-15T14:31:42:   'sec-fetch-site': 'same-origin',
+2025-04-15T14:31:42:   'sec-fetch-mode': 'cors',
+2025-04-15T14:31:42:   'sec-fetch-dest': 'empty',
+2025-04-15T14:31:42:   referer: 'https://www.catalogomarwal.online/',
+2025-04-15T14:31:42:   'accept-encoding': 'gzip, deflate, br, zstd',
+2025-04-15T14:31:42:   'accept-language': 'es-419,es;q=0.9'
+2025-04-15T14:31:42: }
+2025-04-15T14:31:42: 📡 IP detectada: 2803:9800:9016:4567:9565:5938:c6f:cb45
+2025-04-15T14:32:17: ➡️ GET /api/pagina/banners
+2025-04-15T14:32:17: ➡️ GET /api/productos
+2025-04-15T14:32:17: ➡️ GET /api/categorias
+2025-04-15T14:32:17: ➡️ POST /api/logs-cliente
+2025-04-15T14:32:17: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:32:17: 📡 Headers: {
+2025-04-15T14:32:17:   connection: 'upgrade',
+2025-04-15T14:32:17:   host: 'www.catalogomarwal.online',
+2025-04-15T14:32:17:   'x-forwarded-for': '2803:9800:9016:4567:9565:5938:c6f:cb45',
+2025-04-15T14:32:17:   'sec-ch-ua-platform': '"macOS"',
+2025-04-15T14:32:17:   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+2025-04-15T14:32:17:   'sec-ch-ua': '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+2025-04-15T14:32:17:   'sec-ch-ua-mobile': '?0',
+2025-04-15T14:32:17:   accept: '*/*',
+2025-04-15T14:32:17:   'sec-fetch-site': 'same-origin',
+2025-04-15T14:32:17:   'sec-fetch-mode': 'cors',
+2025-04-15T14:32:17:   'sec-fetch-dest': 'empty',
+2025-04-15T14:32:17:   referer: 'https://www.catalogomarwal.online/',
+2025-04-15T14:32:17:   'accept-encoding': 'gzip, deflate, br, zstd',
+2025-04-15T14:32:17:   'accept-language': 'es-419,es;q=0.9',
+2025-04-15T14:32:17:   'if-none-match': 'W/"12-1GJBXDr0LzzSnf9HRPKVrJn5xFg"'
+2025-04-15T14:32:17: }
+2025-04-15T14:32:17: 📡 IP detectada: 2803:9800:9016:4567:9565:5938:c6f:cb45
+2025-04-15T14:32:18: ➡️ GET /api/pagina/banners
+2025-04-15T14:32:18: ➡️ GET /api/productos
+2025-04-15T14:32:18: ➡️ GET /api/categorias
+2025-04-15T14:32:18: ➡️ POST /api/logs-cliente
+2025-04-15T14:32:18: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:32:18: 📡 Headers: {
+2025-04-15T14:32:18:   connection: 'upgrade',
+2025-04-15T14:32:18:   host: 'www.catalogomarwal.online',
+2025-04-15T14:32:18:   'x-forwarded-for': '2803:9800:9016:4567:9565:5938:c6f:cb45',
+2025-04-15T14:32:18:   'sec-ch-ua-platform': '"macOS"',
+2025-04-15T14:32:18:   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+2025-04-15T14:32:18:   'sec-ch-ua': '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+2025-04-15T14:32:18:   'sec-ch-ua-mobile': '?0',
+2025-04-15T14:32:18:   accept: '*/*',
+2025-04-15T14:32:18:   'sec-fetch-site': 'same-origin',
+2025-04-15T14:32:18:   'sec-fetch-mode': 'cors',
+2025-04-15T14:32:18:   'sec-fetch-dest': 'empty',
+2025-04-15T14:32:18:   referer: 'https://www.catalogomarwal.online/',
+2025-04-15T14:32:18:   'accept-encoding': 'gzip, deflate, br, zstd',
+2025-04-15T14:32:18:   'accept-language': 'es-419,es;q=0.9',
+2025-04-15T14:32:18:   'if-none-match': 'W/"f-N6gzs0cxhr20rn7PcIGTjKFDqys"'
+2025-04-15T14:32:18: }
+2025-04-15T14:32:18: 📡 IP detectada: 2803:9800:9016:4567:9565:5938:c6f:cb45
+2025-04-15T14:32:18: ➡️ GET /api/pagina/banners
+2025-04-15T14:32:18: ➡️ GET /api/productos
+2025-04-15T14:32:18: ➡️ GET /api/categorias
+2025-04-15T14:32:18: ➡️ GET /api/pagina/banners
+2025-04-15T14:32:18: ➡️ GET /api/productos
+2025-04-15T14:32:18: ➡️ GET /api/categorias
+2025-04-15T14:32:18: ➡️ POST /api/logs-cliente
+2025-04-15T14:32:18: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:32:18: 📡 Headers: {
+2025-04-15T14:32:18:   connection: 'upgrade',
+2025-04-15T14:32:18:   host: 'www.catalogomarwal.online',
+2025-04-15T14:32:18:   'x-forwarded-for': '2803:9800:9016:4567:9565:5938:c6f:cb45',
+2025-04-15T14:32:18:   'sec-ch-ua-platform': '"macOS"',
+2025-04-15T14:32:18:   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+2025-04-15T14:32:18:   'sec-ch-ua': '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+2025-04-15T14:32:18:   'sec-ch-ua-mobile': '?0',
+2025-04-15T14:32:18:   accept: '*/*',
+2025-04-15T14:32:18:   'sec-fetch-site': 'same-origin',
+2025-04-15T14:32:18:   'sec-fetch-mode': 'cors',
+2025-04-15T14:32:18:   'sec-fetch-dest': 'empty',
+2025-04-15T14:32:18:   referer: 'https://www.catalogomarwal.online/',
+2025-04-15T14:32:18:   'accept-encoding': 'gzip, deflate, br, zstd',
+2025-04-15T14:32:18:   'accept-language': 'es-419,es;q=0.9',
+2025-04-15T14:32:18:   'if-none-match': 'W/"f-N6gzs0cxhr20rn7PcIGTjKFDqys"'
+2025-04-15T14:32:18: }
+2025-04-15T14:32:18: 📡 IP detectada: 2803:9800:9016:4567:9565:5938:c6f:cb45
+2025-04-15T14:32:18: ➡️ GET /api/pagina/banners
+2025-04-15T14:32:18: ➡️ GET /api/productos
+2025-04-15T14:32:18: ➡️ GET /api/categorias
+2025-04-15T14:32:18: ➡️ POST /api/logs-cliente
+2025-04-15T14:32:18: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:32:18: 📡 Headers: {
+2025-04-15T14:32:18:   connection: 'upgrade',
+2025-04-15T14:32:18:   host: 'www.catalogomarwal.online',
+2025-04-15T14:32:18:   'x-forwarded-for': '2803:9800:9016:4567:9565:5938:c6f:cb45',
+2025-04-15T14:32:18:   'sec-ch-ua-platform': '"macOS"',
+2025-04-15T14:32:18:   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+2025-04-15T14:32:18:   'sec-ch-ua': '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+2025-04-15T14:32:18:   'sec-ch-ua-mobile': '?0',
+2025-04-15T14:32:18:   accept: '*/*',
+2025-04-15T14:32:18:   'sec-fetch-site': 'same-origin',
+2025-04-15T14:32:18:   'sec-fetch-mode': 'cors',
+2025-04-15T14:32:18:   'sec-fetch-dest': 'empty',
+2025-04-15T14:32:18:   referer: 'https://www.catalogomarwal.online/',
+2025-04-15T14:32:18:   'accept-encoding': 'gzip, deflate, br, zstd',
+2025-04-15T14:32:18:   'accept-language': 'es-419,es;q=0.9'
+2025-04-15T14:32:18: }
+2025-04-15T14:32:18: 📡 IP detectada: 2803:9800:9016:4567:9565:5938:c6f:cb45
+2025-04-15T14:32:46: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:32:46: ➡️ GET /api/pagina/banners
+2025-04-15T14:32:58: ➡️ GET /api/pagina/banners
+2025-04-15T14:32:58: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:33:28: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:33:28: ➡️ GET /api/pagina/banners
+2025-04-15T14:34:56: ➡️ GET /api/pagina/banners
+2025-04-15T14:34:56: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:36:30: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:36:30: 🗂️ Modelos sincronizados
+2025-04-15T14:36:30: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:36:34: ➡️ GET /api/pagina/banners
+2025-04-15T14:36:34: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:36:35: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:36:35: ➡️ GET /api/pagina/banners
+2025-04-15T14:36:38: ➡️ GET /api/pagina/banners
+2025-04-15T14:36:38: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:36:43: ➡️ GET /api/pagina/banners
+2025-04-15T14:36:43: ➡️ GET /api/productos
+2025-04-15T14:36:43: ➡️ GET /api/categorias
+2025-04-15T14:36:43: ➡️ POST /api/logs-cliente
+2025-04-15T14:36:43: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:36:45: ➡️ GET /api/pagina/banners
+2025-04-15T14:36:45: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:37:28: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:37:28: ➡️ GET /api/pagina/banners
+2025-04-15T14:37:31: ➡️ GET /api/pagina/banners
+2025-04-15T14:37:31: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:38:04: ➡️ GET /api/pagina/banners
+2025-04-15T14:38:04: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:38:13: ➡️ PUT /api/pedidos/1/estado
+2025-04-15T14:38:13: 🟡 Actualizar estado pedido: { id: '1', estado: 'cancelado' }
+2025-04-15T14:38:13: 🧾 Estado anterior: cancelado
+2025-04-15T14:38:13: 🧾 Nuevo estado: cancelado
+2025-04-15T14:38:13: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:38:18: ➡️ GET /api/pagina/banners
+2025-04-15T14:38:18: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:39:32: ➡️ GET /api/pagina/banners
+2025-04-15T14:39:32: ➡️ GET /api/pagina/banners
+2025-04-15T14:39:32: ➡️ GET /api/productos
+2025-04-15T14:39:32: ➡️ GET /api/productos
+2025-04-15T14:39:32: ➡️ GET /api/categorias
+2025-04-15T14:39:32: ➡️ GET /api/categorias
+2025-04-15T14:39:32: ➡️ POST /api/logs-cliente
+2025-04-15T14:39:32: ➡️ POST /api/logs-cliente
+2025-04-15T14:39:32: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:39:32: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:39:36: ➡️ GET /api/productos
+2025-04-15T14:39:36: ➡️ GET /api/pagina/banners
+2025-04-15T14:39:36: ➡️ GET /api/categorias
+2025-04-15T14:39:36: ➡️ POST /api/logs-cliente
+2025-04-15T14:39:36: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:39:38: ➡️ GET /api/pagina/banners
+2025-04-15T14:39:38: ➡️ GET /api/productos
+2025-04-15T14:39:38: ➡️ GET /api/categorias
+2025-04-15T14:39:38: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:39:38: ➡️ POST /api/logs-cliente
+2025-04-15T14:39:54: ➡️ GET /api/pagina
+2025-04-15T14:40:02: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T14:40:02: ➡️ GET /api/productos
+2025-04-15T14:40:02: ➡️ GET /api/pagina/banners
+2025-04-15T14:40:02: ➡️ GET /api/categorias
+2025-04-15T14:40:02: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:40:02: ➡️ POST /api/logs-cliente
+2025-04-15T14:40:07: ➡️ GET /api/productos
+2025-04-15T14:40:07: ➡️ GET /api/pagina/banners
+2025-04-15T14:40:07: ➡️ GET /api/categorias
+2025-04-15T14:40:07: ➡️ POST /api/logs-cliente
+2025-04-15T14:40:07: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:41:11: ➡️ GET /api/pagina/banners
+2025-04-15T14:41:11: ➡️ GET /api/productos
+2025-04-15T14:41:11: ➡️ GET /api/categorias
+2025-04-15T14:41:11: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:41:11: ➡️ POST /api/logs-cliente
+2025-04-15T14:41:15: ➡️ GET /api/productos
+2025-04-15T14:41:15: ➡️ GET /api/pagina/banners
+2025-04-15T14:41:15: ➡️ GET /api/categorias
+2025-04-15T14:41:15: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:41:15: ➡️ POST /api/logs-cliente
+2025-04-15T14:41:21: ➡️ GET /api/pagina/banners
+2025-04-15T14:41:21: ➡️ GET /api/productos
+2025-04-15T14:41:21: ➡️ GET /api/categorias
+2025-04-15T14:41:21: ➡️ POST /api/logs-cliente
+2025-04-15T14:41:21: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:41:22: ➡️ POST /api/logs-cliente
+2025-04-15T14:41:24: ➡️ POST /api/logs-cliente
+2025-04-15T14:42:11: ➡️ GET /api/pagina/banners
+2025-04-15T14:42:12: ➡️ GET /api/productos
+2025-04-15T14:42:12: ➡️ GET /api/categorias
+2025-04-15T14:42:12: ➡️ POST /api/logs-cliente
+2025-04-15T14:42:12: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:42:14: ➡️ GET /api/pagina/banners
+2025-04-15T14:42:14: ➡️ GET /api/productos
+2025-04-15T14:42:14: ➡️ GET /api/categorias
+2025-04-15T14:42:14: ➡️ POST /api/logs-cliente
+2025-04-15T14:42:14: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:42:16: ➡️ GET /api/pagina/banners
+2025-04-15T14:42:16: ➡️ GET /api/productos
+2025-04-15T14:42:16: ➡️ GET /api/categorias
+2025-04-15T14:42:16: ➡️ GET /api/pagina/banners
+2025-04-15T14:42:16: ➡️ GET /api/productos
+2025-04-15T14:42:16: ➡️ GET /api/categorias
+2025-04-15T14:42:16: ➡️ POST /api/logs-cliente
+2025-04-15T14:42:16: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:42:53: ➡️ GET /api/pagina/banners
+2025-04-15T14:42:53: ➡️ GET /api/productos
+2025-04-15T14:42:53: ➡️ GET /api/categorias
+2025-04-15T14:42:53: ➡️ POST /api/logs-cliente
+2025-04-15T14:42:53: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:42:55: ➡️ GET /api/pagina/banners
+2025-04-15T14:42:55: ➡️ GET /api/productos
+2025-04-15T14:42:55: ➡️ GET /api/categorias
+2025-04-15T14:42:55: ➡️ POST /api/logs-cliente
+2025-04-15T14:42:55: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:42:57: ➡️ GET /api/pagina/banners
+2025-04-15T14:42:57: ➡️ GET /api/productos
+2025-04-15T14:42:57: ➡️ GET /api/categorias
+2025-04-15T14:42:57: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:42:57: ➡️ POST /api/logs-cliente
+2025-04-15T14:43:20: ➡️ GET /api/pagina
+2025-04-15T14:43:31: ➡️ GET /api/pagina
+2025-04-15T14:43:35: ➡️ GET /api/pagina/banners
+2025-04-15T14:43:35: ➡️ GET /api/productos
+2025-04-15T14:43:35: ➡️ GET /api/categorias
+2025-04-15T14:43:35: ➡️ POST /api/logs-cliente
+2025-04-15T14:43:35: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:43:56: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T14:43:56: ➡️ GET /api/pagina/banners
+2025-04-15T14:43:56: ➡️ GET /api/productos
+2025-04-15T14:43:57: ➡️ GET /api/categorias
+2025-04-15T14:43:57: ➡️ POST /api/logs-cliente
+2025-04-15T14:43:57: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:44:00: ➡️ GET /api/pagina/banners
+2025-04-15T14:44:00: ➡️ GET /api/productos
+2025-04-15T14:44:00: ➡️ GET /api/categorias
+2025-04-15T14:44:00: ➡️ POST /api/logs-cliente
+2025-04-15T14:44:00: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:44:33: ➡️ GET /api/pagina/banners
+2025-04-15T14:44:33: ➡️ GET /api/productos
+2025-04-15T14:44:33: ➡️ GET /api/categorias
+2025-04-15T14:44:33: ➡️ POST /api/logs-cliente
+2025-04-15T14:44:33: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:44:44: ➡️ GET /api/pedidos
+2025-04-15T14:44:44: ➡️ GET /api/pagina
+2025-04-15T14:45:48: ➡️ GET /api/pagina/banners
+2025-04-15T14:45:48: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T14:45:48: ➡️ GET /api/pagina/banners
+2025-04-15T14:45:48: ➡️ GET /api/productos
+2025-04-15T14:45:48: ➡️ GET /api/productos
+2025-04-15T14:45:49: ➡️ GET /api/categorias
+2025-04-15T14:45:49: ➡️ GET /api/categorias
+2025-04-15T14:45:49: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:45:49: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:45:49: ➡️ POST /api/logs-cliente
+2025-04-15T14:45:49: ➡️ POST /api/logs-cliente
+2025-04-15T14:47:05: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:47:05: 🗂️ Modelos sincronizados
+2025-04-15T14:47:05: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:47:12: ➡️ GET /api/pagina/banners
+2025-04-15T14:47:12: ➡️ GET /api/productos
+2025-04-15T14:47:13: ➡️ GET /api/categorias
+2025-04-15T14:47:13: ➡️ POST /api/logs-cliente
+2025-04-15T14:47:13: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:47:13: 2803:9800:9016:4567:b1ae:851b:f1b2:e650
+2025-04-15T14:47:23: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T14:47:23: ➡️ GET /api/pagina/banners
+2025-04-15T14:47:23: ➡️ GET /api/productos
+2025-04-15T14:47:23: ➡️ GET /api/categorias
+2025-04-15T14:47:23: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:47:23: ➡️ POST /api/logs-cliente
+2025-04-15T14:47:23: 2800:22e0:4000:2d2:7c0e:14e:e558:4af7
+2025-04-15T14:47:30: ➡️ GET /api/public/provincias
+2025-04-15T14:48:11: ➡️ GET /api/public/provincias
+2025-04-15T14:48:13: ➡️ GET /api/public/provincias
+2025-04-15T14:48:20: ➡️ GET /api/pagina/banners
+2025-04-15T14:48:20: ➡️ GET /api/productos
+2025-04-15T14:48:20: ➡️ GET /api/categorias
+2025-04-15T14:48:20: ➡️ POST /api/logs-cliente
+2025-04-15T14:48:20: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:48:20: 2803:9800:9016:4567:b1ae:851b:f1b2:e650
+2025-04-15T14:48:22: ➡️ GET /api/pagina/banners
+2025-04-15T14:48:22: ➡️ GET /api/productos
+2025-04-15T14:48:22: ➡️ GET /api/categorias
+2025-04-15T14:48:22: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:48:22: ➡️ POST /api/logs-cliente
+2025-04-15T14:48:22: 2803:9800:9016:4567:b1ae:851b:f1b2:e650
+2025-04-15T14:48:27: ➡️ GET /api/pagina/banners
+2025-04-15T14:48:27: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:51:13: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T14:51:13: ➡️ GET /api/pagina/banners
+2025-04-15T14:51:13: ➡️ GET /api/productos
+2025-04-15T14:51:13: ➡️ GET /api/categorias
+2025-04-15T14:51:13: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:51:13: 2800:22e0:4000:2d2:7c0e:14e:e558:4af7
+2025-04-15T14:51:13: ➡️ POST /api/logs-cliente
+2025-04-15T14:52:58: ➡️ GET /api/public/provincias
+2025-04-15T14:53:19: ➡️ POST /api/logs-cliente
+2025-04-15T14:56:11: ➡️ GET /api/pagina/banners
+2025-04-15T14:56:11: ➡️ GET /api/productos
+2025-04-15T14:56:11: ➡️ GET /api/categorias
+2025-04-15T14:56:11: ➡️ POST /api/logs-cliente
+2025-04-15T14:56:11: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:56:11: 2803:9800:9016:4567:9565:5938:c6f:cb45
+2025-04-15T14:56:18: ➡️ GET /api/pagina/banners
+2025-04-15T14:56:18: ➡️ GET /api/productos
+2025-04-15T14:56:18: ➡️ GET /api/categorias
+2025-04-15T14:56:18: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T14:56:18: 2803:9800:9016:4567:9565:5938:c6f:cb45
+2025-04-15T14:56:19: ➡️ POST /api/logs-cliente
+2025-04-15T14:56:20: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T14:56:20: ➡️ GET /api/pagina/banners
+2025-04-15T14:57:13: 🟢 Conexión a la base de datos exitosa
+2025-04-15T14:57:13: 🗂️ Modelos sincronizados
+2025-04-15T14:57:13: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T14:59:15: ➡️ GET /api/pagina
+2025-04-15T14:59:18: ➡️ GET /api/pagina
+2025-04-15T14:59:57: ➡️ GET /api/pagina
+2025-04-15T15:02:07: ➡️ GET /api/pagina
+2025-04-15T15:02:19: ➡️ GET /api/pagina
+2025-04-15T15:02:26: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:02:26: ➡️ GET /api/pagina/banners
+2025-04-15T15:02:26: ➡️ GET /api/productos
+2025-04-15T15:02:26: ➡️ GET /api/categorias
+2025-04-15T15:02:26: ➡️ POST /api/logs-cliente
+2025-04-15T15:02:26: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:02:29: ➡️ GET /api/pagina/banners
+2025-04-15T15:02:29: ➡️ GET /api/productos
+2025-04-15T15:02:29: ➡️ GET /api/categorias
+2025-04-15T15:02:29: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:02:29: ➡️ POST /api/logs-cliente
+2025-04-15T15:02:30: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T15:02:30: ➡️ GET /api/pagina/banners
+2025-04-15T15:02:31: ➡️ GET /api/productos
+2025-04-15T15:02:31: ➡️ GET /api/pagina/banners
+2025-04-15T15:02:31: ➡️ GET /api/categorias
+2025-04-15T15:02:31: ➡️ POST /api/logs-cliente
+2025-04-15T15:02:31: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:02:34: ➡️ GET /api/pagina/banners
+2025-04-15T15:02:34: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T15:02:40: ➡️ GET /api/pagina/banners
+2025-04-15T15:02:40: ➡️ GET /api/productos
+2025-04-15T15:02:40: ➡️ GET /api/categorias
+2025-04-15T15:02:40: ➡️ POST /api/logs-cliente
+2025-04-15T15:02:40: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:02:43: ➡️ POST /api/logs-cliente
+2025-04-15T15:03:31: ➡️ GET /api/public/provincias
+2025-04-15T15:03:31: ➡️ GET /api/public/provincias
+2025-04-15T15:04:17: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:04:17: ➡️ GET /api/pagina/banners
+2025-04-15T15:04:17: ➡️ GET /api/productos
+2025-04-15T15:04:18: ➡️ GET /api/categorias
+2025-04-15T15:04:18: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:04:18: ➡️ POST /api/logs-cliente
+2025-04-15T15:04:48: ➡️ GET /api/productos
+2025-04-15T15:04:48: ➡️ GET /api/pagina/banners
+2025-04-15T15:04:48: ➡️ GET /api/categorias
+2025-04-15T15:04:48: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:04:48: ➡️ POST /api/logs-cliente
+2025-04-15T15:09:33: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:09:33: ➡️ GET /api/pagina
+2025-04-15T15:09:37: ➡️ GET /api/pagina
+2025-04-15T15:11:18: ➡️ GET /api/pedidos
+2025-04-15T15:11:18: ➡️ GET /api/pagina
+2025-04-15T15:11:24: ➡️ PUT /api/pedidos/2/estado
+2025-04-15T15:11:24: 🟡 Actualizar estado pedido: { id: '2', estado: 'preparando' }
+2025-04-15T15:11:25: ➡️ PUT /api/pedidos/2/estado
+2025-04-15T15:11:25: 🟡 Actualizar estado pedido: { id: '2', estado: 'preparando' }
+2025-04-15T15:12:37: ➡️ GET /api/pagina
+2025-04-15T15:12:37: ➡️ GET /api/pedidos
+2025-04-15T15:12:42: ➡️ PUT /api/pedidos/2/estado
+2025-04-15T15:12:42: 🟡 Actualizar estado pedido: { id: '2', estado: 'preparando' }
+2025-04-15T15:12:42: 🧾 Estado anterior: preparando
+2025-04-15T15:12:42: 🧾 Nuevo estado: preparando
+2025-04-15T15:12:42: ➡️ GET /api/pedidos
+2025-04-15T15:14:10: ➡️ GET /api/pagina
+2025-04-15T15:14:10: ➡️ GET /api/estadisticas/resumen
+2025-04-15T15:15:20: ➡️ GET /api/pagina
+2025-04-15T15:15:20: ➡️ GET /api/pagina
+2025-04-15T15:16:36: ➡️ GET /api/public/provincias
+2025-04-15T15:19:35: 🟢 Conexión a la base de datos exitosa
+2025-04-15T15:19:35: 🗂️ Modelos sincronizados
+2025-04-15T15:19:35: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T15:19:55: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:19:55: ➡️ GET /api/pagina/banners
+2025-04-15T15:19:55: ➡️ GET /api/productos
+2025-04-15T15:19:55: ➡️ GET /api/categorias
+2025-04-15T15:19:55: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:19:55: ➡️ POST /api/logs-cliente
+2025-04-15T15:22:17: 🟢 Conexión a la base de datos exitosa
+2025-04-15T15:22:17: 🗂️ Modelos sincronizados
+2025-04-15T15:22:17: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T15:22:23: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:22:23: ➡️ GET /api/pagina/banners
+2025-04-15T15:22:23: ➡️ GET /api/productos
+2025-04-15T15:22:23: ➡️ GET /api/categorias
+2025-04-15T15:22:23: ➡️ POST /api/logs-cliente
+2025-04-15T15:22:23: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:23:10: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:23:10: ➡️ GET /api/pagina/banners
+2025-04-15T15:23:10: ➡️ GET /api/productos
+2025-04-15T15:23:10: ➡️ GET /api/categorias
+2025-04-15T15:23:10: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:23:10: ➡️ POST /api/logs-cliente
+2025-04-15T15:24:40: 🟢 Conexión a la base de datos exitosa
+2025-04-15T15:24:40: 🗂️ Modelos sincronizados
+2025-04-15T15:24:40: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T15:24:44: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:24:44: ➡️ GET /api/pagina/banners
+2025-04-15T15:24:44: ➡️ GET /api/productos
+2025-04-15T15:24:44: ➡️ GET /api/categorias
+2025-04-15T15:24:44: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:24:44: ➡️ POST /api/logs-cliente
+2025-04-15T15:25:02: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:25:02: ➡️ GET /api/pagina/banners
+2025-04-15T15:25:02: ➡️ GET /api/productos
+2025-04-15T15:25:02: ➡️ GET /api/categorias
+2025-04-15T15:25:03: ➡️ POST /api/logs-cliente
+2025-04-15T15:25:03: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:26:18: ➡️ GET /api/pagina/banners
+2025-04-15T15:26:18: ➡️ GET /api/productos
+2025-04-15T15:26:18: ➡️ GET /api/categorias
+2025-04-15T15:26:18: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:26:18: ➡️ POST /api/logs-cliente
+2025-04-15T15:26:20: ➡️ GET /api/usuarios/vendedores/vendedor-por-link/TUIJ
+2025-04-15T15:26:20: ➡️ GET /api/pagina/banners
+2025-04-15T15:26:20: ➡️ GET /api/productos
+2025-04-15T15:26:20: ➡️ GET /api/categorias
+2025-04-15T15:26:20: ➡️ POST /api/logs-cliente
+2025-04-15T15:26:20: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:32:41: ➡️ GET /api/pagina/banners
+2025-04-15T15:32:41: ➡️ GET /api/productos
+2025-04-15T15:32:41: ➡️ GET /api/categorias
+2025-04-15T15:32:41: ➡️ POST /api/logs-cliente
+2025-04-15T15:32:41: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T15:32:53: ➡️ GET /api/public/provincias
+2025-04-15T15:47:34: 🟢 Conexión a la base de datos exitosa
+2025-04-15T15:47:34: 🗂️ Modelos sincronizados
+2025-04-15T15:47:34: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T15:47:47: 🟢 Conexión a la base de datos exitosa
+2025-04-15T15:47:47: 🗂️ Modelos sincronizados
+2025-04-15T15:47:47: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T15:47:49: ➡️ POST /api/auth/login
+2025-04-15T15:47:50: ➡️ GET /api/pagina
+2025-04-15T15:47:50: ➡️ GET /api/estadisticas/resumen
+2025-04-15T15:47:52: ➡️ GET /api/productos
+2025-04-15T15:47:52: ➡️ GET /api/categorias
+2025-04-15T15:47:52: ➡️ GET /api/pagina
+2025-04-15T15:51:38: ➡️ GET /api/pagina
+2025-04-15T15:51:41: ➡️ GET /api/pagina
+2025-04-15T15:51:41: ➡️ GET /api/productos
+2025-04-15T15:51:41: ➡️ GET /api/categorias
+2025-04-15T15:51:42: ➡️ GET /api/pagina
+2025-04-15T15:51:42: ➡️ GET /api/categorias
+2025-04-15T15:51:42: ➡️ GET /api/productos
+2025-04-15T15:51:42: ➡️ GET /api/categorias
+2025-04-15T15:52:24: ➡️ GET /api/pagina
+2025-04-15T15:52:24: ➡️ GET /api/categorias
+2025-04-15T15:52:25: ➡️ GET /api/productos
+2025-04-15T15:52:25: ➡️ GET /api/categorias
+2025-04-15T15:52:28: ➡️ GET /api/pagina
+2025-04-15T15:52:28: ➡️ GET /api/categorias
+2025-04-15T15:52:28: ➡️ GET /api/productos
+2025-04-15T15:52:28: ➡️ GET /api/categorias
+2025-04-15T15:53:29: ➡️ GET /api/pagina
+2025-04-15T15:53:29: ➡️ GET /api/categorias
+2025-04-15T15:53:29: ➡️ GET /api/categorias
+2025-04-15T15:53:29: ➡️ GET /api/productos
+2025-04-15T15:53:30: ➡️ GET /api/pagina
+2025-04-15T15:53:30: ➡️ GET /api/categorias
+2025-04-15T15:53:30: ➡️ GET /api/categorias
+2025-04-15T15:53:30: ➡️ GET /api/productos
+2025-04-15T15:53:32: ➡️ GET /api/pagina
+2025-04-15T15:53:32: ➡️ GET /api/categorias
+2025-04-15T15:53:32: ➡️ GET /api/categorias
+2025-04-15T15:53:32: ➡️ GET /api/productos
+2025-04-15T15:56:32: ➡️ GET /api/productos
+2025-04-15T15:56:32: ➡️ GET /api/categorias
+2025-04-15T15:56:32: ➡️ GET /api/pagina
+2025-04-15T16:03:37: ➡️ GET /api/pagina
+2025-04-15T16:10:27: ➡️ GET /api/public/provincias
+2025-04-15T16:10:32: ➡️ GET /api/public/provincias
+2025-04-15T16:12:38: 🟢 Conexión a la base de datos exitosa
+2025-04-15T16:12:38: 🗂️ Modelos sincronizados
+2025-04-15T16:12:38: 🚀 Servidor y WebSocket corriendo en puerto 3000
+2025-04-15T16:12:42: ➡️ POST /api/logs-cliente
+2025-04-15T16:13:23: ➡️ GET /api/productos
+2025-04-15T16:13:25: ➡️ GET /api/pagina
+2025-04-15T16:13:25: ➡️ GET /api/categorias
+2025-04-15T16:13:31: ➡️ POST /api/categorias
+2025-04-15T16:13:31: ➡️ GET /api/categorias
+2025-04-15T16:13:34: ➡️ GET /api/productos
+2025-04-15T16:13:34: ➡️ GET /api/pagina
+2025-04-15T16:13:34: ➡️ GET /api/categorias
+2025-04-15T16:13:34: ➡️ GET /api/categorias
+2025-04-15T16:13:49: ➡️ POST /api/productos/con-imagenes
+2025-04-15T16:13:49: ➡️ GET /api/productos
+2025-04-15T16:13:51: ➡️ GET /api/productos/2
+2025-04-15T16:13:58: ➡️ PUT /api/productos/2/con-imagenes
+2025-04-15T16:13:58: ➡️ GET /api/productos
+2025-04-15T16:14:07: ➡️ GET /api/productos
+2025-04-15T16:14:07: ➡️ GET /api/productos
+2025-04-15T16:14:12: ➡️ GET /api/pagina/banners
+2025-04-15T16:14:12: ➡️ GET /api/productos
+2025-04-15T16:14:13: ➡️ GET /api/categorias
+2025-04-15T16:14:13: ➡️ POST /api/logs-cliente
+2025-04-15T16:14:13: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T16:14:14: ➡️ POST /api/logs-cliente
+2025-04-15T16:14:15: ➡️ POST /api/logs-cliente
+2025-04-15T16:14:15: ➡️ POST /api/logs-cliente
+2025-04-15T16:14:17: ➡️ POST /api/logs-cliente
+2025-04-15T16:14:18: ➡️ POST /api/logs-cliente
+2025-04-15T16:19:02: ➡️ GET /api/pagina/banners
+2025-04-15T16:19:02: ➡️ GET /api/public/provincias
+2025-04-15T16:19:02: ➡️ GET /api/productos
+2025-04-15T16:19:02: ➡️ GET /api/categorias
+2025-04-15T16:19:02: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T16:19:02: ➡️ POST /api/logs-cliente
+2025-04-15T16:19:34: ➡️ POST /api/logs-cliente
+2025-04-15T16:19:34: ➡️ POST /api/logs-cliente
+2025-04-15T16:20:01: ➡️ POST /api/logs-cliente
+2025-04-15T16:20:09: ➡️ GET /api/pagina/banners
+2025-04-15T16:20:09: ➡️ GET /api/pedidos/mis-pedidos
+2025-04-15T16:20:09: ➡️ GET /api/public/provincias
+2025-04-15T16:20:25: ➡️ GET /api/pagina/banners
+2025-04-15T16:20:25: ➡️ GET /api/public/provincias
+2025-04-15T16:20:25: ➡️ GET /api/productos
+2025-04-15T16:20:25: ➡️ GET /api/categorias
+2025-04-15T16:20:25: ➡️ POST /api/logs-cliente
+2025-04-15T16:20:25: ➡️ GET /api/public/cliente-por-ip
+2025-04-15T16:20:27: ➡️ POST /api/logs-cliente
+2025-04-15T16:20:28: ➡️ POST /api/logs-cliente
+2025-04-15T16:20:29: ➡️ POST /api/logs-cliente

@@ -40,7 +40,7 @@ export default function DetalleProductoInline(props: { id: number }) {
       <div class="p-4 mt-6 border-t">
         <div class="flex flex-col sm:flex-row gap-6">
           <img
-            src={`${import.meta.env.VITE_BACKEND_URL}${producto()?.Imagenes?.[0]?.url}`}
+            src={`${import.meta.env.VITE_UPLOADS_URL}${producto()?.Imagenes?.[0]?.url}`}
             alt="Producto"
             class="w-full sm:w-1/2 object-contain bg-white max-h-96"
           />

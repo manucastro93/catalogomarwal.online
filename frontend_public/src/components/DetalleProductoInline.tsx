@@ -39,7 +39,7 @@ export default function DetalleProductoInline({ producto, onVolver, onSelecciona
         {/* Imágenes */}
         <div class="relative w-full h-115 bg-white border rounded flex items-center justify-center">
           <img
-            src={`${import.meta.env.VITE_BACKEND_URL}${producto.Imagenes?.[imagenActual()]?.url}`}
+            src={`${import.meta.env.VITE_UPLOADS_URL}${producto.Imagenes?.[imagenActual()]?.url}`}
             alt={`Imagen ${imagenActual() + 1}`}
             class="max-h-full max-w-full object-contain"
           />

@@ -56,7 +56,7 @@ export default function VerPedidoModal(props: {
             <div><strong>Vendedor:</strong> {props.pedido!.usuario?.nombre || '—'}</div>
             <div><strong>Estado:</strong> {props.pedido!.estado}</div>
             <div><strong>Observaciones:</strong> {props.pedido!.observaciones || '—'}</div>
-            <div><strong>Total:</strong> ${props.pedido!.total?.toFixed(2)}</div>
+            <div><strong>Total:</strong> ${props.pedido!.total}</div>
             <div><strong>Fecha:</strong> {new Date(props.pedido!.createdAt).toLocaleString()}</div>
 
             <div>
@@ -76,9 +76,9 @@ export default function VerPedidoModal(props: {
                       <tr>
                         <td class="border px-2 py-1">{detalle.producto?.nombre || '—'}</td>
                         <td class="border px-2 py-1">{detalle.cantidad}</td>
-                        <td class="border px-2 py-1">${detalle.precioUnitario.toFixed(2)}</td>
+                        <td class="border px-2 py-1">${detalle.precioUnitario}</td>
                         <td class="border px-2 py-1">
-                          ${(detalle.precioUnitario * detalle.cantidad).toFixed(2)}
+                          ${(detalle.precioUnitario * detalle.cantidad)}
                         </td>
                       </tr>
                     )}

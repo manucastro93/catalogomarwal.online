@@ -251,9 +251,12 @@ export default function Productos() {
 />
 
       <ModalImportarExcel
-        abierto={modalExcel()}
-        onCerrar={() => setModalExcel(false)}
-      />
+  abierto={modalExcel()}
+  onCerrar={() => {
+    setModalExcel(false);
+    refetch();
+  }}
+/>
 
       <VerProductoModal
         producto={verProducto()}

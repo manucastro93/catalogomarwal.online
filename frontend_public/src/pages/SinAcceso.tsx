@@ -13,7 +13,7 @@ export default function SinAcceso() {
       </p>
       <Show when={pagina()}>
         <img
-          src={`${import.meta.env.VITE_BACKEND_URL}${pagina()?.logo}`}
+          src={`${import.meta.env.VITE_UPLOADS_URL}${pagina()?.logo}`}
           alt="Logo Marwal"
           class="w-32"
         />
