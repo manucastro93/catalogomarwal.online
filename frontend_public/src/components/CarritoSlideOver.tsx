@@ -69,62 +69,130 @@ export default function CarritoSlideOver() {
 
   return (
     <>
-<Show when={true}>
-  <div
-    class={`fixed inset-0 z-40 transition-opacity duration-300 ${
-      carritoAbierto()
-        ? "bg-black/40 opacity-100"
-        : "opacity-0 pointer-events-none"
-    }`}
-  />
+      <Show when={true}>
+        {/* Fondo oscuro con transición */}
+        <div
+          class={`fixed inset-0 z-40 transition-opacity duration-300 ${
+            carritoAbierto()
+              ? "bg-black/40 opacity-100"
+              : "opacity-0 pointer-events-none"
+          }`}
+        />
 
-  <div
-    class={`fixed top-0 right-0 z-50 h-full flex transition-transform duration-500 ${
-      carritoAbierto()
-        ? "translate-x-0 scale-100 ease-[cubic-bezier(0.22,1.61,0.36,1)]"
-        : "translate-x-full scale-95 ease-in pointer-events-none"
-    }`}
-  >
-    {/* Columna izquierda dentro del panel */}
-    <div
-      class="w-80 sm:w-18 bg-black/70 text-white flex flex-col items-center justify-center cursor-pointer select-none px-1 py-2 text-center"
-      onClick={() => setCarritoAbierto(false)}
-    >
-      <span class="text-2xl font-bold">→</span>
-      <span class="text-[10px] sm:text-xs mt-1 leading-tight">
-        Tocá acá<br />para cerrar
-      </span>
-    </div>
+        <div
+          class={`fixed top-0 right-0 z-50 h-full flex flex-col transition-transform duration-500 ${
+            carritoAbierto()
+              ? "translate-y-0 scale-100 ease-[cubic-bezier(0.22,1.61,0.36,1)]"
+              : "translate-y-full scale-95 ease-in pointer-events-none"
+          }`}
+        >
+          {/* Columna izquierda dentro del panel */}
+          <div
+            class="w-10 sm:w-12 bg-black/70 text-white flex flex-col items-center justify-center cursor-pointer select-none px-1 py-2 text-center"
+            onClick={() => setCarritoAbierto(false)}
+          >
+            <span class="text-2xl font-bold">→</span>
+            <span class="text-[10px] sm:text-xs mt-1 leading-tight">
+              Tocá acá<br />para cerrar
+            </span>
+          </div>
 
-    {/* Panel del carrito */}
-    <div class="w-[90vw] sm:w-[400px] h-full bg-white shadow-xl p-4 flex flex-col overflow-auto">
-      <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
+          {/* Panel del carrito */}
+          <div class="w-[90vw] sm:w-[400px] h-full bg-white shadow-xl p-4 flex flex-col overflow-auto">
+            <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
 
-      <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
-        <div class="flex-1 space-y-4">
-          {/* ... todo tu For del carrito ... */}
-          <div class="border-t pt-4 mt-4 text-sm space-y-2">
-            <p class="text-lg font-bold text-right">
-              TOTAL: ${total().toFixed(2)}
-            </p>
-            <FormularioCliente onConfirmar={handleEnviarPedido} />
+            <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
+              <div class="flex-1 space-y-4">
+                <For each={carrito}>
+                  {(item) => {
+                    const unidades =
+                      item.cantidad * (item.unidadPorBulto || 1);
+                    const precioUnitario = item.unidadPorBulto
+                      ? item.precio / item.unidadPorBulto
+                      : undefined;
+
+                    return (
+                      <div class="flex justify-between items-center text-sm border-b pb-2">
+                        <div>
+                          <p class="font-semibold">{item.nombre}</p>
+                          <p class="text-xs text-gray-500">
+                            x{item.cantidad} bultos ({unidades} unidades)
+                          </p>
+                          <p class="text-xs text-gray-500">
+                            ${item.precio.toFixed(2)} por bulto
+                          </p>
+                          {precioUnitario && (
+                            <p class="text-[11px] text-gray-400">
+                              (${precioUnitario.toFixed(2)} c/u)
+                            </p>
+                          )}
+                        </div>
+                        <div class="flex gap-1 items-center">
+                          <button
+                            class="px-2 h-8 text-sm border rounded"
+                            onClick={() =>
+                              cambiarCantidad(
+                                item.id,
+                                Math.max(1, item.cantidad - 1)
+                              )
+                            }
+                          >
+                            -
+                          </button>
+
+                          <input
+                            type="number"
+                            class="w-14 h-8 text-sm border rounded text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
+                            min={1}
+                            value={item.cantidad}
+                            onInput={(e) =>
+                              cambiarCantidad(item.id, +e.currentTarget.value)
+                            }
+                          />
+
+                          <button
+                            class="px-2 h-8 text-sm border rounded"
+                            onClick={() =>
+                              cambiarCantidad(item.id, item.cantidad + 1)
+                            }
+                          >
+                            +
+                          </button>
+
+                          <button
+                            onClick={() => quitarDelCarrito(item.id)}
+                            class="text-red-500 ml-1 text-base"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }}
+                </For>
+
+                <div class="border-t pt-4 mt-4 text-sm space-y-2">
+                  <p class="text-lg font-bold text-right">
+                    TOTAL: ${total().toFixed(2)}
+                  </p>
+
+                  <FormularioCliente onConfirmar={handleEnviarPedido} />
+                </div>
+              </div>
+            </Show>
           </div>
         </div>
       </Show>
-    </div>
-  </div>
-</Show>
-
 
       {/* Mensaje visual */}
       <Show when={mensaje()}>
         <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje("")} />
       </Show>
 
-      {/* Botón flotante animado */}
+      {/* Botón flotante animado, oculto en móviles */}
       <Show when={!carritoAbierto()}>
         <button
-          class="fixed bottom-5 right-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50"
+          class="fixed bottom-5 right-5 sm:right-5 sm:bottom-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50 hidden sm:block"
           onClick={() => setCarritoAbierto(true)}
           aria-label="Abrir carrito"
         >
