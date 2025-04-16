@@ -78,3 +78,21 @@ button, [role="button"], .cursor-pointer {
 .animate-slideOutRight {
   animation: slideOutRight 0.3s ease-in forwards;
 }
+
+@keyframes cartGlow {
+  0% {
+    box-shadow: 0 0 0px rgba(255, 255, 255, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+    transform: scale(1.1);
+  }
+  100% {
+    box-shadow: 0 0 0px rgba(255, 255, 255, 0.3);
+    transform: scale(1);
+  }
+}
+.animate-cart-glow {
+  animation: cartGlow 0.4s ease-in-out;
+}

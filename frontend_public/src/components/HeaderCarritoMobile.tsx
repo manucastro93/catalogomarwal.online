@@ -1,5 +1,6 @@
 import { Show } from "solid-js";
 import { carrito, carritoAbierto, setCarritoAbierto } from "../store/carrito";
+import { formatearPrecio } from "../utils/formato";
 
 export default function HeaderCarritoMobile() {
   const total = () =>
@@ -12,7 +13,7 @@ export default function HeaderCarritoMobile() {
   return (
     <Show when={carrito.length > 0}>
       <div class="fixed top-0 left-0 right-0 z-50 bg-black text-white text-center md:hidden">
-        <div class="py-2 text-lg font-semibold">🛒 Total: ${total().toFixed(0)}</div>
+        <div class="py-2 text-lg font-semibold">🛒 Total: {formatearPrecio(total())}</div>
 
         {/* Flechita SVG sobresaliente */}
         <div class="relative w-full h-6 overflow-visible">
