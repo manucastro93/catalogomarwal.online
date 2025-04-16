@@ -1,5 +1,6 @@
-// ProductoCard.tsx
+
 import { agregarAlCarrito } from "../store/carrito";
+import { formatearPrecio } from "../utils/formato";
 
 interface Props {
   id: number;
@@ -40,16 +41,16 @@ export default function ProductoCard({
 
       <h3 class="text-sm font-bold mb-1">{nombre}</h3>
 
-      <p class="text-sm text-gray-800">${precioBulto} x bulto</p>
+      <p class="text-sm text-gray-800">{formatearPrecio(precioBulto)} x bulto</p>
 
       {precioUnitario && unidadPorBulto && (
         <p class="text-xs text-gray-500">
-          (${precioUnitario} c/u x {unidadPorBulto})
+          ({formatearPrecio(precioUnitario)} c/u x {unidadPorBulto}un)
         </p>
       )}
 
       <button
-        class="absolute bottom-2 right-2 bg-white shadow-lg rounded-full p-4 text-1xl hover:scale-125 transition-transform duration-200"
+        class="absolute bottom-3 right-3 bg-white shadow-lg rounded-full p-4 text-1xl hover:scale-125 transition-transform duration-200"
         onClick={() =>
           agregarAlCarrito({
             id,
@@ -61,7 +62,7 @@ export default function ProductoCard({
           })
         }
       >
-        🛒
+        Agregar
       </button>
     </div>
   );

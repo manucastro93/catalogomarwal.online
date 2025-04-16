@@ -1,10 +1,11 @@
 import { createResource, For, Show, createSignal } from "solid-js";
 import { obtenerMisPedidos } from "../services/pedido.service";
 import { obtenerBanners } from "../services/pagina.service";
-import { cancelarPedido as cancelarPedidoAPI } from "../services/pedido.service"; // asegúrate de tener esto arriba
+import { cancelarPedido as cancelarPedidoAPI } from "../services/pedido.service"; 
 import dayjs from "dayjs";
-import ModalPedido from "../components/ModalPedido"; // asegurate de importar el componente
+import ModalPedido from "../components/ModalPedido"; 
 import ModalMensaje from "../components/ModalMensaje";
+import { formatearPrecio } from "../utils/formato"; 
 
 export default function MisPedidos() {
   const [banners] = createResource(obtenerBanners);
@@ -86,7 +87,7 @@ export default function MisPedidos() {
                       {(detalle) => (
                         <div class="flex justify-between">
                           <span>{detalle.Producto?.nombre || "Producto"} x {detalle.cantidad}</span>
-                          <span>${detalle.subtotal}</span>
+                          <span>{formatearPrecio(detalle.subtotal)}</span>
                         </div>
                       )}
                     </For>
@@ -94,7 +95,7 @@ export default function MisPedidos() {
 
                   <div class="flex justify-between mt-2 font-semibold text-sm">
                     <span>Total:</span>
-                    <span>${pedido.total}</span>
+                    <span>{formatearPrecio(pedido.total)}</span>
                   </div>
 
                   <p class="mt-1 text-xs text-gray-500">Estado: {pedido.estado}</p>
