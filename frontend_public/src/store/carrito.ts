@@ -19,14 +19,17 @@ function syncLocalStorage(actualizado: typeof carrito) {
   localStorage.setItem('carrito', JSON.stringify(actualizado));
 }
 
-export function agregarAlCarrito(item: {
-  id: number;
-  nombre: string;
-  precio: number;
-  imagen: string;
-  precioPorBulto?: number;
-  unidadPorBulto?: number;
-}) {
+export function agregarAlCarrito(
+  item: {
+    id: number;
+    nombre: string;
+    precio: number;
+    imagen: string;
+    precioPorBulto?: number;
+    unidadPorBulto?: number;
+  },
+  abrir = true // ← parámetro opcional
+) {
   const index = carrito.findIndex((p) => p.id === item.id);
   let actualizado;
   if (index >= 0) {
@@ -38,8 +41,12 @@ export function agregarAlCarrito(item: {
   }
   setCarrito(actualizado);
   syncLocalStorage(actualizado);
-  setCarritoAbierto(true);
+
+  if (abrir) {
+    setCarritoAbierto(true);
+  }
 }
+
 
 export function quitarDelCarrito(id: number) {
   const actualizado = carrito.filter((p) => p.id !== id);
