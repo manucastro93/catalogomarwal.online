@@ -14,6 +14,7 @@ import RutaProtegida from './components/RutaProtegida';
 
 import { setCarrito } from './store/carrito';
 import Footer from 'components/Footer';
+import HeaderCarritoMobile from "./components/HeaderCarritoMobile";
 
 window.scrollTo = () => {};
 
@@ -33,6 +34,7 @@ render(() => (
     <Route path="/" component={() => (
       <RutaProtegida>
         <LayoutPublic>
+        <HeaderCarritoMobile />
           <Inicio />
         </LayoutPublic>
       </RutaProtegida>

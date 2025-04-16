@@ -12,6 +12,9 @@ import {
   eliminarImagenProducto,
 } from '../services/producto.service';
 import { obtenerCategorias } from '../services/categoria.service';
+import { productoSchema } from '../validations/producto.schema';
+import { z } from 'zod';
+import ModalMensaje from './ModalMensaje';
 
 export default function ModalNuevoProducto(props: {
   abierto: boolean;
@@ -36,6 +39,8 @@ export default function ModalNuevoProducto(props: {
   }[]>([]);
 
   const [imagenesExistentes, setImagenesExistentes] = createSignal<ImagenProducto[]>([]);
+  const [errores, setErrores] = createSignal<{ [key: string]: string }>({});
+  const [mensajeError, setMensajeError] = createSignal("");
 
   createEffect(() => {
     if (props.producto) {
@@ -59,20 +64,49 @@ export default function ModalNuevoProducto(props: {
       setCategoriaId('');
       setImagenesSeleccionadas([]);
       setImagenesExistentes([]);
+      setErrores({});
     }
   });
 
   const handleGuardar = async () => {
-    const formData = new FormData();
+    const datos = {
+      sku: sku().trim(),
+      nombre: nombre().trim(),
+      descripcion: descripcion().trim(),
+      hayStock: hayStock(),
+      precioUnitario: precioUnitario().trim(),
+      precioPorBulto: precioPorBulto().trim(),
+      unidadPorBulto: unidadPorBulto().trim(),
+      categoriaId: categoriaId().trim(),
+    };
 
-    formData.append('sku', sku());
-    if (nombre()) formData.append('nombre', nombre());
-    if (descripcion()) formData.append('descripcion', descripcion());
-    formData.append('hayStock', hayStock() === 'Sí' ? 'true' : 'false');
-    formData.append('precioUnitario', precioUnitario());
-    formData.append('precioPorBulto', precioPorBulto());
-    formData.append('unidadPorBulto', unidadPorBulto());
-    formData.append('categoriaId', categoriaId());
+    const result = productoSchema.safeParse(datos);
+
+    if (!result.success) {
+      const erroresZod = result.error.flatten().fieldErrors;
+      const erroresFormateados: { [key: string]: string } = {};
+      Object.entries(erroresZod).forEach(([key, value]) => {
+        if (value?.[0]) erroresFormateados[key] = value[0];
+      });
+      setErrores(erroresFormateados);
+      setMensajeError("Por favor corregí los campos indicados.");
+      return;
+    }
+
+    setErrores({});
+    setMensajeError("");
+
+    const data = result.data;
+
+    const formData = new FormData();
+    formData.append('sku', data.sku);
+    if (data.nombre) formData.append('nombre', data.nombre);
+    if (data.descripcion) formData.append('descripcion', data.descripcion);
+    formData.append('hayStock', data.hayStock === 'Sí' ? 'true' : 'false');
+    formData.append('precioUnitario', data.precioUnitario);
+    formData.append('precioPorBulto', data.precioPorBulto);
+    formData.append('unidadPorBulto', data.unidadPorBulto);
+    formData.append('categoriaId', data.categoriaId);
 
     imagenesSeleccionadas().forEach((img) => {
       formData.append('imagenes', img.file);
@@ -87,7 +121,7 @@ export default function ModalNuevoProducto(props: {
         props.onCerrar("Producto creado correctamente");
       }
     } catch (error) {
-      props.onCerrar("Error al guardar el producto");
+      setMensajeError("Error al guardar el producto");
     }
   };
 
@@ -95,12 +129,15 @@ export default function ModalNuevoProducto(props: {
     await eliminarImagenProducto(id);
     setImagenesExistentes((prev) => prev.filter((img) => img.id !== id));
   };
+
   const link: string = import.meta.env.VITE_BACKEND_URL;
 
   return (
     <Show when={props.abierto}>
       <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded shadow w-full max-w-2xl">
+        <ModalMensaje mensaje={mensajeError()} cerrar={() => setMensajeError("")} />
+
           <h2 class="text-xl font-bold mb-4">
             {props.producto ? 'Editar producto' : 'Nuevo producto'}
           </h2>
@@ -122,9 +159,18 @@ export default function ModalNuevoProducto(props: {
 
           <Show when={tab() === 'datos'}>
             <div class="space-y-3">
-              <input class="w-full border p-2 rounded" placeholder="SKU *" value={sku()} onInput={(e) => setSku(e.currentTarget.value)} />
-              <input class="w-full border p-2 rounded" placeholder="Nombre" value={nombre()} onInput={(e) => setNombre(e.currentTarget.value)} />
-              <textarea class="w-full border p-2 rounded" placeholder="Descripción" value={descripcion()} onInput={(e) => setDescripcion(e.currentTarget.value)} />
+              <div>
+                <input class="w-full border p-2 rounded" placeholder="SKU *" value={sku()} onInput={(e) => setSku(e.currentTarget.value)} />
+                <Show when={errores().sku}><p class="text-red-600 text-sm mt-1">{errores().sku}</p></Show>
+              </div>
+              <div>
+                <input class="w-full border p-2 rounded" placeholder="Nombre" value={nombre()} onInput={(e) => setNombre(e.currentTarget.value)} />
+                <Show when={errores().nombre}><p class="text-red-600 text-sm mt-1">{errores().nombre}</p></Show>
+              </div>
+              <div>
+                <textarea class="w-full border p-2 rounded" placeholder="Descripción" value={descripcion()} onInput={(e) => setDescripcion(e.currentTarget.value)} />
+                <Show when={errores().descripcion}><p class="text-red-600 text-sm mt-1">{errores().descripcion}</p></Show>
+              </div>
               <Show when={props.producto?.id}>
                 <span class='block'>Stock</span>
                 <select class="w-full border p-2 rounded" value={hayStock()} onInput={(e) => setHayStock(e.currentTarget.value)}>
@@ -133,15 +179,27 @@ export default function ModalNuevoProducto(props: {
                 </select>
               </Show>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input class="border p-2 rounded" type="number" placeholder="Precio unitario" value={precioUnitario()} onInput={(e) => setPrecioUnitario(e.currentTarget.value)} />
-                <input class="border p-2 rounded" type="number" placeholder="Precio por bulto" value={precioPorBulto()} onInput={(e) => setPrecioPorBulto(e.currentTarget.value)} />
-                <input class="border p-2 rounded" type="number" placeholder="Unidades por bulto" value={unidadPorBulto()} onInput={(e) => setUnidadPorBulto(e.currentTarget.value)} />
+                <div>
+                  <input class="border p-2 rounded w-full" type="number" placeholder="Precio unitario" value={precioUnitario()} onInput={(e) => setPrecioUnitario(e.currentTarget.value)} />
+                  <Show when={errores().precioUnitario}><p class="text-red-600 text-sm mt-1">{errores().precioUnitario}</p></Show>
+                </div>
+                <div>
+                  <input class="border p-2 rounded w-full" type="number" placeholder="Precio por bulto" value={precioPorBulto()} onInput={(e) => setPrecioPorBulto(e.currentTarget.value)} />
+                  <Show when={errores().precioPorBulto}><p class="text-red-600 text-sm mt-1">{errores().precioPorBulto}</p></Show>
+                </div>
+                <div>
+                  <input class="border p-2 rounded w-full" type="number" placeholder="Unidades por bulto" value={unidadPorBulto()} onInput={(e) => setUnidadPorBulto(e.currentTarget.value)} />
+                  <Show when={errores().unidadPorBulto}><p class="text-red-600 text-sm mt-1">{errores().unidadPorBulto}</p></Show>
+                </div>
               </div>
-              <span class="block">Categoría</span>
-              <select class="w-full border p-2 rounded" value={categoriaId()} onInput={(e) => setCategoriaId(e.currentTarget.value)}>
-                <option value="">Seleccionar categoría</option>
-                <For each={categorias()}>{(cat) => <option value={cat.id}>{cat.nombre}</option>}</For>
-              </select>
+              <div>
+                <span class="block">Categoría</span>
+                <select class="w-full border p-2 rounded" value={categoriaId()} onInput={(e) => setCategoriaId(e.currentTarget.value)}>
+                  <option value="">Seleccionar categoría</option>
+                  <For each={categorias()}>{(cat) => <option value={cat.id}>{cat.nombre}</option>}</For>
+                </select>
+                <Show when={errores().categoriaId}><p class="text-red-600 text-sm mt-1">{errores().categoriaId}</p></Show>
+              </div>
             </div>
           </Show>
 

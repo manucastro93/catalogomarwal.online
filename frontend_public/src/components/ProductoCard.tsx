@@ -40,11 +40,11 @@ export default function ProductoCard({
 
       <h3 class="text-sm font-bold mb-1">{nombre}</h3>
 
-      <p class="text-sm text-gray-800">${precioBulto.toFixed(2)} por bulto</p>
+      <p class="text-sm text-gray-800">${precioBulto} x bulto</p>
 
       {precioUnitario && unidadPorBulto && (
         <p class="text-xs text-gray-500">
-          (${precioUnitario.toFixed(2)} c/u x {unidadPorBulto})
+          (${precioUnitario} c/u x {unidadPorBulto})
         </p>
       )}
 

@@ -28,7 +28,9 @@ app.use(cors({
     const allowlist = [
       'https://catalogomarwal.online',
       'https://www.catalogomarwal.online',
-      'https://admin.catalogomarwal.online'
+      'https://admin.catalogomarwal.online',
+      'http://localhost:3001',
+      'http://localhost:3002',
     ];
 
     // Permití también localhost y sin origin (como en curl, healthchecks, etc.)

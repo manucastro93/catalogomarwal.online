@@ -1,4 +1,4 @@
-import { createSignal, Show, For } from "solid-js";
+import { createSignal, Show, For, createEffect } from "solid-js";
 import {
   carrito,
   carritoAbierto,
@@ -21,8 +21,24 @@ export default function CarritoSlideOver() {
     }, 0);
 
   const { usuario } = useAuth();
-  const [pedidoEnviado, setPedidoEnviado] = createSignal(false);
   const [mensaje, setMensaje] = createSignal("");
+  const [pedidoEnviado, setPedidoEnviado] = createSignal(false);
+
+  // Control visual para permitir animación de cierre antes de desmontar
+  const [showMobile, setShowMobile] = createSignal(false);
+  const [showDesktop, setShowDesktop] = createSignal(false);
+
+  // Reactivo: cuando cambia carritoAbierto, animamos entrada/salida
+  createEffect(() => {
+    const open: boolean = carritoAbierto();
+    if (open) {
+      setShowMobile(true);
+      setShowDesktop(true);
+    } else {
+      setTimeout(() => setShowMobile(false), 300);
+      setTimeout(() => setShowDesktop(false), 300);
+    }
+  });
 
   const handleEnviarPedido = async (datosCliente: any) => {
     const vendedorRaw = localStorage.getItem("vendedor");
@@ -69,84 +85,141 @@ export default function CarritoSlideOver() {
 
   return (
     <>
-<Show when={true}>
-  <div
-    class={`fixed inset-0 z-40 transition-opacity duration-300 ${
-      carritoAbierto()
-        ? "bg-black/40 opacity-100"
-        : "opacity-0 pointer-events-none"
-    }`}
-  />
+      {/* FONDO OSCURO */}
+      <Show when={carritoAbierto()}>
+        <div
+          class="fixed inset-0 z-40 bg-black/40"
+          onClick={() => setCarritoAbierto(false)}
+        />
+      </Show>
 
-  <div
-    class={`fixed top-0 right-0 z-50 h-full flex transition-transform duration-500 ${
-      carritoAbierto()
-        ? "translate-x-0 scale-100 ease-[cubic-bezier(0.22,1.61,0.36,1)]"
-        : "translate-x-full scale-95 ease-in pointer-events-none"
-    }`}
-  >
-    {/* Columna izquierda dentro del panel */}
-    <div
-      class="w-80 sm:w-18 bg-black/70 text-white flex flex-col items-center justify-center cursor-pointer select-none px-1 py-2 text-center"
-      onClick={() => setCarritoAbierto(false)}
-    >
-      <span class="text-2xl font-bold">→</span>
-      <span class="text-[10px] sm:text-xs mt-1 leading-tight">
-        Tocá acá<br />para cerrar
-      </span>
-    </div>
-
-    {/* Panel del carrito */}
-    <div class="w-[90vw] sm:w-[400px] h-full bg-white shadow-xl p-4 flex flex-col overflow-auto">
-      <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
-
-      <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
-        <div class="flex-1 space-y-4">
-          {/* ... todo tu For del carrito ... */}
-          <div class="border-t pt-4 mt-4 text-sm space-y-2">
-            <p class="text-lg font-bold text-right">
-              TOTAL: ${total().toFixed(2)}
-            </p>
-            <FormularioCliente onConfirmar={handleEnviarPedido} />
-          </div>
+      {/* MOBILE: CARRITO DESDE ARRIBA */}
+      <Show when={showMobile()}>
+        <div
+          class={`fixed top-[70px] left-0 right-0 z-40 md:hidden bg-white shadow-lg p-4 overflow-auto max-h-[80vh] ${
+            carritoAbierto() ? "animate-slideDown" : "animate-slideUp"
+          }`}
+        >
+          <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
+          <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
+            <ContenidoCarrito onConfirmar={handleEnviarPedido} total={total()} />
+          </Show>
         </div>
       </Show>
-    </div>
-  </div>
-</Show>
 
+      {/* DESKTOP: CARRITO DESDE LA DERECHA */}
+      <Show when={showDesktop()}>
+        <>
+          {/* Flecha para cerrar */}
+          <div
+            class="fixed top-1/2 right-[400px] z-50 -translate-y-1/2 bg-black text-white px-2 py-1 text-xs rounded-l-2xl cursor-pointer hover:bg-gray-800 shadow hidden md:flex flex-col items-center"
+            onClick={() => setCarritoAbierto(false)}
+          >
+            <span class="leading-tight text-center">cerrar</span>
+            <span class="text-xl">→</span>
+          </div>
 
-      {/* Mensaje visual */}
+          {/* Panel carrito */}
+          <div
+            class={`fixed top-0 right-0 h-full w-[400px] bg-white p-4 shadow-xl overflow-auto hidden md:flex flex-col z-50 ${
+              carritoAbierto() ? "animate-slideInRight" : "animate-slideOutRight"
+            }`}
+          >
+            <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
+            <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
+              <ContenidoCarrito onConfirmar={handleEnviarPedido} total={total()} />
+            </Show>
+          </div>
+        </>
+      </Show>
+
       <Show when={mensaje()}>
         <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje("")} />
       </Show>
 
-      {/* Botón flotante animado */}
+      {/* BOTÓN FLOTANTE SOLO EN DESKTOP */}
       <Show when={!carritoAbierto()}>
         <button
-          class="fixed bottom-5 right-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50"
+          class="hidden md:block fixed bottom-5 right-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50"
           onClick={() => setCarritoAbierto(true)}
           aria-label="Abrir carrito"
         >
           🛒
         </button>
       </Show>
-
-      {/* Animación para el botón */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            0% {
-              opacity: 0;
-              transform: scale(0.9);
-            }
-            100% {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-        `}
-      </style>
     </>
+  );
+}
+
+function ContenidoCarrito(props: {
+  onConfirmar: (datosCliente: any) => void;
+  total: number;
+}) {
+  return (
+    <div class="flex-1 space-y-4">
+      <For each={carrito}>
+        {(item) => {
+          const unidades = item.cantidad * (item.unidadPorBulto || 1);
+          const precioUnitario = item.unidadPorBulto
+            ? item.precio / item.unidadPorBulto
+            : undefined;
+
+          return (
+            <div class="flex justify-between items-center text-sm border-b pb-2">
+              <div>
+                <p class="font-semibold">{item.nombre}</p>
+                <p class="text-xs text-gray-500">
+                  x{item.cantidad} bultos ({unidades} unidades)
+                </p>
+                <p class="text-xs text-gray-500">
+                  ${item.precio.toFixed(2)} por bulto
+                </p>
+                {precioUnitario && (
+                  <p class="text-[11px] text-gray-400">
+                    (${precioUnitario.toFixed(2)} c/u)
+                  </p>
+                )}
+              </div>
+              <div class="flex gap-1 items-center">
+                <button
+                  class="px-2 h-8 text-sm border rounded"
+                  onClick={() =>
+                    cambiarCantidad(item.id, Math.max(1, item.cantidad - 1))
+                  }
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  class="w-14 h-8 text-sm border rounded text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
+                  min={1}
+                  value={item.cantidad}
+                  onInput={(e) =>
+                    cambiarCantidad(item.id, +e.currentTarget.value)
+                  }
+                />
+                <button
+                  class="px-2 h-8 text-sm border rounded"
+                  onClick={() => cambiarCantidad(item.id, item.cantidad + 1)}
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => quitarDelCarrito(item.id)}
+                  class="text-red-500 ml-1 text-base"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          );
+        }}
+      </For>
+
+      <div class="border-t pt-4 mt-4 text-sm space-y-2">
+        <p class="text-lg font-bold text-right">TOTAL: ${props.total.toFixed(0)}</p>
+        <FormularioCliente onConfirmar={props.onConfirmar} />
+      </div>
+    </div>
   );
 }
