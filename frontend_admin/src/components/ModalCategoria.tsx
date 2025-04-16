@@ -1,6 +1,7 @@
 import { createSignal, createEffect, Show, onCleanup } from 'solid-js';
 import { crearCategoria, editarCategoria } from '../services/categoria.service';
 import type { Categoria } from '../shared/types/categoria';
+import { categoriaSchema } from '../validations/categoria.schema';
 
 interface Props {
   abierto: boolean;
@@ -10,7 +11,7 @@ interface Props {
 
 export default function ModalCategoria(props: Props) {
   const [nombre, setNombre] = createSignal('');
-  const [orden, setOrden] = createSignal<number | ''>('');
+  const [orden, setOrden] = createSignal('');
   const [estado, setEstado] = createSignal(true);
   const [errores, setErrores] = createSignal<{ [key: string]: string }>({});
 
@@ -25,7 +26,7 @@ export default function ModalCategoria(props: Props) {
     if (props.abierto) {
       if (props.categoria) {
         setNombre(props.categoria.nombre);
-        setOrden(props.categoria.orden ?? '');
+        setOrden(props.categoria.orden?.toString() ?? '');
         setEstado(props.categoria.estado);
       } else {
         limpiarFormulario();
@@ -37,23 +38,33 @@ export default function ModalCategoria(props: Props) {
     limpiarFormulario();
   });
 
-  const validar = () => {
-    const err: { [key: string]: string } = {};
-    if (!nombre().trim()) err.nombre = 'El nombre de la categoría es obligatorio';
-    if (orden() !== '' && isNaN(Number(orden()))) err.orden = 'El orden debe ser un número';
-    if (estado() !== true && estado() !== false) err.estado = 'El estado debe ser verdadero o falso';
-    setErrores(err);
-    return Object.keys(err).length === 0;
-  };
-
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    if (!validar()) return;
+
+    const datos = {
+      nombre: nombre().trim(),
+      orden: orden(),
+      estado: estado(),
+    };
+
+    const result = categoriaSchema.safeParse(datos);
+
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors;
+      const formateados: { [key: string]: string } = {};
+      Object.entries(errors).forEach(([key, val]) => {
+        if (val?.[0]) formateados[key] = val[0];
+      });
+      setErrores(formateados);
+      return;
+    }
+
+    setErrores({});
 
     const nuevaCategoria: Partial<Categoria> = {
-      nombre: nombre().trim(),
-      orden: orden() === '' ? undefined : Number(orden()),
-      estado: estado(),
+      nombre: result.data.nombre,
+      orden: result.data.orden === '' ? undefined : Number(result.data.orden),
+      estado: result.data.estado,
     };
 
     try {
@@ -65,11 +76,7 @@ export default function ModalCategoria(props: Props) {
         props.onCerrar('Categoría creada correctamente');
       }
     } catch (error: any) {
-      if (error?.response?.data?.message) {
-        setErrores({ nombre: error.response.data.message });
-      } else {
-        setErrores({ nombre: 'Error al guardar la categoría' });
-      }
+      setErrores({ nombre: 'Error al guardar la categoría' });
     }
   };
 

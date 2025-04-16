@@ -11,6 +11,7 @@ import { enviarPedido } from "../services/pedido.service";
 import { useAuth } from "../store/auth";
 import FormularioCliente from "../components/FormularioCliente";
 import ModalMensaje from "./ModalMensaje";
+import { formatearPrecio } from "../utils/formato";
 
 export default function CarritoSlideOver() {
   const total = () =>
@@ -101,8 +102,14 @@ export default function CarritoSlideOver() {
           }`}
         >
           <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
-          <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
-            <ContenidoCarrito onConfirmar={handleEnviarPedido} total={total()} />
+          <Show
+            when={carrito.length > 0}
+            fallback={<p>El carrito está vacío.</p>}
+          >
+            <ContenidoCarrito
+              onConfirmar={handleEnviarPedido}
+              total={total()}
+            />
           </Show>
         </div>
       </Show>
@@ -122,12 +129,20 @@ export default function CarritoSlideOver() {
           {/* Panel carrito */}
           <div
             class={`fixed top-0 right-0 h-full w-[400px] bg-white p-4 shadow-xl overflow-auto hidden md:flex flex-col z-50 ${
-              carritoAbierto() ? "animate-slideInRight" : "animate-slideOutRight"
+              carritoAbierto()
+                ? "animate-slideInRight"
+                : "animate-slideOutRight"
             }`}
           >
             <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
-            <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
-              <ContenidoCarrito onConfirmar={handleEnviarPedido} total={total()} />
+            <Show
+              when={carrito.length > 0}
+              fallback={<p>El carrito está vacío.</p>}
+            >
+              <ContenidoCarrito
+                onConfirmar={handleEnviarPedido}
+                total={total()}
+              />
             </Show>
           </div>
         </>
@@ -165,48 +180,62 @@ function ContenidoCarrito(props: {
             : undefined;
 
           return (
-            <div class="flex justify-between items-center text-sm border-b pb-2">
-              <div>
+            <div class="flex items-start gap-3 text-sm border-b pb-2">
+              {/* Imagen */}
+              <img
+                src={`${import.meta.env.VITE_UPLOADS_URL}${item.imagen}`}
+                alt={item.nombre}
+                class="object-contain w-16 h-16"
+              />
+
+              {/* Info producto */}
+              <div class="flex-1">
                 <p class="font-semibold">{item.nombre}</p>
                 <p class="text-xs text-gray-500">
                   x{item.cantidad} bultos ({unidades} unidades)
                 </p>
                 <p class="text-xs text-gray-500">
-                  ${item.precio.toFixed(2)} por bulto
+                  {formatearPrecio(item.precio)} x bulto
                 </p>
                 {precioUnitario && (
                   <p class="text-[11px] text-gray-400">
-                    (${precioUnitario.toFixed(2)} c/u)
+                    ({formatearPrecio(precioUnitario)} c/u)
                   </p>
                 )}
               </div>
-              <div class="flex gap-1 items-center">
-                <button
-                  class="px-2 h-8 text-sm border rounded"
-                  onClick={() =>
-                    cambiarCantidad(item.id, Math.max(1, item.cantidad - 1))
-                  }
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  class="w-14 h-8 text-sm border rounded text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
-                  min={1}
-                  value={item.cantidad}
-                  onInput={(e) =>
-                    cambiarCantidad(item.id, +e.currentTarget.value)
-                  }
-                />
-                <button
-                  class="px-2 h-8 text-sm border rounded"
-                  onClick={() => cambiarCantidad(item.id, item.cantidad + 1)}
-                >
-                  +
-                </button>
+
+              {/* Controles cantidad */}
+              <div class="flex flex-col gap-1 items-end">
+                <div class="flex items-center gap-1">
+                  <button
+                    class="px-2 h-8 text-sm border rounded"
+                    onClick={() =>
+                      cambiarCantidad(item.id, Math.max(1, item.cantidad - 1))
+                    }
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    class="w-12 h-8 text-sm border rounded text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
+                    min={1}
+                    value={item.cantidad}
+                    onInput={(e) =>
+                      cambiarCantidad(item.id, +e.currentTarget.value)
+                    }
+                  />
+                  <button
+                    class="px-2 h-8 text-sm border rounded"
+                    onClick={() =>
+                      cambiarCantidad(item.id, item.cantidad + 1)
+                    }
+                  >
+                    +
+                  </button>
+                </div>
                 <button
                   onClick={() => quitarDelCarrito(item.id)}
-                  class="text-red-500 ml-1 text-base"
+                  class="text-red-500 text-base"
                 >
                   ✕
                 </button>
@@ -216,10 +245,13 @@ function ContenidoCarrito(props: {
         }}
       </For>
 
-      <div class="border-t pt-4 mt-4 text-sm space-y-2">
-        <p class="text-lg font-bold text-right">TOTAL: ${props.total.toFixed(0)}</p>
-        <FormularioCliente onConfirmar={props.onConfirmar} />
+      <div class="border-y pt-4 pb-4 my-4 text-sm space-y-1 text-right">
+        <p class="text-lg font-bold">
+          TOTAL: {formatearPrecio(props.total)}
+        </p>
+        <p class="text-sm text-gray-500">+ IVA</p>
       </div>
+      <FormularioCliente onConfirmar={props.onConfirmar} />
     </div>
   );
 }
