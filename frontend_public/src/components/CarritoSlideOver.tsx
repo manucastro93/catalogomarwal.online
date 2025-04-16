@@ -79,7 +79,7 @@ export default function CarritoSlideOver() {
           }`}
         />
 
-        {/* Carrito deslizándose desde abajo en móviles, de derecha a izquierda en desktop */}
+        {/* Carrito deslizándose de abajo en dispositivos móviles */}
         <div
           class={`fixed bottom-0 right-0 z-50 h-full flex flex-col transition-transform duration-500 ${
             carritoAbierto()
@@ -87,16 +87,16 @@ export default function CarritoSlideOver() {
               : "translate-y-full scale-95 ease-in pointer-events-none"
           } sm:translate-y-0 sm:scale-100 sm:translate-x-full`}
         >
-          {/* Header siempre visible con el pedido */}
-          <div class="w-full bg-black/70 text-white flex items-center justify-between cursor-pointer select-none py-2 px-4 text-center">
-            <span class="text-xl font-bold">Pedido en el carrito</span>
-            <button
-              class="text-2xl font-bold"
-              onClick={() => setCarritoAbierto(!carritoAbierto())}
+          {/* Header para móviles, para abrir el carrito */}
+          <Show when={!carritoAbierto()}>
+            <div
+              class="w-full bg-black/70 text-white flex items-center justify-between cursor-pointer select-none py-2 px-4 text-center sm:hidden"
+              onClick={() => setCarritoAbierto(true)}
             >
-              {carritoAbierto() ? "↑" : "↓"}
-            </button>
-          </div>
+              <span class="text-xl font-bold">→ Abrir carrito</span>
+              <button class="text-2xl font-bold">{carritoAbierto() ? "↑" : "↓"}</button>
+            </div>
+          </Show>
 
           {/* Panel del carrito */}
           <div class="w-[90vw] sm:w-[400px] h-full bg-white shadow-xl p-4 flex flex-col overflow-auto">
@@ -193,7 +193,7 @@ export default function CarritoSlideOver() {
       {/* Botón flotante animado, visible en todos los dispositivos */}
       <Show when={!carritoAbierto()}>
         <button
-          class="fixed bottom-5 right-5 sm:right-5 sm:bottom-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50"
+          class="fixed bottom-5 right-5 sm:right-5 sm:bottom-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50 sm:block hidden"
           onClick={() => setCarritoAbierto(true)}
           aria-label="Abrir carrito"
         >
