@@ -163,6 +163,18 @@ export default function Vendedores() {
                       >
                         Copiar link
                       </button>
+                      <a
+  href={`https://wa.me/?text=Mirá%20el%20catálogo%20de%20Marwal:%20https://www.catalogomarwal.online/${v.link}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  title="Compartir por WhatsApp"
+>
+  <img
+    src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png"
+    alt="WhatsApp"
+    style={{ width: "25px", height: "25px", marginLeft: "8px", display: "inline-table" }}
+  />
+</a>
                     </td>
                     <td class="p-3 flex gap-2">
                       <button class="text-blue-600 hover:underline" onClick={() => verDetalle(v)}>

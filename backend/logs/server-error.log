@@ -5130,3 +5130,291 @@
 2025-04-15T15:47:50:   sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
 2025-04-15T15:47:50:   parameters: {}
 2025-04-15T15:47:50: }
+2025-04-15T16:58:18: ❌ ERROR: Error
+2025-04-15T16:58:18:     at Query.run (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/mysql/query.js:52:25)
+2025-04-15T16:58:18:     at /home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/sequelize.js:315:28
+2025-04-15T16:58:18:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-04-15T16:58:18:     at async MySQLQueryInterface.select (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/abstract/query-interface.js:407:12)
+2025-04-15T16:58:18:     at async Usuario.findAll (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1140:21)
+2025-04-15T16:58:18:     at async Usuario.findOne (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1240:12)
+2025-04-15T16:58:18:     at async resumenDelMes (file:///home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/controllers/estadisticas.controller.js:19:25) {
+2025-04-15T16:58:18:   name: 'SequelizeDatabaseError',
+2025-04-15T16:58:18:   parent: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T16:58:18:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T16:58:18:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T16:58:18:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T16:58:18:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T16:58:18:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T16:58:18:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T16:58:18:       at Socket.emit (node:events:517:28)
+2025-04-15T16:58:18:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T16:58:18:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T16:58:18:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T16:58:18:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T16:58:18:     errno: 1054,
+2025-04-15T16:58:18:     sqlState: '42S22',
+2025-04-15T16:58:18:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T16:58:18:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T16:58:18:     parameters: undefined
+2025-04-15T16:58:18:   },
+2025-04-15T16:58:18:   original: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T16:58:18:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T16:58:18:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T16:58:18:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T16:58:18:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T16:58:18:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T16:58:18:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T16:58:18:       at Socket.emit (node:events:517:28)
+2025-04-15T16:58:18:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T16:58:18:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T16:58:18:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T16:58:18:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T16:58:18:     errno: 1054,
+2025-04-15T16:58:18:     sqlState: '42S22',
+2025-04-15T16:58:18:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T16:58:18:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T16:58:18:     parameters: undefined
+2025-04-15T16:58:18:   },
+2025-04-15T16:58:18:   sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T16:58:18:   parameters: {}
+2025-04-15T16:58:18: }
+2025-04-15T17:48:02: ❌ ERROR: Error
+2025-04-15T17:48:02:     at Query.run (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/mysql/query.js:52:25)
+2025-04-15T17:48:02:     at /home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/sequelize.js:315:28
+2025-04-15T17:48:02:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-04-15T17:48:02:     at async MySQLQueryInterface.select (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/abstract/query-interface.js:407:12)
+2025-04-15T17:48:02:     at async Usuario.findAll (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1140:21)
+2025-04-15T17:48:02:     at async Usuario.findOne (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1240:12)
+2025-04-15T17:48:02:     at async resumenDelMes (file:///home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/controllers/estadisticas.controller.js:19:25) {
+2025-04-15T17:48:02:   name: 'SequelizeDatabaseError',
+2025-04-15T17:48:02:   parent: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T17:48:02:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T17:48:02:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T17:48:02:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T17:48:02:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T17:48:02:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T17:48:02:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T17:48:02:       at Socket.emit (node:events:517:28)
+2025-04-15T17:48:02:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T17:48:02:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T17:48:02:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T17:48:02:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T17:48:02:     errno: 1054,
+2025-04-15T17:48:02:     sqlState: '42S22',
+2025-04-15T17:48:02:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T17:48:02:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T17:48:02:     parameters: undefined
+2025-04-15T17:48:02:   },
+2025-04-15T17:48:02:   original: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T17:48:02:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T17:48:02:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T17:48:02:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T17:48:02:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T17:48:02:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T17:48:02:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T17:48:02:       at Socket.emit (node:events:517:28)
+2025-04-15T17:48:02:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T17:48:02:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T17:48:02:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T17:48:02:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T17:48:02:     errno: 1054,
+2025-04-15T17:48:02:     sqlState: '42S22',
+2025-04-15T17:48:02:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T17:48:02:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T17:48:02:     parameters: undefined
+2025-04-15T17:48:02:   },
+2025-04-15T17:48:02:   sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T17:48:02:   parameters: {}
+2025-04-15T17:48:02: }
+2025-04-15T17:50:59: ❌ ERROR: Error
+2025-04-15T17:50:59:     at Query.run (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/mysql/query.js:52:25)
+2025-04-15T17:50:59:     at /home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/sequelize.js:315:28
+2025-04-15T17:50:59:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-04-15T17:50:59:     at async MySQLQueryInterface.select (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/abstract/query-interface.js:407:12)
+2025-04-15T17:50:59:     at async Usuario.findAll (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1140:21)
+2025-04-15T17:50:59:     at async Usuario.findOne (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1240:12)
+2025-04-15T17:50:59:     at async resumenDelMes (file:///home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/controllers/estadisticas.controller.js:19:25) {
+2025-04-15T17:50:59:   name: 'SequelizeDatabaseError',
+2025-04-15T17:50:59:   parent: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T17:50:59:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T17:50:59:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T17:50:59:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T17:50:59:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T17:50:59:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T17:50:59:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T17:50:59:       at Socket.emit (node:events:517:28)
+2025-04-15T17:50:59:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T17:50:59:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T17:50:59:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T17:50:59:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T17:50:59:     errno: 1054,
+2025-04-15T17:50:59:     sqlState: '42S22',
+2025-04-15T17:50:59:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T17:50:59:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T17:50:59:     parameters: undefined
+2025-04-15T17:50:59:   },
+2025-04-15T17:50:59:   original: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T17:50:59:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T17:50:59:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T17:50:59:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T17:50:59:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T17:50:59:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T17:50:59:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T17:50:59:       at Socket.emit (node:events:517:28)
+2025-04-15T17:50:59:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T17:50:59:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T17:50:59:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T17:50:59:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T17:50:59:     errno: 1054,
+2025-04-15T17:50:59:     sqlState: '42S22',
+2025-04-15T17:50:59:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T17:50:59:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T17:50:59:     parameters: undefined
+2025-04-15T17:50:59:   },
+2025-04-15T17:50:59:   sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T17:50:59:   parameters: {}
+2025-04-15T17:50:59: }
+2025-04-15T18:21:57: ❌ ERROR: Error
+2025-04-15T18:21:57:     at Query.run (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/mysql/query.js:52:25)
+2025-04-15T18:21:57:     at /home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/sequelize.js:315:28
+2025-04-15T18:21:57:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-04-15T18:21:57:     at async MySQLQueryInterface.select (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/abstract/query-interface.js:407:12)
+2025-04-15T18:21:57:     at async Usuario.findAll (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1140:21)
+2025-04-15T18:21:57:     at async Usuario.findOne (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1240:12)
+2025-04-15T18:21:57:     at async resumenDelMes (file:///home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/controllers/estadisticas.controller.js:19:25) {
+2025-04-15T18:21:57:   name: 'SequelizeDatabaseError',
+2025-04-15T18:21:57:   parent: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T18:21:57:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T18:21:57:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T18:21:57:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T18:21:57:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T18:21:57:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T18:21:57:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T18:21:57:       at Socket.emit (node:events:517:28)
+2025-04-15T18:21:57:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T18:21:57:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T18:21:57:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T18:21:57:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T18:21:57:     errno: 1054,
+2025-04-15T18:21:57:     sqlState: '42S22',
+2025-04-15T18:21:57:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T18:21:57:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T18:21:57:     parameters: undefined
+2025-04-15T18:21:57:   },
+2025-04-15T18:21:57:   original: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T18:21:57:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T18:21:57:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T18:21:57:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T18:21:57:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T18:21:57:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T18:21:57:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T18:21:57:       at Socket.emit (node:events:517:28)
+2025-04-15T18:21:57:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T18:21:57:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T18:21:57:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T18:21:57:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T18:21:57:     errno: 1054,
+2025-04-15T18:21:57:     sqlState: '42S22',
+2025-04-15T18:21:57:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T18:21:57:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T18:21:57:     parameters: undefined
+2025-04-15T18:21:57:   },
+2025-04-15T18:21:57:   sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T18:21:57:   parameters: {}
+2025-04-15T18:21:57: }
+2025-04-15T19:11:05: ❌ ERROR: Error
+2025-04-15T19:11:05:     at Query.run (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/mysql/query.js:52:25)
+2025-04-15T19:11:05:     at /home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/sequelize.js:315:28
+2025-04-15T19:11:05:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-04-15T19:11:05:     at async MySQLQueryInterface.select (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/abstract/query-interface.js:407:12)
+2025-04-15T19:11:05:     at async Usuario.findAll (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1140:21)
+2025-04-15T19:11:05:     at async Usuario.findOne (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1240:12)
+2025-04-15T19:11:05:     at async resumenDelMes (file:///home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/controllers/estadisticas.controller.js:19:25) {
+2025-04-15T19:11:05:   name: 'SequelizeDatabaseError',
+2025-04-15T19:11:05:   parent: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T19:11:05:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T19:11:05:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T19:11:05:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T19:11:05:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T19:11:05:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T19:11:05:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T19:11:05:       at Socket.emit (node:events:517:28)
+2025-04-15T19:11:05:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T19:11:05:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T19:11:05:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T19:11:05:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T19:11:05:     errno: 1054,
+2025-04-15T19:11:05:     sqlState: '42S22',
+2025-04-15T19:11:05:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T19:11:05:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T19:11:05:     parameters: undefined
+2025-04-15T19:11:05:   },
+2025-04-15T19:11:05:   original: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T19:11:05:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T19:11:05:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T19:11:05:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T19:11:05:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T19:11:05:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T19:11:05:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T19:11:05:       at Socket.emit (node:events:517:28)
+2025-04-15T19:11:05:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T19:11:05:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T19:11:05:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T19:11:05:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T19:11:05:     errno: 1054,
+2025-04-15T19:11:05:     sqlState: '42S22',
+2025-04-15T19:11:05:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T19:11:05:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T19:11:05:     parameters: undefined
+2025-04-15T19:11:05:   },
+2025-04-15T19:11:05:   sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T19:11:05:   parameters: {}
+2025-04-15T19:11:05: }
+2025-04-15T19:50:27: ❌ ERROR: Error
+2025-04-15T19:50:27:     at Query.run (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/mysql/query.js:52:25)
+2025-04-15T19:50:27:     at /home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/sequelize.js:315:28
+2025-04-15T19:50:27:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-04-15T19:50:27:     at async MySQLQueryInterface.select (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/dialects/abstract/query-interface.js:407:12)
+2025-04-15T19:50:27:     at async Usuario.findAll (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1140:21)
+2025-04-15T19:50:27:     at async Usuario.findOne (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/sequelize/lib/model.js:1240:12)
+2025-04-15T19:50:27:     at async resumenDelMes (file:///home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/controllers/estadisticas.controller.js:19:25) {
+2025-04-15T19:50:27:   name: 'SequelizeDatabaseError',
+2025-04-15T19:50:27:   parent: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T19:50:27:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T19:50:27:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T19:50:27:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T19:50:27:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T19:50:27:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T19:50:27:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T19:50:27:       at Socket.emit (node:events:517:28)
+2025-04-15T19:50:27:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T19:50:27:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T19:50:27:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T19:50:27:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T19:50:27:     errno: 1054,
+2025-04-15T19:50:27:     sqlState: '42S22',
+2025-04-15T19:50:27:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T19:50:27:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T19:50:27:     parameters: undefined
+2025-04-15T19:50:27:   },
+2025-04-15T19:50:27:   original: Error: Unknown column 'Pedidos.id' in 'field list'
+2025-04-15T19:50:27:       at Packet.asError (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packets/packet.js:740:17)
+2025-04-15T19:50:27:       at Query.execute (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/commands/command.js:29:26)
+2025-04-15T19:50:27:       at Connection.handlePacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:475:34)
+2025-04-15T19:50:27:       at PacketParser.onPacket (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:93:12)
+2025-04-15T19:50:27:       at PacketParser.executeStart (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/packet_parser.js:75:16)
+2025-04-15T19:50:27:       at Socket.<anonymous> (/home/catalogomarwal/htdocs/www.catalogomarwal.online/backend/node_modules/mysql2/lib/base/connection.js:100:25)
+2025-04-15T19:50:27:       at Socket.emit (node:events:517:28)
+2025-04-15T19:50:27:       at addChunk (node:internal/streams/readable:368:12)
+2025-04-15T19:50:27:       at readableAddChunk (node:internal/streams/readable:341:9)
+2025-04-15T19:50:27:       at Readable.push (node:internal/streams/readable:278:10) {
+2025-04-15T19:50:27:     code: 'ER_BAD_FIELD_ERROR',
+2025-04-15T19:50:27:     errno: 1054,
+2025-04-15T19:50:27:     sqlState: '42S22',
+2025-04-15T19:50:27:     sqlMessage: "Unknown column 'Pedidos.id' in 'field list'",
+2025-04-15T19:50:27:     sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T19:50:27:     parameters: undefined
+2025-04-15T19:50:27:   },
+2025-04-15T19:50:27:   sql: "SELECT `Usuario`.*, `Pedidos`.`id` AS `Pedidos.id`, `Pedidos`.`estado` AS `Pedidos.estado`, `Pedidos`.`observaciones` AS `Pedidos.observaciones`, `Pedidos`.`total` AS `Pedidos.total`, `Pedidos`.`clienteId` AS `Pedidos.clienteId`, `Pedidos`.`usuarioId` AS `Pedidos.usuarioId`, `Pedidos`.`createdAt` AS `Pedidos.createdAt`, `Pedidos`.`updatedAt` AS `Pedidos.updatedAt`, `Pedidos`.`deletedAt` AS `Pedidos.deletedAt` FROM (SELECT `Usuario`.`id`, `Usuario`.`nombre`, `Usuario`.`email`, `Usuario`.`contraseña`, `Usuario`.`rol`, `Usuario`.`link`, `Usuario`.`telefono`, `Usuario`.`createdAt`, `Usuario`.`updatedAt`, `Usuario`.`deletedAt`, COUNT(`Pedidos`.`id`) AS `ventas` FROM `Usuarios` AS `Usuario` WHERE (`Usuario`.`deletedAt` IS NULL AND `Usuario`.`rol` = 'vendedor') AND ( SELECT `usuarioId` FROM `Pedidos` AS `Pedidos` WHERE ((`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') AND `Pedidos`.`usuarioId` = `Usuario`.`id`) LIMIT 1 ) IS NOT NULL GROUP BY `Usuario`.`id` ORDER BY COUNT(`Pedidos`.`id`) DESC LIMIT 1) AS `Usuario` INNER JOIN `Pedidos` AS `Pedidos` ON `Usuario`.`id` = `Pedidos`.`usuarioId` AND (`Pedidos`.`deletedAt` IS NULL AND `Pedidos`.`createdAt` >= '2025-04-01 03:00:00') ORDER BY COUNT(`Pedidos`.`id`) DESC;",
+2025-04-15T19:50:27:   parameters: {}
+2025-04-15T19:50:27: }
