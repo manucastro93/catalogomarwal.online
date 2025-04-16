@@ -112,7 +112,7 @@ export default function CarritoSlideOver() {
         <>
           {/* Flecha para cerrar */}
           <div
-            class="fixed top-1/2 right-[400px] z-50 -translate-y-1/2 bg-black text-white px-2 py-1 text-xs rounded-l-2xl cursor-pointer hover:bg-gray-800 shadow hidden md:flex flex-col items-center"
+            class="fixed top-1/2 right-[400px] z-50 -translate-y-1/2 bg-black text-white px-2 py-1 text-xl rounded-l-2xl cursor-pointer hover:bg-gray-800 shadow hidden md:flex flex-col items-center"
             onClick={() => setCarritoAbierto(false)}
           >
             <span class="leading-tight text-center">cerrar</span>
@@ -140,7 +140,7 @@ export default function CarritoSlideOver() {
       {/* BOTÓN FLOTANTE SOLO EN DESKTOP */}
       <Show when={!carritoAbierto()}>
         <button
-          class="hidden md:block fixed bottom-5 right-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50"
+          class="hidden md:block fixed bottom-5 right-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-100 animate-[fadeIn_.3s_ease-out_forwards] z-50"
           onClick={() => setCarritoAbierto(true)}
           aria-label="Abrir carrito"
         >
