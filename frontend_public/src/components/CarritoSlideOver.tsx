@@ -79,15 +79,15 @@ export default function CarritoSlideOver() {
           }`}
         />
 
-        {/* Carrito deslizándose desde arriba */}
+        {/* Carrito deslizándose de abajo hacia arriba */}
         <div
-          class={`fixed top-0 right-0 z-50 h-full flex flex-col transition-transform duration-500 ${
+          class={`fixed bottom-0 right-0 z-50 h-full flex flex-col transition-transform duration-500 ${
             carritoAbierto()
               ? "translate-y-0 scale-100 ease-[cubic-bezier(0.22,1.61,0.36,1)]"
               : "translate-y-full scale-95 ease-in pointer-events-none"
           } sm:translate-y-0 sm:scale-100 sm:translate-x-full`}
         >
-          {/* Header con el pedido siempre visible */}
+          {/* Header siempre visible */}
           <div class="w-full bg-black/70 text-white flex items-center justify-between cursor-pointer select-none py-2 px-4 text-center">
             <span class="text-xl font-bold">Pedido en el carrito</span>
             <button
@@ -189,33 +189,6 @@ export default function CarritoSlideOver() {
       <Show when={mensaje()}>
         <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje("")} />
       </Show>
-
-      {/* Botón flotante animado, visible en todos los dispositivos */}
-      <Show when={!carritoAbierto()}>
-        <button
-          class="fixed bottom-5 right-5 sm:right-5 sm:bottom-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50 hidden sm:block"
-          onClick={() => setCarritoAbierto(true)}
-          aria-label="Abrir carrito"
-        >
-          🛒
-        </button>
-      </Show>
-
-      {/* Animación para el botón */}
-      <style>
-        {`
-          @keyframes fadeIn {
-            0% {
-              opacity: 0;
-              transform: scale(0.9);
-            }
-            100% {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-        `}
-      </style>
     </>
   );
 }
