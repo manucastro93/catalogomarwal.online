@@ -11,6 +11,8 @@ import { obtenerProvincias, obtenerLocalidades } from '../services/ubicacion.ser
 import type { Cliente } from '../shared/types/cliente';
 import { useAuth } from '../store/auth';
 import { mostrarMensaje } from '../utils/mensajes';
+import { clienteSchema } from '../validations/cliente.schema';
+import { z } from 'zod';
 
 interface Props {
   abierto: boolean;
@@ -81,26 +83,35 @@ export default function ModalCliente(props: Props) {
   };
 
   const validar = () => {
-    const err: { [key: string]: string } = {};
-    if (!nombre().trim()) err.nombre = 'El nombre es obligatorio';
-    if (!telefono().trim()) err.telefono = 'El teléfono es obligatorio';
-    if (!email().trim()) {
-      err.email = 'El email es obligatorio';
-    } else if (!/^\S+@\S+\.\S+$/.test(email())) {
-      err.email = 'Formato de email inválido';
+    const datos = {
+      nombre: nombre().trim(),
+      telefono: telefono().trim(),
+      email: email().trim(),
+      cuit_cuil: cuitCuil().trim(),
+      razonSocial: razonSocial().trim(),
+      direccion: direccion().trim(),
+      provinciaId: provinciaId(),
+      localidadId: localidadId(),
+    };
+  
+    const result = clienteSchema.safeParse(datos);
+  
+    if (!result.success) {
+      const erroresZod = result.error.flatten().fieldErrors;
+      const erroresFormateados: { [key: string]: string } = {};
+  
+      Object.entries(erroresZod).forEach(([key, value]) => {
+        if (value?.[0]) erroresFormateados[key] = value[0];
+      });
+  
+      setErrores(erroresFormateados);
+      return false;
     }
-    if (!cuitCuil().trim()) {
-      err.cuitCuil = 'El CUIT/CUIL es obligatorio';
-    } else if (!/^\d{11}$/.test(cuitCuil())) {
-      err.cuitCuil = 'Formato de CUIT/CUIL inválido';
-    }
-    if (!direccion().trim()) err.direccion = 'La dirección es obligatoria';
-    if (!provinciaId()) err.provinciaId = 'Seleccioná una provincia';
-    if (!localidadId()) err.localidadId = 'Seleccioná una localidad';
-
-    setErrores(err);
-    return Object.keys(err).length === 0;
+  
+    setErrores({});
+    return true;
   };
+  
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();

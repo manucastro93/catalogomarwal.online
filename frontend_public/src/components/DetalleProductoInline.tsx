@@ -1,6 +1,7 @@
 import { createSignal, Show } from 'solid-js';
 import { agregarAlCarrito, setCarritoAbierto } from '../store/carrito';
 import type { Producto } from '../shared/types/producto';
+import { formatearPrecio } from '../utils/formato';  
 
 interface Props {
   producto: Producto;
@@ -59,10 +60,10 @@ export default function DetalleProductoInline({ producto, onVolver, onSelecciona
         <div>
           <h1 class="text-2xl font-bold mb-2">{producto.nombre || 'Sin nombre'}</h1>
           <p class="text-xl text-black font-semibold">
-            ${Number(producto.precioPorBulto || 0).toFixed(2)} x bulto
+            {formatearPrecio(Number(producto.precioPorBulto || 0))} x bulto
           </p>
           <p class="text-sm text-gray-500 mb-2">
-            (Equivale a {(Number(producto.precioPorBulto || 0) / (producto.unidadPorBulto || 1)).toFixed(2)} por unidad)
+            (Equivale a {(Number(producto.precioPorBulto || 0) / (producto.unidadPorBulto || 1))} por unidad)
           </p>
 
           {producto.descripcion && (
