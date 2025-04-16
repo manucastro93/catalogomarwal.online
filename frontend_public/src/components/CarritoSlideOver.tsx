@@ -87,7 +87,7 @@ export default function CarritoSlideOver() {
   >
     {/* Columna izquierda dentro del panel */}
     <div
-      class="w-80 sm:w-12 bg-black/30 text-white flex flex-col items-center justify-center cursor-pointer select-none px-1 py-2 text-center"
+      class="w-85 sm:w-12 bg-black/30 text-white flex flex-col items-center justify-center cursor-pointer select-none px-1 py-2 text-center"
       onClick={() => setCarritoAbierto(false)}
     >
       <span class="text-2xl font-bold">→</span>
