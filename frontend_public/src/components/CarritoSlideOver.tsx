@@ -84,7 +84,8 @@ export default function CarritoSlideOver() {
             onClick={() => setCarritoAbierto(false)}
           >
             <span class="text-xl font-bold">←</span>
-          </div>
+            <span class="text-[10px] sm:text-xs mt-1 leading-tight">Tocá acá<br />para cerrar</span>
+            </div>
 
           {/* Panel del carrito */}
           <div
