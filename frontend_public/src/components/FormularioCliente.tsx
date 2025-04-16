@@ -4,7 +4,7 @@ import {
   Show,
   For,
 } from 'solid-js';
-import { obtenerProvincias, buscarLocalidades } from '../services/ubicacion.service';
+import { obtenerProvincias, obtenerLocalidades } from '../services/ubicacion.service';
 import { capitalizarTexto } from '../utils/formato';
 
 interface Props {
@@ -27,7 +27,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
   const [localidades, setLocalidades] = createSignal<any[]>([]);
 
   const cargarLocalidades = async (provId: number) => {
-    const resultado = await buscarLocalidades('', provId);
+    const resultado = await obtenerLocalidades(provId);
     setLocalidades(resultado);
   };
 
