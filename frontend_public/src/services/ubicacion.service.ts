@@ -9,6 +9,7 @@ export const obtenerProvincias = async () => {
 export const obtenerLocalidades = async (provinciaId: number) => {
   if (!provinciaId) return [];
   const res = await fetch(`${API_URL}/public/provincia/${provinciaId}/localidades`);
+  console.log("loc: ", res)
   if (!res.ok) throw new Error('Error al obtener localidades');
   return res.json();
 };
