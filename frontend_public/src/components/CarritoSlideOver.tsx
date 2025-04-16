@@ -69,119 +69,52 @@ export default function CarritoSlideOver() {
 
   return (
     <>
-      <Show when={true}>
-        {/* Fondo oscuro con panel y zona de cierre a la izquierda */}
-        <div
-          class={`fixed inset-0 z-40 flex transition-opacity duration-300 ${
-            carritoAbierto()
-              ? "bg-black/40 opacity-100"
-              : "opacity-0 pointer-events-none"
-          }`}
-        >
-          {/* Zona izquierda para cerrar */}
-          <div
-  class="w-10 sm:w-12 bg-black/50 text-white flex flex-col items-center justify-center cursor-pointer select-none px-1 py-2 text-center"
-  onClick={() => setCarritoAbierto(false)}
->
-  <span class="text-2xl font-bold">→</span>
-  <span class="text-[10px] sm:text-xs mt-1 leading-tight">Tocá acá<br />para cerrar</span>
-</div>
+<Show when={true}>
+  <div
+    class={`fixed inset-0 z-40 transition-opacity duration-300 ${
+      carritoAbierto()
+        ? "bg-black/40 opacity-100"
+        : "opacity-0 pointer-events-none"
+    }`}
+  />
 
-          {/* Panel del carrito */}
-          <div
-            class={`h-full w-[90%] sm:w-[400px] bg-white shadow-xl p-4 flex flex-col overflow-auto transform transition-transform duration-500 ${
-              carritoAbierto()
-                ? "translate-x-0 scale-100 ease-[cubic-bezier(0.22,1.61,0.36,1)]"
-                : "translate-x-full scale-95 ease-in pointer-events-none"
-            }`}
-          >
-            <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
+  <div
+    class={`fixed top-0 right-0 z-50 h-full flex transition-transform duration-500 ${
+      carritoAbierto()
+        ? "translate-x-0 scale-100 ease-[cubic-bezier(0.22,1.61,0.36,1)]"
+        : "translate-x-full scale-95 ease-in pointer-events-none"
+    }`}
+  >
+    {/* Columna izquierda dentro del panel */}
+    <div
+      class="w-10 sm:w-12 bg-black/50 text-white flex flex-col items-center justify-center cursor-pointer select-none px-1 py-2 text-center"
+      onClick={() => setCarritoAbierto(false)}
+    >
+      <span class="text-2xl font-bold">→</span>
+      <span class="text-[10px] sm:text-xs mt-1 leading-tight">
+        Tocá acá<br />para cerrar
+      </span>
+    </div>
 
-            <Show
-              when={carrito.length > 0}
-              fallback={<p>El carrito está vacío.</p>}
-            >
-              <div class="flex-1 space-y-4">
-                <For each={carrito}>
-                  {(item) => {
-                    const unidades =
-                      item.cantidad * (item.unidadPorBulto || 1);
-                    const precioUnitario = item.unidadPorBulto
-                      ? item.precio / item.unidadPorBulto
-                      : undefined;
+    {/* Panel del carrito */}
+    <div class="w-[90vw] sm:w-[400px] h-full bg-white shadow-xl p-4 flex flex-col overflow-auto">
+      <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
 
-                    return (
-                      <div class="flex justify-between items-center text-sm border-b pb-2">
-                        <div>
-                          <p class="font-semibold">{item.nombre}</p>
-                          <p class="text-xs text-gray-500">
-                            x{item.cantidad} bultos ({unidades} unidades)
-                          </p>
-                          <p class="text-xs text-gray-500">
-                            ${item.precio.toFixed(2)} por bulto
-                          </p>
-                          {precioUnitario && (
-                            <p class="text-[11px] text-gray-400">
-                              (${precioUnitario.toFixed(2)} c/u)
-                            </p>
-                          )}
-                        </div>
-                        <div class="flex gap-1 items-center">
-                          <button
-                            class="px-2 h-8 text-sm border rounded"
-                            onClick={() =>
-                              cambiarCantidad(
-                                item.id,
-                                Math.max(1, item.cantidad - 1)
-                              )
-                            }
-                          >
-                            -
-                          </button>
-
-                          <input
-                            type="number"
-                            class="w-14 h-8 text-sm border rounded text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
-                            min={1}
-                            value={item.cantidad}
-                            onInput={(e) =>
-                              cambiarCantidad(item.id, +e.currentTarget.value)
-                            }
-                          />
-
-                          <button
-                            class="px-2 h-8 text-sm border rounded"
-                            onClick={() =>
-                              cambiarCantidad(item.id, item.cantidad + 1)
-                            }
-                          >
-                            +
-                          </button>
-
-                          <button
-                            onClick={() => quitarDelCarrito(item.id)}
-                            class="text-red-500 ml-1 text-base"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  }}
-                </For>
-
-                <div class="border-t pt-4 mt-4 text-sm space-y-2">
-                  <p class="text-lg font-bold text-right">
-                    TOTAL: ${total().toFixed(2)}
-                  </p>
-
-                  <FormularioCliente onConfirmar={handleEnviarPedido} />
-                </div>
-              </div>
-            </Show>
+      <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
+        <div class="flex-1 space-y-4">
+          {/* ... todo tu For del carrito ... */}
+          <div class="border-t pt-4 mt-4 text-sm space-y-2">
+            <p class="text-lg font-bold text-right">
+              TOTAL: ${total().toFixed(2)}
+            </p>
+            <FormularioCliente onConfirmar={handleEnviarPedido} />
           </div>
         </div>
       </Show>
+    </div>
+  </div>
+</Show>
+
 
       {/* Mensaje visual */}
       <Show when={mensaje()}>
