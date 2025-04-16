@@ -89,7 +89,6 @@ export default function ModalNuevoProducto(props: {
         if (value?.[0]) erroresFormateados[key] = value[0];
       });
       setErrores(erroresFormateados);
-      setMensajeError("Por favor corregí los campos indicados.");
       return;
     }
 
