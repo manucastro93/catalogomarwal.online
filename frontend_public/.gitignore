@@ -1,2 +1,25 @@
-node_modules
-dist
+# Archivos de entorno
+.env
+.env.* 
+
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+
+# Mac y sistema
+.DS_Store
+Thumbs.db
+
+# Vite
+.vite/
+
+# Configuraciones del sistema o editor
+.idea/
+.vscode/
+
+# Producción
+/public/uploads/
