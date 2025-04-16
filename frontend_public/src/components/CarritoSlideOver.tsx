@@ -79,24 +79,23 @@ export default function CarritoSlideOver() {
           }`}
         />
 
-        {/* Carrito deslizándose de abajo en dispositivos móviles */}
         <div
-          class={`fixed bottom-0 right-0 z-50 h-full flex flex-col transition-transform duration-500 ${
+          class={`fixed top-0 right-0 z-50 h-full flex flex-col transition-transform duration-500 ${
             carritoAbierto()
               ? "translate-y-0 scale-100 ease-[cubic-bezier(0.22,1.61,0.36,1)]"
               : "translate-y-full scale-95 ease-in pointer-events-none"
-          } sm:translate-y-0 sm:scale-100 sm:translate-x-full`}
+          }`}
         >
-          {/* Header para móviles, para abrir el carrito */}
-          <Show when={!carritoAbierto()}>
-            <div
-              class="w-full bg-black/70 text-white flex items-center justify-between cursor-pointer select-none py-2 px-4 text-center sm:hidden"
-              onClick={() => setCarritoAbierto(true)}
-            >
-              <span class="text-xl font-bold">→ Abrir carrito</span>
-              <button class="text-2xl font-bold">{carritoAbierto() ? "↑" : "↓"}</button>
-            </div>
-          </Show>
+          {/* Columna izquierda dentro del panel */}
+          <div
+            class="w-10 sm:w-12 bg-black/70 text-white flex flex-col items-center justify-center cursor-pointer select-none px-1 py-2 text-center"
+            onClick={() => setCarritoAbierto(false)}
+          >
+            <span class="text-2xl font-bold">→</span>
+            <span class="text-[10px] sm:text-xs mt-1 leading-tight">
+              Tocá acá<br />para cerrar
+            </span>
+          </div>
 
           {/* Panel del carrito */}
           <div class="w-[90vw] sm:w-[400px] h-full bg-white shadow-xl p-4 flex flex-col overflow-auto">
@@ -190,10 +189,10 @@ export default function CarritoSlideOver() {
         <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje("")} />
       </Show>
 
-      {/* Botón flotante animado, visible en todos los dispositivos */}
+      {/* Botón flotante animado, oculto en móviles */}
       <Show when={!carritoAbierto()}>
         <button
-          class="fixed bottom-5 right-5 sm:right-5 sm:bottom-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50 sm:block hidden"
+          class="fixed bottom-5 right-5 sm:right-5 sm:bottom-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-0 animate-[fadeIn_.3s_ease-out_forwards] z-50 hidden sm:block"
           onClick={() => setCarritoAbierto(true)}
           aria-label="Abrir carrito"
         >
