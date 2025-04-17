@@ -155,7 +155,6 @@ export default function CarritoSlideOver() {
       {/* BOTÓN FLOTANTE SOLO EN DESKTOP */}
       <Show when={!carritoAbierto()}>
         <button
-        id="carrito-icono"
           class="hidden md:block fixed bottom-5 right-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-100 animate-[fadeIn_.3s_ease-out_forwards] z-50"
           onClick={() => setCarritoAbierto(true)}
           aria-label="Abrir carrito"

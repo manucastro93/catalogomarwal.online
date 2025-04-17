@@ -13,8 +13,11 @@ export default function HeaderCarritoMobile() {
   return (
     <Show when={carrito.length > 0}>
       <div class="fixed top-0 left-0 right-0 z-50 bg-black text-white text-center md:hidden">
-        <div class="py-2 text-lg font-semibold">🛒 Total: {formatearPrecio(total())}</div>
-
+        <div class="py-2 text-lg font-semibold">
+          <span id="carrito-icono" class="pt-4 inline-block relative text-3xl">
+          🛒
+         </span>{" "} 
+         Total: {formatearPrecio(total())}</div>
         {/* Flechita SVG sobresaliente */}
         <div class="relative w-full h-6 overflow-visible">
           <svg
@@ -40,7 +43,7 @@ export default function HeaderCarritoMobile() {
         </div>
       </div>
 
-      <div class="h-[72px] md:hidden" />
+      <div class="h-[67px] md:hidden" />
     </Show>
   );
 }
