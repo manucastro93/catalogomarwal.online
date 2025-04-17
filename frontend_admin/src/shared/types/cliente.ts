@@ -21,4 +21,8 @@ export interface Cliente {
   provincia?: Provincia;
   localidad?: Localidad;
   vendedor?: Usuario;
+
+  latitud?: number | null;
+  longitud?: number | null;
+  totalVentas?: number; 
 }

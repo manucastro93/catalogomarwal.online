@@ -121,11 +121,12 @@ export default function Sidebar() {
               <Users size={16} /> Usuarios
             </A>
           </Show>
-
+          <Show when={usuario()?.rol !== 'vendedor'}>
           {/* Página y gráficos */}
-          <A href="/Pagina" class="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 transition" classList={{ 'bg-gray-700 font-bold': esActivo('/Pagina') }}>
-            <Settings size={16} /> Página
-          </A>
+            <A href="/Pagina" class="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 transition" classList={{ 'bg-gray-700 font-bold': esActivo('/Pagina') }}>
+              <Settings size={16} /> Página
+            </A>
+          </Show>
           <A href="/Graficos" class="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 transition" classList={{ 'bg-gray-700 font-bold': esActivo('/Graficos') }}>
             <ChartLine size={16} /> Gráficos
           </A>

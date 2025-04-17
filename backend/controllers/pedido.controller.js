@@ -1,43 +1,64 @@
 import { Pedido, DetallePedido, Producto, Cliente, Usuario, IpCliente, Notificacion } from '../models/index.js';
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 import { enviarEmailPedido } from "../utils/notificaciones/email.js";
 import { enviarWhatsappPedido } from "../utils/notificaciones/whatsapp.js";
 
 export const obtenerPedidos = async (req, res, next) => {
   try {
-    const { pagina = 1, limit = 10, orden = 'createdAt', direccion = 'DESC', busqueda = '', vendedorId } = req.query;
+    const {
+      pagina = 1,
+      limit = 10,
+      orden = 'createdAt',
+      direccion = 'DESC',
+      busqueda = '',
+      vendedorId,
+      estado,
+    } = req.query;
+
     const offset = (pagina - 1) * limit;
 
     const where = {};
 
-    if (busqueda) {
-      where.estado = { [Op.like]: `%${busqueda}%` };
-    }
-
-    // 🔒 Si es vendedor, solo sus pedidos
     if (req.usuario?.rol === 'vendedor') {
       where.usuarioId = req.usuario.id;
     }
 
-    // Si se proporciona un vendedorId (por admin)
     if (vendedorId) {
       where.usuarioId = vendedorId;
     }
 
+    if (estado) {
+      where.estado = estado;
+    }
+
+    const include = [
+      { model: Cliente, as: 'cliente' },
+      { model: Usuario, as: 'usuario' },
+      {
+        model: DetallePedido,
+        as: 'detalles',
+        include: [Producto],
+      },
+    ];
+
+    const whereFinal = {
+      ...where,
+    };
+
+    if (busqueda) {
+      whereFinal[Op.and] = [
+        where,
+        literal(`cliente.nombre LIKE '%${busqueda}%'`)
+      ];
+    }
+
     const { count, rows } = await Pedido.findAndCountAll({
-      where,
+      where: whereFinal,
+      include,
       limit: Number(limit),
       offset,
       order: [[orden, direccion]],
-      include: [
-        { model: Cliente, as: 'cliente' },
-        { model: Usuario, as: 'usuario' },
-        {
-          model: DetallePedido,
-          as: 'detalles',
-          include: [Producto],
-        },
-      ],
+      subQuery: false // 👈 obligatorio cuando usás literal con include
     });
 
     res.json({
@@ -47,10 +68,10 @@ export const obtenerPedidos = async (req, res, next) => {
       totalPaginas: Math.ceil(count / limit),
     });
   } catch (error) {
+    console.error('❌ ERROR en obtenerPedidos:', error);
     next(error);
   }
 };
-
 
 export const obtenerPedidoPorId = async (req, res, next) => {
   try {

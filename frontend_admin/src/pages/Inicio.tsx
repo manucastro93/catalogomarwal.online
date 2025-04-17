@@ -17,7 +17,7 @@ export default function Inicio() {
         </div>
 
         <div class="bg-white p-4 rounded shadow">
-          <h2 class="font-semibold text-gray-700">Producto estrella</h2>
+          <h2 class="font-semibold text-gray-700">Producto estrella del mes</h2>
           <Show when={resumen()?.productoEstrella} fallback={<p>Sin datos</p>}>
             <div class="flex items-center gap-3">
               <img
@@ -28,7 +28,7 @@ export default function Inicio() {
               <div>
                 <p class="font-semibold">{resumen().productoEstrella.Producto?.nombre}</p>
                 <p class="text-xs text-gray-500">
-                  {resumen().productoEstrella.totalVendidas} vendidas — {formatearPrecio(Number(resumen().productoEstrella.totalFacturado))}
+                  {resumen().productoEstrella.totalVendidas} bultos — {formatearPrecio(Number(resumen().productoEstrella.totalFacturado))}
                 </p>
               </div>
             </div>
@@ -36,7 +36,7 @@ export default function Inicio() {
         </div>
 
         <div class="bg-white p-4 rounded shadow">
-          <h2 class="font-semibold text-gray-700">Vendedor top</h2>
+          <h2 class="font-semibold text-gray-700">Vendedor top del mes</h2>
           <Show when={resumen()?.vendedorTop} fallback={<p>Sin datos</p>}>
             <div>
               <p class="font-semibold">{resumen().vendedorTop.usuario?.nombre}</p>
@@ -48,12 +48,12 @@ export default function Inicio() {
         </div>
 
         <div class="bg-white p-4 rounded shadow">
-          <h2 class="font-semibold text-gray-700">Categoría más vendida</h2>
+          <h2 class="font-semibold text-gray-700">Categoría más vendida del mes</h2>
           <p>{resumen()?.categoriaTop?.nombre ?? 'Sin datos'}</p>
         </div>
 
         <div class="bg-white p-4 rounded shadow col-span-full">
-          <h2 class="font-semibold text-gray-700 mb-2">Top 5 Clientes</h2>
+          <h2 class="font-semibold text-gray-700 mb-2">Top 5 Clientes del mes</h2>
           <ul class="list-disc list-inside">
             <For each={resumen()?.mejoresClientes ?? []}>
               {(cliente) => (

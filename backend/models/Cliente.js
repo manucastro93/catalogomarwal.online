@@ -40,7 +40,15 @@ export default (sequelize, DataTypes) => {
     vendedorId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-    }
+    },
+    latitud: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
+    longitud: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+    },
   }, {
     sequelize,
     modelName: 'Cliente',
@@ -62,7 +70,12 @@ export default (sequelize, DataTypes) => {
       foreignKey: 'vendedorId',
       as: 'vendedor'
     });
+    Cliente.hasMany(models.Pedido, {
+      foreignKey: 'clienteId',
+      as: 'pedidos'
+    });
   };
+
 
   return Cliente;
 };

@@ -20,3 +20,9 @@ export const editarCliente = async (id: number, cliente: Partial<Cliente>) => {
   const response = await api.put(`/clientes/${id}`, cliente);
   return response.data;
 };
+
+export const obtenerClientesConVentas = async (vendedorId?: number): Promise<Cliente[]> => {
+  const params = vendedorId ? { vendedorId } : {};
+  const { data } = await api.get('/clientes/mapa', { params });
+  return data;
+};
