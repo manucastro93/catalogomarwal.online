@@ -1,7 +1,6 @@
 import { render } from 'solid-js/web';
 import { Router, Route } from '@solidjs/router';
 import './index.css';
-
 import Login from './pages/Login';
 import Inicio from './pages/Inicio';
 import Productos from './pages/Productos';
@@ -12,7 +11,7 @@ import Vendedores from './pages/Vendedores';
 import Administradores from './pages/Administradores';
 import Pagina from './pages/Pagina';
 import Estadisticas from './pages/Estadisticas';
-
+import DefinirContrasena from './components/DefinirContrasena';
 import { checkLocalStorage, useAuth } from './store/auth';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -24,6 +23,7 @@ render(() => (
   <Router>
     <Route path="/" component={Login} />
     <Route path="/login" component={Login} />
+    <Route path="/definir-contraseña" component={DefinirContrasena} />
     <Route path="/Inicio" component={() => <ProtectedRoute><Layout><Inicio /></Layout></ProtectedRoute>} />
     <Route path="/Productos" component={() => <ProtectedRoute><Layout><Productos /></Layout></ProtectedRoute>} />
     <Route path="/Clientes" component={() => <ProtectedRoute><Layout><Clientes /></Layout></ProtectedRoute>} />

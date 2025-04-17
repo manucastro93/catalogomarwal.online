@@ -1,4 +1,10 @@
-import { createSignal, createResource, createMemo, For, Show } from "solid-js";
+import {
+  createSignal,
+  createResource,
+  createMemo,
+  For,
+  Show
+} from "solid-js";
 import {
   obtenerProductos,
   obtenerProductoPorId,
@@ -11,6 +17,7 @@ import ModalImportarExcel from "../components/ModalImportarExcel";
 import VerProductoModal from "../components/VerProductoModal";
 import ModalConfirmacion from "../components/ModalConfirmacion";
 import ModalMensaje from "../components/ModalMensaje";
+import Loader from "../components/Loader";
 import type { Producto } from "../shared/types/producto";
 
 export default function Productos() {
@@ -123,100 +130,103 @@ export default function Productos() {
         </select>
       </div>
 
-      <div class="overflow-auto border rounded-lg">
-        <table class="w-full text-sm border-collapse">
-          <thead class="bg-gray-100 sticky top-0">
-            <tr>
-              <th
-                class="text-left p-3 border-b cursor-pointer"
-                onClick={() => cambiarOrden("sku")}
-              >
-                SKU {orden() === "sku" && (direccion() === "asc" ? "▲" : "▼")}
-              </th>
-              <th
-                class="text-left p-3 border-b cursor-pointer"
-                onClick={() => cambiarOrden("nombre")}
-              >
-                Nombre{" "}
-                {orden() === "nombre" && (direccion() === "asc" ? "▲" : "▼")}
-              </th>
-              <th
-                class="text-left p-3 border-b cursor-pointer"
-                onClick={() => cambiarOrden("precioUnitario")}
-              >
-                PrecioXUn{" "}
-                {orden() === "precioUnitario" &&
-                  (direccion() === "asc" ? "▲" : "▼")}
-              </th>
-              <th
-                class="text-left p-3 border-b cursor-pointer"
-                onClick={() => cambiarOrden("precioPorBulto")}
-              >
-                PrecioXBulto{" "}
-                {orden() === "precioPorBulto" &&
-                  (direccion() === "asc" ? "▲" : "▼")}
-              </th>
-              <th
-                class="text-left p-3 border-b cursor-pointer"
-                onClick={() => cambiarOrden("producto?.hayStock")}
-              >
-                ¿Hay Stock?{" "}
-                {orden() === "producto?.hayStock" &&
-                  (direccion() === "asc" ? "▲" : "▼")}
-              </th>
-              <th class="text-left p-3 border-b">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <Show
-              when={respuesta()?.data?.length > 0}
-              fallback={
-                <tr>
-                  <td colspan="6" class="text-center p-4 text-gray-500">
-                    No se encontraron productos
-                  </td>
-                </tr>
-              }
-            >
-              <For each={respuesta()?.data}>
-                {(p: Producto) => (
-                  <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-3">{p.sku}</td>
-                    <td class="p-3">{p.nombre}</td>
-                    <td class="p-3">${p.precioUnitario}</td>
-                    <td class="p-3">${p.precioPorBulto}</td>
-                    <td class="p-3">{p.hayStock ? "Sí" : "No"}</td>
-                    <td class="p-3 flex gap-2">
-                      <button
-                        class="text-blue-600 hover:underline"
-                        onClick={() => verProductoCompleto(p.id)}
-                      >
-                        Ver
-                      </button>
-                      {!esVendedor && (
-                        <>
-                          <button
-                            class="text-green-600 hover:underline"
-                            onClick={() => editarProductoCompleto(p.id)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            class="text-red-600 hover:underline"
-                            onClick={() => handleEliminar(p.id)}
-                          >
-                            Eliminar
-                          </button>
-                        </>
-                      )}
+      <Show when={!respuesta.loading} fallback={<Loader />}>
+        <div class="overflow-auto border rounded-lg">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-gray-100 sticky top-0">
+              <tr>
+                <th class="text-left p-3 border-b cursor-pointer">Imagen</th>
+                <th
+                  class="text-left p-3 border-b cursor-pointer"
+                  onClick={() => cambiarOrden("sku")}
+                >
+                  SKU {orden() === "sku" && (direccion() === "asc" ? "▲" : "▼")}
+                </th>
+                <th
+                  class="text-left p-3 border-b cursor-pointer"
+                  onClick={() => cambiarOrden("nombre")}
+                >
+                  Nombre{" "}
+                  {orden() === "nombre" && (direccion() === "asc" ? "▲" : "▼")}
+                </th>
+                <th
+                  class="text-left p-3 border-b cursor-pointer"
+                  onClick={() => cambiarOrden("precioUnitario")}
+                >
+                  PrecioXUn{" "}
+                  {orden() === "precioUnitario" &&
+                    (direccion() === "asc" ? "▲" : "▼")}
+                </th>
+                <th
+                  class="text-left p-3 border-b cursor-pointer"
+                  onClick={() => cambiarOrden("precioPorBulto")}
+                >
+                  PrecioXBulto{" "}
+                  {orden() === "precioPorBulto" &&
+                    (direccion() === "asc" ? "▲" : "▼")}
+                </th>
+                <th
+                  class="text-left p-3 border-b cursor-pointer"
+                  onClick={() => cambiarOrden("producto?.hayStock")}
+                >
+                  ¿Hay Stock?{" "}
+                  {orden() === "producto?.hayStock" &&
+                    (direccion() === "asc" ? "▲" : "▼")}
+                </th>
+                <th class="text-left p-3 border-b">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <Show
+                when={respuesta()?.data && respuesta()!.data.length > 0}
+                fallback={
+                  <tr>
+                    <td colspan="6" class="text-center p-4 text-gray-500">
+                      No se encontraron productos
                     </td>
                   </tr>
-                )}
-              </For>
-            </Show>
-          </tbody>
-        </table>
-      </div>
+                }
+              >
+                <For each={respuesta()?.data}>
+                  {(p: Producto) => (
+                    <tr class="hover:bg-gray-50 border-b">
+                      <td class="p-3">{p.sku}</td>
+                      <td class="p-3">{p.nombre}</td>
+                      <td class="p-3">${p.precioUnitario}</td>
+                      <td class="p-3">${p.precioPorBulto}</td>
+                      <td class="p-3">{p.hayStock ? "Sí" : "No"}</td>
+                      <td class="p-3 flex gap-2">
+                        <button
+                          class="text-blue-600 hover:underline"
+                          onClick={() => verProductoCompleto(p.id)}
+                        >
+                          Ver
+                        </button>
+                        {!esVendedor && (
+                          <>
+                            <button
+                              class="text-green-600 hover:underline"
+                              onClick={() => editarProductoCompleto(p.id)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              class="text-red-600 hover:underline"
+                              onClick={() => handleEliminar(p.id)}
+                            >
+                              Eliminar
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </For>
+              </Show>
+            </tbody>
+          </table>
+        </div>
+      </Show>
 
       <div class="flex justify-center items-center gap-2 mt-4">
         <button
@@ -227,36 +237,37 @@ export default function Productos() {
           ◀
         </button>
         <span class="text-sm">
-          Página {respuesta()?.pagina} de {respuesta()?.totalPaginas}
+          Página {respuesta()?.pagina ?? "-"} de{" "}
+          {respuesta()?.totalPaginas ?? "-"}
         </span>
         <button
           onClick={() =>
             setPagina((p) => Math.min(respuesta()?.totalPaginas || p, p + 1))
           }
           class="px-3 py-1 border rounded disabled:opacity-50"
-          disabled={pagina() === respuesta()?.totalPaginas}
+          disabled={pagina() === (respuesta()?.totalPaginas ?? 1)}
         >
           ▶
         </button>
       </div>
 
       <ModalNuevoProducto
-  abierto={modalAbierto()}
-  producto={productoSeleccionado()}
-  onCerrar={(mensajeExito?: string) => {
-    setModalAbierto(false);
-    refetch();
-    if (mensajeExito) setMensaje(mensajeExito);
-  }}
-/>
+        abierto={modalAbierto()}
+        producto={productoSeleccionado()}
+        onCerrar={(mensajeExito?: string) => {
+          setModalAbierto(false);
+          refetch();
+          if (mensajeExito) setMensaje(mensajeExito);
+        }}
+      />
 
       <ModalImportarExcel
-  abierto={modalExcel()}
-  onCerrar={() => {
-    setModalExcel(false);
-    refetch();
-  }}
-/>
+        abierto={modalExcel()}
+        onCerrar={() => {
+          setModalExcel(false);
+          refetch();
+        }}
+      />
 
       <VerProductoModal
         producto={verProducto()}

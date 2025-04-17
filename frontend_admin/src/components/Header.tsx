@@ -1,4 +1,5 @@
 import { useAuth } from "../store/auth";
+import NotificacionesDropdown from "../components/NotificacionesDropdown";
 
 export default function Header() {
   const { usuario, logout } = useAuth();
@@ -10,6 +11,7 @@ export default function Header() {
       </h1>
 
       <div class="flex items-center gap-3 text-sm sm:text-base">
+      <NotificacionesDropdown />
         <span class="text-gray-600 truncate max-w-[120px] sm:max-w-[180px]">
           {usuario()?.nombre}
         </span>

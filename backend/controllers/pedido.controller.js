@@ -1,11 +1,11 @@
-import { Pedido, DetallePedido, Producto, Cliente, Usuario, IpCliente } from '../models/index.js';
+import { Pedido, DetallePedido, Producto, Cliente, Usuario, IpCliente, Notificacion } from '../models/index.js';
 import { Op } from 'sequelize';
 import { enviarEmailPedido } from "../utils/notificaciones/email.js";
 import { enviarWhatsappPedido } from "../utils/notificaciones/whatsapp.js";
 
 export const obtenerPedidos = async (req, res, next) => {
   try {
-    const { pagina = 1, limit = 10, orden = 'createdAt', direccion = 'DESC', busqueda = '' } = req.query;
+    const { pagina = 1, limit = 10, orden = 'createdAt', direccion = 'DESC', busqueda = '', vendedorId } = req.query;
     const offset = (pagina - 1) * limit;
 
     const where = {};
@@ -17,6 +17,11 @@ export const obtenerPedidos = async (req, res, next) => {
     // 🔒 Si es vendedor, solo sus pedidos
     if (req.usuario?.rol === 'vendedor') {
       where.usuarioId = req.usuario.id;
+    }
+
+    // Si se proporciona un vendedorId (por admin)
+    if (vendedorId) {
+      where.usuarioId = vendedorId;
     }
 
     const { count, rows } = await Pedido.findAndCountAll({
@@ -46,6 +51,7 @@ export const obtenerPedidos = async (req, res, next) => {
   }
 };
 
+
 export const obtenerPedidoPorId = async (req, res, next) => {
   try {
     const pedido = await Pedido.findByPk(req.params.id, {
@@ -65,6 +71,7 @@ export const obtenerPedidoPorId = async (req, res, next) => {
     next(error);
   }
 };
+
 export const actualizarEstadoPedido = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -72,7 +79,13 @@ export const actualizarEstadoPedido = async (req, res, next) => {
 
     console.log('🟡 Actualizar estado pedido:', { id, estado });
 
-    const pedido = await Pedido.findByPk(id);
+    const pedido = await Pedido.findByPk(id, {
+      include: [
+        { model: Cliente, as: 'cliente' },
+        { model: Usuario, as: 'usuario' },
+      ]
+    });
+
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
     // Solo se puede cancelar si está pendiente
@@ -81,6 +94,39 @@ export const actualizarEstadoPedido = async (req, res, next) => {
     }
 
     await pedido.update({ estado });
+
+    // 🔔 Notificación para admins
+    const administradores = await Usuario.findAll({
+      where: { rol: { [Op.in]: ['administrador', 'supremo'] } }
+    });
+
+    for (const admin of administradores) {
+      await Notificacion.create({
+        titulo: `Estado del pedido #${pedido.id} actualizado`,
+        mensaje: `El estado ahora es "${estado}"`,
+        tipo: 'pedido',
+        usuarioId: admin.id,
+      });
+    }
+
+    // ✉️ WhatsApp y Email al cliente y vendedor
+    try {
+      await enviarEmailPedido({
+        cliente: pedido.cliente,
+        pedido,
+        carrito: [], // no disponible aquí, podrías cargarlo si querés
+        vendedor: pedido.usuario,
+      });
+
+      await enviarWhatsappPedido({
+        cliente: pedido.cliente,
+        pedido,
+        carrito: [],
+        vendedor: pedido.usuario,
+      });
+    } catch (notiErr) {
+      console.warn('⚠️ Error al enviar notificaciones:', notiErr.message);
+    }
 
     console.log("🧾 Estado anterior:", pedido.estado);
     console.log("🧾 Nuevo estado:", estado);
@@ -91,7 +137,6 @@ export const actualizarEstadoPedido = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const crearPedido = async (req, res, next) => {
   const t = await Pedido.sequelize.transaction();
@@ -186,7 +231,29 @@ export const crearPedido = async (req, res, next) => {
     await pedido.update({ total: totalPedido }, { transaction: t });
 
     await t.commit();
+    // Notificación para el vendedor
+await Notificacion.create({
+  titulo: 'Nuevo pedido recibido',
+  mensaje: `El cliente ${clienteExistente.nombre} hizo un pedido.`,
+  tipo: 'pedido',
+  usuarioId: usuarioId, // vendedor
+});
 
+// Notificación para todos los administradores
+const administradores = await Usuario.findAll({
+  where: {
+    rol: { [Op.in]: ['administrador', 'supremo'] },
+  },
+});
+
+for (const admin of administradores) {
+  await Notificacion.create({
+    titulo: 'Nuevo pedido recibido',
+    mensaje: `El cliente ${clienteExistente.nombre} hizo un pedido.`,
+    tipo: 'pedido',
+    usuarioId: admin.id,
+  });
+}
     try {
       await enviarEmailPedido({
         cliente: clienteExistente,

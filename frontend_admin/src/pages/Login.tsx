@@ -15,9 +15,14 @@ export default function Login() {
     setError('');
 
     try {
-      const { token, usuario } = await loginUsuario(email(), password());
+      const { token, usuario, requiereContraseña } = await loginUsuario(email(), password());
       login(usuario, token);
-      navigate('/Inicio');
+
+      if (requiereContraseña) {
+        navigate('/definir-contraseña');
+      } else {
+        navigate('/Inicio');
+      }
     } catch (err) {
       setError('Email o contraseña incorrectos');
     }

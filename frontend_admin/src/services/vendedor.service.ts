@@ -13,7 +13,9 @@ export const obtenerVendedores = async (): Promise<Vendedor[]> => {
 };
 
 // Agregar un nuevo vendedor
-export const agregarVendedor = async (vendedor: Vendedor): Promise<Vendedor> => {
+export const agregarVendedor = async (
+  vendedor: Partial<Omit<Vendedor, 'id'>>
+): Promise<Vendedor> => {
   try {
     const response = await api.post('/usuarios/vendedores', vendedor);
     return response.data;
@@ -22,11 +24,10 @@ export const agregarVendedor = async (vendedor: Vendedor): Promise<Vendedor> => 
     throw error;
   }
 };
-
 // Editar un vendedor
-export const editarVendedor = async (vendedorId: string, vendedor: Vendedor): Promise<Vendedor> => {
+export const editarVendedor = async (vendedorId: string,datos: Partial<Omit<Vendedor, 'id'>>): Promise<Vendedor> => {
   try {
-    const response = await api.put(`/usuarios/vendedores/${vendedorId}`, vendedor);
+    const response = await api.put(`/usuarios/vendedores/${vendedorId}`, datos);
     return response.data;
   } catch (error) {
     console.error('Error al editar el vendedor', error);

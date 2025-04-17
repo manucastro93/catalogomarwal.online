@@ -1,7 +1,6 @@
 import { createSignal, createEffect, Show } from 'solid-js';
 import type { Vendedor } from '../shared/types/vendedor';
 import { vendedorSchema } from '../validations/vendedor.schema';
-import { z } from 'zod';
 
 interface ModalNuevoVendedorProps {
   abierto: boolean;

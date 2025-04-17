@@ -14,7 +14,8 @@ export default (sequelize, DataTypes) => {
     },
     subtotal: {
       type: DataTypes.FLOAT,
-      allowNull: true,
+      allowNull: false,
+      defaultValue: 0,
     },
     descuento: {
       type: DataTypes.FLOAT,
