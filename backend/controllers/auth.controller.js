@@ -7,8 +7,17 @@ export const login = async (req, res, next) => {
     const { email, contraseña } = req.body;
     const usuario = await Usuario.findOne({ where: { email } });
 
-    if (!usuario || !(await bcrypt.compare(contraseña, usuario.contraseña))) {
+    // Si no existe el usuario
+    if (!usuario) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
+
+    // Si tiene contraseña definida, comparar
+    if (usuario.contraseña) {
+      const coincide = await bcrypt.compare(contraseña, usuario.contraseña);
+      if (!coincide) {
+        return res.status(401).json({ message: 'Credenciales inválidas' });
+      }
     }
 
     const token = jwt.sign(
@@ -17,7 +26,15 @@ export const login = async (req, res, next) => {
       { expiresIn: '2000000h' }
     );
 
-    res.json({ token, usuario });
+    // Limpiar el objeto antes de enviar al frontend
+    const usuarioLimpio = { ...usuario.toJSON() };
+    delete usuarioLimpio.contraseña;
+
+    res.json({
+      token,
+      usuario: usuarioLimpio,
+      requiereContraseña: !usuario.contraseña,
+    });
   } catch (error) {
     next(error);
   }

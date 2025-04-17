@@ -1,4 +1,3 @@
-// src/pages/Clientes.tsx
 import {
   createSignal,
   createResource,
@@ -17,6 +16,7 @@ import ModalConfirmacion from '../components/ModalConfirmacion';
 import ModalCliente from '../components/ModalCliente';
 import VerClienteModal from '../components/VerClienteModal';
 import { obtenerVendedores } from '../services/vendedor.service';
+import Loader from '../components/Loader';
 
 export default function Clientes() {
   const { usuario } = useAuth();
@@ -171,52 +171,54 @@ export default function Clientes() {
         </select>
       </div>
 
-      <div class="overflow-auto border rounded-lg">
-        <table class="w-full text-sm border-collapse">
-          <thead class="bg-gray-100 sticky top-0">
-            <tr>
-              <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('nombre')}>Nombre</th>
-              <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('email')}>Email</th>
-              <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('provincia')}>Provincia</th>
-              <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('localidad')}>Localidad</th>
-              <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('vendedor')}>Vendedor</th>
-              <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('createdAt')}>Creado</th>
-              <th class="text-left p-3 border-b">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <Show when={respuesta()?.data?.length > 0} fallback={<tr><td colspan="6" class="text-center p-4 text-gray-500">No se encontraron clientes</td></tr>}>
-              <For each={respuesta()?.data}>
-                {(c: Cliente) => (
-                  <tr class="hover:bg-gray-50 border-b">
-                    <td class="p-3">{c.nombre}</td>
-                    <td class="p-3">{c.email}</td>
-                    <td class="p-3">{c.provincia?.nombre}</td>
-                    <td class="p-3">{c.localidad?.nombre}</td>
-                    <td class="p-3">{c.vendedor?.nombre}</td>
-                    <td class="p-3">{new Date(c.createdAt).toLocaleDateString()}</td>
-                    <td class="p-3 flex gap-2">
-                      <button class="text-blue-600 hover:underline" onClick={() => setVerCliente(c)}>Ver</button>
-                      <Show when={puedeEditar()}>
-                        <button class="text-green-600 hover:underline" onClick={() => {
-                          setClienteSeleccionado(c);
-                          setModalAbierto(true);
-                        }}>Editar</button>
-                      </Show>
-                      <Show when={puedeEliminar()}>
-                        <button class="text-red-600 hover:underline" onClick={() => {
-                          setClienteAEliminar(c);
-                          setModalConfirmar(true);
-                        }}>Eliminar</button>
-                      </Show>
-                    </td>
-                  </tr>
-                )}
-              </For>
-            </Show>
-          </tbody>
-        </table>
-      </div>
+      <Show when={!respuesta.loading} fallback={<Loader />}>
+        <div class="overflow-auto border rounded-lg">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-gray-100 sticky top-0">
+              <tr>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('nombre')}>Nombre</th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('email')}>Email</th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('provincia')}>Provincia</th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('localidad')}>Localidad</th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('vendedor')}>Vendedor</th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('createdAt')}>Creado</th>
+                <th class="text-left p-3 border-b">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <Show when={respuesta()?.data && respuesta()!.data.length > 0} fallback={<tr><td colspan="7" class="text-center p-4 text-gray-500">No se encontraron clientes</td></tr>}>
+                <For each={respuesta()?.data}>
+                  {(c: Cliente) => (
+                    <tr class="hover:bg-gray-50 border-b">
+                      <td class="p-3">{c.nombre}</td>
+                      <td class="p-3">{c.email}</td>
+                      <td class="p-3">{c.provincia?.nombre}</td>
+                      <td class="p-3">{c.localidad?.nombre}</td>
+                      <td class="p-3">{c.vendedor?.nombre}</td>
+                      <td class="p-3">{new Date(c.createdAt).toLocaleDateString()}</td>
+                      <td class="p-3 flex gap-2">
+                        <button class="text-blue-600 hover:underline" onClick={() => setVerCliente(c)}>Ver</button>
+                        <Show when={puedeEditar()}>
+                          <button class="text-green-600 hover:underline" onClick={() => {
+                            setClienteSeleccionado(c);
+                            setModalAbierto(true);
+                          }}>Editar</button>
+                        </Show>
+                        <Show when={puedeEliminar()}>
+                          <button class="text-red-600 hover:underline" onClick={() => {
+                            setClienteAEliminar(c);
+                            setModalConfirmar(true);
+                          }}>Eliminar</button>
+                        </Show>
+                      </td>
+                    </tr>
+                  )}
+                </For>
+              </Show>
+            </tbody>
+          </table>
+        </div>
+      </Show>
 
       <div class="flex justify-center items-center gap-2 mt-4">
         <button
@@ -227,12 +229,12 @@ export default function Clientes() {
           ◀
         </button>
         <span class="text-sm">
-          Página {respuesta()?.pagina} de {respuesta()?.totalPaginas}
+          Página {respuesta()?.pagina ?? '-'} de {respuesta()?.totalPaginas ?? '-'}
         </span>
         <button
           onClick={() => setPagina((p) => Math.min(respuesta()?.totalPaginas || p, p + 1))}
           class="px-3 py-1 border rounded disabled:opacity-50"
-          disabled={pagina() === respuesta()?.totalPaginas}
+          disabled={pagina() === (respuesta()?.totalPaginas ?? 1)}
         >
           ▶
         </button>

@@ -9,8 +9,8 @@ export interface Pedido {
   total: number;
   clienteId: number;
   usuarioId?: number;
-  Cliente?: Cliente; 
-  Usuario?: Usuario; 
+  cliente?: Cliente; 
+  usuario?: Usuario; 
   detalles?: DetallePedido[];
   createdAt: string;
   updatedAt: string;

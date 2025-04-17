@@ -22,6 +22,7 @@ import categoriaRoutes from './routes/categoria.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import estadisticasRoutes from './routes/estadisticas.routes.js';
 import logClienteRoutes from './routes/logCliente.routes.js';
+import notificacionRoutes from './routes/notificacion.routes.js';
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -69,6 +70,7 @@ app.use('/api/categorias', categoriaRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/estadisticas', estadisticasRoutes);
 app.use('/api/logs-cliente', logClienteRoutes);
+app.use('/api/notificaciones', notificacionRoutes);
 
 // Centralizado de errores
 app.use(errorHandler);

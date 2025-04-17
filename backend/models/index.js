@@ -67,7 +67,8 @@ export const {
   Localidad,
   IpCliente,
   LogCliente,
-  LogAuditoria
+  LogAuditoria,
+  Notificacion,
 } = db;
 
 export { sequelize, Sequelize };

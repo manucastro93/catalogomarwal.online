@@ -10,6 +10,7 @@ import ModalConfirmacion from '../components/ModalConfirmacion';
 import ModalMensaje from '../components/ModalMensaje';
 import type { Categoria } from '../shared/types/categoria';
 import { useAuth } from '../store/auth';
+import Loader from '../components/Loader';
 
 export default function Categorias() {
   const { usuario } = useAuth();
@@ -54,50 +55,52 @@ export default function Categorias() {
         </Show>
       </div>
 
-      <div class="overflow-auto border rounded-lg">
-        <table class="w-full text-sm border-collapse">
-          <thead class="bg-gray-100">
-            <tr>
-              <th class="text-left p-3 border-b">Nombre</th>
-              <th class="text-left p-3 border-b">Orden</th>
-              <th class="text-left p-3 border-b">Estado</th>
-              <th class="text-left p-3 border-b">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <Show when={categorias()?.length} fallback={<tr><td colspan="4" class="text-center p-4 text-gray-500">No hay categorías</td></tr>}>
-              <For each={categorias()}>{(c: Categoria) => (
-                <tr class="hover:bg-gray-50 border-b">
-                  <td class="p-3">{c.nombre}</td>
-                  <td class="p-3">{c.orden ?? '-'}</td>
-                  <td class="p-3">{c.estado ? 'Activa' : 'Inactiva'}</td>
-                  <td class="p-3 flex gap-2">
-                    <Show when={puedeEditar()}>
-                      <button
-                        class="text-green-600 hover:underline"
-                        onClick={() => abrirModal(c)}
-                      >Editar</button>
-                    </Show>
-                    <Show when={puedeEliminar()}>
-                      <button
-                        class="text-red-600 hover:underline"
-                        onClick={() => {
-                          setCategoriaAEliminar(c);
-                          setModalConfirmar(true);
-                        }}
-                      >Eliminar</button>
-                    </Show>
-                  </td>
-                </tr>
-              )}</For>
-            </Show>
-          </tbody>
-        </table>
-      </div>
+      <Show when={!categorias.loading} fallback={<Loader />}>
+        <div class="overflow-auto border rounded-lg">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="text-left p-3 border-b">Nombre</th>
+                <th class="text-left p-3 border-b">Orden</th>
+                <th class="text-left p-3 border-b">Estado</th>
+                <th class="text-left p-3 border-b">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <Show when={categorias()?.length} fallback={<tr><td colspan="4" class="text-center p-4 text-gray-500">No hay categorías</td></tr>}>
+                <For each={categorias()}>{(c: Categoria) => (
+                  <tr class="hover:bg-gray-50 border-b">
+                    <td class="p-3">{c.nombre}</td>
+                    <td class="p-3">{c.orden ?? '-'}</td>
+                    <td class="p-3">{c.estado ? 'Activa' : 'Inactiva'}</td>
+                    <td class="p-3 flex gap-2">
+                      <Show when={puedeEditar()}>
+                        <button
+                          class="text-green-600 hover:underline"
+                          onClick={() => abrirModal(c)}
+                        >Editar</button>
+                      </Show>
+                      <Show when={puedeEliminar()}>
+                        <button
+                          class="text-red-600 hover:underline"
+                          onClick={() => {
+                            setCategoriaAEliminar(c);
+                            setModalConfirmar(true);
+                          }}
+                        >Eliminar</button>
+                      </Show>
+                    </td>
+                  </tr>
+                )}</For>
+              </Show>
+            </tbody>
+          </table>
+        </div>
+      </Show>
 
       <ModalCategoria
         abierto={modalAbierto()}
-        categoria={categoriaSeleccionada() ?? undefined}
+        categoria={categoriaSeleccionada() || null}
         onCerrar={(mensajeExito?: string) => {
           setModalAbierto(false);
           setCategoriaSeleccionada(null);
@@ -119,11 +122,9 @@ export default function Categorias() {
         onConfirmar={confirmarEliminacion}
       />
 
-      <ModalMensaje
-        mensaje={mensaje()}
-        visible={mostrarMensaje()}
-        onClose={() => setMostrarMensaje(false)}
-      />
+      <Show when={mostrarMensaje()}>
+        <ModalMensaje mensaje={mensaje()} cerrar={() => setMostrarMensaje(false)} />
+      </Show>
     </div>
   );
 }

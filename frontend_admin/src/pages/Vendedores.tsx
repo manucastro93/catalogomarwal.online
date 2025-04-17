@@ -1,10 +1,9 @@
 import {
   createSignal,
   createResource,
-  createEffect,
   createMemo,
   For,
-  Show,
+  Show
 } from 'solid-js';
 import {
   obtenerVendedores,
@@ -17,6 +16,7 @@ import VerVendedorModal from '../components/VerVendedorModal';
 import type { Vendedor } from '../shared/types/vendedor';
 import ModalMensaje from '../components/ModalMensaje';
 import ModalConfirmacion from '../components/ModalConfirmacion';
+import Loader from '../components/Loader';
 
 export default function Vendedores() {
   const [pagina, setPagina] = createSignal(1);
@@ -52,8 +52,8 @@ export default function Vendedores() {
     }
   };
 
-  const confirmarEliminar = (id: string) => {
-    setIdAEliminar(id);
+  const confirmarEliminar = (id: number) => {
+    setIdAEliminar(String(id));
     setModalConfirmar(true);
   };
 
@@ -78,9 +78,12 @@ export default function Vendedores() {
     setModalAbierto(true);
   };
 
-  const handleGuardarVendedor = async (datos: Partial<Vendedor>) => {
-    if (vendedorSeleccionado()) {
-      await editarVendedor(vendedorSeleccionado()!.id, datos);
+  const handleGuardarVendedor = async (datos: Partial<Omit<Vendedor, 'id'>>) => {
+    if (vendedorSeleccionado()?.id != null) {
+      await editarVendedor(
+        String(vendedorSeleccionado()!.id),
+        datos as Partial<Omit<Vendedor, 'id'>>
+      );
       setModalMensaje('Vendedor editado correctamente');
     } else {
       await agregarVendedor(datos);
@@ -90,10 +93,11 @@ export default function Vendedores() {
     setModalAbierto(false);
     setVendedorSeleccionado(null);
   };
+  
 
-  const copiarLink = async (id: string) => {
+  const copiarLink = async (id: string | number | undefined) => {
     try {
-      const link = `https://www.catalogomarwal.online/${id}`;
+      const link = `https://www.catalogomarwal.online/${String(id || '')}`;
       await navigator.clipboard.writeText(link);
       setModalMensaje('¡Link copiado al portapapeles!');
     } catch (err) {
@@ -122,78 +126,80 @@ export default function Vendedores() {
         </div>
       </div>
 
-      <div class="overflow-auto border rounded-lg">
-        <table class="w-full text-sm border-collapse">
-          <thead class="bg-gray-100">
-            <tr>
-              <th class="text-left p-3 cursor-pointer" onClick={() => cambiarOrden('nombre')}>
-                Nombre {orden() === 'nombre' && (direccion() === 'asc' ? '▲' : '▼')}
-              </th>
-              <th class="text-left p-3 cursor-pointer" onClick={() => cambiarOrden('email')}>
-                Email {orden() === 'email' && (direccion() === 'asc' ? '▲' : '▼')}
-              </th>
-              <th class="text-left p-3 cursor-pointer" onClick={() => cambiarOrden('telefono')}>
-                Teléfono {orden() === 'telefono' && (direccion() === 'asc' ? '▲' : '▼')}
-              </th>
-              <th class="text-left p-3">Link</th>
-              <th class="text-left p-3">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <Show
-              when={vendedoresFiltrados().length > 0}
-              fallback={
-                <tr>
-                  <td colSpan={5} class="p-4 text-center text-gray-500">
-                    No se encontraron vendedores
-                  </td>
-                </tr>
-              }
-            >
-              <For each={vendedoresFiltrados()}>
-                {(v) => (
-                  <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3">{v.nombre}</td>
-                    <td class="p-3">{v.email}</td>
-                    <td class="p-3">{v.telefono || '-'}</td>
-                    <td class="p-3">
-                      <button
-                        class="text-blue-600 hover:underline"
-                        onClick={() => copiarLink(v.link)}
-                      >
-                        Copiar link
-                      </button>
-                      <a
-  href={`https://wa.me/?text=Mirá%20el%20catálogo%20de%20Marwal:%20https://www.catalogomarwal.online/${v.link}`}
-  target="_blank"
-  rel="noopener noreferrer"
-  title="Compartir por WhatsApp"
->
-  <img
-    src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png"
-    alt="WhatsApp"
-    style={{ width: "25px", height: "25px", marginLeft: "8px", display: "inline-table" }}
-  />
-</a>
-                    </td>
-                    <td class="p-3 flex gap-2">
-                      <button class="text-blue-600 hover:underline" onClick={() => verDetalle(v)}>
-                        Ver
-                      </button>
-                      <button class="text-green-600 hover:underline" onClick={() => editarVendedorCompleto(v)}>
-                        Editar
-                      </button>
-                      <button class="text-red-600 hover:underline" onClick={() => confirmarEliminar(v.id)}>
-                        Eliminar
-                      </button>
+      <Show when={!respuesta.loading} fallback={<Loader />}>
+        <div class="overflow-auto border rounded-lg">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="text-left p-3 cursor-pointer" onClick={() => cambiarOrden('nombre')}>
+                  Nombre {orden() === 'nombre' && (direccion() === 'asc' ? '▲' : '▼')}
+                </th>
+                <th class="text-left p-3 cursor-pointer" onClick={() => cambiarOrden('email')}>
+                  Email {orden() === 'email' && (direccion() === 'asc' ? '▲' : '▼')}
+                </th>
+                <th class="text-left p-3 cursor-pointer" onClick={() => cambiarOrden('telefono')}>
+                  Teléfono {orden() === 'telefono' && (direccion() === 'asc' ? '▲' : '▼')}
+                </th>
+                <th class="text-left p-3">Link</th>
+                <th class="text-left p-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <Show
+                when={vendedoresFiltrados().length > 0}
+                fallback={
+                  <tr>
+                    <td colSpan={5} class="p-4 text-center text-gray-500">
+                      No se encontraron vendedores
                     </td>
                   </tr>
-                )}
-              </For>
-            </Show>
-          </tbody>
-        </table>
-      </div>
+                }
+              >
+                <For each={vendedoresFiltrados()}>
+                  {(v) => (
+                    <tr class="border-b hover:bg-gray-50">
+                      <td class="p-3">{v.nombre}</td>
+                      <td class="p-3">{v.email}</td>
+                      <td class="p-3">{v.telefono || '-'}</td>
+                      <td class="p-3">
+                        <button
+                          class="text-blue-600 hover:underline"
+                          onClick={() => copiarLink(v.link)}
+                        >
+                          Copiar link
+                        </button>
+                        <a
+                          href={`https://wa.me/?text=Mirá%20el%20catálogo%20de%20Marwal:%20https://www.catalogomarwal.online/${String(v.link)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Compartir por WhatsApp"
+                        >
+                          <img
+                            src="https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png"
+                            alt="WhatsApp"
+                            style="width: 25px; height: 25px; margin-left: 8px; display: inline-table;"
+                          />
+                        </a>
+                      </td>
+                      <td class="p-3 flex gap-2">
+                        <button class="text-blue-600 hover:underline" onClick={() => verDetalle(v)}>
+                          Ver
+                        </button>
+                        <button class="text-green-600 hover:underline" onClick={() => editarVendedorCompleto(v)}>
+                          Editar
+                        </button>
+                        <button class="text-red-600 hover:underline" onClick={() => confirmarEliminar(v.id)}>
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+                </For>
+              </Show>
+            </tbody>
+          </table>
+        </div>
+      </Show>
 
       <ModalNuevoVendedor
         abierto={modalAbierto()}
