@@ -4,19 +4,18 @@ import {
   createMemo,
   For,
   Show,
-  createEffect
 } from 'solid-js';
 import * as XLSX from 'xlsx';
 import { obtenerClientes, eliminarCliente } from '../services/cliente.service';
 import { obtenerProvincias, obtenerLocalidades } from '../services/ubicacion.service';
 import { useAuth } from '../store/auth';
 import type { Cliente } from '../shared/types/cliente';
-import type { Provincia, Localidad } from '../shared/types/ubicacion';
 import ModalConfirmacion from '../components/ModalConfirmacion';
 import ModalCliente from '../components/ModalCliente';
 import VerClienteModal from '../components/VerClienteModal';
 import { obtenerVendedores } from '../services/vendedor.service';
 import Loader from '../components/Loader';
+import ModalMapaClientes from '../components/ModalMapaClientes';
 
 export default function Clientes() {
   const { usuario } = useAuth();
@@ -34,12 +33,40 @@ export default function Clientes() {
   const [clienteSeleccionado, setClienteSeleccionado] = createSignal<Cliente | null>(null);
   const [clienteAEliminar, setClienteAEliminar] = createSignal<Cliente | null>(null);
   const [modalConfirmar, setModalConfirmar] = createSignal(false);
+  const [mostrarMapa, setMostrarMapa] = createSignal(false);
+
   const [vendedores] = createResource(obtenerVendedores);
   const [provincias] = createResource(obtenerProvincias);
   const [localidades] = createResource(
     () => provinciaSeleccionada(),
     (id) => id ? obtenerLocalidades(Number(id)) : Promise.resolve([])
   );
+
+  const fetchParams = createMemo(() => ({
+    page: pagina(),
+    limit: 10,
+    orden: orden(),
+    direccion: direccion(),
+    buscar: busqueda(),
+    provinciaId: provinciaSeleccionada() || undefined,
+    localidadId: localidadSeleccionada() || undefined,
+    vendedorId: vendedorIdSeleccionado() || undefined,
+  }));
+
+  const [respuesta, { refetch }] = createResource(fetchParams, obtenerClientes);
+
+  const cambiarOrden = (col: string) => {
+    if (orden() === col) {
+      setDireccion(direccion() === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrden(col);
+      setDireccion('asc');
+    }
+  };
+
+  const puedeEditar = () => ['supremo', 'administrador'].includes(usuario()?.rol || '');
+  const puedeEliminar = () => usuario()?.rol === 'supremo';
+  const puedeAgregar = () => ['supremo', 'vendedor'].includes(usuario()?.rol || '');
 
   const exportarExcel = () => {
     const clientes = respuesta()?.data || [];
@@ -59,32 +86,6 @@ export default function Clientes() {
     XLSX.writeFile(wb, 'clientes.xlsx');
   };
 
-  const fetchParams = createMemo(() => ({
-    page: pagina(),
-    limit: 10,
-    orden: orden(),
-    direccion: direccion(),
-    buscar: busqueda(),
-    provinciaId: provinciaSeleccionada() || undefined,
-    localidadId: localidadSeleccionada() || undefined,
-    vendedorId: vendedorIdSeleccionado() || undefined, 
-  }));
-
-  const [respuesta, { refetch }] = createResource(fetchParams, obtenerClientes);
-
-  const cambiarOrden = (col: string) => {
-    if (orden() === col) {
-      setDireccion(direccion() === 'asc' ? 'desc' : 'asc');
-    } else {
-      setOrden(col);
-      setDireccion('asc');
-    }
-  };
-
-  const puedeEditar = () => ['supremo', 'administrador'].includes(usuario()?.rol || '');
-  const puedeEliminar = () => usuario()?.rol === 'supremo';
-  const puedeAgregar = () => ['supremo', 'vendedor'].includes(usuario()?.rol || '');
-
   const confirmarEliminacion = async () => {
     if (!clienteAEliminar()) return;
     await eliminarCliente(clienteAEliminar()!.id);
@@ -97,8 +98,14 @@ export default function Clientes() {
     <div class="p-6">
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold">Clientes</h1>
-        <Show when={puedeAgregar()}>
-          <div class="flex gap-2">
+        <div class="flex gap-2">
+          <button
+            onClick={() => setMostrarMapa(true)}
+            class="bg-indigo-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Ver mapa de clientes
+          </button>
+          <Show when={puedeAgregar()}>
             <button
               onClick={exportarExcel}
               class="bg-green-600 text-white px-3 py-1 rounded text-sm"
@@ -114,8 +121,8 @@ export default function Clientes() {
             >
               + Nuevo Cliente
             </button>
-          </div>
-        </Show>
+          </Show>
+        </div>
       </div>
 
       <div class="flex gap-4 mb-4 flex-wrap">
@@ -134,6 +141,7 @@ export default function Clientes() {
             )}</For>
           </select>
         </Show>
+
         <input
           type="text"
           placeholder="Buscar por nombre o email..."
@@ -186,7 +194,9 @@ export default function Clientes() {
               </tr>
             </thead>
             <tbody>
-              <Show when={respuesta()?.data && respuesta()!.data.length > 0} fallback={<tr><td colspan="7" class="text-center p-4 text-gray-500">No se encontraron clientes</td></tr>}>
+              <Show when={respuesta()?.data?.length} fallback={
+                <tr><td colspan="7" class="text-center p-4 text-gray-500">No se encontraron clientes</td></tr>
+              }>
                 <For each={respuesta()?.data}>
                   {(c: Cliente) => (
                     <tr class="hover:bg-gray-50 border-b">
@@ -262,6 +272,11 @@ export default function Clientes() {
           setModalConfirmar(false);
         }}
         onConfirmar={confirmarEliminacion}
+      />
+
+      <ModalMapaClientes
+        abierto={mostrarMapa()}
+        onCerrar={() => setMostrarMapa(false)}
       />
     </div>
   );

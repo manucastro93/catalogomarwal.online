@@ -1,7 +1,7 @@
 import { createResource, createSignal, For, Show } from 'solid-js';
 import api from '../services/api';
 import type { Notificacion }  from '../shared/types/notificacion.ts';
-
+import { formatearFechaHora } from '../utils/fecha';
 
 export default function NotificacionesDropdown() {
   const [abierto, setAbierto] = createSignal(false);
@@ -33,7 +33,7 @@ export default function NotificacionesDropdown() {
 
       <Show when={abierto()}>
         <div class="absolute right-0 mt-2 w-80 bg-white border rounded shadow z-50 max-h-96 overflow-auto">
-          <div class="p-2 border-b font-semibold">Notificaciones</div>
+          <div class="p-2 border-b font-semibold bg-amber-300">Notificaciones</div>
           <For each={notificaciones()}>
             {(n: Notificacion) => (
               <div
@@ -42,6 +42,7 @@ export default function NotificacionesDropdown() {
                 }`}
                 onClick={() => marcarComoLeida(n.id)}
               >
+                <h1 class="font-bold text-sm text-gray-700">{formatearFechaHora(n.createdAt)}</h1>
                 <div>{n.titulo}</div>
                 <div class="text-xs text-gray-500">{n.mensaje}</div>
               </div>

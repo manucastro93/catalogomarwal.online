@@ -30,6 +30,7 @@ export default function Pedidos() {
   const [busqueda, setBusqueda] = createSignal('');
   const [vendedores] = createResource(obtenerVendedores);
   const [vendedorSeleccionado, setVendedorSeleccionado] = createSignal('');
+  const [estadoSeleccionado, setEstadoSeleccionado] = createSignal('');
   const [verPedido, setVerPedido] = createSignal<Pedido | null>(null);
   const [pedidoAEliminar, setPedidoAEliminar] = createSignal<Pedido | null>(null);
 
@@ -39,6 +40,7 @@ export default function Pedidos() {
     direccion: direccion(),
     busqueda: busqueda(),
     vendedorId: vendedorSeleccionado() || undefined,
+    estado: estadoSeleccionado() || undefined,
   }));
 
   const [respuesta, { refetch }] = createResource(fetchParams, obtenerPedidos);
@@ -71,10 +73,10 @@ export default function Pedidos() {
         </button>
       </div>
 
-      <div class="mb-4">
+      <div class="flex flex-wrap items-center gap-2 mb-4">
         <input
           type="text"
-          placeholder="Buscar por cliente, estado..."
+          placeholder="Buscar por cliente"
           class="p-2 border rounded w-full max-w-md"
           value={busqueda()}
           onInput={(e) => {
@@ -82,22 +84,38 @@ export default function Pedidos() {
             setPagina(1);
           }}
         />
+
+        <Show when={usuario()?.rol !== 'vendedor'}>
+          <select
+            class="p-2 border rounded"
+            value={vendedorSeleccionado()}
+            onInput={(e) => {
+              setVendedorSeleccionado(e.currentTarget.value);
+              setPagina(1);
+            }}
+          >
+            <option value="">Todos los vendedores</option>
+            <For each={vendedores()}>{(v) => <option value={v.id}>{v.nombre}</option>}</For>
+          </select>
+        </Show>
+
+        <select
+          class="p-2 border rounded"
+          value={estadoSeleccionado()}
+          onInput={(e) => {
+            setEstadoSeleccionado(e.currentTarget.value);
+            setPagina(1);
+          }}
+        >
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="confirmado">Confirmado</option>
+          <option value="preparando">En preparación</option>
+          <option value="entregado">Entregado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
       </div>
-      <Show when={usuario()?.rol !== 'vendedor'}>
-  <select
-    class="p-2 border rounded"
-    value={vendedorSeleccionado()}
-    onInput={(e) => {
-      setVendedorSeleccionado(e.currentTarget.value);
-      setPagina(1);
-    }}
-  >
-    <option value="">Todos los vendedores</option>
-    <For each={vendedores()}>
-      {(v) => <option value={v.id}>{v.nombre}</option>}
-    </For>
-  </select>
-</Show>
+
       <Show when={!respuesta.loading} fallback={<Loader />}>
         <div class="overflow-auto border rounded-lg">
           <table class="w-full text-sm border-collapse">

@@ -59,7 +59,7 @@ export default function ModalImportarExcel(props: {
 
       if (!sku) errores.add(`sku-${filaIdx}`);
       if (!precioUnitario || isNaN(Number(precioUnitario))) errores.add(`precioUnitario-${filaIdx}`);
-      const existeCategoria = categorias()?.some((c) => c.nombre === categoriaNombre);
+      const existeCategoria = categorias()?.some((c: Categoria) => c.nombre === categoriaNombre);
       if (!existeCategoria) errores.add(`categoria-${filaIdx}`);
     });
     setErrores(errores);
@@ -89,7 +89,7 @@ export default function ModalImportarExcel(props: {
     ];
 
     const datos = preview().slice(1).map((fila) => {
-      const categoria = categorias()?.find((c) => c.nombre === fila[6]);
+      const categoria = categorias()?.find((c: Categoria) => c.nombre === fila[6]);
       return [
         fila[0], // sku
         fila[1], // nombre
@@ -175,7 +175,9 @@ export default function ModalImportarExcel(props: {
                                       <option value="">Seleccionar</option>
                                       <For each={categorias()}>
                                         {(c: Categoria) => (
-                                          <option value={c.nombre}>{c.nombre}</option>
+                                          <option value={c.nombre} selected={celda === c.nombre}>
+                                            {c.nombre}
+                                          </option>
                                         )}
                                       </For>
                                     </select>
