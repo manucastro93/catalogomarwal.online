@@ -1,5 +1,7 @@
 import { Pedido, DetallePedido, Producto, Cliente, Usuario, IpCliente } from '../models/index.js';
 import { Op } from 'sequelize';
+import { enviarEmailPedido } from "../utils/notificaciones/email.js";
+import { enviarWhatsappPedido } from "../utils/notificaciones/whatsapp.js";
 
 export const obtenerPedidos = async (req, res, next) => {
   try {
@@ -95,7 +97,7 @@ export const crearPedido = async (req, res, next) => {
   const t = await Pedido.sequelize.transaction();
 
   try {
-    const { cliente, carrito, usuarioId } = req.body;
+    const { cliente, carrito, usuarioId, vendedor } = req.body;
     if (!usuarioId) {
       return res.status(400).json({ error: 'No tiene vendedor asignado.' });
     }
@@ -184,6 +186,24 @@ export const crearPedido = async (req, res, next) => {
     await pedido.update({ total: totalPedido }, { transaction: t });
 
     await t.commit();
+
+    try {
+      await enviarEmailPedido({
+        cliente: clienteExistente,
+        pedido,
+        carrito,
+        vendedor
+      });
+    
+      await enviarWhatsappPedido({
+        cliente: clienteExistente,
+        pedido,
+        carrito,
+        vendedor
+      });
+    } catch (notiError) {
+      console.warn("⚠️ Error al enviar notificaciones:", notiError.message);
+    }
     res.status(201).json({ message: 'Pedido creado correctamente', pedidoId: pedido.id });
   } catch (error) {
     await t.rollback();

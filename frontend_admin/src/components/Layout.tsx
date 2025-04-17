@@ -7,7 +7,7 @@ export default function Layout(props: { children: any }) {
       <Sidebar />
       <div class="flex-1">
         <Header />
-        <main class="p-4">
+        <main class="pt-16 lg:pl-64 p-4">
           {props.children}
         </main>
       </div>

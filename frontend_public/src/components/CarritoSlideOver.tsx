@@ -12,6 +12,7 @@ import { useAuth } from "../store/auth";
 import FormularioCliente from "../components/FormularioCliente";
 import ModalMensaje from "./ModalMensaje";
 import { formatearPrecio } from "../utils/formato";
+import EnviandoOverlay from "./EnviandoOverlay";
 
 export default function CarritoSlideOver() {
   const total = () =>
@@ -24,12 +25,11 @@ export default function CarritoSlideOver() {
   const { usuario } = useAuth();
   const [mensaje, setMensaje] = createSignal("");
   const [pedidoEnviado, setPedidoEnviado] = createSignal(false);
+  const [enviando, setEnviando] = createSignal(false);
 
-  // Control visual para permitir animación de cierre antes de desmontar
   const [showMobile, setShowMobile] = createSignal(false);
   const [showDesktop, setShowDesktop] = createSignal(false);
 
-  // Reactivo: cuando cambia carritoAbierto, animamos entrada/salida
   createEffect(() => {
     const open: boolean = carritoAbierto();
     if (open) {
@@ -42,8 +42,9 @@ export default function CarritoSlideOver() {
   });
 
   const handleEnviarPedido = async (datosCliente: any) => {
+    setEnviando(true);
     const vendedorRaw = localStorage.getItem("vendedor");
-    const vendedorId = vendedorRaw ? JSON.parse(vendedorRaw).id : undefined;
+    const vendedor = vendedorRaw ? JSON.parse(vendedorRaw) : null;
 
     if (!datosCliente?.nombre?.trim() || !datosCliente?.telefono?.trim()) {
       setMensaje("Por favor completá nombre y teléfono.");
@@ -63,10 +64,11 @@ export default function CarritoSlideOver() {
       const res = await enviarPedido({
         cliente: {
           ...datosCliente,
-          vendedorId: vendedorId ? Number(vendedorId) : undefined,
+          vendedorId: vendedor?.id,
         },
         carrito: carritoPlano,
-        usuarioId: vendedorId,
+        usuarioId: vendedor?.id,
+        vendedor: vendedor
       });
 
       if (res?.clienteId) {
@@ -81,12 +83,19 @@ export default function CarritoSlideOver() {
     } catch (error) {
       console.error("❌ Error al enviar pedido:", error);
       setMensaje("Hubo un error al enviar el pedido. Intentalo nuevamente.");
+    } finally {
+      setEnviando(false);
     }
   };
 
   return (
     <>
-      {/* FONDO OSCURO */}
+      {/* Overlay de carga global */}
+      <Show when={enviando()}>
+        <EnviandoOverlay />
+      </Show>
+
+      {/* Fondo oscuro */}
       <Show when={carritoAbierto()}>
         <div
           class="fixed inset-0 z-40 bg-black/40"
@@ -226,9 +235,7 @@ function ContenidoCarrito(props: {
                   />
                   <button
                     class="px-2 h-8 text-sm border rounded"
-                    onClick={() =>
-                      cambiarCantidad(item.id, item.cantidad + 1)
-                    }
+                    onClick={() => cambiarCantidad(item.id, item.cantidad + 1)}
                   >
                     +
                   </button>
@@ -246,9 +253,7 @@ function ContenidoCarrito(props: {
       </For>
 
       <div class="border-y pt-4 pb-4 my-4 text-sm space-y-1 text-right">
-        <p class="text-lg font-bold">
-          TOTAL: {formatearPrecio(props.total)}
-        </p>
+        <p class="text-lg font-bold">TOTAL: {formatearPrecio(props.total)}</p>
         <p class="text-sm text-gray-500">+ IVA</p>
       </div>
       <FormularioCliente onConfirmar={props.onConfirmar} />

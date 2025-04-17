@@ -43,7 +43,7 @@ export default function HeaderCarritoMobile() {
         </div>
       </div>
 
-      <div class="h-[67px] md:hidden" />
+      <div class="h-[90px] md:hidden" />
     </Show>
   );
 }

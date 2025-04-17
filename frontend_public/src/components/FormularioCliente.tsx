@@ -6,7 +6,7 @@ import {
 } from 'solid-js';
 import { obtenerProvincias, obtenerLocalidades } from '../services/ubicacion.service';
 import { capitalizarTexto } from '../utils/formato';
-
+import { validarTelefonoArgentino } from "../utils/validarTelefono";
 interface Props {
   onConfirmar: (datosCliente: any) => void;
 }
@@ -35,7 +35,11 @@ export default function FormularioCliente({ onConfirmar }: Props) {
     const nuevosErrores: Record<string, string> = {};
 
     if (!nombre().trim()) nuevosErrores.nombre = 'El nombre es obligatorio';
-    if (!telefono().trim()) nuevosErrores.telefono = 'El teléfono es obligatorio';
+    if (!telefono().trim()) {
+      nuevosErrores.telefono = 'El teléfono es obligatorio';
+    } else if (!validarTelefonoArgentino(telefono())) {
+      nuevosErrores.telefono = 'El número no es válido. Usá formato 11XXXXXXXX o +54911XXXXXXXX.';
+    }
     if (!email().trim() || !email().includes('@')) nuevosErrores.email = 'El email no es válido';
     if (!direccion().trim()) nuevosErrores.direccion = 'La dirección es obligatoria';
     if (!cuit().trim()) nuevosErrores.cuit = 'El CUIT/CUIL es obligatorio';
@@ -77,12 +81,12 @@ export default function FormularioCliente({ onConfirmar }: Props) {
 
       {/* Teléfono */}
       <input
-        class={`w-full border px-3 py-2 rounded text-sm ${errores().telefono ? 'border-red-500' : ''}`}
-        type="text"
-        placeholder="Teléfono *"
-        value={telefono()}
-        onInput={(e) => setTelefono(e.currentTarget.value)}
-      />
+  class={`w-full border px-3 py-2 rounded text-sm ${errores().telefono ? 'border-red-500' : ''}`}
+  type="text"
+  placeholder="Whatsapp. Ej: 11XXXXXXXX o 351XXXXXXXX"
+  value={telefono()}
+  onInput={(e) => setTelefono(e.currentTarget.value)}
+/>
       <Show when={errores().telefono}>
         <p class="text-red-600 text-xs">{errores().telefono}</p>
       </Show>
