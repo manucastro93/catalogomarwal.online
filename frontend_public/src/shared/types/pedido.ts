@@ -1,3 +1,4 @@
+import type { Vendedor } from './vendedor';
 export interface PedidoClienteInput {
   nombre: string;
   telefono: string;
@@ -23,4 +24,5 @@ export interface PedidoPayload {
   cliente: PedidoClienteInput;
   carrito: ItemCarritoInput[];
   usuarioId?: number | null;
+  vendedor?: Vendedor;
 }
