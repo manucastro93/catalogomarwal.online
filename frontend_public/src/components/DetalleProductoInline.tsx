@@ -2,6 +2,8 @@ import { createSignal, Show } from 'solid-js';
 import { agregarAlCarrito, setCarritoAbierto } from '../store/carrito';
 import type { Producto } from '../shared/types/producto';
 import { formatearPrecio } from '../utils/formato';  
+import { animarHaciaCarrito } from "../utils/animarHaciaCarrito";
+import { esMobile } from "../utils/esMobile";
 
 interface Props {
   producto: Producto;
@@ -23,6 +25,14 @@ export default function DetalleProductoInline({ producto, onVolver, onSelecciona
 
   const handleAgregar = () => {
     if (!producto.nombre) return;
+  
+    if (esMobile()) {
+      const imagenEl = document.querySelector("#detalle-producto-img") as HTMLImageElement;
+      if (imagenEl) {
+        animarHaciaCarrito(imagenEl);
+      }
+    }
+  
     agregarAlCarrito({
       id: producto.id,
       nombre: producto.nombre,
@@ -30,8 +40,11 @@ export default function DetalleProductoInline({ producto, onVolver, onSelecciona
       imagen: producto.Imagenes?.[0]?.url || '/placeholder.png',
       precioPorBulto: Number(producto.precioPorBulto) || 0,
       unidadPorBulto: producto.unidadPorBulto || 1,
-    });
-    setCarritoAbierto(true);
+    }, false); // no abrir el carrito en mobile
+  
+    if (window.innerWidth >= 768) {
+      setCarritoAbierto(true); // solo en desktop
+    }
   };
 
   return (
@@ -40,6 +53,7 @@ export default function DetalleProductoInline({ producto, onVolver, onSelecciona
         {/* Imágenes */}
         <div class="relative w-full h-115 bg-white border rounded flex items-center justify-center">
           <img
+            id="detalle-producto-img"
             src={`${import.meta.env.VITE_UPLOADS_URL}${producto.Imagenes?.[imagenActual()]?.url}`}
             alt={`Imagen ${imagenActual() + 1}`}
             class="max-h-full max-w-full object-contain"
