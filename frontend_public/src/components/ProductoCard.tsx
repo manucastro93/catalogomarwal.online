@@ -79,13 +79,15 @@ export default function ProductoCard({
 
       <h3 class="text-sm font-bold mb-1">{nombre}</h3>
 
-      <p class="text-sm text-gray-800">{formatearPrecio(precioBulto)} x bulto</p>
-
       {precioUnitario && unidadPorBulto && (
-        <p class="text-xs text-gray-500">
-          ({formatearPrecio(precioUnitario)} c/u x {unidadPorBulto}un)
-        </p>
-      )}
+  <p class="text-sm text-gray-800">
+    {formatearPrecio(precioUnitario)} c/u
+  </p>
+)}
+
+<p class="text-xs text-gray-600">
+  {formatearPrecio(precioBulto)} x bulto ({unidadPorBulto} un)
+</p>
 
       {/* Botón Agregar - desktop (posición absoluta) */}
       <button
