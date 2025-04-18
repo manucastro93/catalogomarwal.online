@@ -220,6 +220,7 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
     const filas = leerExcelProductos(req.file.path);
 
     const productosCreados = [];
+
     for (const fila of filas) {
       const {
         sku,
@@ -229,13 +230,32 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
         precioUnitario,
         precioPorBulto,
         unidadPorBulto,
-        categoriaId,
+        categoria, // ← ahora recibimos nombre de categoría
       } = fila;
 
       if (!sku || isNaN(precioUnitario)) continue;
 
       const yaExiste = await Producto.findOne({ where: { sku } });
       if (yaExiste) continue;
+
+      // Buscar categoría por nombre
+      let categoriaExistente = await Categoria.findOne({
+        where: { nombre: categoria },
+        paranoid: false,
+      });
+
+      // Si está eliminada, restaurar
+      if (categoriaExistente?.deletedAt) {
+        await categoriaExistente.restore();
+      }
+
+      // Si no existe, crearla
+      if (!categoriaExistente) {
+        categoriaExistente = await Categoria.create({
+          nombre: categoria,
+          estado: true,
+        });
+      }
 
       const producto = await Producto.create({
         sku,
@@ -245,7 +265,7 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
         precioUnitario,
         precioPorBulto,
         unidadPorBulto,
-        categoriaId,
+        categoriaId: categoriaExistente.id,
       });
 
       productosCreados.push(producto);
@@ -259,4 +279,3 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
     next(error);
   }
 };
-

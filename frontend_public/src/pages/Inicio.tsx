@@ -149,8 +149,8 @@ export default function Inicio() {
             }
           >
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-5">
-              <For each={filtrados()}>
-                {(prod) => (
+            <For each={filtrados()?.filter(p => Array.isArray(p.Imagenes) && p.Imagenes.length > 0)}>
+            {(prod) => (
                   <ProductoCard
                     id={prod.id}
                     nombre={prod.nombre}

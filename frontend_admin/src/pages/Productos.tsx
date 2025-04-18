@@ -19,6 +19,7 @@ import ModalConfirmacion from "../components/ModalConfirmacion";
 import ModalMensaje from "../components/ModalMensaje";
 import Loader from "../components/Loader";
 import type { Producto } from "../shared/types/producto";
+import { formatearPrecio } from "../utils/formato"; 
 
 export default function Productos() {
   const [pagina, setPagina] = createSignal(1);
@@ -190,10 +191,19 @@ export default function Productos() {
                 <For each={respuesta()?.data}>
                   {(p: Producto) => (
                     <tr class="hover:bg-gray-50 border-b">
+                      <td>  
+                      <Show when={Array.isArray(p.Imagenes) && p.Imagenes.length > 0}>
+                        <img
+                          src={`${import.meta.env.VITE_BACKEND_URL}${p.Imagenes?.[0]?.url}`}
+                          alt={p.nombre}
+                          class="h-12 w-12 object-cover rounded"
+                        />
+                      </Show>
+                      </td>
                       <td class="p-3">{p.sku}</td>
                       <td class="p-3">{p.nombre}</td>
-                      <td class="p-3">${p.precioUnitario}</td>
-                      <td class="p-3">${p.precioPorBulto}</td>
+                      <td class="p-3">{formatearPrecio(p.precioUnitario)}</td>
+                      <td class="p-3">{formatearPrecio(p.precioPorBulto)}</td>
                       <td class="p-3">{p.hayStock ? "Sí" : "No"}</td>
                       <td class="p-3 flex gap-2">
                         <button
