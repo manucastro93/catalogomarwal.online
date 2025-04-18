@@ -23,6 +23,7 @@ export default function ModalImportarExcel(props: {
   const [errores, setErrores] = createSignal<Set<string>>(new Set());
   const [mensaje, setMensaje] = createSignal('');
   const [categorias] = createResource(obtenerCategorias);
+  const [subiendo, setSubiendo] = createSignal(false);
 
   const manejarArchivo = (e: Event) => {
     const input = e.target as HTMLInputElement;
@@ -40,6 +41,17 @@ export default function ModalImportarExcel(props: {
       const filas = json.slice(1).map((fila: any[]) => {
         const completa = [...fila];
         while (completa.length < HEADERS.length) completa.push('');
+
+        const precioUnitario = Number(completa[3]);
+        const precioPorBulto = Number(completa[4]);
+        const unidadPorBulto = Number(completa[5]);
+
+        if (!isNaN(precioUnitario) && !isNaN(unidadPorBulto)) {
+          completa[4] = (precioUnitario * unidadPorBulto).toFixed(2);
+        } else if (!isNaN(precioPorBulto) && !isNaN(unidadPorBulto) && unidadPorBulto > 0) {
+          completa[3] = (precioPorBulto / unidadPorBulto).toFixed(2);
+        }
+
         return completa;
       });
 
@@ -55,12 +67,9 @@ export default function ModalImportarExcel(props: {
     const errores = new Set<string>();
     rows.slice(1).forEach((fila, i) => {
       const filaIdx = i + 1;
-      const [sku, , , precioUnitario, , , categoriaNombre] = fila;
-
+      const [sku, , , precioUnitario] = fila;
       if (!sku) errores.add(`sku-${filaIdx}`);
-      if (!precioUnitario || isNaN(Number(precioUnitario))) errores.add(`precioUnitario-${filaIdx}`);
-      const existeCategoria = categorias()?.some((c: Categoria) => c.nombre === categoriaNombre);
-      if (!existeCategoria) errores.add(`categoria-${filaIdx}`);
+      if (precioUnitario === '' || isNaN(Number(precioUnitario))) errores.add(`precioUnitario-${filaIdx}`);
     });
     setErrores(errores);
   };
@@ -71,36 +80,36 @@ export default function ModalImportarExcel(props: {
     setPreview((prev) => {
       const copia = prev.map((fila) => [...fila]);
       copia[filaIdx + 1][colIdx] = valor;
+
+      const fila = copia[filaIdx + 1];
+      const unidadPorBulto = Number(fila[5]);
+      const precioUnitario = Number(fila[3]);
+      const precioPorBulto = Number(fila[4]);
+
+      if ((colIdx === 3 || colIdx === 5) && !isNaN(precioUnitario) && !isNaN(unidadPorBulto)) {
+        copia[filaIdx + 1][4] = (precioUnitario * unidadPorBulto).toFixed(2);
+      }
+      if ((colIdx === 4 || colIdx === 5) && !isNaN(precioPorBulto) && !isNaN(unidadPorBulto) && unidadPorBulto > 0) {
+        copia[filaIdx + 1][3] = (precioPorBulto / unidadPorBulto).toFixed(2);
+      }
+
       validar(copia);
       return copia;
     });
+
+    setTimeout(() => {
+      const input = document.querySelector(
+        `input[data-row='${filaIdx}'][data-col='${colIdx}']`
+      ) as HTMLInputElement;
+      input?.focus();
+      input?.setSelectionRange(input.value.length, input.value.length);
+    }, 0);
   };
 
   const subirProductos = async () => {
-    const headerFinal = [
-      'sku',
-      'nombre',
-      'descripcion',
-      'hayStock',
-      'precioUnitario',
-      'precioPorBulto',
-      'unidadPorBulto',
-      'categoriaId',
-    ];
-
-    const datos = preview().slice(1).map((fila) => {
-      const categoria = categorias()?.find((c: Categoria) => c.nombre === fila[6]);
-      return [
-        fila[0], // sku
-        fila[1], // nombre
-        fila[2], // descripcion
-        'Sí',    // hayStock por defecto
-        fila[3], // precioUnitario
-        fila[4], // precioPorBulto
-        fila[5], // unidadPorBulto
-        categoria?.id || '', // categoriaId
-      ];
-    });
+    setSubiendo(true);
+    const headerFinal = [...HEADERS];
+    const datos = preview().slice(1);
 
     const hoja = XLSX.utils.aoa_to_sheet([headerFinal, ...datos]);
     const wb = XLSX.utils.book_new();
@@ -122,13 +131,15 @@ export default function ModalImportarExcel(props: {
     } catch (err) {
       console.error('❌ Error al importar productos:', err);
       setMensaje('Error al importar productos');
+    } finally {
+      setSubiendo(false);
     }
   };
 
   return (
     <Show when={props.abierto}>
       <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg max-w-6xl w-full shadow">
+        <div class="bg-white p-6 rounded-lg max-w-6xl w-full shadow relative">
           <h2 class="text-lg font-semibold mb-4">Importar productos desde Excel</h2>
 
           <label class="block w-max cursor-pointer bg-blue-600 text-white px-4 py-2 rounded mb-4">
@@ -144,6 +155,7 @@ export default function ModalImportarExcel(props: {
                     <For each={HEADERS}>
                       {(col) => <th class="p-2 border text-left">{col}</th>}
                     </For>
+                    <th class="p-2 border text-left">Eliminar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,22 +175,12 @@ export default function ModalImportarExcel(props: {
                                   <td class="p-1 border">
                                     <select
                                       value={celda}
-                                      class={`w-full px-1 py-0.5 rounded outline-none ${
-                                        celdaEsInvalida(col, filaN)
-                                          ? 'bg-red-100 text-red-600 font-semibold'
-                                          : ''
-                                      }`}
-                                      onInput={(e) =>
-                                        editarCelda(index, j, e.currentTarget.value)
-                                      }
+                                      class={`w-full px-1 py-0.5 rounded outline-none ${celdaEsInvalida(col, filaN) ? 'bg-red-100 text-red-600 font-semibold' : ''}`}
+                                      onInput={(e) => editarCelda(index, j, e.currentTarget.value)}
                                     >
-                                      <option value="">Seleccionar</option>
+                                      <option value={celda}>{celda || 'Seleccionar'}</option>
                                       <For each={categorias()}>
-                                        {(c: Categoria) => (
-                                          <option value={c.nombre} selected={celda === c.nombre}>
-                                            {c.nombre}
-                                          </option>
-                                        )}
+                                        {(c: Categoria) => <option value={c.nombre}>{c.nombre}</option>}
                                       </For>
                                     </select>
                                   </td>
@@ -188,20 +190,29 @@ export default function ModalImportarExcel(props: {
                               return (
                                 <td class="p-1 border">
                                   <input
+                                    data-row={index}
+                                    data-col={j}
                                     value={celda}
-                                    class={`w-full px-1 py-0.5 rounded outline-none ${
-                                      celdaEsInvalida(col, filaN)
-                                        ? 'bg-red-100 text-red-600 font-semibold'
-                                        : ''
-                                    }`}
-                                    onInput={(e) =>
-                                      editarCelda(index, j, e.currentTarget.value)
-                                    }
+                                    class={`w-full px-1 py-0.5 rounded outline-none ${celdaEsInvalida(col, filaN) ? 'bg-red-100 text-red-600 font-semibold' : ''}`}
+                                    onInput={(e) => editarCelda(index, j, e.currentTarget.value)}
                                   />
                                 </td>
                               );
                             }}
                           </For>
+                          <td class="p-1 border text-center">
+                            <button
+                              onClick={() => {
+                                const actual = preview();
+                                const nueva = [actual[0], ...actual.slice(1).filter((_, i) => i !== index)];
+                                setPreview(nueva);
+                                validar(nueva);
+                              }}
+                              class="text-red-600 hover:text-red-800"
+                            >
+                              🗑️
+                            </button>
+                          </td>
                         </tr>
                       );
                     }}
@@ -211,11 +222,14 @@ export default function ModalImportarExcel(props: {
             </div>
           </Show>
 
+          <Show when={errores().size > 0}>
+            <p class="text-red-600 text-sm font-medium mt-4">
+              ⚠️ Hay celdas obligatorias vacías o con formato incorrecto. Corregilas antes de continuar.
+            </p>
+          </Show>
+
           <div class="mt-4 text-right">
-            <button
-              onClick={props.onCerrar}
-              class="bg-gray-400 text-white px-4 py-1 rounded"
-            >
+            <button onClick={props.onCerrar} class="bg-gray-400 text-white px-4 py-1 rounded">
               Cancelar
             </button>
             <button
@@ -226,6 +240,14 @@ export default function ModalImportarExcel(props: {
               Subir
             </button>
           </div>
+
+          <Show when={subiendo()}>
+            <div class="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-50">
+              <div class="text-center text-blue-600 font-semibold text-lg animate-pulse">
+                Subiendo productos...
+              </div>
+            </div>
+          </Show>
 
           <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje('')} />
         </div>

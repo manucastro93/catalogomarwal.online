@@ -11,9 +11,18 @@ export const leerExcelProductos = (ruta) => {
   const filas = json.slice(1).map((fila) => {
     const obj = {};
     headers.forEach((h, i) => {
-      obj[h] = fila[i];
+      obj[h.trim()] = fila[i];
     });
-    return obj;
+    return {
+      sku: obj.sku,
+      nombre: obj.nombre,
+      descripcion: obj.descripcion,
+      hayStock: obj.hayStock || 'Sí',
+      precioUnitario: obj.precioUnitario,
+      precioPorBulto: obj.precioPorBulto,
+      unidadPorBulto: obj.unidadPorBulto,
+      categoria: obj.categoria, // <-- nombre textual
+    };
   });
 
   return filas;
