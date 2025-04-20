@@ -1,5 +1,5 @@
 import api from './api';
-import type { Producto } from '../shared/types/producto';
+import type { Producto } from '../types/producto';
 
 export const obtenerProductos = async (params = {}) => {
   const { data } = await api.get('/productos', { params });
@@ -55,4 +55,16 @@ export const importarProductosDesdeExcel = async (formData: FormData) => {
     },
   });
   return data;
+};
+
+export const actualizarOrdenImagenes = async (imagenes: { id: number; orden: number }[]) => {
+  const { data } = await api.put('/productos/imagenes/orden', { imagenes });
+  return data;
+};
+
+export const buscarProductosPorTexto = async (texto: string): Promise<Producto[]> => {
+  const { data } = await api.get('/productos', {
+    params: { buscar: texto, limit: 10 },
+  });
+  return data.data || [];
 };

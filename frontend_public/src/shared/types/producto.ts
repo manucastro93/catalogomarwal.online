@@ -3,6 +3,7 @@ import type { Categoria } from './categoria';
 export interface ImagenProducto {
   id: number;
   url: string;
+  orden?: number;
   productoId: number;
 }
 
@@ -11,7 +12,7 @@ export interface Producto {
   sku: string;
   nombre?: string;
   descripcion?: string;
-  hayStock?: boolean;
+  activo?: boolean;
   precioUnitario: number;
   precioPorBulto?: number;
   unidadPorBulto?: number;

@@ -1,39 +1,25 @@
-import { Notificacion, Usuario } from '../models/index.js';
+import { Notificacion } from '../models/index.js';
 import { Op } from 'sequelize';
-
-export const crearNotificacion = async (req, res, next) => {
-  try {
-    const { titulo, mensaje, tipo = 'general', usuarioId = null } = req.body;
-
-    const notificacion = await Notificacion.create({
-      titulo,
-      mensaje,
-      tipo,
-      usuarioId,
-    });
-
-    res.status(201).json(notificacion);
-  } catch (error) {
-    next(error);
-  }
-};
 
 export const obtenerNotificaciones = async (req, res, next) => {
   try {
     const usuarioId = req.usuario?.id;
+
     const notificaciones = await Notificacion.findAll({
       where: {
         [Op.or]: [
           { usuarioId },
-          { usuarioId: null }, // notificaciones generales
+          { usuarioId: null }, // notificaciones globales
         ],
       },
       order: [['createdAt', 'DESC']],
-      include: [{ model: Usuario, as: 'usuario', attributes: ['id', 'nombre', 'email'] }],
+      limit: 100,
+      attributes: ['id', 'titulo', 'mensaje', 'leida', 'createdAt', 'pedidoId'] // ✅ importante
     });
 
     res.json(notificaciones);
   } catch (error) {
+    console.error('❌ Error al obtener notificaciones:', error);
     next(error);
   }
 };
@@ -43,11 +29,50 @@ export const marcarComoLeida = async (req, res, next) => {
     const { id } = req.params;
     const notificacion = await Notificacion.findByPk(id);
 
-    if (!notificacion) return res.status(404).json({ message: 'No encontrada' });
+    if (!notificacion) return res.status(404).json({ message: 'Notificación no encontrada' });
 
     await notificacion.update({ leida: true });
-    res.json({ message: 'Marcada como leída' });
+    res.json({ message: 'Notificación marcada como leída' });
   } catch (error) {
+    console.error('❌ Error al marcar como leída:', error);
+    next(error);
+  }
+};
+
+export const eliminarNotificacion = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const notificacion = await Notificacion.findByPk(id);
+
+    if (!notificacion) return res.status(404).json({ message: 'Notificación no encontrada' });
+
+    await notificacion.destroy();
+    res.json({ message: 'Notificación eliminada' });
+  } catch (error) {
+    console.error('❌ Error al eliminar notificación:', error);
+    next(error);
+  }
+};
+
+export const crearNotificacion = async (req, res, next) => {
+  try {
+    const { mensaje, titulo, tipo, usuarioId = null, pedidoId = null } = req.body;
+
+    if (!mensaje || !titulo) {
+      return res.status(400).json({ message: 'Faltan campos obligatorios' });
+    }
+
+    const notificacion = await Notificacion.create({
+      mensaje,
+      titulo,
+      tipo,
+      usuarioId,
+      pedidoId,
+    });
+
+    res.status(201).json({ message: 'Notificación creada', notificacion });
+  } catch (error) {
+    console.error('❌ Error al crear notificación:', error);
     next(error);
   }
 };

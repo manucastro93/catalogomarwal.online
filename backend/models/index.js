@@ -69,6 +69,7 @@ export const {
   LogCliente,
   LogAuditoria,
   Notificacion,
+  HistorialCliente
 } = db;
 
 export { sequelize, Sequelize };

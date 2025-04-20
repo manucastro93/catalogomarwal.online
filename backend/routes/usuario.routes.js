@@ -1,4 +1,3 @@
-// routes/usuario.routes.js
 import express from 'express';
 import {
   obtenerUsuarios,
@@ -9,33 +8,35 @@ import {
   crearVendedor,
   actualizarVendedor,
   eliminarVendedor,
+  buscarVendedorPorLink,
   obtenerAdministradores,
   crearAdministrador,
   actualizarAdministrador,
   eliminarAdministrador,
-  buscarVendedorPorLink
 } from '../controllers/usuario.controller.js';
+
+import { validarUsuario } from '../validaciones/usuario.validation.js';
+import { registrarAuditoria } from '../middlewares/auditoria.js';
 
 const router = express.Router();
 
-// CRUD general de usuarios
+// ================== USUARIOS GENERALES ==================
 router.get('/', obtenerUsuarios);
-router.post('/', crearUsuario);
-router.put('/:id', actualizarUsuario);
-router.delete('/:id', eliminarUsuario);
+router.post('/', validarUsuario, crearUsuario, registrarAuditoria('Usuario', 'creado'));
+router.put('/:id', validarUsuario, actualizarUsuario, registrarAuditoria('Usuario', 'modificado'));
+router.delete('/:id', eliminarUsuario, registrarAuditoria('Usuario', 'eliminado'));
 
-
-// Vendedores
+// ================== VENDEDORES ==================
 router.get('/vendedores', obtenerVendedores);
-router.post('/vendedores', crearVendedor);
-router.put('/vendedores/:id', actualizarVendedor);
-router.delete('/vendedores/:id', eliminarVendedor);
+router.post('/vendedores', validarUsuario, crearVendedor, registrarAuditoria('Usuario', 'creado'));
+router.put('/vendedores/:id', validarUsuario, actualizarVendedor, registrarAuditoria('Usuario', 'modificado'));
+router.delete('/vendedores/:id', eliminarVendedor, registrarAuditoria('Usuario', 'eliminado'));
 router.get('/vendedores/vendedor-por-link/:link', buscarVendedorPorLink);
 
-// Administradores
+// ================== ADMINISTRADORES ==================
 router.get('/administradores', obtenerAdministradores);
-router.post('/administradores', crearAdministrador);
-router.put('/administradores/:id', actualizarAdministrador);
-router.delete('/administradores/:id', eliminarAdministrador);
+router.post('/administradores', validarUsuario, crearAdministrador, registrarAuditoria('Usuario', 'creado'));
+router.put('/administradores/:id', validarUsuario, actualizarAdministrador, registrarAuditoria('Usuario', 'modificado'));
+router.delete('/administradores/:id', eliminarAdministrador, registrarAuditoria('Usuario', 'eliminado'));
 
 export default router;

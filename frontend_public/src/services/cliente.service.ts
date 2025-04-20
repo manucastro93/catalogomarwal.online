@@ -47,7 +47,6 @@ export const detectarClientePorIp = async () => {
       const data = await res.json();
       if (data?.clienteId) {
         localStorage.setItem("clienteId", data.clienteId.toString());
-        console.log("🟢 clienteId detectado por IP:", data.clienteId);
       }
     } else {
       console.warn("ℹ️ No se encontró cliente por IP");

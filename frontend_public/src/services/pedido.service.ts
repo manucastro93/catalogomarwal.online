@@ -59,3 +59,24 @@ export const cancelarPedido = async (id: number) => {
     throw err;
   }
 };
+
+export const validarCarrito = async (carrito: any[]) => {
+  try {
+    const res = await fetch(`${API_URL}/pedidos/validar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ carrito }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw data; // contiene mensaje y errores
+    }
+
+    return data; // { mensaje: "Carrito válido." }
+  } catch (err) {
+    console.error("❌ Error al validar carrito:", err);
+    throw err;
+  }
+};

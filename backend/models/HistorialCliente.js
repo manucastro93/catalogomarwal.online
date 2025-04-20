@@ -21,7 +21,7 @@ export default (sequelize, DataTypes) => {
         allowNull: true,
       },
     }, {
-      tableName: 'historial_clientes',
+      tableName: 'HistorialClientes',
       timestamps: true,
       paranoid: true,
     });

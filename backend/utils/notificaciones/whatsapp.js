@@ -3,6 +3,10 @@ import twilio from 'twilio';
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
 
 export async function enviarWhatsappPedido({ cliente, pedido, carrito, vendedor }) {
+  if (!cliente || !pedido || !Array.isArray(carrito)) {
+    throw new Error('Faltan datos obligatorios o el carrito no es válido para WhatsApp');
+  }
+
   const mensaje = `
 🛍️ *¡Gracias por tu pedido, ${cliente.nombre}!*
 
@@ -10,14 +14,13 @@ export async function enviarWhatsappPedido({ cliente, pedido, carrito, vendedor 
 
 👤 *Atendido por:* ${vendedor?.nombre || 'Nuestro equipo'}
 💬 Tel: ${cliente.telefono}
-💰 *Total:* $${pedido.total}
+💰 *Total:* $${pedido.total.toLocaleString('es-AR')}
 
 🧾 *Detalle:*
 ${carrito.map((p) => `• ${p.nombre} x ${p.cantidad} bultos`).join('\n')}
 
 📲 Te mantendremos al tanto por este medio.
 `;
-
 
   function formatearNumeroWhatsapp(num) {
     const limpio = num.replace(/\D/g, '');

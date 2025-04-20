@@ -1,5 +1,5 @@
 import api from './api';
-import type { Pedido } from '../shared/types/pedido';
+import type { Pedido, PedidoPayload } from '../types/pedido';
 
 export const obtenerPedidos = async (params: {
   pagina?: number;
@@ -28,4 +28,9 @@ export const actualizarEstadoPedido = async (id: number, estado: string) => {
 
 export const eliminarPedido = async (id: number) => {
   await api.delete(`/pedidos/${id}`);
+};
+
+export const crearPedidoDesdePanel = async (payload: PedidoPayload): Promise<Pedido> => {
+  const { data } = await api.post('/pedidos/desde-panel', payload);
+  return data;
 };

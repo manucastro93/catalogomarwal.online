@@ -1,5 +1,6 @@
 import api from './api';
-import type { Cliente } from '../shared/types/cliente';
+import type { Cliente } from '../types/cliente';
+import type { Producto } from '../types/producto';
 
 export const obtenerClientes = async (params: any) => {
   const { data } = await api.get('/clientes', { params });
@@ -25,4 +26,11 @@ export const obtenerClientesConVentas = async (vendedorId?: number): Promise<Cli
   const params = vendedorId ? { vendedorId } : {};
   const { data } = await api.get('/clientes/mapa', { params });
   return data;
+};
+
+export const buscarClientesPorTexto = async (texto: string): Promise<Cliente[]> => {
+  const { data } = await api.get('/clientes', {
+    params: { buscar: texto, limit: 10 },
+  });
+  return data.data || [];
 };

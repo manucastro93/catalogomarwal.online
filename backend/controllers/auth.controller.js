@@ -39,3 +39,7 @@ export const login = async (req, res, next) => {
     next(error);
   }
 };
+
+export const verificarToken = (req, res) => {
+  res.json({ message: 'Token válido', usuario: req.usuario });
+};

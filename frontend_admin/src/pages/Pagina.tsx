@@ -5,10 +5,10 @@ import {
   crearBanner,
   eliminarBanner,
 } from "../services/pagina.service";
-import type { Pagina } from "../shared/types/pagina";
-import type { Banner } from "../shared/types/banner";
-import ModalMensaje from "../components/ModalMensaje";
-import ModalConfirmacion from "../components/ModalConfirmacion";
+import type { Pagina } from "../types/pagina";
+import type { Banner } from "../types/banner";
+import ModalMensaje from "../components/Layout/ModalMensaje";
+import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
 import dayjs from "dayjs";
 
 export default function Pagina() {
@@ -17,10 +17,13 @@ export default function Pagina() {
   const [mensaje, setMensaje] = createSignal("");
   const [bannerAEliminar, setBannerAEliminar] = createSignal<Banner | null>(null);
 
-  const [nuevoBanner, setNuevoBanner] = createSignal<
-    Partial<Banner & { imagen: File | "" }>
-  >({
-    imagen: "",
+  const [nuevoBanner, setNuevoBanner] = createSignal<{
+    imagen: File | null;
+    orden: number;
+    fechaInicio: string;
+    fechaFin: string;
+  }>({
+    imagen: null,
     orden: 1,
     fechaInicio: "",
     fechaFin: "",
@@ -39,30 +42,23 @@ export default function Pagina() {
   };
 
   const handleCrearBanner = async () => {
-    const banner = nuevoBanner();
-    if (!banner.imagen || typeof banner.imagen === "string") {
+    const { imagen, orden, fechaInicio, fechaFin } = nuevoBanner();
+
+    if (!imagen) {
       setMensaje("Seleccioná una imagen válida");
       return;
     }
 
     const formData = new FormData();
-    formData.append("imagen", banner.imagen);
-    formData.append("orden", String(banner.orden || 1));
-    formData.append("fechaInicio", banner.fechaInicio || "");
-    formData.append("fechaFin", banner.fechaFin || "");
-
-    console.log("📤 Enviando formData con:", {
-      orden: banner.orden,
-      fechaInicio: banner.fechaInicio,
-      fechaFin: banner.fechaFin,
-      imagen: banner.imagen.name,
-    });
+    formData.append("imagen", imagen);
+    formData.append("orden", String(orden || 1));
+    formData.append("fechaInicio", fechaInicio || "");
+    formData.append("fechaFin", fechaFin || "");
 
     try {
-      const response = await crearBanner(formData);
-      console.log("✅ Banner creado:", response);
+      await crearBanner(formData);
       setMensaje("Banner creado correctamente");
-      setNuevoBanner({ imagen: "", orden: 1, fechaInicio: "", fechaFin: "" });
+      setNuevoBanner({ imagen: null, orden: 1, fechaInicio: "", fechaFin: "" });
       refetch();
     } catch (err: any) {
       console.error("❌ Error al crear el banner:", err);
@@ -101,7 +97,7 @@ export default function Pagina() {
             />
           </label>
           <Show when={logo()}>
-            <p class="text-sm text-gray-700">{logo()?.name}</p>
+            <p class="text-sm text-gray-700">{(logo() as File).name}</p>
           </Show>
           <button
             onClick={handleLogoUpload}
@@ -124,14 +120,15 @@ export default function Pagina() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) =>
-                  setNuevoBanner({ ...nuevoBanner(), imagen: e.currentTarget.files?.[0] })
-                }
+                onChange={(e) => {
+                  const archivo = e.currentTarget.files?.[0] ?? null;
+                  setNuevoBanner({ ...nuevoBanner(), imagen: archivo });
+                }}
                 class="hidden"
               />
             </label>
-            <Show when={nuevoBanner().imagen && typeof nuevoBanner().imagen !== "string"}>
-              <p class="text-sm mt-2 text-gray-700">{(nuevoBanner().imagen as File)?.name}</p>
+            <Show when={nuevoBanner().imagen}>
+              <p class="text-sm mt-2 text-gray-700">{nuevoBanner().imagen?.name}</p>
             </Show>
           </div>
 
@@ -155,7 +152,7 @@ export default function Pagina() {
             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio</label>
             <input
               type="date"
-              value={nuevoBanner().fechaInicio}
+              value={nuevoBanner().fechaInicio || ""}
               onInput={(e) =>
                 setNuevoBanner({ ...nuevoBanner(), fechaInicio: e.currentTarget.value })
               }
@@ -166,7 +163,7 @@ export default function Pagina() {
             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de fin</label>
             <input
               type="date"
-              value={nuevoBanner().fechaFin}
+              value={nuevoBanner().fechaFin || ""}
               onInput={(e) =>
                 setNuevoBanner({ ...nuevoBanner(), fechaFin: e.currentTarget.value })
               }
@@ -219,10 +216,7 @@ export default function Pagina() {
 
       <ModalConfirmacion
         abierto={!!bannerAEliminar()}
-        titulo="¿Eliminar banner?"
-        mensaje="Esta acción no se puede deshacer."
-        confirmarTexto="Eliminar"
-        cancelarTexto="Cancelar"
+        mensaje="¿Eliminar banner?"
         onConfirmar={async () => {
           try {
             await eliminarBanner(bannerAEliminar()!.id);

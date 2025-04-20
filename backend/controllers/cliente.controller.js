@@ -2,6 +2,7 @@ import { Cliente, Provincia, Localidad, Usuario, Pedido } from '../models/index.
 import { Op, fn, col } from 'sequelize';
 import { validationResult } from 'express-validator';
 import { geocodificarDireccion } from '../utils/geocodificarDireccion.js';
+import { registrarHistorialCliente } from '../utils/registrarHistorialCliente.js';
 
 export const listarClientes = async (req, res) => {
   try {
@@ -62,55 +63,37 @@ export const crearCliente = async (req, res, next) => {
   try {
     const errores = validationResult(req);
     if (!errores.isEmpty()) {
-      return res.status(400).json({
-        mensaje: 'Error de validación',
-        errores: errores.array(),
-      });
+      return res.status(400).json({ mensaje: 'Error de validación', errores: errores.array() });
     }
 
     const {
-      nombre,
-      telefono,
-      email,
-      razonSocial,
-      direccion,
-      provinciaId,
-      localidadId,
-      cuit_cuil,
+      nombre, telefono, email, razonSocial,
+      direccion, provinciaId, localidadId, cuit_cuil
     } = req.body;
 
     if (!nombre || !telefono || !email || !direccion || !cuit_cuil) {
       return res.status(400).json({ mensaje: 'Faltan campos obligatorios' });
     }
 
-    if (provinciaId) {
-      const provincia = await Provincia.findByPk(provinciaId);
-      if (!provincia) return res.status(400).json({ mensaje: 'Provincia no encontrada' });
+    if (provinciaId && !(await Provincia.findByPk(provinciaId))) {
+      return res.status(400).json({ mensaje: 'Provincia no encontrada' });
     }
-
-    if (localidadId) {
-      const localidad = await Localidad.findByPk(localidadId);
-      if (!localidad) return res.status(400).json({ mensaje: 'Localidad no encontrada' });
+    if (localidadId && !(await Localidad.findByPk(localidadId))) {
+      return res.status(400).json({ mensaje: 'Localidad no encontrada' });
     }
 
     const provinciaNombre = provinciaId ? (await Provincia.findByPk(provinciaId))?.nombre : '';
     const localidadNombre = localidadId ? (await Localidad.findByPk(localidadId))?.nombre : '';
-
     const direccionCompleta = `${direccion}, ${localidadNombre}, ${provinciaNombre}, Argentina`;
     const { latitud, longitud } = await geocodificarDireccion(direccionCompleta);
 
     const nuevo = await Cliente.create({
-      nombre,
-      telefono,
-      email,
-      razonSocial,
-      direccion,
+      nombre, telefono, email, razonSocial, direccion,
       provinciaId: provinciaId || null,
       localidadId: localidadId || null,
       cuit_cuil,
       vendedorId: req.usuario?.id || null,
-      latitud,
-      longitud,
+      latitud, longitud,
     });
 
     res.status(201).json(nuevo);
@@ -122,16 +105,11 @@ export const crearCliente = async (req, res, next) => {
 export const actualizarCliente = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const anterior = await Cliente.findByPk(id);
 
     const {
-      nombre,
-      telefono,
-      email,
-      razonSocial,
-      direccion,
-      provinciaId,
-      localidadId,
-      cuit_cuil,
+      nombre, telefono, email, razonSocial,
+      direccion, provinciaId, localidadId, cuit_cuil
     } = req.body;
 
     const provinciaNombre = provinciaId ? (await Provincia.findByPk(provinciaId))?.nombre : '';
@@ -139,23 +117,17 @@ export const actualizarCliente = async (req, res, next) => {
     const direccionCompleta = `${direccion}, ${localidadNombre}, ${provinciaNombre}, Argentina`;
     const { latitud, longitud } = await geocodificarDireccion(direccionCompleta);
 
-    await Cliente.update(
-      {
-        nombre,
-        telefono,
-        email,
-        razonSocial,
-        direccion,
-        provinciaId: provinciaId || null,
-        localidadId: localidadId || null,
-        cuit_cuil,
-        latitud,
-        longitud,
-      },
-      { where: { id } }
-    );
+    await Cliente.update({
+      nombre, telefono, email, razonSocial, direccion,
+      provinciaId: provinciaId || null,
+      localidadId: localidadId || null,
+      cuit_cuil,
+      latitud, longitud,
+    }, { where: { id } });
 
     const actualizado = await Cliente.findByPk(id);
+    await registrarHistorialCliente(anterior, actualizado, req.usuario?.id);
+
     res.json(actualizado);
   } catch (error) {
     next(error);
@@ -175,20 +147,12 @@ export const eliminarCliente = async (req, res, next) => {
 export const obtenerClientesConVentas = async (req, res) => {
   try {
     const clientes = await Cliente.findAll({
-      include: [
-        {
-          model: Pedido,
-          as: 'pedidos', 
-          attributes: [],
-          required: false,
-        }
-      ],
+      include: [{ model: Pedido, as: 'pedidos', attributes: [], required: false }],
       attributes: {
         include: [[fn('SUM', col('pedidos.total')), 'totalVentas']],
       },
       group: ['Cliente.id'],
     });
-
     res.json(clientes);
   } catch (error) {
     console.error(error);

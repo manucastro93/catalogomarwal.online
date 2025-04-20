@@ -1,6 +1,6 @@
 import api from './api';
-import type { Pagina } from '../shared/types/pagina';
-import type { Banner } from '../shared/types/banner';
+import type { Pagina } from '../types/pagina';
+import type { Banner } from '../types/banner';
 
 export const obtenerPagina = async (): Promise<Pagina> => {
   const { data } = await api.get('/pagina');

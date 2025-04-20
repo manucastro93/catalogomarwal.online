@@ -6,15 +6,14 @@ import {
   eliminarCliente,
   obtenerClientesConVentas
 } from '../controllers/cliente.controller.js';
-import { validarCliente } from '../validaciones/cliente.validation.js';
-import { verificarToken } from '../middlewares/authMiddleware.js';
+import { registrarAuditoria } from '../middlewares/auditoria.js';
 
 const router = express.Router();
 
-router.get('/',verificarToken, listarClientes);
-router.get('/mapa', verificarToken, obtenerClientesConVentas);
-router.post('/', verificarToken, validarCliente, crearCliente);
-router.put('/:id', actualizarCliente);
-router.delete('/:id', eliminarCliente);
+router.get('/', listarClientes);
+router.get('/con-ventas', obtenerClientesConVentas);
+router.post('/', crearCliente, registrarAuditoria('Cliente', 'creado'));
+router.put('/:id', actualizarCliente, registrarAuditoria('Cliente', 'modificado'));
+router.delete('/:id', eliminarCliente, registrarAuditoria('Cliente', 'eliminado'));
 
 export default router;

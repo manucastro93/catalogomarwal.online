@@ -39,10 +39,26 @@ export default (sequelize, DataTypes) => {
   });
 
   Pedido.associate = (models) => {
-    Pedido.belongsTo(models.Cliente, { foreignKey: 'clienteId', as: 'cliente' });
-    Pedido.belongsTo(models.Usuario, { as: 'usuario', foreignKey: 'usuarioId' });
-    Pedido.hasMany(models.DetallePedido, { foreignKey: 'pedidoId', as: 'detalles' });
+    Pedido.belongsTo(models.Cliente, {
+      foreignKey: 'clienteId',
+      as: 'cliente',
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE'
+    });
+    Pedido.belongsTo(models.Usuario, {
+      as: 'usuario',
+      foreignKey: 'usuarioId',
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE'
+    });
+    Pedido.hasMany(models.DetallePedido, {
+      foreignKey: 'pedidoId',
+      as: 'detalles',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE'
+    });
   };
 
   return Pedido;
 };
+

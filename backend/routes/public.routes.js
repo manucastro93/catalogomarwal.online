@@ -18,5 +18,7 @@ router.get('/provincia/:provinciaId/localidades', listarLocalidadesPorProvincia)
 router.get('/localidades', listarLocalidadesPorProvinciaInput);
 router.get('/banners', listarBanners);
 router.get('/cliente-por-ip', obtenerClientePorIp);
+router.get('/productos', listarProductosPublicos);
+router.get('/categorias', listarCategorias);
 
 export default router;

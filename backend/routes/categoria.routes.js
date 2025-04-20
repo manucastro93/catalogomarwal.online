@@ -11,7 +11,7 @@ import { validarCategoria } from '../validaciones/categoria.validation.js';
 
 const router = express.Router();
 
-router.get('/', listarCategorias);
+router.get('/', verificarToken, listarCategorias);
 router.post('/', verificarToken, esAdminOSupremo, validarCategoria, crearCategoria);
 router.put('/:id', verificarToken, esAdminOSupremo, validarCategoria, editarCategoria);
 router.delete('/:id', verificarToken, esAdminOSupremo, eliminarCategoria);
