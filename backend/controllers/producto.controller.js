@@ -17,8 +17,14 @@ export const obtenerProductos = async (req, res, next) => {
 
     const offset = (page - 1) * limit;
     const where = {};
-    const include = [];
-
+    const include = [
+      {
+        model: ImagenProducto,
+        as: 'Imagenes',
+        required: false,
+      }
+    ];
+    
     if (buscar) {
       include.push({
         model: Categoria,
@@ -28,7 +34,7 @@ export const obtenerProductos = async (req, res, next) => {
           nombre: { [Op.like]: `%${buscar}%` },
         },
       });
-
+    
       where[Op.or] = [
         { nombre: { [Op.like]: `%${buscar}%` } },
         { sku: { [Op.like]: `%${buscar}%` } },
@@ -40,6 +46,7 @@ export const obtenerProductos = async (req, res, next) => {
         required: false,
       });
     }
+    
 
     if (categoriaId) {
       where.categoriaId = categoriaId;
