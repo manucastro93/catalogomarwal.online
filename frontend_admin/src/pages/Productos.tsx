@@ -1,10 +1,4 @@
-import {
-  createSignal,
-  createResource,
-  createMemo,
-  For,
-  Show
-} from "solid-js";
+import { createSignal, createResource, createMemo, For, Show } from "solid-js";
 import {
   obtenerProductos,
   obtenerProductoPorId,
@@ -12,14 +6,16 @@ import {
 } from "../services/producto.service";
 import { useAuth } from "../store/auth";
 import { obtenerCategorias } from "../services/categoria.service";
-import ModalNuevoProducto from "../components/ModalNuevoProducto";
-import ModalImportarExcel from "../components/ModalImportarExcel";
-import VerProductoModal from "../components/VerProductoModal";
-import ModalConfirmacion from "../components/ModalConfirmacion";
-import ModalMensaje from "../components/ModalMensaje";
-import Loader from "../components/Loader";
-import type { Producto } from "../shared/types/producto";
-import { formatearPrecio } from "../utils/formato"; 
+import ModalNuevoProducto from "../components/Producto/ModalNuevoProducto";
+import ModalImportarExcel from "../components/Producto/ModalImportarExcel";
+import VerProductoModal from "../components/Producto/VerProductoModal";
+import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
+import ModalMensaje from "../components/Layout/ModalMensaje";
+import Loader from "../components/Layout/Loader";
+import type { Producto } from "../types/producto";
+import { formatearPrecio } from "../utils/formato";
+import FiltrosProductos from "../components/Producto/FiltrosProductos";
+import TablaProductos from "../components/Producto/TablaProductos";
 
 export default function Productos() {
   const [pagina, setPagina] = createSignal(1);
@@ -76,7 +72,9 @@ export default function Productos() {
   };
 
   const handleEliminar = (id: number) => {
-    setProductoAEliminar(respuesta()?.data.find((p: Producto) => p.id === id) || null);
+    setProductoAEliminar(
+      respuesta()?.data.find((p: Producto) => p.id === id) || null
+    );
   };
 
   return (
@@ -104,138 +102,31 @@ export default function Productos() {
         )}
       </div>
 
-      <div class="flex gap-4 mb-4">
-        <input
-          type="text"
-          placeholder="Buscar por nombre..."
-          class="p-2 border rounded w-full max-w-md"
-          value={busqueda()}
-          onInput={(e) => {
-            setBusqueda(e.currentTarget.value);
-            setPagina(1);
-          }}
-        />
-
-        <select
-          class="p-2 border rounded"
-          value={categoriaSeleccionada()}
-          onInput={(e) => {
-            setCategoriaSeleccionada(e.currentTarget.value);
-            setPagina(1);
-          }}
-        >
-          <option value="">Todas las categorías</option>
-          <For each={categorias()}>
-            {(cat) => <option value={cat.id}>{cat.nombre}</option>}
-          </For>
-        </select>
-      </div>
+      <FiltrosProductos
+        busqueda={busqueda()}
+        categoriaSeleccionada={categoriaSeleccionada()}
+        categorias={categorias() ?? []}
+        onBuscar={(valor) => {
+          setBusqueda(valor);
+          setPagina(1);
+        }}
+        onSeleccionCategoria={(valor) => {
+          setCategoriaSeleccionada(valor);
+          setPagina(1);
+        }}
+      />
 
       <Show when={!respuesta.loading} fallback={<Loader />}>
-        <div class="overflow-auto border rounded-lg">
-          <table class="w-full text-sm border-collapse">
-            <thead class="bg-gray-100 sticky top-0">
-              <tr>
-                <th class="text-left p-3 border-b cursor-pointer">Imagen</th>
-                <th
-                  class="text-left p-3 border-b cursor-pointer"
-                  onClick={() => cambiarOrden("sku")}
-                >
-                  SKU {orden() === "sku" && (direccion() === "asc" ? "▲" : "▼")}
-                </th>
-                <th
-                  class="text-left p-3 border-b cursor-pointer"
-                  onClick={() => cambiarOrden("nombre")}
-                >
-                  Nombre{" "}
-                  {orden() === "nombre" && (direccion() === "asc" ? "▲" : "▼")}
-                </th>
-                <th
-                  class="text-left p-3 border-b cursor-pointer"
-                  onClick={() => cambiarOrden("precioUnitario")}
-                >
-                  PrecioXUn{" "}
-                  {orden() === "precioUnitario" &&
-                    (direccion() === "asc" ? "▲" : "▼")}
-                </th>
-                <th
-                  class="text-left p-3 border-b cursor-pointer"
-                  onClick={() => cambiarOrden("precioPorBulto")}
-                >
-                  PrecioXBulto{" "}
-                  {orden() === "precioPorBulto" &&
-                    (direccion() === "asc" ? "▲" : "▼")}
-                </th>
-                <th
-                  class="text-left p-3 border-b cursor-pointer"
-                  onClick={() => cambiarOrden("producto?.hayStock")}
-                >
-                  ¿Hay Stock?{" "}
-                  {orden() === "producto?.hayStock" &&
-                    (direccion() === "asc" ? "▲" : "▼")}
-                </th>
-                <th class="text-left p-3 border-b">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <Show
-                when={respuesta()?.data && respuesta()!.data.length > 0}
-                fallback={
-                  <tr>
-                    <td colspan="6" class="text-center p-4 text-gray-500">
-                      No se encontraron productos
-                    </td>
-                  </tr>
-                }
-              >
-                <For each={respuesta()?.data}>
-                  {(p: Producto) => (
-                    <tr class="hover:bg-gray-50 border-b">
-                      <td>  
-                      <Show when={Array.isArray(p.Imagenes) && p.Imagenes.length > 0}>
-                        <img
-                          src={`${import.meta.env.VITE_BACKEND_URL}${p.Imagenes?.[0]?.url}`}
-                          alt={p.nombre}
-                          class="h-12 w-12 object-cover rounded"
-                        />
-                      </Show>
-                      </td>
-                      <td class="p-3">{p.sku}</td>
-                      <td class="p-3">{p.nombre}</td>
-                      <td class="p-3">{formatearPrecio(p.precioUnitario)}</td>
-                      <td class="p-3">{formatearPrecio(p.precioPorBulto)}</td>
-                      <td class="p-3">{p.hayStock ? "Sí" : "No"}</td>
-                      <td class="p-3 flex gap-2">
-                        <button
-                          class="text-blue-600 hover:underline"
-                          onClick={() => verProductoCompleto(p.id)}
-                        >
-                          Ver
-                        </button>
-                        {!esVendedor && (
-                          <>
-                            <button
-                              class="text-green-600 hover:underline"
-                              onClick={() => editarProductoCompleto(p.id)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              class="text-red-600 hover:underline"
-                              onClick={() => handleEliminar(p.id)}
-                            >
-                              Eliminar
-                            </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                </For>
-              </Show>
-            </tbody>
-          </table>
-        </div>
+        <TablaProductos
+          productos={respuesta()?.data ?? []}
+          orden={orden()}
+          direccion={direccion()}
+          esVendedor={esVendedor}
+          onOrdenar={cambiarOrden}
+          onVer={verProductoCompleto}
+          onEditar={editarProductoCompleto}
+          onEliminar={handleEliminar}
+        />
       </Show>
 
       <div class="flex justify-center items-center gap-2 mt-4">

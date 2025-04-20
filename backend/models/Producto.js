@@ -13,7 +13,7 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    hayStock: {
+    activo: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },

@@ -1,8 +1,10 @@
+// server.js
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import sequelize from './config/database.js';
 import errorHandler from './middlewares/errorHandler.js';
+import rutas from './routes/index.js';
 import { createServer } from 'http';
 import { initSockets } from './sockets/index.js';
 
@@ -10,19 +12,6 @@ dotenv.config();
 
 const app = express();
 app.set('trust proxy', true);
-
-// Rutas
-import productoRoutes from './routes/producto.routes.js';
-import clienteRoutes from './routes/cliente.routes.js';
-import pedidoRoutes from './routes/pedido.routes.js';
-import publicRoutes from './routes/public.routes.js';
-import usuarioRoutes from './routes/usuario.routes.js';
-import paginaRoutes from './routes/pagina.routes.js';
-import categoriaRoutes from './routes/categoria.routes.js';
-import authRoutes from './routes/auth.routes.js';
-import estadisticasRoutes from './routes/estadisticas.routes.js';
-import logClienteRoutes from './routes/logCliente.routes.js';
-import notificacionRoutes from './routes/notificacion.routes.js';
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -33,46 +22,28 @@ app.use(cors({
       'http://localhost:3001',
       'http://localhost:3002',
     ];
-
-    // Permití también localhost y sin origin (como en curl, healthchecks, etc.)
-    if (!origin || allowlist.includes(origin)) {
-      return callback(null, true);
-    }
-
+    if (!origin || allowlist.includes(origin)) return callback(null, true);
     console.warn(`⚠️ Bloqueado por CORS: ${origin}`);
-    return callback(null, false); // NO tirar error, solo devolver false
+    return callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-
-// Log de rutas para debug
 app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.path}`);
   next();
 });
 
-// Middlewares básicos
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Rutas
-app.use('/api/productos', productoRoutes);
-app.use('/api/clientes', clienteRoutes);
-app.use('/api/pedidos', pedidoRoutes);
-app.use('/api/public', publicRoutes);
-app.use('/api/usuarios', usuarioRoutes);
-app.use('/api/pagina', paginaRoutes);
-app.use('/api/categorias', categoriaRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/estadisticas', estadisticasRoutes);
-app.use('/api/logs-cliente', logClienteRoutes);
-app.use('/api/notificaciones', notificacionRoutes);
+// 👇 Rutas centralizadas
+app.use('/api', rutas);
 
-// Centralizado de errores
+// Manejo de errores
 app.use(errorHandler);
 
 // 🚀 INIT
@@ -82,8 +53,6 @@ async function init() {
   try {
     await sequelize.authenticate();
     console.log('🟢 Conexión a la base de datos exitosa');
-
-    console.log('🗂️ Modelos sincronizados');
 
     const httpServer = createServer(app);
     initSockets(httpServer);

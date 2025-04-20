@@ -1,29 +1,25 @@
-import {
-  createSignal,
-  createResource,
-  createMemo,
-  For,
-  Show,
-} from 'solid-js';
+import { createSignal, createResource, createMemo, For, Show } from "solid-js";
 import {
   obtenerAdministradores,
   agregarAdministrador,
   editarAdministrador,
   eliminarAdministrador,
-} from '../services/administrador.service';
-import type { Usuario } from '../shared/types/usuario';
-import ModalNuevoAdministrador from '../components/ModalNuevoAdministrador';
-import VerAdministradorModal from '../components/VerAdministradorModal';
-import ModalMensaje from '../components/ModalMensaje';
-import ModalConfirmacion from '../components/ModalConfirmacion';
+} from "../services/administrador.service";
+import type { Usuario } from "../types/usuario";
+import ModalNuevoAdministrador from "../components/Usuario/ModalNuevoAdministrador";
+import VerAdministradorModal from "../components/Usuario/VerAdministradorModal";
+import ModalMensaje from "../components/Layout/ModalMensaje";
+import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
+import TablaAdministradores from "../components/Usuario/TablaAdministradores";
 
 export default function Administradores() {
-  const [busqueda, setBusqueda] = createSignal('');
+  const [busqueda, setBusqueda] = createSignal("");
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [adminSeleccionado, setAdminSeleccionado] = createSignal<Usuario | null>(null);
+  const [adminSeleccionado, setAdminSeleccionado] =
+    createSignal<Usuario | null>(null);
   const [verAdmin, setVerAdmin] = createSignal<Usuario | null>(null);
 
-  const [modalMensaje, setModalMensaje] = createSignal('');
+  const [modalMensaje, setModalMensaje] = createSignal("");
   const [modalConfirmar, setModalConfirmar] = createSignal(false);
   const [idAEliminar, setIdAEliminar] = createSignal<number | null>(null);
 
@@ -31,11 +27,14 @@ export default function Administradores() {
 
   const administradoresFiltrados = createMemo(() => {
     const buscar = busqueda().toLowerCase();
-    return respuesta()?.filter((a) =>
-      a.nombre?.toLowerCase().includes(buscar) ||
-      a.email?.toLowerCase().includes(buscar) ||
-      a.telefono?.includes(buscar)
-    ) || [];
+    return (
+      respuesta()?.filter(
+        (a) =>
+          a.nombre?.toLowerCase().includes(buscar) ||
+          a.email?.toLowerCase().includes(buscar) ||
+          a.telefono?.includes(buscar)
+      ) || []
+    );
   });
 
   const confirmarEliminar = (id: number) => {
@@ -46,7 +45,7 @@ export default function Administradores() {
   const handleEliminar = async () => {
     if (!idAEliminar()) return;
     await eliminarAdministrador(idAEliminar()!);
-    setModalMensaje('Administrador eliminado correctamente');
+    setModalMensaje("Administrador eliminado correctamente");
     refetch();
   };
 
@@ -67,10 +66,10 @@ export default function Administradores() {
   const handleGuardar = async (datos: Partial<Usuario>) => {
     if (adminSeleccionado()) {
       await editarAdministrador(adminSeleccionado()!.id, datos);
-      setModalMensaje('Administrador editado correctamente');
+      setModalMensaje("Administrador editado correctamente");
     } else {
       await agregarAdministrador(datos);
-      setModalMensaje('Administrador creado correctamente');
+      setModalMensaje("Administrador creado correctamente");
     }
     refetch();
     setModalAbierto(false);
@@ -98,51 +97,12 @@ export default function Administradores() {
         </div>
       </div>
 
-      <div class="overflow-auto border rounded-lg">
-        <table class="w-full text-sm border-collapse">
-          <thead class="bg-gray-100">
-            <tr>
-              <th class="text-left p-3">Nombre</th>
-              <th class="text-left p-3">Email</th>
-              <th class="text-left p-3">Teléfono</th>
-              <th class="text-left p-3">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <Show
-              when={administradoresFiltrados().length > 0}
-              fallback={
-                <tr>
-                  <td colSpan={4} class="p-4 text-center text-gray-500">
-                    No se encontraron administradores
-                  </td>
-                </tr>
-              }
-            >
-              <For each={administradoresFiltrados()}>
-                {(a) => (
-                  <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3">{a.nombre}</td>
-                    <td class="p-3">{a.email}</td>
-                    <td class="p-3">{a.telefono || '-'}</td>
-                    <td class="p-3 flex gap-2">
-                      <button class="text-blue-600 hover:underline" onClick={() => verDetalle(a)}>
-                        Ver
-                      </button>
-                      <button class="text-green-600 hover:underline" onClick={() => editarAdmin(a)}>
-                        Editar
-                      </button>
-                      <button class="text-red-600 hover:underline" onClick={() => confirmarEliminar(a.id)}>
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                )}
-              </For>
-            </Show>
-          </tbody>
-        </table>
-      </div>
+      <TablaAdministradores
+        administradores={administradoresFiltrados()}
+        onVer={verDetalle}
+        onEditar={editarAdmin}
+        onEliminar={confirmarEliminar}
+      />
 
       <ModalNuevoAdministrador
         abierto={modalAbierto()}
@@ -170,7 +130,10 @@ export default function Administradores() {
         mensaje="¿Estás seguro que querés eliminar este administrador?"
       />
 
-      <ModalMensaje mensaje={modalMensaje()} cerrar={() => setModalMensaje('')} />
+      <ModalMensaje
+        mensaje={modalMensaje()}
+        cerrar={() => setModalMensaje("")}
+      />
     </div>
   );
 }

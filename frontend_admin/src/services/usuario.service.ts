@@ -1,5 +1,5 @@
 import api from './api';
-import type { Usuario } from '../shared/types/usuario';
+import type { Usuario } from '../types/usuario';
 
 export const obtenerUsuarios = async (): Promise<Usuario[]> => {
   const { data } = await api.get('/usuarios');

@@ -20,13 +20,10 @@ export const crearUsuario = async (req, res, next) => {
     if (existente) return res.status(400).json({ message: 'El email ya está en uso.' });
 
     let hash = null;
-
-    // Solo generar contraseña si se especifica (por ejemplo, para 'supremo')
     if (contraseña) {
       hash = await bcrypt.hash(contraseña, 10);
     }
 
-    // Para vendedores y administradores no se crea contraseña aún, pero el teléfono es obligatorio
     if ((rol === 'vendedor' || rol === 'administrador') && !telefono) {
       return res.status(400).json({ message: 'El teléfono es obligatorio para este tipo de usuario.' });
     }
@@ -96,7 +93,6 @@ export const crearVendedor = async (req, res, next) => {
 
     const existente = await Usuario.findOne({ where: { email } });
     if (existente) return res.status(400).json({ message: 'El email ya está en uso.' });
-
     if (!telefono) return res.status(400).json({ message: 'El teléfono es obligatorio.' });
 
     const vendedor = await Usuario.create({
@@ -104,7 +100,7 @@ export const crearVendedor = async (req, res, next) => {
       email,
       telefono,
       rol: 'vendedor',
-      contraseña: null, // se establece al primer ingreso
+      contraseña: null,
     });
 
     res.status(201).json(vendedor);
@@ -163,7 +159,6 @@ export const buscarVendedorPorLink = async (req, res, next) => {
   }
 };
 
-
 // ================== ADMINISTRADORES ==================
 
 export const obtenerAdministradores = async (req, res, next) => {
@@ -184,7 +179,6 @@ export const crearAdministrador = async (req, res, next) => {
 
     const existente = await Usuario.findOne({ where: { email } });
     if (existente) return res.status(400).json({ message: 'El email ya está en uso.' });
-
     if (!telefono) return res.status(400).json({ message: 'El teléfono es obligatorio.' });
 
     const administrador = await Usuario.create({
@@ -192,7 +186,7 @@ export const crearAdministrador = async (req, res, next) => {
       email,
       telefono,
       rol: 'administrador',
-      contraseña: null, // se establece al primer ingreso
+      contraseña: null,
     });
 
     res.status(201).json(administrador);

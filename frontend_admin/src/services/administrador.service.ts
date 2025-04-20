@@ -1,8 +1,6 @@
-// src/services/administrador.service.ts
 import api from './api';
-import type { Usuario } from '../shared/types/usuario';
+import type { Usuario } from '../types/usuario';
 
-// Obtener todos los administradores
 export const obtenerAdministradores = async (): Promise<Usuario[]> => {
   try {
     const response = await api.get('/usuarios/administradores');
@@ -13,7 +11,6 @@ export const obtenerAdministradores = async (): Promise<Usuario[]> => {
   }
 };
 
-// Agregar un nuevo administrador
 export const agregarAdministrador = async (admin: Partial<Usuario>): Promise<Usuario> => {
   try {
     const response = await api.post('/usuarios/administradores', admin);
@@ -24,7 +21,6 @@ export const agregarAdministrador = async (admin: Partial<Usuario>): Promise<Usu
   }
 };
 
-// Editar un administrador
 export const editarAdministrador = async (id: string | number, admin: Partial<Usuario>): Promise<Usuario> => {
   try {
     const response = await api.put(`/usuarios/administradores/${id}`, admin);
@@ -35,7 +31,6 @@ export const editarAdministrador = async (id: string | number, admin: Partial<Us
   }
 };
 
-// Eliminar un administrador
 export const eliminarAdministrador = async (id: string | number): Promise<void> => {
   try {
     await api.delete(`/usuarios/administradores/${id}`);

@@ -1,37 +1,45 @@
+import { createSignal, createResource, createMemo, For, Show } from "solid-js";
+import * as XLSX from "xlsx";
+import { obtenerClientes, eliminarCliente } from "../services/cliente.service";
 import {
-  createSignal,
-  createResource,
-  createMemo,
-  For,
-  Show,
-} from 'solid-js';
-import * as XLSX from 'xlsx';
-import { obtenerClientes, eliminarCliente } from '../services/cliente.service';
-import { obtenerProvincias, obtenerLocalidades } from '../services/ubicacion.service';
-import { useAuth } from '../store/auth';
-import type { Cliente } from '../shared/types/cliente';
-import ModalConfirmacion from '../components/ModalConfirmacion';
-import ModalCliente from '../components/ModalCliente';
-import VerClienteModal from '../components/VerClienteModal';
-import { obtenerVendedores } from '../services/vendedor.service';
-import Loader from '../components/Loader';
-import ModalMapaClientes from '../components/ModalMapaClientes';
+  obtenerProvincias,
+  obtenerLocalidades,
+} from "../services/ubicacion.service";
+import { useAuth } from "../store/auth";
+import type { Cliente } from "../types/cliente";
+import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
+import ModalCliente from "../components/Cliente/ModalCliente";
+import VerClienteModal from "../components/Cliente/VerClienteModal";
+import { obtenerVendedores } from "../services/vendedor.service";
+import Loader from "../components/Layout/Loader";
+import ModalMapaClientes from "../components/Cliente/ModalMapaClientes";
+import TablaClientes from "../components/Cliente/TablaClientes";
+import FiltrosClientes from "../components/Cliente/FiltrosClientes";
 
 export default function Clientes() {
   const { usuario } = useAuth();
   const [pagina, setPagina] = createSignal(1);
-  const [orden, setOrden] = createSignal('createdAt');
-  const [direccion, setDireccion] = createSignal<'asc' | 'desc'>('desc');
+  const [orden, setOrden] = createSignal("createdAt");
+  const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
 
-  const [busqueda, setBusqueda] = createSignal('');
-  const [provinciaSeleccionada, setProvinciaSeleccionada] = createSignal<number | ''>('');
-  const [localidadSeleccionada, setLocalidadSeleccionada] = createSignal<number | ''>('');
-  const [vendedorIdSeleccionado, setVendedorIdSeleccionado] = createSignal<number | ''>('');
+  const [busqueda, setBusqueda] = createSignal("");
+  const [provinciaSeleccionada, setProvinciaSeleccionada] = createSignal<
+    number | ""
+  >("");
+  const [localidadSeleccionada, setLocalidadSeleccionada] = createSignal<
+    number | ""
+  >("");
+  const [vendedorIdSeleccionado, setVendedorIdSeleccionado] = createSignal<
+    number | ""
+  >("");
 
   const [modalAbierto, setModalAbierto] = createSignal(false);
   const [verCliente, setVerCliente] = createSignal<Cliente | null>(null);
-  const [clienteSeleccionado, setClienteSeleccionado] = createSignal<Cliente | null>(null);
-  const [clienteAEliminar, setClienteAEliminar] = createSignal<Cliente | null>(null);
+  const [clienteSeleccionado, setClienteSeleccionado] =
+    createSignal<Cliente | null>(null);
+  const [clienteAEliminar, setClienteAEliminar] = createSignal<Cliente | null>(
+    null
+  );
   const [modalConfirmar, setModalConfirmar] = createSignal(false);
   const [mostrarMapa, setMostrarMapa] = createSignal(false);
 
@@ -39,7 +47,7 @@ export default function Clientes() {
   const [provincias] = createResource(obtenerProvincias);
   const [localidades] = createResource(
     () => provinciaSeleccionada(),
-    (id) => id ? obtenerLocalidades(Number(id)) : Promise.resolve([])
+    (id) => (id ? obtenerLocalidades(Number(id)) : Promise.resolve([]))
   );
 
   const fetchParams = createMemo(() => ({
@@ -57,16 +65,18 @@ export default function Clientes() {
 
   const cambiarOrden = (col: string) => {
     if (orden() === col) {
-      setDireccion(direccion() === 'asc' ? 'desc' : 'asc');
+      setDireccion(direccion() === "asc" ? "desc" : "asc");
     } else {
       setOrden(col);
-      setDireccion('asc');
+      setDireccion("asc");
     }
   };
 
-  const puedeEditar = () => ['supremo', 'administrador'].includes(usuario()?.rol || '');
-  const puedeEliminar = () => usuario()?.rol === 'supremo';
-  const puedeAgregar = () => ['supremo', 'vendedor'].includes(usuario()?.rol || '');
+  const puedeEditar = () =>
+    ["supremo", "administrador"].includes(usuario()?.rol || "");
+  const puedeEliminar = () => usuario()?.rol === "supremo";
+  const puedeAgregar = () =>
+    ["supremo", "vendedor"].includes(usuario()?.rol || "");
 
   const exportarExcel = () => {
     const clientes = respuesta()?.data || [];
@@ -77,13 +87,13 @@ export default function Clientes() {
       Dirección: c.direccion,
       Provincia: c.provincia?.nombre,
       Localidad: c.localidad?.nombre,
-      'Fecha de creación': new Date(c.createdAt).toLocaleDateString(),
+      "Fecha de creación": new Date(c.createdAt).toLocaleDateString(),
     }));
 
     const ws = XLSX.utils.json_to_sheet(filas);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
-    XLSX.writeFile(wb, 'clientes.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+    XLSX.writeFile(wb, "clientes.xlsx");
   };
 
   const confirmarEliminacion = async () => {
@@ -112,6 +122,7 @@ export default function Clientes() {
             >
               Exportar Excel
             </button>
+
             <button
               onClick={() => {
                 setClienteSeleccionado(null);
@@ -125,109 +136,50 @@ export default function Clientes() {
         </div>
       </div>
 
-      <div class="flex gap-4 mb-4 flex-wrap">
-        <Show when={usuario()?.rol !== 'vendedor'}>
-          <select
-            class="p-2 border rounded"
-            value={vendedorIdSeleccionado()}
-            onInput={(e) => {
-              setVendedorIdSeleccionado(Number(e.currentTarget.value) || '');
-              setPagina(1);
-            }}
-          >
-            <option value="">Todos los vendedores</option>
-            <For each={vendedores()}>{(v) => (
-              <option value={v.id}>{v.nombre}</option>
-            )}</For>
-          </select>
-        </Show>
-
-        <input
-          type="text"
-          placeholder="Buscar por nombre o email..."
-          class="p-2 border rounded w-full max-w-xs"
-          value={busqueda()}
-          onInput={(e) => {
-            setBusqueda(e.currentTarget.value);
-            setPagina(1);
-          }}
-        />
-
-        <select
-          class="p-2 border rounded"
-          value={provinciaSeleccionada()}
-          onInput={(e) => {
-            setProvinciaSeleccionada(Number(e.currentTarget.value) || '');
-            setLocalidadSeleccionada('');
-            setPagina(1);
-          }}
-        >
-          <option value="">Todas las provincias</option>
-          <For each={provincias()}>{(p) => <option value={p.id}>{p.nombre}</option>}</For>
-        </select>
-
-        <select
-          class="p-2 border rounded"
-          value={localidadSeleccionada()}
-          onInput={(e) => {
-            setLocalidadSeleccionada(Number(e.currentTarget.value) || '');
-            setPagina(1);
-          }}
-        >
-          <option value="">Todas las localidades</option>
-          <For each={localidades()}>{(l) => <option value={l.id}>{l.nombre}</option>}</For>
-        </select>
-      </div>
+      <FiltrosClientes
+        usuarioRol={usuario()?.rol || ""}
+        busqueda={busqueda()}
+        onBuscar={(v) => {
+          setBusqueda(v);
+          setPagina(1);
+        }}
+        provincias={provincias() || []}
+        localidades={localidades() || []}
+        vendedores={vendedores() || []}
+        provinciaSeleccionada={provinciaSeleccionada()}
+        localidadSeleccionada={localidadSeleccionada()}
+        vendedorSeleccionado={vendedorIdSeleccionado()}
+        onSeleccionProvincia={(id) => {
+          setProvinciaSeleccionada(id);
+          setLocalidadSeleccionada("");
+          setPagina(1);
+        }}
+        onSeleccionLocalidad={(id) => {
+          setLocalidadSeleccionada(id);
+          setPagina(1);
+        }}
+        onSeleccionVendedor={(id) => {
+          setVendedorIdSeleccionado(id);
+          setPagina(1);
+        }}
+      />
 
       <Show when={!respuesta.loading} fallback={<Loader />}>
-        <div class="overflow-auto border rounded-lg">
-          <table class="w-full text-sm border-collapse">
-            <thead class="bg-gray-100 sticky top-0">
-              <tr>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('nombre')}>Nombre</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('email')}>Email</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('provincia')}>Provincia</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('localidad')}>Localidad</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('vendedor')}>Vendedor</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => cambiarOrden('createdAt')}>Creado</th>
-                <th class="text-left p-3 border-b">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <Show when={respuesta()?.data?.length} fallback={
-                <tr><td colspan="7" class="text-center p-4 text-gray-500">No se encontraron clientes</td></tr>
-              }>
-                <For each={respuesta()?.data}>
-                  {(c: Cliente) => (
-                    <tr class="hover:bg-gray-50 border-b">
-                      <td class="p-3">{c.nombre}</td>
-                      <td class="p-3">{c.email}</td>
-                      <td class="p-3">{c.provincia?.nombre}</td>
-                      <td class="p-3">{c.localidad?.nombre}</td>
-                      <td class="p-3">{c.vendedor?.nombre}</td>
-                      <td class="p-3">{new Date(c.createdAt).toLocaleDateString()}</td>
-                      <td class="p-3 flex gap-2">
-                        <button class="text-blue-600 hover:underline" onClick={() => setVerCliente(c)}>Ver</button>
-                        <Show when={puedeEditar()}>
-                          <button class="text-green-600 hover:underline" onClick={() => {
-                            setClienteSeleccionado(c);
-                            setModalAbierto(true);
-                          }}>Editar</button>
-                        </Show>
-                        <Show when={puedeEliminar()}>
-                          <button class="text-red-600 hover:underline" onClick={() => {
-                            setClienteAEliminar(c);
-                            setModalConfirmar(true);
-                          }}>Eliminar</button>
-                        </Show>
-                      </td>
-                    </tr>
-                  )}
-                </For>
-              </Show>
-            </tbody>
-          </table>
-        </div>
+        <TablaClientes
+          clientes={respuesta()?.data ?? []}
+          puedeEditar={puedeEditar()}
+          puedeEliminar={puedeEliminar()}
+          onVer={setVerCliente}
+          onEditar={(c) => {
+            setClienteSeleccionado(c);
+            setModalAbierto(true);
+          }}
+          onEliminar={(c) => {
+            setClienteAEliminar(c);
+            setModalConfirmar(true);
+          }}
+          onOrdenar={cambiarOrden}
+        />
       </Show>
 
       <div class="flex justify-center items-center gap-2 mt-4">
@@ -239,10 +191,13 @@ export default function Clientes() {
           ◀
         </button>
         <span class="text-sm">
-          Página {respuesta()?.pagina ?? '-'} de {respuesta()?.totalPaginas ?? '-'}
+          Página {respuesta()?.pagina ?? "-"} de{" "}
+          {respuesta()?.totalPaginas ?? "-"}
         </span>
         <button
-          onClick={() => setPagina((p) => Math.min(respuesta()?.totalPaginas || p, p + 1))}
+          onClick={() =>
+            setPagina((p) => Math.min(respuesta()?.totalPaginas || p, p + 1))
+          }
           class="px-3 py-1 border rounded disabled:opacity-50"
           disabled={pagina() === (respuesta()?.totalPaginas ?? 1)}
         >
@@ -266,7 +221,9 @@ export default function Clientes() {
 
       <ModalConfirmacion
         abierto={modalConfirmar()}
-        mensaje={`¿Estás seguro que querés eliminar al cliente "${clienteAEliminar()?.nombre}"?`}
+        mensaje={`¿Estás seguro que querés eliminar al cliente "${
+          clienteAEliminar()?.nombre
+        }"?`}
         onCancelar={() => {
           setClienteAEliminar(null);
           setModalConfirmar(false);

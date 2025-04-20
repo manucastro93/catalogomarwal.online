@@ -32,9 +32,27 @@ export default function MisPedidos() {
   
 
   const modificarPedido = () => {
-    // TODO: Redireccionar o mostrar modal de edición
-    alert("Función de modificación no implementada aún.");
+    const pedido = pedidoSeleccionado();
+    if (!pedido) return;
+  
+    // Armar carrito desde detalles
+    const carrito = pedido.detalles.map((item: any) => ({
+      id: item.productoId,
+      nombre: item.Producto?.nombre,
+      cantidad: item.cantidad,
+      precio: item.precioXBulto,
+      unidadPorBulto: item.Producto?.unidadPorBulto || 1,
+      imagen: item.Producto?.Imagenes?.[0]?.url || "",
+    }));
+  
+    // Guardar en localStorage
+    localStorage.setItem("carrito", JSON.stringify(carrito));
+    localStorage.setItem("modoEdicionPedidoId", String(pedido.id));
+  
+    // Redirigir al home (inicio)
+    window.location.href = "/";
   };
+  
 
   return (
     <div class="flex flex-col">

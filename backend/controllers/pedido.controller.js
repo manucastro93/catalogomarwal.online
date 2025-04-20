@@ -1,5 +1,5 @@
-import { Pedido, DetallePedido, Producto, Cliente, Usuario, IpCliente, Notificacion } from '../models/index.js';
-import { Op, literal } from 'sequelize';
+import { Pedido, DetallePedido, Producto, Cliente, Usuario, IpCliente, Notificacion, HistorialCliente } from '../models/index.js';
+import { Op } from 'sequelize';
 import { enviarEmailPedido } from "../utils/notificaciones/email.js";
 import { enviarWhatsappPedido } from "../utils/notificaciones/whatsapp.js";
 
@@ -16,7 +16,6 @@ export const obtenerPedidos = async (req, res, next) => {
     } = req.query;
 
     const offset = (pagina - 1) * limit;
-
     const where = {};
 
     if (req.usuario?.rol === 'vendedor') {
@@ -31,41 +30,93 @@ export const obtenerPedidos = async (req, res, next) => {
       where.estado = estado;
     }
 
-    const include = [
-      { model: Cliente, as: 'cliente' },
+    const whereFinal = { ...where };
+
+    if (busqueda) {
+      whereFinal['$cliente.nombre$'] = {
+        [Op.like]: `%${busqueda}%`,
+      };
+    }
+
+    let orderBy = [[orden, direccion]];
+
+    if (orden === 'cliente') {
+      orderBy = [[{ model: Cliente, as: 'cliente' }, 'nombre', direccion]];
+    } else if (orden === 'vendedor') {
+      orderBy = [[{ model: Usuario, as: 'usuario' }, 'nombre', direccion]];
+    }
+
+    const includeBase = [
+      { model: Cliente, as: 'cliente', required: true },
       { model: Usuario, as: 'usuario' },
       {
         model: DetallePedido,
         as: 'detalles',
-        include: [Producto],
+        include: [{ model: Producto, as: 'producto' }],
       },
     ];
-
-    const whereFinal = {
-      ...where,
-    };
-
-    if (busqueda) {
-      whereFinal[Op.and] = [
-        where,
-        literal(`cliente.nombre LIKE '%${busqueda}%'`)
-      ];
-    }
-
-    const { count, rows } = await Pedido.findAndCountAll({
+    
+    // Paso 1: obtener IDs con paginación limpia
+    const includePaginacion = [
+      {
+        model: Cliente,
+        as: 'cliente',
+        where: busqueda ? { nombre: { [Op.like]: `%${busqueda}%` } } : undefined,
+        required: !!busqueda,
+      },
+      {
+        model: Usuario,
+        as: 'usuario',
+      },
+    ];
+    
+    const idsPaginados = await Pedido.findAll({
+      attributes: ['id'],
       where: whereFinal,
-      include,
+      include: includePaginacion,
       limit: Number(limit),
       offset,
-      order: [[orden, direccion]],
-      subQuery: false // 👈 obligatorio cuando usás literal con include
+      order: orderBy,
+      subQuery: false,
     });
+    
 
+    const ids = idsPaginados.map(p => p.id);
+
+    // Paso 2: obtener pedidos completos con include
+    const rows = await Pedido.findAll({
+      where: { id: ids },
+      include: includeBase,
+      order: orderBy,
+    });
+    rows.forEach(p => {
+    });
+    
+    // Paso 3: obtener cantidad total
+    const count = await Pedido.count({
+      where,
+      include: [
+        {
+          model: Cliente,
+          as: 'cliente',
+          where: busqueda ? { nombre: { [Op.like]: `%${busqueda}%` } } : undefined,
+          required: !!busqueda,
+        },
+      ],
+      distinct: true,
+      col: 'id'
+    });
+    
+
+    const totalPaginas = Math.ceil(count / limit);
+    
     res.json({
       data: rows,
-      total: count,
       pagina: Number(pagina),
-      totalPaginas: Math.ceil(count / limit),
+      totalPaginas,
+      totalItems: count,
+      hasNextPage: Number(pagina) < totalPaginas,
+      hasPrevPage: Number(pagina) > 1,
     });
   } catch (error) {
     console.error('❌ ERROR en obtenerPedidos:', error);
@@ -73,255 +124,381 @@ export const obtenerPedidos = async (req, res, next) => {
   }
 };
 
-export const obtenerPedidoPorId = async (req, res, next) => {
+export const crearPedido = async (req, res, next) => {
   try {
-    const pedido = await Pedido.findByPk(req.params.id, {
-      include: [
-        { model: Cliente, as: 'cliente' },
-        { model: Usuario, as: 'usuario' },
-        {
-          model: DetallePedido,
-          as: 'detalles',
-          include: [Producto],
-        },
-      ],
+    const { cliente, carrito, usuarioId = null } = req.body;
+
+    if (!cliente || !carrito || !Array.isArray(carrito) || carrito.length === 0) {
+      return res.status(400).json({ message: 'Faltan datos del cliente o carrito vacío' });
+    }
+
+    let clienteExistente = await Cliente.findOne({
+      where: { email: cliente.email },
+      paranoid: false,
     });
-    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
-    res.json(pedido);
+
+    let clienteFinal;
+
+    if (clienteExistente) {
+      const camposAActualizar = [
+        'nombre',
+        'telefono',
+        'email',
+        'razonSocial',
+        'direccion',
+        'provinciaId',
+        'localidadId',
+        'cuit_cuil',
+        'vendedorId',
+      ];
+
+      for (const campo of camposAActualizar) {
+        const valorAnterior = clienteExistente[campo];
+        const valorNuevo = cliente[campo];
+
+        if (valorAnterior !== valorNuevo) {
+          await HistorialCliente.create({
+            campo,
+            valorAnterior: valorAnterior?.toString() ?? null,
+            valorNuevo: valorNuevo?.toString() ?? null,
+            clienteId: clienteExistente.id,
+            usuarioId,
+          });
+        }
+      }
+
+      await clienteExistente.update(cliente);
+      clienteFinal = clienteExistente;
+    } else {
+      clienteFinal = await Cliente.create(cliente);
+    }
+
+    const pedido = await Pedido.create({
+      clienteId: clienteFinal.id,
+      usuarioId,
+      total: 0,
+      estado: 'pendiente',
+    });
+
+    let total = 0;
+
+    for (const item of carrito) {
+      const productoDb = await Producto.findByPk(item.id);
+      if (!productoDb) continue;
+
+      const precioUnitario = productoDb.precioUnitario;
+      const precioPorBulto = productoDb.precioPorBulto || precioUnitario;
+      const subtotal = item.cantidad * precioPorBulto;
+
+      await DetallePedido.create({
+        pedidoId: pedido.id,
+        clienteId: clienteFinal.id,
+        productoId: item.id,
+        cantidad: item.cantidad,
+        precioUnitario,
+        precioXBulto: precioPorBulto,
+        subtotal,
+      });
+
+      total += subtotal;
+    }
+
+    pedido.total = total;
+    await pedido.save();
+
+    // 🌐 Registrar IP si no existe
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+
+    const yaExisteIp = await IpCliente.findOne({
+      where: { ip, clienteId: clienteFinal.id },
+    });
+
+    if (!yaExisteIp) {
+      await IpCliente.create({ ip, clienteId: clienteFinal.id });
+      console.log('📌 IP registrada:', ip);
+    }
+
+    // Crear notificación para el vendedor
+    if (pedido.usuarioId) {
+      await Notificacion.create({
+        titulo: 'Nuevo pedido recibido',
+        mensaje: `Pedido #${pedido.id} creado por el cliente ${cliente.nombre}.`,
+        usuarioId: pedido.usuarioId,
+        tipo: 'pedido',
+        pedidoId: pedido.id,
+      });
+    }
+
+    // Crear notificación global para administradores
+    const admins = await Usuario.findAll({
+      where: {
+        rol: { [Op.in]: ['administrador', 'supremo'] },
+      },
+    });
+
+    for (const admin of admins) {
+      await Notificacion.create({
+        titulo: 'Nuevo pedido recibido',
+        mensaje: `Pedido #${pedido.id} generado.`,
+        usuarioId: admin.id,
+        tipo: 'pedido',
+        pedidoId: pedido.id,
+      });
+    }
+
+    // ✉️ Email + WhatsApp
+    const vendedor = usuarioId ? await Usuario.findByPk(usuarioId) : null;
+
+    await enviarEmailPedido({
+      cliente: clienteFinal,
+      pedido,
+      carrito,
+      vendedor,
+    });
+
+    await enviarWhatsappPedido({
+      cliente: clienteFinal,
+      pedido,
+      carrito,
+      vendedor,
+    });
+
+    res.status(201).json({
+      message: 'Pedido creado correctamente',
+      pedidoId: pedido.id,
+      clienteId: clienteFinal.id,
+    });
+    
   } catch (error) {
+    console.error('❌ Error al crear pedido:', error);
     next(error);
   }
 };
 
-export const actualizarEstadoPedido = async (req, res, next) => {
+export const crearPedidoDesdePanel = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { estado } = req.body;
+    const { cliente, carrito, usuarioId } = req.body;
 
-    console.log('🟡 Actualizar estado pedido:', { id, estado });
-
-    const pedido = await Pedido.findByPk(id, {
-      include: [
-        { model: Cliente, as: 'cliente' },
-        { model: Usuario, as: 'usuario' },
-      ]
-    });
-
-    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
-
-    // Solo se puede cancelar si está pendiente
-    if (estado === 'cancelado' && pedido.estado.toLowerCase().trim() !== 'pendiente') {
-      return res.status(400).json({ message: 'Solo se pueden cancelar pedidos pendientes' });
+    if (!cliente?.id || !Array.isArray(carrito) || carrito.length === 0) {
+      return res.status(400).json({ error: 'Datos incompletos para el pedido.' });
     }
 
-    await pedido.update({ estado });
+    const clienteFinal = await Cliente.findByPk(cliente.id);
+    if (!clienteFinal) {
+      return res.status(404).json({ error: 'Cliente no encontrado.' });
+    }
 
-    // 🔔 Notificación para admins
-    const administradores = await Usuario.findAll({
-      where: { rol: { [Op.in]: ['administrador', 'supremo'] } }
+    const pedido = await Pedido.create({
+      clienteId: clienteFinal.id,
+      usuarioId,
+      total: 0,
+      estado: 'pendiente',
     });
 
-    for (const admin of administradores) {
+    let total = 0;
+
+    for (const item of carrito) {
+      const productoDb = await Producto.findByPk(item.id);
+      if (!productoDb) continue;
+
+      const precioUnitario = productoDb.precioUnitario;
+      const precioPorBulto = productoDb.precioPorBulto || precioUnitario;
+      const subtotal = item.cantidad * precioPorBulto;
+
+      await DetallePedido.create({
+        pedidoId: pedido.id,
+        clienteId: clienteFinal.id,
+        productoId: item.id,
+        cantidad: item.cantidad,
+        precioUnitario,
+        precioXBulto: precioPorBulto,
+        subtotal,
+        dispositivo: 'panel',
+        usuarioId,
+      });
+
+      total += subtotal;
+    }
+
+    await pedido.update({ total });
+
+    const vendedor = usuarioId ? await Usuario.findByPk(usuarioId) : null;
+
+    await Notificacion.create({
+      titulo: 'Nuevo pedido creado desde el panel',
+      mensaje: `El cliente ${clienteFinal.nombre} tiene un nuevo pedido.`,
+      tipo: 'pedido',
+      usuarioId,
+    });
+
+    const admins = await Usuario.findAll({
+      where: { rol: { [Op.in]: ['administrador', 'supremo'] } },
+    });
+
+    for (const admin of admins) {
       await Notificacion.create({
-        titulo: `Estado del pedido #${pedido.id} actualizado`,
-        mensaje: `El estado ahora es "${estado}"`,
+        titulo: 'Pedido desde el panel',
+        mensaje: `El cliente ${clienteFinal.nombre} tiene un nuevo pedido.`,
         tipo: 'pedido',
         usuarioId: admin.id,
       });
     }
 
-    // ✉️ WhatsApp y Email al cliente y vendedor
-    try {
-      await enviarEmailPedido({
-        cliente: pedido.cliente,
-        pedido,
-        carrito: [], // no disponible aquí, podrías cargarlo si querés
-        vendedor: pedido.usuario,
-      });
+    await enviarEmailPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
+    await enviarWhatsappPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
 
-      await enviarWhatsappPedido({
-        cliente: pedido.cliente,
-        pedido,
-        carrito: [],
-        vendedor: pedido.usuario,
-      });
-    } catch (notiErr) {
-      console.warn('⚠️ Error al enviar notificaciones:', notiErr.message);
+    res.status(201).json({ message: 'Pedido creado correctamente', pedidoId: pedido.id });
+  } catch (err) {
+    console.error('❌ Error al crear pedido desde panel:', err);
+    res.status(500).json({ error: 'Error interno al crear el pedido.' });
+  }
+};
+
+
+export const actualizarEstadoPedido = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+    const estados_validos = [
+      'pendiente',
+      'confirmado',
+      'preparando',
+      'enviado',
+      'entregado',
+      'cancelado',
+      'rechazado',
+    ];
+
+    const pedido = await Pedido.findByPk(id);
+    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
+
+    if (!estados_validos.includes(estado)) {
+      return res.status(400).json({ message: 'Estado inválido' });
     }
 
-    console.log("🧾 Estado anterior:", pedido.estado);
-    console.log("🧾 Nuevo estado:", estado);
+    await pedido.update({ estado });
 
-    res.json({ message: 'Estado actualizado correctamente', pedido });
+    // 🔔 Notificación por cambio de estado
+    const tituloBase = estado === 'cancelado'
+      ? 'Pedido cancelado'
+      : `Pedido actualizado`;
+
+    const mensajeBase = estado === 'cancelado'
+      ? `El pedido #${pedido.id} fue cancelado.`
+      : `El estado del pedido #${pedido.id} ahora es "${estado}".`;
+
+    // Vendedor
+    await Notificacion.create({
+      titulo: tituloBase,
+      mensaje: mensajeBase,
+      tipo: 'pedido',
+      usuarioId: pedido.usuarioId,
+    });
+
+    // Admins
+    const admins = await Usuario.findAll({
+      where: { rol: { [Op.in]: ['administrador', 'supremo'] } },
+    });
+
+    for (const admin of admins) {
+      await Notificacion.create({
+        titulo: tituloBase,
+        mensaje: mensajeBase,
+        tipo: 'pedido',
+        usuarioId: admin.id,
+      });
+    }
+
+
+    res.json({ message: 'Estado actualizado correctamente', estado });
   } catch (error) {
-    console.error("❌ Error al actualizar estado:", error);
+    console.error('❌ Error al actualizar estado del pedido:', error);
     next(error);
   }
 };
 
-export const crearPedido = async (req, res, next) => {
-  const t = await Pedido.sequelize.transaction();
-
+export const validarCarritoSolo = async (req, res, next) => {
   try {
-    const { cliente, carrito, usuarioId, vendedor } = req.body;
-    if (!usuarioId) {
-      return res.status(400).json({ error: 'No tiene vendedor asignado.' });
+    const { carrito } = req.body;
+
+    if (!Array.isArray(carrito) || carrito.length === 0) {
+      return res.status(400).json({ message: 'Carrito vacío' });
     }
 
-    if (!cliente?.email || !cliente?.telefono || !cliente?.nombre || !carrito?.length) {
-      return res.status(400).json({ error: 'Faltan datos obligatorios.' });
-    }
-
-    // 🔎 Buscar cliente por email
-    let clienteExistente = await Cliente.findOne({
-      where: { email: cliente.email },
-      transaction: t,
-    });
-
-    if (clienteExistente) {
-
-      await clienteExistente.update({
-        nombre: cliente.nombre,
-        telefono: cliente.telefono,
-        direccion: cliente.direccion,
-        razonSocial: cliente.razonSocial,
-        cuit_cuil: cliente.cuit_cuil || '',
-        provinciaId: cliente.provinciaId || null,
-        localidadId: cliente.localidadId || null,
-        vendedorId: cliente.vendedorId || clienteExistente.vendedorId,
-      }, { transaction: t });
-
-    } else {
-
-      clienteExistente = await Cliente.create({
-        nombre: cliente.nombre,
-        telefono: cliente.telefono,
-        email: cliente.email,
-        direccion: cliente.direccion,
-        razonSocial: cliente.razonSocial,
-        cuit_cuil: cliente.cuit_cuil || '',
-        provinciaId: cliente.provinciaId || null,
-        localidadId: cliente.localidadId || null,
-        vendedorId: cliente.vendedorId || null,
-      }, { transaction: t });
-    }
-
-    // 🧠 Asociar IP actual
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
-
-    const yaTieneIp = await IpCliente.findOne({
-      where: { ip, clienteId: clienteExistente.id },
-      transaction: t,
-    });
-
-    if (!yaTieneIp) {
-      await IpCliente.create({
-        ip,
-        clienteId: clienteExistente.id,
-      }, { transaction: t });
-      console.log('🌐 IP registrada:', ip);
-    }
-
-    // 🧾 Crear pedido
-    const pedido = await Pedido.create({
-      estado: 'pendiente',
-      observaciones: '',
-      total: 0,
-      clienteId: clienteExistente.id,
-      usuarioId: usuarioId || null,
-    }, { transaction: t });
-
-    let totalPedido = 0;
+    const detalles = [];
+    let total = 0;
 
     for (const item of carrito) {
-      const subtotal = item.precio * item.cantidad;
-      totalPedido += subtotal;
+      const productoDb = await Producto.findByPk(item.id);
+      if (!productoDb) continue;
 
-      await DetallePedido.create({
-        cantidad: item.cantidad,
-        precioUnitario: item.precio / (item.unidadPorBulto || 1),
-        precioXBulto: item.precio,
-        subtotal,
-        clienteId: clienteExistente.id,
-        pedidoId: pedido.id,
+      const precioUnitario = productoDb.precioUnitario;
+      const precioPorBulto = productoDb.precioPorBulto || precioUnitario;
+      const subtotal = item.cantidad * precioPorBulto;
+
+      detalles.push({
         productoId: item.id,
-        usuarioId: usuarioId || null,
-      }, { transaction: t });
+        nombre: productoDb.nombre,
+        cantidad: item.cantidad,
+        precioUnitario,
+        precioPorBulto,
+        subtotal,
+      });
+
+      total += subtotal;
     }
 
-    await pedido.update({ total: totalPedido }, { transaction: t });
-
-    await t.commit();
-    // Notificación para el vendedor
-await Notificacion.create({
-  titulo: 'Nuevo pedido recibido',
-  mensaje: `El cliente ${clienteExistente.nombre} hizo un pedido.`,
-  tipo: 'pedido',
-  usuarioId: usuarioId, // vendedor
-});
-
-// Notificación para todos los administradores
-const administradores = await Usuario.findAll({
-  where: {
-    rol: { [Op.in]: ['administrador', 'supremo'] },
-  },
-});
-
-for (const admin of administradores) {
-  await Notificacion.create({
-    titulo: 'Nuevo pedido recibido',
-    mensaje: `El cliente ${clienteExistente.nombre} hizo un pedido.`,
-    tipo: 'pedido',
-    usuarioId: admin.id,
-  });
-}
-    try {
-      await enviarEmailPedido({
-        cliente: clienteExistente,
-        pedido,
-        carrito,
-        vendedor
-      });
-    
-      await enviarWhatsappPedido({
-        cliente: clienteExistente,
-        pedido,
-        carrito,
-        vendedor
-      });
-    } catch (notiError) {
-      console.warn("⚠️ Error al enviar notificaciones:", notiError.message);
-    }
-    res.status(201).json({ message: 'Pedido creado correctamente', pedidoId: pedido.id });
+    res.json({ detalles, total });
   } catch (error) {
-    await t.rollback();
-    console.error('❌ Error al crear pedido:', error.message);
+    console.error('❌ Error al validar carrito:', error);
+    next(error);
+  }
+};
+
+export const obtenerPedidoPorId = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (isNaN(id)) return res.status(400).json({ message: 'ID inválido' });
+
+    const pedido = await Pedido.findByPk(id, {
+      include: [
+        { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto' }] },
+        { model: Cliente, as: 'cliente' },
+        { model: Usuario, as: 'usuario' },
+      ],
+    });
+
+    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
+
+    res.json(pedido);
+  } catch (error) {
+    console.error('❌ Error en obtenerPedidoPorId:', error);
     next(error);
   }
 };
 
 export const obtenerPedidosPorIp = async (req, res, next) => {
   try {
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
-    const ipCliente = await IpCliente.findOne({
-      where: { ip },
-      include: [{ model: Cliente, as: 'cliente' }]
-    });
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress;
+    const ipCliente = await IpCliente.findOne({ where: { ip } });
 
-    if (!ipCliente || !ipCliente.clienteId) {
-      return res.status(404).json({ message: 'Cliente no encontrado por IP' });
-    }
+    if (!ipCliente) return res.status(404).json({ message: 'IP no registrada' });
+
     const pedidos = await Pedido.findAll({
-      where: { clienteId: ipCliente.clienteId },
+      where: {
+        clienteId: ipCliente.clienteId,
+        createdAt: { [Op.gte]: dayjs().subtract(6, 'month').toDate() },
+      },
       include: [
-        { model: DetallePedido, as: 'detalles', include: [Producto] },
+        { model: Cliente, as: 'cliente' },
+        { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto' }] },
       ],
       order: [['createdAt', 'DESC']],
     });
 
     res.json(pedidos);
   } catch (error) {
-    console.error('❌ Error al obtener pedidos por IP:', error);
+    console.error('❌ Error en obtenerPedidosPorIp:', error);
     next(error);
   }
 };

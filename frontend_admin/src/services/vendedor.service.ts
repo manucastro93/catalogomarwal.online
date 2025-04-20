@@ -1,5 +1,5 @@
 import api from './api'; // Asegúrate de que esta ruta sea correcta
-import { Vendedor } from '../shared/types/vendedor'; // Asegúrate de que la ruta sea correcta
+import { Vendedor } from '../types/vendedor'; // Asegúrate de que la ruta sea correcta
 
 // Obtener todos los vendedores
 export const obtenerVendedores = async (): Promise<Vendedor[]> => {

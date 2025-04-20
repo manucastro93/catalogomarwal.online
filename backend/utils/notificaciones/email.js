@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
 
 export async function enviarEmailPedido({ cliente, pedido, carrito, vendedor }) {
+  if (!cliente || !pedido || !Array.isArray(carrito)) {
+    throw new Error("Faltan datos obligatorios o el carrito no es válido.");
+  }
+
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,      // ej: smtp.gmail.com
     port: process.env.EMAIL_PORT,      // ej: 587
@@ -11,10 +15,6 @@ export async function enviarEmailPedido({ cliente, pedido, carrito, vendedor }) 
     },
   });
 
-  const listaProductos = carrito.map(p =>
-    `<li><strong>${p.nombre}</strong> – ${p.cantidad} bultos</li>`
-  ).join("");
-  
   const html = `
   <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 640px; margin: auto; background-color: #f9f9f9; border-radius: 10px;">
     <h2 style="color: #222; margin-bottom: 4px;">¡Gracias por tu pedido, ${cliente.nombre}!</h2>
@@ -57,12 +57,10 @@ export async function enviarEmailPedido({ cliente, pedido, carrito, vendedor }) 
   </div>
 `;
 
-  
-
   await transporter.sendMail({
     from: `"Catálogo Marwal" <${process.env.EMAIL_USER}>`,
     to: [cliente.email, vendedor?.email].filter(Boolean).join(","),
-    subject: `📦 Nuevo pedido #${pedido.id}`,
+    subject: `📦 Pedido #${pedido.id} confirmado – ${cliente.nombre}`,
     html,
   });
 }

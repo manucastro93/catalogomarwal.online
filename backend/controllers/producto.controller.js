@@ -1,6 +1,8 @@
+// 📁 controllers/producto.controller.js
 import { Producto, Categoria, ImagenProducto } from '../models/index.js';
 import { Op } from 'sequelize';
 import { leerExcelProductos } from '../utils/leerExcel.js';
+import cache from '../utils/cache.js';
 
 export const obtenerProductos = async (req, res, next) => {
   try {
@@ -14,11 +16,29 @@ export const obtenerProductos = async (req, res, next) => {
     } = req.query;
 
     const offset = (page - 1) * limit;
-
     const where = {};
+    const include = [];
 
     if (buscar) {
-      where.nombre = { [Op.like]: `%${buscar}%` };
+      include.push({
+        model: Categoria,
+        as: 'Categoria',
+        required: false,
+        where: {
+          nombre: { [Op.like]: `%${buscar}%` },
+        },
+      });
+
+      where[Op.or] = [
+        { nombre: { [Op.like]: `%${buscar}%` } },
+        { sku: { [Op.like]: `%${buscar}%` } },
+      ];
+    } else {
+      include.push({
+        model: Categoria,
+        as: 'Categoria',
+        required: false,
+      });
     }
 
     if (categoriaId) {
@@ -27,30 +47,24 @@ export const obtenerProductos = async (req, res, next) => {
 
     const { count, rows } = await Producto.findAndCountAll({
       where,
+      include,
+      offset,
       limit: Number(limit),
-      offset: Number(offset),
-      order: [[orden, direccion.toUpperCase()]],
-      include: [
-        {
-          model: Categoria,
-          as: 'Categoria',
-          attributes: ['id', 'nombre'],
-        },
-        {
-          model: ImagenProducto,
-          as: 'Imagenes',
-          attributes: ['id', 'url'],
-          required: false,
-        },
-      ],
+      order: [[orden, direccion]],
     });
 
-    return res.json({
+    const totalPaginas = Math.ceil(count / limit);
+
+    res.json({
       data: rows,
       pagina: Number(page),
-      totalPaginas: Math.ceil(count / limit),
+      totalPaginas,
+      totalItems: count,
+      hasNextPage: Number(page) < totalPaginas,
+      hasPrevPage: Number(page) > 1,
     });
   } catch (error) {
+    console.error('❌ Error al obtener productos:', error);
     next(error);
   }
 };
@@ -67,10 +81,11 @@ export const obtenerProductoPorId = async (req, res, next) => {
         {
           model: ImagenProducto,
           as: 'Imagenes',
-          attributes: ['id', 'url'],
+          attributes: ['id', 'url', 'orden'],
           required: false,
         },
       ],
+      order: [[{ model: ImagenProducto, as: 'Imagenes' }, 'orden', 'ASC']],
     });
 
     if (!producto) {
@@ -86,6 +101,7 @@ export const obtenerProductoPorId = async (req, res, next) => {
 export const crearProducto = async (req, res, next) => {
   try {
     const producto = await Producto.create(req.body);
+    cache.flushAll();
     res.status(201).json(producto);
   } catch (error) {
     next(error);
@@ -117,13 +133,15 @@ export const crearProductoConImagenes = async (req, res, next) => {
     });
 
     if (req.files && req.files.length > 0) {
-      const imagenes = req.files.map((file) => ({
+      const imagenes = req.files.map((file, index) => ({
         url: `/uploads/productos/${file.filename}`,
         productoId: producto.id,
+        orden: index,
       }));
       await ImagenProducto.bulkCreate(imagenes);
     }
 
+    cache.flushAll();
     res.json({ producto });
   } catch (error) {
     next(error);
@@ -137,6 +155,7 @@ export const actualizarProducto = async (req, res, next) => {
     if (!producto) return res.status(404).json({ message: 'Producto no encontrado' });
 
     await producto.update(req.body);
+    cache.flushAll();
     res.json(producto);
   } catch (error) {
     next(error);
@@ -173,13 +192,15 @@ export const actualizarProductoConImagenes = async (req, res, next) => {
     });
 
     if (req.files?.length) {
-      const imagenes = req.files.map((file) => ({
+      const imagenes = req.files.map((file, index) => ({
         url: `/uploads/productos/${file.filename}`,
         productoId: producto.id,
+        orden: index,
       }));
       await ImagenProducto.bulkCreate(imagenes);
     }
 
+    cache.flushAll();
     res.json({ producto });
   } catch (error) {
     next(error);
@@ -193,19 +214,8 @@ export const eliminarProducto = async (req, res, next) => {
     if (!producto) return res.status(404).json({ message: 'Producto no encontrado' });
 
     await producto.destroy();
+    cache.flushAll();
     res.json({ message: 'Producto eliminado correctamente' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const eliminarImagenProducto = async (req, res, next) => {
-  try {
-    const imagen = await ImagenProducto.findByPk(req.params.id);
-    if (!imagen) return res.status(404).json({ error: 'Imagen no encontrada' });
-
-    await imagen.destroy();
-    res.json({ mensaje: 'Imagen eliminada' });
   } catch (error) {
     next(error);
   }
@@ -218,7 +228,6 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
     }
 
     const filas = leerExcelProductos(req.file.path);
-
     const productosCreados = [];
 
     for (const fila of filas) {
@@ -230,7 +239,7 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
         precioUnitario,
         precioPorBulto,
         unidadPorBulto,
-        categoria, // ← ahora recibimos nombre de categoría
+        categoria,
       } = fila;
 
       if (!sku || isNaN(precioUnitario)) continue;
@@ -238,18 +247,15 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
       const yaExiste = await Producto.findOne({ where: { sku } });
       if (yaExiste) continue;
 
-      // Buscar categoría por nombre
       let categoriaExistente = await Categoria.findOne({
         where: { nombre: categoria },
         paranoid: false,
       });
 
-      // Si está eliminada, restaurar
       if (categoriaExistente?.deletedAt) {
         await categoriaExistente.restore();
       }
 
-      // Si no existe, crearla
       if (!categoriaExistente) {
         categoriaExistente = await Categoria.create({
           nombre: categoria,
@@ -271,6 +277,7 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
       productosCreados.push(producto);
     }
 
+    cache.flushAll();
     res.json({
       mensaje: `${productosCreados.length} productos importados correctamente`,
       productos: productosCreados,
@@ -279,3 +286,32 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
     next(error);
   }
 };
+
+export const actualizarOrdenImagenes = async (req, res, next) => {
+  try {
+    const { imagenes } = req.body;
+
+    for (const { id, orden } of imagenes) {
+      await ImagenProducto.update({ orden }, { where: { id } });
+    }
+
+    res.json({ mensaje: 'Orden actualizado correctamente' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const eliminarImagenProducto = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const imagen = await ImagenProducto.findByPk(id);
+    if (!imagen) return res.status(404).json({ message: 'Imagen no encontrada' });
+
+    await imagen.destroy();
+    res.json({ message: 'Imagen eliminada correctamente' });
+  } catch (error) {
+    console.error('❌ Error al eliminar imagen del producto:', error);
+    next(error);
+  }
+};
+

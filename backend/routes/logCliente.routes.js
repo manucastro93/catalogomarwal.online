@@ -1,8 +1,9 @@
 import express from 'express';
-import { registrarLog } from '../controllers/logCliente.controller.js';
+import { registrarLogCliente, listarLogsCliente } from '../controllers/logCliente.controller.js';
 
 const router = express.Router();
 
-router.post('/', registrarLog);
-
+router.post('/', registrarLogCliente);
+router.post('/logs-cliente', listarLogsCliente);
+router
 export default router;

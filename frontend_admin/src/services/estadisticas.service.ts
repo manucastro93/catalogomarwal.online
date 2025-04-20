@@ -31,3 +31,7 @@ export const obtenerRankingEstadisticas = async (desde: string, hasta: string) =
   return data;
 };
 
+export const obtenerEstadisticasProducto = async (productoId: number) => {
+  const { data } = await api.get(`/estadisticas/producto/${productoId}`);
+  return data;
+};

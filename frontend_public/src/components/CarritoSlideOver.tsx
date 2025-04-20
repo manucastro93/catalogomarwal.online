@@ -1,13 +1,18 @@
-import { createSignal, Show, For, createEffect } from "solid-js";
+import {
+  createSignal,
+  Show,
+  For,
+  createEffect
+} from "solid-js";
 import {
   carrito,
   carritoAbierto,
   setCarritoAbierto,
   quitarDelCarrito,
   cambiarCantidad,
-  limpiarCarrito,
+  limpiarCarrito
 } from "../store/carrito";
-import { enviarPedido } from "../services/pedido.service";
+import { enviarPedido, validarCarrito } from "../services/pedido.service";
 import { useAuth } from "../store/auth";
 import FormularioCliente from "../components/FormularioCliente";
 import ModalMensaje from "./ModalMensaje";
@@ -26,7 +31,6 @@ export default function CarritoSlideOver() {
   const [mensaje, setMensaje] = createSignal("");
   const [pedidoEnviado, setPedidoEnviado] = createSignal(false);
   const [enviando, setEnviando] = createSignal(false);
-
   const [showMobile, setShowMobile] = createSignal(false);
   const [showDesktop, setShowDesktop] = createSignal(false);
 
@@ -43,11 +47,13 @@ export default function CarritoSlideOver() {
 
   const handleEnviarPedido = async (datosCliente: any) => {
     setEnviando(true);
+
     const vendedorRaw = localStorage.getItem("vendedor");
     const vendedor = vendedorRaw ? JSON.parse(vendedorRaw) : null;
 
     if (!datosCliente?.nombre?.trim() || !datosCliente?.telefono?.trim()) {
       setMensaje("Por favor completá nombre y teléfono.");
+      setEnviando(false);
       return;
     }
 
@@ -61,6 +67,8 @@ export default function CarritoSlideOver() {
     }));
 
     try {
+      const validacion = await validarCarrito(carritoPlano);
+
       const res = await enviarPedido({
         cliente: {
           ...datosCliente,
@@ -68,21 +76,36 @@ export default function CarritoSlideOver() {
         },
         carrito: carritoPlano,
         usuarioId: vendedor?.id,
-        vendedor: vendedor
+        vendedor,
       });
 
       if (res?.clienteId) {
         localStorage.setItem("clienteId", res.clienteId.toString());
       }
 
+      localStorage.removeItem("clienteDatos");
       limpiarCarrito();
       setCarritoAbierto(false);
       setPedidoEnviado(true);
       setMensaje("¡Pedido enviado con éxito!");
       setTimeout(() => setMensaje(""), 8000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error al enviar pedido:", error);
-      setMensaje("Hubo un error al enviar el pedido. Intentalo nuevamente.");
+
+      if (error?.errores) {
+        const resumen = error.errores
+          .map((e: any) => {
+            if (e.motivo === "El precio fue modificado.") {
+              return `🛑 ${e.motivo} (${e.precioCliente} ➜ ${e.precioActual})`;
+            }
+            return `🛑 ${e.motivo}`;
+          })
+          .join("\n");
+
+        setMensaje(`Algunos productos del carrito han cambiado:\n${resumen}`);
+      } else {
+        setMensaje("Hubo un error al enviar el pedido. Intentalo nuevamente.");
+      }
     } finally {
       setEnviando(false);
     }
@@ -90,12 +113,10 @@ export default function CarritoSlideOver() {
 
   return (
     <>
-      {/* Overlay de carga global */}
       <Show when={enviando()}>
         <EnviandoOverlay />
       </Show>
 
-      {/* Fondo oscuro */}
       <Show when={carritoAbierto()}>
         <div
           class="fixed inset-0 z-40 bg-black/40"
@@ -103,7 +124,6 @@ export default function CarritoSlideOver() {
         />
       </Show>
 
-      {/* MOBILE: CARRITO DESDE ARRIBA */}
       <Show when={showMobile()}>
         <div
           class={`fixed top-[70px] left-0 right-0 z-40 md:hidden bg-white shadow-lg p-4 overflow-auto max-h-[80vh] ${
@@ -111,22 +131,14 @@ export default function CarritoSlideOver() {
           }`}
         >
           <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
-          <Show
-            when={carrito.length > 0}
-            fallback={<p>El carrito está vacío.</p>}
-          >
-            <ContenidoCarrito
-              onConfirmar={handleEnviarPedido}
-              total={total()}
-            />
+          <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
+            <ContenidoCarrito onConfirmar={handleEnviarPedido} total={total()} />
           </Show>
         </div>
       </Show>
 
-      {/* DESKTOP: CARRITO DESDE LA DERECHA */}
       <Show when={showDesktop()}>
         <>
-          {/* Flecha para cerrar */}
           <div
             class="fixed top-1/2 right-[400px] z-50 -translate-y-1/2 bg-black text-white px-2 py-1 text-xl rounded-l-2xl cursor-pointer hover:bg-gray-800 shadow hidden md:flex flex-col items-center"
             onClick={() => setCarritoAbierto(false)}
@@ -135,23 +147,14 @@ export default function CarritoSlideOver() {
             <span class="text-xl">→</span>
           </div>
 
-          {/* Panel carrito */}
           <div
             class={`fixed top-0 right-0 h-full w-[400px] bg-white p-4 shadow-xl overflow-auto hidden md:flex flex-col z-50 ${
-              carritoAbierto()
-                ? "animate-slideInRight"
-                : "animate-slideOutRight"
+              carritoAbierto() ? "animate-slideInRight" : "animate-slideOutRight"
             }`}
           >
             <h2 class="text-xl font-bold mb-4">¡SU CARRITO!</h2>
-            <Show
-              when={carrito.length > 0}
-              fallback={<p>El carrito está vacío.</p>}
-            >
-              <ContenidoCarrito
-                onConfirmar={handleEnviarPedido}
-                total={total()}
-              />
+            <Show when={carrito.length > 0} fallback={<p>El carrito está vacío.</p>}>
+              <ContenidoCarrito onConfirmar={handleEnviarPedido} total={total()} />
             </Show>
           </div>
         </>
@@ -161,7 +164,6 @@ export default function CarritoSlideOver() {
         <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje("")} />
       </Show>
 
-      {/* BOTÓN FLOTANTE SOLO EN DESKTOP */}
       <Show when={!carritoAbierto()}>
         <button
           class="hidden md:block fixed bottom-5 right-5 bg-black text-white text-4xl p-5 rounded-full shadow-xl transition-all duration-300 ease-out scale-90 opacity-100 animate-[fadeIn_.3s_ease-out_forwards] z-50"
@@ -190,14 +192,12 @@ function ContenidoCarrito(props: {
 
           return (
             <div class="flex items-start gap-3 text-sm border-b pb-2">
-              {/* Imagen */}
               <img
                 src={`${import.meta.env.VITE_UPLOADS_URL}${item.imagen}`}
                 alt={item.nombre}
                 class="object-contain w-16 h-16"
               />
 
-              {/* Info producto */}
               <div class="flex-1">
                 <p class="font-semibold">{item.nombre}</p>
                 <p class="text-xs text-gray-500">
@@ -213,7 +213,6 @@ function ContenidoCarrito(props: {
                 )}
               </div>
 
-              {/* Controles cantidad */}
               <div class="flex flex-col gap-1 items-end">
                 <div class="flex items-center gap-1">
                   <button

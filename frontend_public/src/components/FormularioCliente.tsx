@@ -3,23 +3,27 @@ import {
   createResource,
   Show,
   For,
+  onMount
 } from 'solid-js';
 import { obtenerProvincias, obtenerLocalidades } from '../services/ubicacion.service';
 import { capitalizarTexto } from '../utils/formato';
 import { validarTelefonoArgentino } from "../utils/validarTelefono";
+
 interface Props {
   onConfirmar: (datosCliente: any) => void;
 }
 
 export default function FormularioCliente({ onConfirmar }: Props) {
-  const [nombre, setNombre] = createSignal('');
-  const [telefono, setTelefono] = createSignal('');
-  const [email, setEmail] = createSignal('');
-  const [direccion, setDireccion] = createSignal('');
-  const [razonSocial, setRazonSocial] = createSignal('');
-  const [cuit, setCuit] = createSignal('');
-  const [provinciaId, setProvinciaId] = createSignal<number | undefined>();
-  const [localidadId, setLocalidadId] = createSignal<number | undefined>();
+  const datosGuardados = JSON.parse(localStorage.getItem("clienteDatos") || "null");
+
+  const [nombre, setNombre] = createSignal(datosGuardados?.nombre || '');
+  const [telefono, setTelefono] = createSignal(datosGuardados?.telefono || '');
+  const [email, setEmail] = createSignal(datosGuardados?.email || '');
+  const [direccion, setDireccion] = createSignal(datosGuardados?.direccion || '');
+  const [razonSocial, setRazonSocial] = createSignal(datosGuardados?.razonSocial || '');
+  const [cuit, setCuit] = createSignal(datosGuardados?.cuit_cuil || '');
+  const [provinciaId, setProvinciaId] = createSignal<number | undefined>(datosGuardados?.provinciaId);
+  const [localidadId, setLocalidadId] = createSignal<number | undefined>(datosGuardados?.localidadId);
 
   const [errores, setErrores] = createSignal<Record<string, string>>({});
 
@@ -30,6 +34,10 @@ export default function FormularioCliente({ onConfirmar }: Props) {
     const resultado = await obtenerLocalidades(provId);
     setLocalidades(resultado);
   };
+
+  onMount(() => {
+    if (provinciaId()) cargarLocalidades(provinciaId()!);
+  });
 
   const enviar = () => {
     const nuevosErrores: Record<string, string> = {};
@@ -81,12 +89,12 @@ export default function FormularioCliente({ onConfirmar }: Props) {
 
       {/* Teléfono */}
       <input
-  class={`w-full border px-3 py-2 rounded text-sm ${errores().telefono ? 'border-red-500' : ''}`}
-  type="text"
-  placeholder="Whatsapp. Ej: 11XXXXXXXX o 351XXXXXXXX"
-  value={telefono()}
-  onInput={(e) => setTelefono(e.currentTarget.value)}
-/>
+        class={`w-full border px-3 py-2 rounded text-sm ${errores().telefono ? 'border-red-500' : ''}`}
+        type="text"
+        placeholder="Whatsapp. Ej: 11XXXXXXXX o 351XXXXXXXX"
+        value={telefono()}
+        onInput={(e) => setTelefono(e.currentTarget.value)}
+      />
       <Show when={errores().telefono}>
         <p class="text-red-600 text-xs">{errores().telefono}</p>
       </Show>

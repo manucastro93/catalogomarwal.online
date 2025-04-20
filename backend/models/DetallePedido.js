@@ -64,10 +64,10 @@ export default (sequelize, DataTypes) => {
   });
 
   DetallePedido.associate = (models) => {
-    DetallePedido.belongsTo(models.Pedido, { foreignKey: 'pedidoId' });
-    DetallePedido.belongsTo(models.Producto, { foreignKey: 'productoId' });
-    DetallePedido.belongsTo(models.Cliente, { foreignKey: 'clienteId' });
-    DetallePedido.belongsTo(models.Usuario, { foreignKey: 'usuarioId' });
+    DetallePedido.belongsTo(models.Pedido, { foreignKey: 'pedidoId', as: 'pedido' });
+    DetallePedido.belongsTo(models.Producto, { foreignKey: 'productoId', as: 'producto' });
+    DetallePedido.belongsTo(models.Cliente, { foreignKey: 'clienteId', as: 'cliente' });
+    DetallePedido.belongsTo(models.Usuario, { foreignKey: 'usuarioId', as: 'usuario' });
   };
 
   return DetallePedido;

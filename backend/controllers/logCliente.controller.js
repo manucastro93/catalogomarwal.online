@@ -1,47 +1,95 @@
-import { LogCliente, IpCliente } from '../models/index.js';
+import { LogCliente, IpCliente, Cliente } from '../models/index.js';
+import { Op } from 'sequelize';
 import { getClientIp } from '../utils/getClientIp.js';
 
-export const registrarLog = async (req, res, next) => {
+export const registrarLogCliente = async (req, res, next) => {
   try {
     const ip = getClientIp(req);
-    // Detectar fuente
-      const referer = req.headers.referer || '';
-      const userAgent = req.headers['user-agent'] || '';
+    const {
+      categoriaId = null,
+      busqueda = null,
+      tiempoEnPantalla = null,
+      ubicacion = null,
+      sesion = null,
+      referer = null
+    } = req.body;
 
-      let fuente = 'desconocida';
+    const ipCliente = await IpCliente.findOne({ where: { ip } });
+    const ipClienteId = ipCliente?.id || null;
 
-      if (referer.includes('whatsapp.com') || referer.includes('wa.me')) {
-        fuente = 'whatsapp';
-      } else if (userAgent.toLowerCase().includes('whatsapp')) {
-        fuente = 'whatsapp';
-      } else if (referer.includes('instagram.com')) {
-        fuente = 'instagram';
-      } else if (referer.includes('facebook.com')) {
-        fuente = 'facebook';
-      } else if (referer.includes('google.')) {
-        fuente = 'google';
-      } else if (!referer) {
-        fuente = 'directo';
-      }
+    if (!ipClienteId && !busqueda && !categoriaId) {
+      return res.status(400).json({ message: 'Faltan datos o IP no registrada' });
+    }
 
-    const { clienteId, ...resto } = req.body;
-
-    // Buscar o crear IpCliente
-    const [ipCliente] = await IpCliente.findOrCreate({
-      where: { ip, clienteId: clienteId || null },
-      defaults: { ip, clienteId: clienteId || null },
-    });
-
-    const nuevoLog = await LogCliente.create({
-      ...resto,
-      ipClienteId: ipCliente.id,
+    const log = await LogCliente.create({
+      ipClienteId,
+      categoriaId,
+      busqueda,
+      tiempoEnPantalla,
+      ubicacion,
+      sesion,
       referer,
-      fuente, // ✅ se guarda la fuente detectada
     });
 
-    res.status(201).json({ message: 'Log registrado correctamente', log: nuevoLog });
+    res.status(201).json({ message: 'Log registrado', log });
   } catch (error) {
-    console.error('❌ Error al registrar log:', error);
+    console.error('❌ Error al registrar log del cliente:', error);
+    next(error);
+  }
+};
+
+export const listarLogsCliente = async (req, res, next) => {
+  try {
+    const {
+      clienteId,
+      ip,
+      desde,
+      hasta,
+      limit = 100,
+      page = 1,
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+
+    const where = {};
+    const include = [
+      {
+        model: IpCliente,
+        as: 'ipCliente',
+        include: [{ model: Cliente, as: 'cliente' }],
+      },
+    ];
+
+    if (desde && hasta) {
+      where.createdAt = {
+        [Op.between]: [new Date(desde), new Date(hasta)],
+      };
+    }
+
+    if (ip) {
+      include[0].where = { ...(include[0].where || {}), ip };
+    }
+
+    if (clienteId) {
+      include[0].where = { ...(include[0].where || {}), clienteId };
+    }
+
+    const { count, rows } = await LogCliente.findAndCountAll({
+      where,
+      include,
+      limit: Number(limit),
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json({
+      data: rows,
+      total: count,
+      pagina: Number(page),
+      totalPaginas: Math.ceil(count / limit),
+    });
+  } catch (error) {
+    console.error('❌ Error al listar logs:', error);
     next(error);
   }
 };
