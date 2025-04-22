@@ -456,15 +456,34 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
   try {
     const { cliente, carrito, usuarioId } = req.body;
 
-    if (!cliente?.id || !Array.isArray(carrito) || carrito.length === 0) {
+    if (!cliente || !Array.isArray(carrito) || carrito.length === 0) {
       return res.status(400).json({ error: 'Datos incompletos para el pedido.' });
     }
 
-    const clienteFinal = await Cliente.findByPk(cliente.id);
-    if (!clienteFinal) {
-      return res.status(404).json({ error: 'Cliente no encontrado.' });
+    // Crear cliente si no existe
+    let clienteFinal = null;
+
+    if (!cliente.id || cliente.id === 0) {
+      clienteFinal = await Cliente.create({
+        nombre: cliente.nombre,
+        email: cliente.email,
+        telefono: cliente.telefono,
+        direccion: cliente.direccion || '',
+        razonSocial: cliente.razonSocial || '',
+        cuit_cuil: cliente.cuit_cuil,
+        provinciaId: cliente.provinciaId || null,
+        localidadId: cliente.localidadId || null,
+        vendedorId: usuarioId,
+      });
+    } else {
+      const buscado = await Cliente.findByPk(cliente.id);
+      if (!buscado) {
+        return res.status(404).json({ error: 'Cliente no encontrado.' });
+      }
+      clienteFinal = buscado;
     }
 
+    // Crear el pedido
     const pedido = await Pedido.create({
       clienteId: clienteFinal.id,
       usuarioId,
@@ -501,6 +520,7 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
 
     const vendedor = usuarioId ? await Usuario.findByPk(usuarioId) : null;
 
+    // Notificación al vendedor
     await Notificacion.create({
       titulo: 'Nuevo pedido creado desde el panel',
       mensaje: `El cliente ${clienteFinal.nombre} tiene un nuevo pedido.`,
@@ -508,6 +528,7 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
       usuarioId,
     });
 
+    // Notificaciones a administradores
     const admins = await Usuario.findAll({
       where: { rol: { [Op.in]: ['administrador', 'supremo'] } },
     });
@@ -521,9 +542,10 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
       });
     }
 
+    // Envío por email y WhatsApp
     await enviarEmailPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
     await enviarWhatsappPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
-    localStorage.setItem("clienteDatos", JSON.stringify(clienteFinal));
+
     res.status(201).json({ message: 'Pedido creado correctamente', pedidoId: pedido.id });
   } catch (err) {
     console.error('❌ Error al crear pedido desde panel:', err);

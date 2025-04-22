@@ -58,7 +58,7 @@ export const importarProductosDesdeExcel = async (formData: FormData) => {
 };
 
 export const actualizarOrdenImagenes = async (imagenes: { id: number; orden: number }[]) => {
-  const { data } = await api.put('/productos/imagenes/orden', { imagenes });
+  const { data } = await api.put('/productos/imagenes/ordenar', { imagenes });
   return data;
 };
 

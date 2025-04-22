@@ -77,13 +77,13 @@ export default function Sidebar() {
             </button>
             <Show when={ventasOpen()}>
               <div class="ml-5 flex flex-col gap-1 mt-1">
+                <A href="/Pedidos" classList={{ 'text-blue-400': esActivo('/Pedidos') }}>Pedidos</A>
                 <A href="/Productos" classList={{ 'text-blue-400': esActivo('/Productos') }}>Productos</A>
+                <A href="/Categorias" classList={{ 'text-blue-400': esActivo('/Categorias') }}>Categorías</A>
                 <A href="/Clientes" classList={{ 'text-blue-400': esActivo('/Clientes') }}>Clientes</A>
                 <Show when={usuario()?.rol !== 'vendedor'}>
                   <A href="/Vendedores" classList={{ 'text-blue-400': esActivo('/Vendedores') }}>Vendedores</A>
                 </Show>
-                <A href="/Categorias" classList={{ 'text-blue-400': esActivo('/Categorias') }}>Categorías</A>
-                <A href="/Pedidos" classList={{ 'text-blue-400': esActivo('/Pedidos') }}>Pedidos</A>
                 <A href="/Estadisticas" classList={{ 'text-blue-400': esActivo('/Estadisticas') }}>Estadísticas</A>
                 <Show when={usuario()?.rol !== 'vendedor'}>
                   <A href="/LogsCliente" classList={{ 'text-blue-400': esActivo('/LogsCliente') }}>Actividad Clientes</A>
