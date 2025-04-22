@@ -21,6 +21,9 @@ export const obtenerProductos = async (req, res, next) => {
         model: ImagenProducto,
         as: 'Imagenes',
         required: false,
+        attributes: ['id', 'url', 'orden'],
+        separate: true,
+        order: [['orden', 'ASC']],
       }
     ];
     
