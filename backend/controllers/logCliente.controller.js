@@ -1,7 +1,7 @@
-import { LogCliente, IpCliente, Cliente } from '../models/index.js';
+import { LogCliente, IpCliente, Cliente, Categoria } from '../models/index.js';
 import { Op } from 'sequelize';
 import { getClientIp } from '../utils/getClientIp.js';
-
+import dayjs from 'dayjs';
 export const registrarLogCliente = async (req, res, next) => {
   try {
     const ip = getClientIp(req);
@@ -11,7 +11,8 @@ export const registrarLogCliente = async (req, res, next) => {
       tiempoEnPantalla = null,
       ubicacion = null,
       sesion = null,
-      referer = null
+      referer = null,
+      fuente = null,
     } = req.body;
 
     const ipCliente = await IpCliente.findOne({ where: { ip } });
@@ -29,6 +30,7 @@ export const registrarLogCliente = async (req, res, next) => {
       ubicacion,
       sesion,
       referer,
+      fuente,
     });
 
     res.status(201).json({ message: 'Log registrado', log });
@@ -47,49 +49,85 @@ export const listarLogsCliente = async (req, res, next) => {
       hasta,
       limit = 100,
       page = 1,
+      groupBy,
     } = req.query;
 
     const offset = (page - 1) * limit;
-
     const where = {};
+
     const include = [
       {
         model: IpCliente,
         as: 'ipCliente',
-        include: [{ model: Cliente, as: 'cliente' }],
+        required: false,
+        attributes: ['ip'],
+        include: [
+          {
+            model: Cliente,
+            as: 'clientes',
+            attributes: ['id', 'nombre'],
+            through: { attributes: [] }, // no mostrar datos de la tabla pivot
+            required: false,
+          }
+        ],
+      },
+      {
+        model: Categoria,
+        as: 'categoria',
+        attributes: ['id', 'nombre'],
+        required: false,
       },
     ];
 
+    // ✅ Filtro por fecha
     if (desde && hasta) {
       where.createdAt = {
         [Op.between]: [new Date(desde), new Date(hasta)],
       };
     }
 
-    if (ip) {
-      include[0].where = { ...(include[0].where || {}), ip };
-    }
-
-    if (clienteId) {
-      include[0].where = { ...(include[0].where || {}), clienteId };
-    }
+    // ✅ NO filtramos por IP ni clienteId aquí. Vamos a filtrar luego.
+    const paginando = groupBy !== 'ipFecha';
 
     const { count, rows } = await LogCliente.findAndCountAll({
       where,
       include,
-      limit: Number(limit),
-      offset,
       order: [['createdAt', 'DESC']],
+      ...(paginando && { limit: Number(limit), offset }),
     });
+    // ✅ Filtro manual por clienteId si viene
+    const filtrados = clienteId
+      ? rows.filter((log) => {
+          const ipCliente = log.ipCliente;
+          const cliente = ipCliente?.cliente;
+          return (
+            cliente?.id == clienteId || ipCliente?.clienteId == clienteId
+          );
+        })
+      : rows;
 
-    res.json({
-      data: rows,
-      total: count,
+    // ✅ Agrupado por IP y fecha
+    if (groupBy === 'ipFecha') {
+      const grouped = filtrados.reduce((acc, log) => {
+        const fecha = dayjs(log.createdAt).format('YYYY-MM-DD');
+        const ip = log.ipCliente?.ip || 'Sin IP';
+        const key = `${ip} - ${fecha}`;
+        acc[key] = acc[key] || [];
+        acc[key].push(log);
+        return acc;
+      }, {});
+      return res.json({ grouped });
+    }
+
+    return res.json({
+      data: filtrados,
+      total: filtrados.length,
       pagina: Number(page),
-      totalPaginas: Math.ceil(count / limit),
+      totalPaginas: Math.ceil(filtrados.length / limit),
     });
   } catch (error) {
     console.error('❌ Error al listar logs:', error);
     next(error);
   }
 };
+

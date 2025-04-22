@@ -9,11 +9,15 @@ export type EstadoPedido =
   | "enviado"
   | "entregado"
   | "cancelado"
-  | "rechazado";
+  | "rechazado"
+  | "editando";
+
+export type EstadoEdicion = 'pendiente' | 'editando';
 
 export interface Pedido {
   id: number;
   estado: EstadoPedido;
+  estadoEdicion: EstadoEdicion;
   observaciones?: string | null;
   total: number;
   clienteId: number;
@@ -35,9 +39,9 @@ export interface Pedido {
 export interface PedidoPayload {
   cliente: Cliente;
   carrito: {
-    id: number; // id del producto
+    id: number; 
     cantidad: number;
-    precio: number; // precio por bulto
+    precio: number; 
     unidadPorBulto: number;
   }[];
   usuarioId?: number | null;

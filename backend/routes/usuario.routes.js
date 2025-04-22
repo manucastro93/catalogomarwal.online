@@ -13,6 +13,7 @@ import {
   crearAdministrador,
   actualizarAdministrador,
   eliminarAdministrador,
+  obtenerEstadisticasVendedor
 } from '../controllers/usuario.controller.js';
 
 import { validarUsuario } from '../validaciones/usuario.validation.js';
@@ -28,10 +29,11 @@ router.delete('/:id', eliminarUsuario, registrarAuditoria('Usuario', 'eliminado'
 
 // ================== VENDEDORES ==================
 router.get('/vendedores', obtenerVendedores);
+router.get('/vendedores/vendedor-por-link/:link', buscarVendedorPorLink);
+router.get('/:id/estadisticas-vendedor', obtenerEstadisticasVendedor);
 router.post('/vendedores', validarUsuario, crearVendedor, registrarAuditoria('Usuario', 'creado'));
 router.put('/vendedores/:id', validarUsuario, actualizarVendedor, registrarAuditoria('Usuario', 'modificado'));
 router.delete('/vendedores/:id', eliminarVendedor, registrarAuditoria('Usuario', 'eliminado'));
-router.get('/vendedores/vendedor-por-link/:link', buscarVendedorPorLink);
 
 // ================== ADMINISTRADORES ==================
 router.get('/administradores', obtenerAdministradores);

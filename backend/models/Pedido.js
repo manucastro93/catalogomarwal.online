@@ -8,7 +8,8 @@ export default (sequelize, DataTypes) => {
         'enviado',
         'entregado',
         'cancelado',
-        'rechazado'
+        'rechazado',
+        'editando'
       ),
       defaultValue: 'pendiente',
     },
@@ -34,7 +35,11 @@ export default (sequelize, DataTypes) => {
       references: {
         model: 'Usuarios',
         key: 'id',
-      },
+      }
+    },
+    estadoEdicion: {
+      type: DataTypes.ENUM('pendiente', 'editando'),
+      defaultValue: 'pendiente',
     },
   });
 
@@ -61,4 +66,3 @@ export default (sequelize, DataTypes) => {
 
   return Pedido;
 };
-

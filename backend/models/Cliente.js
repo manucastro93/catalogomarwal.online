@@ -74,8 +74,13 @@ export default (sequelize, DataTypes) => {
       foreignKey: 'clienteId',
       as: 'pedidos'
     });
+    Cliente.belongsToMany(models.IpCliente, {
+      through: 'IpClienteCliente',
+      foreignKey: 'clienteId',
+      otherKey: 'ipClienteId',
+      as: 'ips',
+    });
   };
-
 
   return Cliente;
 };

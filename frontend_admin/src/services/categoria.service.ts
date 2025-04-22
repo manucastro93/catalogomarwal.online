@@ -3,8 +3,9 @@ import type { Categoria } from '../types/categoria';
 
 export const obtenerCategorias = async () => {
   const { data } = await api.get('/categorias');
-  return data;
+  return data.data; 
 };
+
 
 export const crearCategoria = async (categoria: Partial<Categoria>) => {
   const { data } = await api.post('/categorias', categoria);

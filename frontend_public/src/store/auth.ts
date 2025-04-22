@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js';
-import type { Usuario } from '../shared/types/usuario';
+import type { Usuario } from '../types/usuario';
 import { useNavigate } from '@solidjs/router';
 
 const [usuario, setUsuario] = createSignal<Usuario | null>(null);

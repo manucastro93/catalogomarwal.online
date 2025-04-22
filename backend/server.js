@@ -2,6 +2,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import './cronjobs/revertirEditando.js';
 import sequelize from './config/database.js';
 import errorHandler from './middlewares/errorHandler.js';
 import rutas from './routes/index.js';

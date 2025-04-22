@@ -5,26 +5,37 @@ import {
   crearPedido,
   crearPedidoDesdePanel,
   actualizarEstadoPedido,
-  obtenerPedidosPorIp,
-  validarCarritoSolo
+  validarCarritoSolo,
+  crearOEditarPedido,
+  duplicarPedido,
+  marcarComoEditando,
+  revertirEditando,
+  obtenerPedidosInicio,
+  cancelarPedidoDesdeCliente
 } from '../controllers/pedido.controller.js';
 
-import { validarPedido } from '../validaciones/pedido.validation.js';
+import { validarPedidoBody } from '../validaciones/pedido.validation.js';
 import { registrarAuditoria } from '../middlewares/auditoria.js';
 
 const router = express.Router();
 
 // 📦 Listar pedidos (panel o por IP pública)
 router.get('/', obtenerPedidos);
+router.get('/inicio', obtenerPedidosInicio);
 router.get('/:id', obtenerPedidoPorId);
-router.get('/ip', obtenerPedidosPorIp);
 
-// 🧾 Crear pedidos
-router.post('/', validarPedido, crearPedido, registrarAuditoria('Pedido', 'creado'));
-router.post('/desde-panel', validarPedido, crearPedidoDesdePanel, registrarAuditoria('Pedido', 'creado'));
+// 🧾 Crear o editar pedidos
+router.post('/', validarPedidoBody, crearOEditarPedido, registrarAuditoria('Pedido', 'creado_o_editado'));
+router.post('/duplicar', duplicarPedido);
+router.post('/desde-panel', validarPedidoBody, crearPedidoDesdePanel, registrarAuditoria('Pedido', 'creado_desde_panel'));
 
-// 🔄 Cambiar estado
-router.put('/:id/estado', actualizarEstadoPedido, registrarAuditoria('Pedido', 'modificado'));
+// ✏️ Marcar pedido en edición y revertir
+router.put('/:id/editando', marcarComoEditando, registrarAuditoria('Pedido', 'edicion_iniciada'));
+router.put('/:id/revertir-editando', revertirEditando, registrarAuditoria('Pedido', 'edicion_revertida'));
+
+// 🔄 Cambiar estado (desde panel, bloqueado si cliente está editando)
+router.put('/:id/estado', actualizarEstadoPedido, registrarAuditoria('Pedido', 'estado_modificado'));
+router.put('/:id/cancelar-desde-cliente', cancelarPedidoDesdeCliente);
 
 // 🧪 Validar carrito (sin registrar)
 router.post('/validar', validarCarritoSolo);

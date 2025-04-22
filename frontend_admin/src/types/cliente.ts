@@ -2,6 +2,18 @@ import type { Provincia } from './ubicacion';
 import type { Localidad } from './ubicacion';
 import type { Usuario } from './usuario';
 
+export interface HistorialCambio {
+  id: number;
+  campo: string;
+  valorAnterior: string;
+  valorNuevo: string;
+  createdAt: string;
+  usuario?: {
+    id: number;
+    nombre: string;
+  };
+}
+
 export interface Cliente {
   id: number;
   nombre: string;

@@ -1,6 +1,6 @@
 import { body } from 'express-validator';
 
-export const validarPedido = [
+export const validarPedidoBody = [
   body('carrito')
     .isArray({ min: 1 })
     .withMessage('El carrito no puede estar vacío'),

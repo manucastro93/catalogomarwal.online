@@ -1,4 +1,3 @@
-// 📁 controllers/producto.controller.js
 import { Producto, Categoria, ImagenProducto } from '../models/index.js';
 import { Op } from 'sequelize';
 import { leerExcelProductos } from '../utils/leerExcel.js';
@@ -121,7 +120,7 @@ export const crearProductoConImagenes = async (req, res, next) => {
       sku,
       nombre,
       descripcion,
-      hayStock,
+      activo,
       precioUnitario,
       precioPorBulto,
       unidadPorBulto,
@@ -132,7 +131,7 @@ export const crearProductoConImagenes = async (req, res, next) => {
       sku,
       nombre,
       descripcion,
-      hayStock: hayStock === 'true',
+      activo: activo === 'true',
       precioUnitario,
       precioPorBulto,
       unidadPorBulto,
@@ -177,7 +176,7 @@ export const actualizarProductoConImagenes = async (req, res, next) => {
       sku,
       nombre,
       descripcion,
-      hayStock,
+      activo,
       precioUnitario,
       precioPorBulto,
       unidadPorBulto,
@@ -191,7 +190,7 @@ export const actualizarProductoConImagenes = async (req, res, next) => {
       sku,
       nombre,
       descripcion,
-      hayStock: hayStock === 'true',
+      activo: activo === 'true',
       precioUnitario,
       precioPorBulto,
       unidadPorBulto,
@@ -242,7 +241,7 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
         sku,
         nombre,
         descripcion,
-        hayStock,
+        activo,
         precioUnitario,
         precioPorBulto,
         unidadPorBulto,
@@ -274,7 +273,7 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
         sku,
         nombre,
         descripcion,
-        hayStock: hayStock === 'Sí',
+        activo: activo === 'Sí',
         precioUnitario,
         precioPorBulto,
         unidadPorBulto,

@@ -18,10 +18,26 @@ import { obtenerBanners } from "../services/pagina.service";
 import {
   registrarLogCliente,
   detectarClientePorIp,
+  obtenerClientePorId,
 } from "../services/cliente.service";
 import { registrarBusqueda } from "../hooks/useLogBusqueda";
 
-export default function Inicio() {
+let timeoutBusqueda: number;
+
+function registrarBusquedaDebounced(valor: string) {
+  clearTimeout(timeoutBusqueda);
+  timeoutBusqueda = window.setTimeout(() => {
+    if (valor.trim().length >= 2) {
+      registrarBusqueda(valor);
+    }
+  }, 800);
+}
+
+interface InicioProps {
+  pedidoIdEdicion?: string;
+}
+
+export default function Inicio(props: InicioProps) {
   const [params] = useSearchParams();
   const [productos, setProductos] = createSignal<any[]>([]);
   const [categorias, setCategorias] = createSignal<string[]>([]);
@@ -31,24 +47,17 @@ export default function Inicio() {
   const [pagina, setPagina] = createSignal(1);
   const [totalPaginas, setTotalPaginas] = createSignal(1);
   const [banners] = createResource(obtenerBanners);
-  const [productoSeleccionado, setProductoSeleccionado] = createSignal<
-    any | null
-  >(null);
+  const [productoSeleccionado, setProductoSeleccionado] = createSignal<any | null>(null);
   const [mostrarDetalle, setMostrarDetalle] = createSignal(false);
   const [mensajeEdicion, setMensajeEdicion] = createSignal("");
 
   const obtenerOrdenYDireccion = () => {
     switch (ordenSeleccionado()) {
-      case "precioAsc":
-        return { orden: "precioPorBulto", direccion: "ASC" };
-      case "precioDesc":
-        return { orden: "precioPorBulto", direccion: "DESC" };
-      case "nombreAsc":
-        return { orden: "nombre", direccion: "ASC" };
-      case "nombreDesc":
-        return { orden: "nombre", direccion: "DESC" };
-      default:
-        return { orden: "createdAt", direccion: "DESC" };
+      case "precioAsc": return { orden: "precioPorBulto", direccion: "ASC" };
+      case "precioDesc": return { orden: "precioPorBulto", direccion: "DESC" };
+      case "nombreAsc": return { orden: "nombre", direccion: "ASC" };
+      case "nombreDesc": return { orden: "nombre", direccion: "DESC" };
+      default: return { orden: "createdAt", direccion: "DESC" };
     }
   };
 
@@ -94,14 +103,10 @@ export default function Inicio() {
 
     detectarClientePorIp();
 
-    // Precargar datos de cliente si existe clienteId
     const clienteId = localStorage.getItem("clienteId");
     if (clienteId) {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/clientes/${clienteId}`
-        );
-        const data = await res.json();
+        const data = await obtenerClientePorId(Number(clienteId));
         if (data?.id) {
           localStorage.setItem("clienteDatos", JSON.stringify(data));
         }
@@ -109,24 +114,35 @@ export default function Inicio() {
         console.error("❌ Error al obtener datos del cliente por IP:", error);
       }
     }
+
+    // ✅ Mostrar mensaje si ya está en modo edición
+    const pedidoId = localStorage.getItem("modoEdicionPedidoId");
+    if (pedidoId) {
+      setMensajeEdicion(
+        `Estás editando el Pedido #${pedidoId}. Realizá los cambios y volvé a enviarlo.`
+      );
+    }
+
+    // ✅ Si viene desde props, lo setea también
+    if (props.pedidoIdEdicion) {
+      console.log("🟢 Seteando modoEdicionPedidoId desde props:", props.pedidoIdEdicion);
+      localStorage.setItem("modoEdicionPedidoId", props.pedidoIdEdicion);
+      localStorage.setItem("abrirCarrito", "1");
+    }
   });
 
   createEffect(() => {
     fetchProductos();
   });
 
-  onMount(() => {
-    const pedidoId = localStorage.getItem("modoEdicionPedidoId");
-    if (pedidoId) {
-      setMensajeEdicion(
-        `Estás editando el Pedido #${pedidoId}. Realizá los cambios y volvé a enviarlo.`
-      );
-      localStorage.removeItem("modoEdicionPedidoId");
-    }
-  });
-
   return (
     <div class="flex flex-col">
+      <Show when={mensajeEdicion()}>
+        <div class="bg-yellow-100 text-yellow-800 px-4 py-2 text-sm border-b border-yellow-300">
+          {mensajeEdicion()}
+        </div>
+      </Show>
+
       <Show when={banners()}>
         <div class="w-full overflow-hidden mb-0">
           <For each={banners()}>
@@ -143,7 +159,7 @@ export default function Inicio() {
 
       <div class="flex flex-col sm:flex-row">
         <Show when={!mostrarDetalle()}>
-          <aside class="w-full sm:w-48 bg-white border-r p-4 transition-all duration-300 ease-in-out">
+          <aside class="w-full sm:w-48 bg-white border-r p-4">
             <h2 class="text-sm font-bold mb-2">CATEGORÍAS</h2>
             <div class="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-visible">
               <For each={categorias()}>
@@ -154,20 +170,6 @@ export default function Inicio() {
                     onClick={() => {
                       setCategoriaActiva(cat);
                       setPagina(1);
-                      const categoria = productos().find(
-                        (p) => p.Categoria?.nombre === cat
-                      )?.Categoria;
-                      registrarLogCliente({
-                        ubicacion: "categoría",
-                        categoriaId: categoria?.id,
-                        sesion:
-                          localStorage.getItem("sesionId") ||
-                          crypto.randomUUID(),
-                        clienteId:
-                          Number(localStorage.getItem("clienteId")) ||
-                          undefined,
-                        referer: document.referrer,
-                      });
                     }}
                   />
                 )}
@@ -187,9 +189,10 @@ export default function Inicio() {
                 placeholder="🔍 Buscar productos"
                 value={busqueda()}
                 onInput={(e) => {
-                  setBusqueda(e.currentTarget.value);
+                  const valor = e.currentTarget.value;
+                  setBusqueda(valor);
                   setPagina(1);
-                  registrarBusqueda(e.currentTarget.value);
+                  registrarBusquedaDebounced(valor);
                 }}
                 class="w-full sm:w-60 px-3 py-2 border border-gray-300 rounded-full text-sm"
               />
@@ -207,36 +210,31 @@ export default function Inicio() {
             </div>
           </div>
 
-          <Show
-            when={!mostrarDetalle()}
-            fallback={
-              <div class="animate-fade-in">
-                <div class="transition-all duration-300 animate-slide-fade">
-                  <DetalleProductoInline
-                    producto={productoSeleccionado()}
-                    onVolver={() => setMostrarDetalle(false)}
-                  />
-                </div>
-              </div>
-            }
-          >
+          <Show when={!mostrarDetalle()} fallback={
+            <div class="animate-fade-in">
+              <DetalleProductoInline
+                producto={productoSeleccionado()}
+                onVolver={() => setMostrarDetalle(false)}
+              />
+            </div>
+          }>
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-5">
               <For each={productos()}>
                 {(prod) => (
                   <ProductoCard
-                  id={prod.id}
-                  sku={prod.sku} // 👈 ACÁ
-                  nombre={prod.nombre}
-                  precio={parseFloat(prod.precioUnitario) || 0}
-                  precioPorBulto={parseFloat(prod.precioPorBulto) || undefined}
-                  unidadPorBulto={prod.unidadPorBulto || undefined}
-                  imagen={prod.Imagenes?.[0]?.url}
-                  segundaImagen={prod.Imagenes?.[1]?.url}
-                  onVerDetalle={() => {
-                    setProductoSeleccionado(prod);
-                    setMostrarDetalle(true);
-                  }}
-                />
+                    id={prod.id}
+                    sku={prod.sku}
+                    nombre={prod.nombre}
+                    precio={parseFloat(prod.precioUnitario) || 0}
+                    precioPorBulto={parseFloat(prod.precioPorBulto) || undefined}
+                    unidadPorBulto={prod.unidadPorBulto || undefined}
+                    imagen={prod.Imagenes?.[0]?.url}
+                    segundaImagen={prod.Imagenes?.[1]?.url}
+                    onVerDetalle={() => {
+                      setProductoSeleccionado(prod);
+                      setMostrarDetalle(true);
+                    }}
+                  />
                 )}
               </For>
             </div>
@@ -254,9 +252,7 @@ export default function Inicio() {
                   Página {pagina()} de {totalPaginas()}
                 </span>
                 <button
-                  onClick={() =>
-                    setPagina((p) => Math.min(totalPaginas(), p + 1))
-                  }
+                  onClick={() => setPagina((p) => Math.min(totalPaginas(), p + 1))}
                   class="px-3 py-1 border rounded disabled:opacity-50"
                   disabled={pagina() === totalPaginas()}
                 >

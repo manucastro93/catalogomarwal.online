@@ -1,6 +1,7 @@
 import { Show, For } from "solid-js";
 import type { Pedido } from "../../types/pedido";
 import { formatearPrecio } from "../../utils/formato";
+
 export default function VerPedidoModal(props: {
   pedido: Pedido | null;
   onClose: () => void;
@@ -31,7 +32,6 @@ export default function VerPedidoModal(props: {
     `);
     ventana.document.close();
 
-    // Esperar un poquito para asegurar que se cargue todo antes de imprimir
     ventana.onload = () => {
       ventana.focus();
       ventana.print();
@@ -39,8 +39,10 @@ export default function VerPedidoModal(props: {
     };
   };
 
+  const isEditing = props.pedido?.estadoEdicion === 'editando';
+
   return (
-    <Show when={props.pedido}>
+    <Show when={props.pedido != null}>
       <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center mb-4">
@@ -52,6 +54,13 @@ export default function VerPedidoModal(props: {
               ×
             </button>
           </div>
+
+          {/* Banner de edición */}
+          <Show when={isEditing}>
+            <div class="bg-yellow-100 text-yellow-800 px-4 py-2 mb-4 rounded">
+              ⚠️ <strong>Pedido en edición por el cliente.</strong> No se puede modificar el estado hasta que finalice o expire (30 minutos).
+            </div>
+          </Show>
 
           {/* CONTENIDO A IMPRIMIR */}
           <div id="contenido-a-imprimir" class="space-y-4">

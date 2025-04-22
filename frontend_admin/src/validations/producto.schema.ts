@@ -19,7 +19,7 @@ export const productoSchema = z.object({
     .optional()
     .transform((val) => val ? capitalizar(val) : val),
 
-  hayStock: z.enum(["Sí", "No"]),
+  activo: z.enum(["Sí", "No"]),
 
   precioUnitario: z
     .string()

@@ -90,7 +90,7 @@ export default function ModalNuevoProducto(props: {
       sku: sku().trim(),
       nombre: nombre().trim(),
       descripcion: descripcion().trim(),
-      hayStock: activo(),
+      activo: activo(),
       precioUnitario: precioUnitario().trim(),
       precioPorBulto: precioPorBulto().trim(),
       unidadPorBulto: unidadPorBulto().trim(),
@@ -118,7 +118,7 @@ export default function ModalNuevoProducto(props: {
     formData.append("sku", data.sku);
     if (data.nombre) formData.append("nombre", data.nombre);
     if (data.descripcion) formData.append("descripcion", data.descripcion);
-    formData.append("hayStock", data.hayStock === "Sí" ? "true" : "false");
+    formData.append("activo", data.activo === "Sí" ? "true" : "false");
     formData.append("precioUnitario", data.precioUnitario);
     formData.append("precioPorBulto", data.precioPorBulto);
     formData.append("unidadPorBulto", data.unidadPorBulto);

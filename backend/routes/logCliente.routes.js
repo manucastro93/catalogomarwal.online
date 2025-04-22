@@ -3,7 +3,10 @@ import { registrarLogCliente, listarLogsCliente } from '../controllers/logClient
 
 const router = express.Router();
 
+// POST /logs-cliente
 router.post('/', registrarLogCliente);
-router.post('/logs-cliente', listarLogsCliente);
-router
+
+// GET  /logs-cliente
+router.get('/', listarLogsCliente);
+
 export default router;

@@ -1,4 +1,4 @@
-import { Producto, Categoria, ImagenProducto, Provincia, Localidad, Banner, IpCliente } from '../models/index.js';
+import { Producto, Categoria, ImagenProducto, Provincia, Localidad, Banner, IpCliente, Cliente, Usuario, Pedido, DetallePedido } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize';
 import { getClientIp } from '../utils/getClientIp.js';
 import cache from '../utils/cache.js';
@@ -212,14 +212,90 @@ export const listarBanners = async (req, res, next) => {
 export const obtenerClientePorIp = async (req, res, next) => {
   try {
     const ip = getClientIp(req);
-    const registro = await IpCliente.findOne({ where: { ip } });
 
+    // Buscar primero uno que tenga clienteId asignado
+    let registro = await IpCliente.findOne({
+      where: { ip, clienteId: { [Op.ne]: null } },
+      order: [['createdAt', 'DESC']], // opcional
+    });
+    // Si no existe uno con cliente asignado, buscar cualquier otro
     if (!registro) {
-      return res.status(404).json({ message: 'IP no asociada a ningún cliente' });
+      registro = await IpCliente.findOne({ where: { ip } });
     }
-    res.json({ clienteId: registro.clienteId });
+
+    // Si no existe ningún registro, crear uno vacío
+    if (!registro) {
+      registro = await IpCliente.create({ ip, clienteId: null });
+      console.log(`🆕 IP registrada sin cliente: ${ip}`);
+      return res.status(200).json({});
+    }
+
+    // Si ya tiene cliente asociado
+    if (registro.clienteId) {
+      return res.json({ clienteId: registro.clienteId });
+    }
+
+    // Existe pero sin cliente asignado
+    return res.status(200).json({});
   } catch (error) {
     console.error('❌ Error al buscar cliente por IP:', error);
+    next(error);
+  }
+};
+
+export const obtenerClientePorId = async (req, res) => {
+  try {
+    const cliente = await Cliente.findByPk(req.params.id, {
+      include: [
+        { model: Provincia, as: 'provincia' },
+        { model: Localidad, as: 'localidad' },
+        { model: Usuario, as: 'vendedor' },
+      ],
+    });
+
+    if (!cliente) return res.status(404).json({ message: 'Cliente no encontrado' });
+
+    res.json(cliente);
+  } catch (error) {
+    console.error('❌ Error al obtener cliente por ID:', error);
+    res.status(500).json({ message: 'Error del servidor' });
+  }
+};
+
+export const obtenerPedidosClientePorId = async (req, res, next) => {
+  try {
+    const ip = getClientIp(req);
+
+    // Buscar todos los registros con esa IP y clienteId válido
+    const registros = await IpCliente.findAll({
+      where: {
+        ip,
+        clienteId: { [Op.ne]: null }
+      }
+    });
+
+    const clienteIds = registros.map((r) => r.clienteId).filter(Boolean);
+
+    if (clienteIds.length === 0) {
+      return res.status(200).json([]); // No hay clientes asociados
+    }
+
+    const pedidos = await Pedido.findAll({
+      where: {
+        clienteId: { [Op.in]: clienteIds },
+      },
+      include: [
+        { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto',
+                                                            include: [{ model: ImagenProducto, as: 'Imagenes' }] }] },
+        { model: Cliente, as: 'cliente' },
+        { model: Usuario, as: 'usuario' },
+      ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json(pedidos);
+  } catch (error) {
+    console.error('❌ Error en obtenerPedidosClientePorId:', error);
     next(error);
   }
 };

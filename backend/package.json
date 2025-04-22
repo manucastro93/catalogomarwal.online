@@ -22,6 +22,7 @@
     "mysql2": "^3.14.0",
     "nanoid": "^5.1.5",
     "node-cache": "^5.1.2",
+    "node-cron": "^3.0.3",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.1",
     "pm2": "^6.0.5",

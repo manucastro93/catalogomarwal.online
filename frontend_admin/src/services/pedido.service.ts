@@ -21,16 +21,38 @@ export const obtenerPedidoPorId = async (id: number): Promise<Pedido> => {
   return data;
 };
 
-export const actualizarEstadoPedido = async (id: number, estado: string) => {
+export const actualizarEstadoPedido = async (
+  id: number,
+  estado: string
+): Promise<{ message: string; estado: string }> => {
   const { data } = await api.put(`/pedidos/${id}/estado`, { estado });
   return data;
 };
 
-export const eliminarPedido = async (id: number) => {
+export const eliminarPedido = async (id: number): Promise<void> => {
   await api.delete(`/pedidos/${id}`);
 };
 
-export const crearPedidoDesdePanel = async (payload: PedidoPayload): Promise<Pedido> => {
+export const crearPedidoDesdePanel = async (
+  payload: PedidoPayload
+): Promise<Pedido> => {
   const { data } = await api.post('/pedidos/desde-panel', payload);
+  return data;
+};
+
+export const marcarComoEditando = async (id: number): Promise<void> => {
+  await api.put(`/pedidos/${id}/editando`);
+};
+
+export const revertirEditando = async (id: number): Promise<void> => {
+  await api.put(`/pedidos/${id}/revertir-editando`);
+};
+
+export const obtenerPedidosInicio = async (
+  vendedorId?: number
+): Promise<{ pendientes: Pedido[]; confirmados: Pedido[] }> => {
+  const { data } = await api.get('/pedidos/inicio', {
+    params: vendedorId ? { vendedorId } : {},
+  });
   return data;
 };

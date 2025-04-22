@@ -52,14 +52,26 @@ export default function TablaPedidos(props: {
                     <button class="text-blue-600 hover:underline" onClick={() => props.onVer(p)}>
                       Ver
                     </button>
-                    <Show when={!props.esVendedor}>
-                      <button
-                        class="text-yellow-600 hover:underline"
-                        onClick={() => props.onCambiarEstado(p)}
-                      >
-                        Cambiar estado
-                      </button>
-                    </Show>
+                    <Show
+  when={!props.esVendedor}
+  fallback={
+    <Show when={p.estadoEdicion === "editando"}>
+      <span class="text-sm text-yellow-600 font-semibold">🛠 En edición</span>
+    </Show>
+  }
+>
+  <Show when={p.estadoEdicion !== "editando"} fallback={
+    <span class="text-sm text-yellow-600 font-semibold">🛠 En edición</span>
+  }>
+    <button
+      class="text-yellow-600 hover:underline"
+      onClick={() => props.onCambiarEstado(p)}
+    >
+      Cambiar estado
+    </button>
+  </Show>
+</Show>
+
                   </td>
                 </tr>
               )}

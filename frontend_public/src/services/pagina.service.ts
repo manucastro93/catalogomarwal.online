@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Pagina } from '../shared/types/pagina';
+import type { Pagina } from '../types/pagina';
 
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
