@@ -34,3 +34,8 @@ export const buscarClientesPorTexto = async (texto: string): Promise<Cliente[]> 
   });
   return data.data || [];
 };
+
+export const obtenerHistorialCliente = async (clienteId: number) => {
+  const { data } = await api.get(`/clientes/${clienteId}/historial`);
+  return data;
+};

@@ -1,30 +1,30 @@
-import { createResource, Show, For } from "solid-js";
-import {
-  obtenerResumenDelMes,
-  obtenerEstadisticasPorFecha,
-  compararRangos,
-  obtenerRankingEstadisticas,
-} from "../services/estadisticas.service";
-import { formatearPrecio } from "../utils/formato";
-import GraficoEstadisticasPorFecha from "../components/Estadistica/GraficoEstadisticasPorFecha";
-import ComparadorDeRangos from "../components/Estadistica/ComparadorDeRangos";
-import RankingEstadisticas from "../components/Estadistica/RankingEstadisticas";
-import ResumenEstadisticasMensuales from "../components/Estadistica/ResumenEstadisticasMensuales";
+import { createResource, Show } from 'solid-js';
+import { obtenerResumenDelMes } from '../services/estadisticas.service';
+import ResumenEstadisticasMensuales from '../components/Estadistica/ResumenEstadisticasMensuales';
+import GraficoVentasPorCategoria from '../components/Estadistica/GraficoVentasPorCategoria';
+import Loader from '../components/Layout/Loader';
 
 export default function Estadisticas() {
   const [resumen] = createResource(obtenerResumenDelMes);
 
   return (
-    <div class="p-6 space-y-6">
-      <h1 class="text-2xl font-bold">Estadísticas del mes</h1>
+    <div class="p-4 space-y-6">
+      <h1 class="text-2xl font-bold text-gray-800">Estadísticas del Mes</h1>
 
-      <Show when={resumen()} fallback={<p>Cargando estadísticas...</p>}>
-        <ResumenEstadisticasMensuales resumen={resumen()} />
+      <Show when={resumen()} fallback={<Loader />}>
+        {(data) => {
+          console.log('📦 Resumen recibido:', data());
+          return (
+            <>
+              <ResumenEstadisticasMensuales resumen={data()} />
+
+              <div class="mt-6">
+                <GraficoVentasPorCategoria />
+              </div>
+            </>
+          );
+        }}
       </Show>
-
-      <GraficoEstadisticasPorFecha />
-      <ComparadorDeRangos />
-      <RankingEstadisticas />
     </div>
   );
 }

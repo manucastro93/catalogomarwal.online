@@ -1,6 +1,6 @@
 import { createSignal, Show } from 'solid-js';
 import { agregarAlCarrito, setCarritoAbierto } from '../store/carrito';
-import type { Producto } from '../shared/types/producto';
+import type { Producto } from '../types/producto';
 import { formatearPrecio } from '../utils/formato';  
 import { animarHaciaCarrito } from "../utils/animarHaciaCarrito";
 import { esMobile } from "../utils/esMobile";

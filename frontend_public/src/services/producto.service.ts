@@ -11,7 +11,6 @@ export const obtenerProductos = async (params: Record<string, any> = {}) => {
   return res.json(); // { data, pagina, totalPaginas }
 };
 
-
 export const obtenerCategorias = async () => {
   const res = await fetch(`${API_URL}/public/categorias`);
   if (!res.ok) throw new Error('Error al obtener categorías');
@@ -22,4 +21,20 @@ export const obtenerProductoPorId = async (id: number) => {
   const res = await fetch(`${API_URL}/productos/${id}`);
   if (!res.ok) throw new Error('Error al obtener el producto');
   return res.json();
+};
+
+export const registrarVistaProducto = async (productoId: number) => {
+  try {
+    await fetch(`${API_URL}/logs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        categoriaId: null,
+        busqueda: `detalle:${productoId}`, // lo podés filtrar así en backend
+        tiempoEnPantalla: 0,
+      }),
+    });
+  } catch (err) {
+    console.warn("❌ No se pudo registrar vista de producto:", err);
+  }
 };

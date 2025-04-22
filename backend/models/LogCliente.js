@@ -43,6 +43,10 @@ export default (sequelize, DataTypes) => {
       foreignKey: 'ipClienteId',
       as: 'ipCliente',
     });
+    LogCliente.belongsTo(models.Categoria, {
+      foreignKey: 'categoriaId',
+      as: 'categoria',
+    });
   };
 
   return LogCliente;

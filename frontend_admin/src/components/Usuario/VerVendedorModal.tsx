@@ -1,5 +1,7 @@
 import { createSignal, createEffect, Show } from 'solid-js';
 import type { Vendedor } from '../../types/vendedor';
+import TabEstadisticasVendedor from './Tabs/TabEstadisticasVendedor';
+import TabDatosVendedor from './Tabs/TabDetallesVendedor';
 
 export default function ModalVerVendedor(props: {
   abierto: boolean;
@@ -36,31 +38,11 @@ export default function ModalVerVendedor(props: {
           </div>
 
           <Show when={tab() === 'detalles'}>
-            <div class="space-y-3">
-              <div>
-                <span class='font-bold'>Nombre: </span>{props.vendedor?.nombre}
-              </div>
-              <div>
-                <span class='font-bold'>Email: </span>{props.vendedor?.email}
-              </div>
-              <div>
-                <span class='font-bold'>Teléfono: </span>{props.vendedor?.telefono || '-'}
-              </div>
-            </div>
+            <TabDatosVendedor vendedor={props.vendedor!} />
           </Show>
 
           <Show when={tab() === 'estadisticas'}>
-            <div class="space-y-4">
-              <div>
-                <span class='font-bold'>Ventas Totales: </span>{props.vendedor?.ventasTotales || 'No disponible'}
-              </div>
-              <div>
-                <span class='font-bold'>Clientes Atendidos: </span>{props.vendedor?.clientesAtendidos || 'No disponible'}
-              </div>
-              <div>
-                <span class='font-bold'>Fecha de Registro: </span>{props.vendedor?.fechaRegistro || 'No disponible'}
-              </div>
-            </div>
+            <TabEstadisticasVendedor vendedorId={props.vendedor!.id} />
           </Show>
 
           <div class="text-right mt-6">

@@ -17,7 +17,7 @@ export const leerExcelProductos = (ruta) => {
       sku: obj.sku,
       nombre: obj.nombre,
       descripcion: obj.descripcion,
-      hayStock: obj.hayStock || 'Sí',
+      activo: obj.activo || 'Sí',
       precioUnitario: obj.precioUnitario,
       precioPorBulto: obj.precioPorBulto,
       unidadPorBulto: obj.unidadPorBulto,

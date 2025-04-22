@@ -1,4 +1,5 @@
-import { Usuario } from '../models/index.js';
+import { Usuario, Pedido, DetallePedido,Producto, Cliente, Provincia, Localidad, IpCliente, LogCliente } from '../models/index.js';
+import { Op, fn, col, literal } from 'sequelize';
 import bcrypt from 'bcryptjs';
 
 // ================== USUARIOS GENERALES ==================
@@ -156,6 +157,63 @@ export const buscarVendedorPorLink = async (req, res, next) => {
     res.json(vendedor);
   } catch (error) {
     next(error);
+  }
+};
+
+export const obtenerEstadisticasVendedor = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Ventas totales
+    const pedidos = await Pedido.findAll({
+      where: { usuarioId: id },
+      attributes: ['id', 'total', 'createdAt'],
+    });
+
+    // Producto más vendido
+    const productoTop = await DetallePedido.findOne({
+      where: { usuarioId: id },
+      attributes: [
+        'productoId',
+        [fn('SUM', col('cantidad')), 'totalVendidas'],
+      ],
+      include: [{ model: Producto, as: 'producto', attributes: ['nombre'] }],
+      group: ['productoId'],
+      order: [[literal('totalVendidas'), 'DESC']],
+    });
+
+    // Clientes
+    const clientes = await Cliente.findAll({
+      where: { vendedorId: id },
+      include: [
+        { model: Provincia, as: 'provincia', attributes: ['nombre'] },
+        { model: Localidad, as: 'localidad', attributes: ['nombre'] },
+      ],
+    });
+
+    const clienteIds = clientes.map(c => c.id);
+
+    // Logs de visitas al catálogo
+    const ipClientes = await IpCliente.findAll({ where: { clienteId: { [Op.in]: clienteIds } } });
+    const ipIds = ipClientes.map(i => i.id);
+
+    const visitasCatalogo = await LogCliente.count({
+      where: {
+        ipClienteId: { [Op.in]: ipIds },
+      },
+    });
+
+    res.json({
+      totalPedidos: pedidos.length,
+      totalFacturado: pedidos.reduce((acc, p) => acc + p.total, 0),
+      productoTop,
+      cantidadClientes: clientes.length,
+      clientes,
+      visitasCatalogo,
+    });
+  } catch (error) {
+    console.error("❌ Error en estadísticas del vendedor:", error);
+    res.status(500).json({ message: 'Error al obtener estadísticas del vendedor' });
   }
 };
 

@@ -16,16 +16,19 @@ export default (sequelize, DataTypes) => {
   });
 
   IpCliente.associate = (models) => {
-    IpCliente.belongsTo(models.Cliente, {
-      foreignKey: 'clienteId',
-      as: 'cliente', // 🔍 opcional: te permite acceder como `ipCliente.cliente`
+    IpCliente.belongsToMany(models.Cliente, {
+      through: 'IpClienteCliente',
+      foreignKey: 'ipClienteId',
+      otherKey: 'clienteId',
+      as: 'clientes',
     });
-
+  
     IpCliente.hasMany(models.LogCliente, {
       foreignKey: 'ipClienteId',
-      as: 'logs', // 🔍 opcional: más claro cuando hacés includes
+      as: 'logs',
     });
   };
+  
 
   return IpCliente;
 };

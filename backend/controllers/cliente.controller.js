@@ -1,5 +1,5 @@
-import { Cliente, Provincia, Localidad, Usuario, Pedido } from '../models/index.js';
-import { Op, fn, col } from 'sequelize';
+import { Cliente, Provincia, Localidad, Usuario, Pedido, DetallePedido, Producto, LogCliente, IpCliente, HistorialCliente } from '../models/index.js';
+import { Op, fn, col, literal } from 'sequelize';
 import { validationResult } from 'express-validator';
 import { geocodificarDireccion } from '../utils/geocodificarDireccion.js';
 import { registrarHistorialCliente } from '../utils/registrarHistorialCliente.js';
@@ -157,5 +157,63 @@ export const obtenerClientesConVentas = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ mensaje: 'Error al obtener clientes con ventas' });
+  }
+};
+
+export const obtenerEstadisticasCliente = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Total de pedidos y total facturado
+    const pedidos = await Pedido.findAll({
+      where: { clienteId: id },
+      attributes: ['id', 'total', 'createdAt'],
+      order: [['createdAt', 'DESC']],
+    });
+
+    // Productos más comprados
+    const productosTop = await DetallePedido.findAll({
+      where: { clienteId: id },
+      attributes: [
+        'productoId',
+        [fn('SUM', col('cantidad')), 'totalComprado'],
+        [fn('SUM', col('subtotal')), 'totalGastado'],
+      ],
+      include: [{ model: Producto, as: 'producto', attributes: ['nombre'] }],
+      group: ['productoId'],
+      order: [[literal('totalComprado'), 'DESC']],
+      limit: 5,
+    });
+
+    // Logs por IP
+    const ips = await IpCliente.findAll({ where: { clienteId: id }, attributes: ['id'] });
+    const ipIds = ips.map(ip => ip.id);
+
+    const logs = await LogCliente.findAll({
+      where: { ipClienteId: { [Op.in]: ipIds } },
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json({ pedidos, productosTop, logs });
+  } catch (error) {
+    console.error("❌ Error en estadísticas de cliente:", error);
+    res.status(500).json({ message: 'Error al obtener estadísticas del cliente' });
+  }
+};
+
+export const obtenerHistorialCliente = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const historial = await HistorialCliente.findAll({
+      where: { clienteId: id },
+      include: [{ model: Usuario, as: 'usuario', attributes: ['id', 'nombre'] }],
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json(historial);
+  } catch (error) {
+    console.error('❌ Error al obtener historial del cliente:', error);
+    res.status(500).json({ message: 'Error al obtener historial del cliente' });
   }
 };

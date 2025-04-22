@@ -1,4 +1,4 @@
-import { Pedido, DetallePedido, Producto, Cliente, Usuario, Categoria, ImagenProducto } from '../models/index.js';
+import { Pedido, DetallePedido, Producto, Cliente, Usuario, Categoria, ImagenProducto, LogCliente } from '../models/index.js';
 import { Op, fn, col, literal } from 'sequelize';
 import dayjs from 'dayjs';
 import cache from '../utils/cache.js';
@@ -28,8 +28,9 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
       const producto = await Producto.findByPk(productoTop.productoId, {
         include: [{ model: ImagenProducto, as: 'Imagenes', attributes: ['url'], required: false }],
         attributes: ['id', 'nombre'],
+        paranoid: false,
       });
-
+      
       productoEstrella = {
         productoId: productoTop.productoId,
         totalVendidas: Number(productoTop.totalVendidas),
@@ -184,7 +185,7 @@ export const obtenerRankingEstadisticas = async (req, res, next) => {
     const vendedores = await Pedido.findAll({
       attributes: [
         'usuarioId',
-        [fn('COUNT', col('id')), 'totalPedidos'],
+        [fn('COUNT', col('Pedido.id')), 'totalPedidos'],
         [fn('SUM', col('total')), 'totalFacturado'],
       ],
       include: [{ model: Usuario, as: 'usuario', attributes: ['nombre'] }],
@@ -197,7 +198,7 @@ export const obtenerRankingEstadisticas = async (req, res, next) => {
     const clientes = await Pedido.findAll({
       attributes: [
         'clienteId',
-        [fn('COUNT', col('id')), 'cantidadPedidos'],
+        [fn('COUNT', col('Pedido.id')), 'cantidadPedidos'],
         [fn('SUM', col('total')), 'totalGastado'],
       ],
       include: [{ model: Cliente, as: 'cliente', attributes: ['nombre'] }],
@@ -209,17 +210,28 @@ export const obtenerRankingEstadisticas = async (req, res, next) => {
 
     const categorias = await DetallePedido.findAll({
       attributes: [
-        [col('Producto.categoriaId'), 'categoriaId'],
+        [col('producto.categoriaId'), 'categoriaId'],
         [fn('SUM', col('subtotal')), 'totalFacturado'],
+        [col('producto.Categoria.nombre'), 'nombre'],
       ],
-      include: [{ model: Producto, as: 'producto', attributes: [], include: [{ model: Categoria, as: 'Categoria', attributes: ['nombre'], required: true }], required: true }],
+      include: [{
+        model: Producto,
+        as: 'producto', // alias correcto
+        attributes: [],
+        include: [{
+          model: Categoria,
+          as: 'Categoria', // alias correcto
+          attributes: [],
+        }],
+        required: true,
+      }],
       where: whereFecha,
-      group: ['Producto.categoriaId'],
+      group: ['producto.categoriaId'],
       order: [[literal('totalFacturado'), 'DESC']],
       limit: 10,
       raw: true,
-      nest: true,
     });
+    
 
     res.json({ productos, vendedores, clientes, categorias });
   } catch (error) {
@@ -232,21 +244,60 @@ export const obtenerEstadisticasProducto = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const [ventas, unidadesVendidas, facturacion] = await Promise.all([
+    const [ventas, unidadesVendidas, facturacion, visitas] = await Promise.all([
       Pedido.count({
-        include: [{ model: DetallePedido, where: { productoId: id }, required: true }],
-      }),
+        include: [{ model: DetallePedido, as: 'detalles', where: { productoId: id }, required: true }],
+      }),      
       DetallePedido.sum('cantidad', { where: { productoId: id } }),
       DetallePedido.sum('subtotal', { where: { productoId: id } }),
+      LogCliente.count({ where: { busqueda: `detalle:${id}` } }),
     ]);
 
     res.json({
       ventas: ventas || 0,
       unidadesVendidas: unidadesVendidas || 0,
       facturacion: facturacion || 0,
+      visitas: visitas || 0,
     });
   } catch (error) {
     console.error('❌ Error en obtenerEstadisticasProducto:', error);
     next(error);
+  }
+};
+
+export const obtenerVentasPorCategoria = async (req, res) => {
+  try {
+    const resultados = await DetallePedido.findAll({
+      attributes: [
+        [fn('SUM', col('subtotal')), 'totalVentas'],
+        [col('producto.Categoria.nombre'), 'categoria'],
+      ],
+      include: [
+        {
+          model: Producto,
+          as: 'producto',
+          attributes: [],
+          include: [{
+            model: Categoria,
+            as: 'Categoria', // correcto según tu modelo
+            attributes: [],
+          }],
+          required: true,
+        }
+      ],
+      where: { deletedAt: null },
+      group: ['producto.Categoria.nombre'],
+      raw: true,
+    });
+
+    const datos = resultados.map(item => ({
+      categoria: item.categoria,
+      totalVentas: Number(item.totalVentas),
+    }));
+
+    res.json(datos);
+  } catch (error) {
+    console.error("❌ Error al obtener ventas por categoría", error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };

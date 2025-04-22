@@ -6,7 +6,9 @@ import {
   listarLocalidadesPorProvinciaInput,
   listarLocalidadesPorProvincia,
   listarBanners,
-  obtenerClientePorIp
+  obtenerClientePorIp,
+  obtenerClientePorId,
+  obtenerPedidosClientePorId
 } from '../controllers/public.controller.js';
 
 const router = express.Router();
@@ -18,6 +20,8 @@ router.get('/provincia/:provinciaId/localidades', listarLocalidadesPorProvincia)
 router.get('/localidades', listarLocalidadesPorProvinciaInput);
 router.get('/banners', listarBanners);
 router.get('/cliente-por-ip', obtenerClientePorIp);
+router.get('/pedidos/id-cliente', obtenerPedidosClientePorId);
+router.get('/cliente/:id', obtenerClientePorId);
 router.get('/productos', listarProductosPublicos);
 router.get('/categorias', listarCategorias);
 

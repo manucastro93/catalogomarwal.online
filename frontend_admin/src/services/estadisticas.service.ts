@@ -35,3 +35,18 @@ export const obtenerEstadisticasProducto = async (productoId: number) => {
   const { data } = await api.get(`/estadisticas/producto/${productoId}`);
   return data;
 };
+
+export const obtenerEstadisticasCliente = async (clienteId: number) => {
+  const { data } = await api.get(`/clientes/${clienteId}/estadisticas`);
+  return data;
+};
+
+export const obtenerEstadisticasVendedor = async (vendedorId: number) => {
+  const { data } = await api.get(`/usuarios/${vendedorId}/estadisticas-vendedor`);
+  return data;
+};
+
+export const obtenerVentasPorCategoria = async () => {
+  const { data } = await api.get('/estadisticas/ventas-por-categoria');
+  return data;
+};

@@ -5,6 +5,9 @@ import {
   onCleanup
 } from 'solid-js';
 import type { Cliente } from '../../types/cliente';
+import TabEstadisticasCliente from './Tabs/TabEstadisticas';
+import TabDatosCliente from './Tabs/TabDetalles';
+import TabHistorialCliente from './Tabs/Historial'; 
 
 interface Props {
   cliente: Cliente | null;
@@ -12,7 +15,7 @@ interface Props {
 }
 
 export default function VerClienteModal(props: Props) {
-  const [tab, setTab] = createSignal<'datos' | 'actividad'>('datos');
+  const [tab, setTab] = createSignal<'datos' | 'actividad' | 'historial'>('datos');
 
   const handleEscape = (e: KeyboardEvent) => {
     if (e.key === 'Escape') props.onCerrar();
@@ -21,7 +24,6 @@ export default function VerClienteModal(props: Props) {
   createEffect(() => {
     if (props.cliente) {
       document.body.style.overflow = 'hidden';
-      console.log('Cliente:', props.cliente);
       window.addEventListener('keydown', handleEscape);
     }
   });
@@ -35,13 +37,10 @@ export default function VerClienteModal(props: Props) {
     window.print();
   };
 
-
   return (
     <Show when={props.cliente}>
       <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-        <div
-          class="relative z-50 bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl overflow-y-auto max-h-[90vh]"
-        >
+        <div class="relative z-50 bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl overflow-y-auto max-h-[90vh]">
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-3xl font-bold">Cliente: {props.cliente?.nombre}</h2>
             <div class="flex gap-2">
@@ -73,57 +72,24 @@ export default function VerClienteModal(props: Props) {
             >
               Actividad y estadísticas
             </button>
+            <button
+              class={tab() === 'historial' ? 'font-semibold border-b-2 border-blue-600 pb-1' : ''}
+              onClick={() => setTab('historial')}
+            >
+              Historial de datos
+            </button>
           </div>
 
           <Show when={tab() === 'datos'}>
-            <div class="grid grid-cols-2 gap-6 text-base">
-              <div>
-                <p class="font-semibold text-gray-700 text-lg">Nombre</p>
-                <p>{props.cliente?.nombre || '-'}</p>
-              </div>
-              <div>
-                <p class="font-semibold text-gray-700 text-lg">Teléfono</p>
-                <p>{props.cliente?.telefono || '-'}</p>
-              </div>
-              <div>
-                <p class="font-semibold text-gray-700 text-lg">Email</p>
-                <p>{props.cliente?.email || '-'}</p>
-              </div>
-              <div>
-                <p class="font-semibold text-gray-700 text-lg">CUIT / CUIL</p>
-                <p>{props.cliente?.cuit_cuil || '-'}</p>
-              </div>
-              <div class="col-span-2">
-                <p class="font-semibold text-gray-700 text-lg">Razón social</p>
-                <p>{props.cliente?.razonSocial || '-'}</p>
-              </div>
-              <div class="col-span-2">
-                <p class="font-semibold text-gray-700 text-lg">Dirección</p>
-                <p>{props.cliente?.direccion || '-'}</p>
-              </div>
-              <div>
-                <p class="font-semibold text-gray-700 text-lg">Provincia</p>
-                <p>{props.cliente?.provincia?.nombre || '-'}</p>
-              </div>
-              <div>
-                <p class="font-semibold text-gray-700 text-lg">Localidad</p>
-                <p>{props.cliente?.localidad?.nombre || '-'}</p>
-              </div>
-              <div class="col-span-2">
-                <p class="font-semibold text-gray-700 text-lg">Vendedor asignado</p>
-                <p>{props.cliente?.vendedor?.nombre || '-'}</p>
-              </div>
-              <div class="col-span-2">
-                <p class="font-semibold text-gray-700 text-lg">Creado el</p>
-                <p>{new Date(props.cliente?.createdAt || '').toLocaleString()}</p>
-              </div>
-            </div>
+            <TabDatosCliente cliente={props.cliente!} />
           </Show>
 
           <Show when={tab() === 'actividad'}>
-            <div class="text-base text-gray-700">
-              <p class="text-gray-500 italic">Próximamente: pedidos recientes, historial de actividad, ingresos mensuales, etc.</p>
-            </div>
+            <TabEstadisticasCliente clienteId={props.cliente!.id} />
+          </Show>
+
+          <Show when={tab() === 'historial'}>
+            <TabHistorialCliente clienteId={props.cliente!.id} />
           </Show>
         </div>
       </div>

@@ -55,3 +55,14 @@ export const detectarClientePorIp = async () => {
     console.error("❌ No se pudo detectar cliente por IP:", err);
   }
 };
+
+export const obtenerClientePorId = async (id: number) => {
+  try {
+    const res = await fetch(`${API_URL}/public/cliente/${id}`);
+    if (!res.ok) throw new Error("No se pudo obtener el cliente");
+    return await res.json();
+  } catch (error) {
+    console.error("❌ Error al obtener cliente por ID:", error);
+    throw error;
+  }
+};
