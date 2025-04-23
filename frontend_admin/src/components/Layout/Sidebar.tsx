@@ -114,7 +114,7 @@ export default function Sidebar() {
                 </Show>
                 <A href="/Produccion/Inyeccion" classList={{ 'text-blue-400': esActivo('/Produccion/Inyeccion') }}>Inyección</A>
                 <A href="/Produccion/Hojalateria" classList={{ 'text-blue-400': esActivo('/Produccion/Hojalateria') }}>Hojalatería</A>
-                <A href="/Produccion/Contabilizacion" classList={{ 'text-blue-400': esActivo('/Produccion/Contabilizacion') }}>Contabilización Producción Diaria</A>
+                <A href="/Produccion/ProduccionDiaria" classList={{ 'text-blue-400': esActivo('/Produccion/ProduccionDiaria') }}>Contabilización Producción Diaria</A>
               </div>
             </Show>
           </div>
