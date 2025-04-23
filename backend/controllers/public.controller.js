@@ -1,4 +1,4 @@
-import { Producto, Categoria, ImagenProducto, Provincia, Localidad, Banner, IpCliente, Cliente, Usuario, Pedido, DetallePedido } from '../models/index.js';
+import { Producto, Categoria, ImagenProducto, Provincia, Localidad, Banner, IpCliente, Cliente, Usuario, Pedido, DetallePedido, IpClienteCliente } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize';
 import { getClientIp } from '../utils/getClientIp.js';
 import cache from '../utils/cache.js';
@@ -266,27 +266,43 @@ export const obtenerPedidosClientePorId = async (req, res, next) => {
   try {
     const ip = getClientIp(req);
 
-    // Buscar todos los registros con esa IP y clienteId válido
-    const registros = await IpCliente.findAll({
+    // Buscar IP registrada
+    const ipCliente = await IpCliente.findOne({ where: { ip } });
+
+    if (!ipCliente) {
+      return res.status(200).json([]); // IP no registrada
+    }
+
+    // Buscar clienteIds relacionados a esa IP
+    const relaciones = await IpClienteCliente.findAll({
       where: {
-        ip,
-        clienteId: { [Op.ne]: null }
-      }
+        ipClienteId: ipCliente.id,
+      },
     });
 
-    const clienteIds = registros.map((r) => r.clienteId).filter(Boolean);
+    const clienteIds = relaciones.map((r) => r.clienteId).filter(Boolean);
 
     if (clienteIds.length === 0) {
       return res.status(200).json([]); // No hay clientes asociados
     }
 
+    // Buscar pedidos con esos clienteIds
     const pedidos = await Pedido.findAll({
       where: {
         clienteId: { [Op.in]: clienteIds },
       },
       include: [
-        { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto',
-                                                            include: [{ model: ImagenProducto, as: 'Imagenes' }] }] },
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [
+            {
+              model: Producto,
+              as: 'producto',
+              include: [{ model: ImagenProducto, as: 'Imagenes' }],
+            },
+          ],
+        },
         { model: Cliente, as: 'cliente' },
         { model: Usuario, as: 'usuario' },
       ],
@@ -299,3 +315,4 @@ export const obtenerPedidosClientePorId = async (req, res, next) => {
     next(error);
   }
 };
+

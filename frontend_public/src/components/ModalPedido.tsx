@@ -219,13 +219,6 @@ export default function ModalPedido({
           <div class="mt-6 flex justify-end gap-3">
             <Show when={pedido.estadoEdicion === "editando"}>
               <button
-                class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm"
-                onClick={modificarPedido}
-                disabled={duplicando() || showConfirm()}
-              >
-                Modificar
-              </button>
-              <button
                 class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
                 onClick={() => setShowConfirm(true)}
                 disabled={duplicando() || showConfirm()}
@@ -243,6 +236,15 @@ export default function ModalPedido({
                 Cancelar Pedido
               </button>
             </Show>
+            <Show when={pedido.estado?.toLowerCase().trim() === "pendiente"}>
+  <button
+    class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm"
+    onClick={modificarPedido}
+    disabled={duplicando() || showConfirm()}
+  >
+    Modificar
+  </button>
+</Show>
 
             <button
               class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm"

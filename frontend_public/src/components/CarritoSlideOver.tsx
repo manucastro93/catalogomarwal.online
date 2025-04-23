@@ -17,7 +17,6 @@ import {
 } from "../store/carrito";
 import {
   enviarPedido,
-  validarCarrito,
   obtenerPedidoPorId,
 } from "../services/pedido.service";
 import { useAuth } from "../store/auth";
@@ -33,7 +32,6 @@ export default function CarritoSlideOver() {
       0
     );
 
-  const { usuario } = useAuth();
   const [mensaje, setMensaje] = createSignal("");
   const [enviando, setEnviando] = createSignal(false);
   const [showMobile, setShowMobile] = createSignal(false);
@@ -42,6 +40,9 @@ export default function CarritoSlideOver() {
   const [isEditing, setIsEditing] = createSignal(false);
   const [validandoEdicion, setValidandoEdicion] = createSignal(true);
   const [erroresDetalle, setErroresDetalle] = createSignal<any[]>([]);
+  const [mensajeExito, setMensajeExito] = createSignal("");
+  const [mensajeError, setMensajeError] = createSignal("");
+
   // ✅ Al montar, recuperar modo edición
   onMount(() => {
     const id = localStorage.getItem("modoEdicionPedidoId");
@@ -109,25 +110,21 @@ export default function CarritoSlideOver() {
       setTimeout(() => setShowDesktop(false), 300);
     }
   });
-  const handleEnviarPedido = async (datosCliente: any) => {
-    if (!pid() && localStorage.getItem("modoEdicionPedidoId")) {
-      setMensaje(
-        "Ya estás editando un pedido. Confirmalo o cancelalo primero."
-      );
-      setEnviando(false);
-      return;
-    }
 
+  const handleEnviarPedido = async (datosCliente: any) => {
     setEnviando(true);
+    setErroresDetalle([]);
+    setMensaje("");
+  
     const vendedorRaw = localStorage.getItem("vendedor");
     const vendedor = vendedorRaw ? JSON.parse(vendedorRaw) : null;
-
+  
     if (!datosCliente?.nombre?.trim() || !datosCliente?.telefono?.trim()) {
       setMensaje("Por favor completá nombre y teléfono.");
       setEnviando(false);
       return;
     }
-
+  
     const carritoPlano = carrito.map((item) => ({
       id: item.id,
       nombre: item.nombre,
@@ -137,34 +134,36 @@ export default function CarritoSlideOver() {
       unidadPorBulto: item.unidadPorBulto,
       usuarioId: vendedor?.id,
     }));
-
+    
     try {
-      await validarCarrito(carritoPlano);
       const clienteId = Number(localStorage.getItem("clienteId"));
+  
       const res = await enviarPedido({
         cliente: { ...datosCliente, vendedorId: vendedor?.id, clienteId },
         carrito: carritoPlano,
         usuarioId: vendedor?.id,
         pedidoId: pid() ? Number(pid()) : null,
       });
-
-      if (res.clienteId) {
-        localStorage.setItem("clienteId", String(res.clienteId));
+    
+      if (!res?.pedidoId || !res?.clienteId) {
+        console.error("❌ Datos incompletos en la respuesta:", res);
+        setMensajeError("La respuesta del servidor no es válida.");
+        return;
       }
-
+  
+      localStorage.setItem("clienteId", String(res.clienteId));
       limpiarCarrito();
       localStorage.removeItem("modoEdicionPedidoId");
       setPid(null);
       setCarritoAbierto(false);
-      setMensaje(
-        "¡Pedido enviado con éxito!. Podés revisarlo en la sección 'Mis Pedidos'."
-      );
+  
+      setMensajeExito("¡Pedido enviado con éxito!. Podés revisarlo en la sección 'Mis Pedidos'.");
       setTimeout(() => setMensaje(""), 9000);
     } catch (error: any) {
-      console.error("❌ Error al enviar pedido:", error);
-
-      if (error?.errores?.length) {
-        if (error.carritoActualizado?.length) {
+      console.error("❌ ERROR CATCH:", error);
+  
+      if (Array.isArray(error?.errores) && error.errores.length > 0) {
+        if (Array.isArray(error.carritoActualizado)) {
           const nuevo = error.carritoActualizado.map((p: any) => ({
             id: p.id,
             nombre: p.nombre,
@@ -176,27 +175,26 @@ export default function CarritoSlideOver() {
           }));
           setCarrito(nuevo);
         }
-
-        const resumen = error.errores
-          .map((e: any) =>
-            e.motivo === "El precio fue modificado."
-              ? `🛑 ${e.nombre || "Producto"}: ${e.motivo} (${formatearPrecio(
-                  e.precioCliente
-                )} ➜ ${formatearPrecio(e.precioActual)})`
-              : `🛑 ${e.nombre || "Producto"}: ${e.motivo}`
-          )
-          .join("\n");
-
-        setMensaje(
-          `Algunos productos fueron modificados. El carrito fue actualizado con los datos vigentes:\n${resumen}`
-        );
+  
+        const resumen = error.errores.map((e: any) => {
+          if (e.motivo === "El precio fue modificado.") {
+            return `🛑 ${e.nombre || "Producto"}: ${e.motivo} (${formatearPrecio(e.precioCliente)} ➜ ${formatearPrecio(e.precioActual)})`;
+          } else {
+            return `🛑 ${e.nombre || "Producto"}: ${e.motivo}`;
+          }
+        }).join("\n");
+  
+        setErroresDetalle(error.errores);
+        setMensajeError(`Algunos productos fueron modificados:\n\n${resumen}`);
       } else {
-        setMensaje(error?.mensaje || "Hubo un error al enviar el pedido.");
+        setMensajeError(error?.mensaje || "Error inesperado al enviar el pedido.");
       }
     } finally {
       setEnviando(false);
     }
   };
+  
+  
 
   return (
     <>
@@ -270,19 +268,14 @@ export default function CarritoSlideOver() {
         </>
       </Show>
 
-      <Show when={mensaje()}>
-        <ModalMensaje
-          tipo="error"
-          titulo="No se pudo procesar el pedido"
-          mensaje={mensaje()}
-          errores={erroresDetalle()}
-          notaFinal="El carrito se ha actualizado automáticamente con los datos vigentes.\nAhora podrás confirmar el pedido nuevamente."
-          cerrar={() => {
-            setMensaje("");
-            setErroresDetalle([]);
-          }}
-        />
+      <Show when={mensajeExito()}>
+        <ModalMensaje tipo="ok" mensaje={mensajeExito()} cerrar={() => setMensajeExito("")} />
       </Show>
+
+      <Show when={mensajeError()}>
+        <ModalMensaje tipo="error" mensaje={mensajeError()} cerrar={() => setMensajeError("")} />
+      </Show>
+
 
       <Show when={!carritoAbierto()}>
         <button
