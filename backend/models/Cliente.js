@@ -18,8 +18,8 @@ export default (sequelize, DataTypes) => {
       references: { model: 'Localidades', key: 'id' },
     },
     vendedorId: DataTypes.INTEGER,
-    latitud: DataTypes.FLOAT,
-    longitud: DataTypes.FLOAT,
+    latitud: DataTypes.DOUBLE,
+    longitud: DataTypes.DOUBLE,
   }, {
     tableName: 'Clientes',
     timestamps: true,

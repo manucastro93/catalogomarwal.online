@@ -11,3 +11,7 @@ export const guardarReporteProduccion = async (reporte: CrearReporteProduccion) 
   return data;
 };
   
+export const eliminarReporteProduccion = async (id: number) => {
+  const { data } = await api.delete(`/produccion-diaria/reportes-produccion/${id}`);
+  return data;
+};

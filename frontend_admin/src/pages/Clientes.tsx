@@ -21,7 +21,6 @@ export default function Clientes() {
   const [pagina, setPagina] = createSignal(1);
   const [orden, setOrden] = createSignal("createdAt");
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
-
   const [busqueda, setBusqueda] = createSignal("");
   const [provinciaSeleccionada, setProvinciaSeleccionada] = createSignal<
     number | ""
@@ -35,11 +34,8 @@ export default function Clientes() {
 
   const [modalAbierto, setModalAbierto] = createSignal(false);
   const [verCliente, setVerCliente] = createSignal<Cliente | null>(null);
-  const [clienteSeleccionado, setClienteSeleccionado] =
-    createSignal<Cliente | null>(null);
-  const [clienteAEliminar, setClienteAEliminar] = createSignal<Cliente | null>(
-    null
-  );
+  const [clienteSeleccionado, setClienteSeleccionado] = createSignal<Cliente | null>(null);
+  const [clienteAEliminar, setClienteAEliminar] = createSignal<Cliente | null>(null);
   const [modalConfirmar, setModalConfirmar] = createSignal(false);
   const [mostrarMapa, setMostrarMapa] = createSignal(false);
 
@@ -123,15 +119,7 @@ export default function Clientes() {
               Exportar Excel
             </button>
 
-            <button
-              onClick={() => {
-                setClienteSeleccionado(null);
-                setModalAbierto(true);
-              }}
-              class="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-            >
-              + Nuevo Cliente
-            </button>
+            
           </Show>
         </div>
       </div>
