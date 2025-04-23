@@ -122,30 +122,6 @@ export const crearOEditarPedido = async (req, res, next) => {
   try {
     const { cliente, carrito, usuarioId = null, pedidoId = null } = req.body;
 
-    if (!pedidoId) {
-      const otroEditando = await Pedido.findOne({
-        where: {
-          clienteId: clienteFinal.id,
-          estadoEdicion: 'editando'
-        }
-      });
-    
-      if (otroEditando) {
-        return res.status(409).json({ message: 'Ya hay un pedido en modo edición. Confirmalo o cancelalo.' });
-      }
-    }
-
-    const { errores, carritoActualizado } = await verificarProductosDelCarrito(carrito);
-
-if (errores.length > 0) {
-  return res.status(400).json({
-    mensaje: 'Algunos productos fueron modificados.',
-    errores,
-    carritoActualizado,
-  });
-}
-
-
     if (!cliente || !carrito?.length) {
       return res.status(400).json({ message: 'Faltan datos del cliente o carrito vacío' });
     }
@@ -172,6 +148,31 @@ if (errores.length > 0) {
       clienteFinal = await Cliente.create(cliente);
     }
 
+    // 🔄 Validación productos
+    const { errores, carritoActualizado } = await verificarProductosDelCarrito(carrito);
+
+    if (errores.length > 0) {
+      return res.status(400).json({
+        mensaje: 'Algunos productos fueron modificados.',
+        errores,
+        carritoActualizado,
+      });
+    }
+
+    // 🔒 Evitar múltiples pedidos en edición
+    if (!pedidoId) {
+      const otroEditando = await Pedido.findOne({
+        where: {
+          clienteId: clienteFinal.id,
+          estadoEdicion: 'editando'
+        }
+      });
+
+      if (otroEditando) {
+        return res.status(409).json({ message: 'Ya hay un pedido en modo edición. Confirmalo o cancelalo.' });
+      }
+    }
+
     // 📦 Pedido
     let pedido;
 
@@ -179,10 +180,8 @@ if (errores.length > 0) {
       pedido = await Pedido.findByPk(pedidoId);
       if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
-      // ✅ Restaurar estado
       await pedido.update({ estado: 'pendiente', estadoEdicion: 'pendiente' });
 
-      // 🔔 Notificación al vendedor
       await Notificacion.create({
         titulo: 'Edición confirmada',
         mensaje: `El cliente confirmó los cambios del pedido #${pedido.id}.`,
@@ -191,7 +190,6 @@ if (errores.length > 0) {
         pedidoId: pedido.id,
       });
 
-      // 🔔 Notificaciones a administradores
       const admins = await Usuario.findAll({
         where: { rol: { [Op.in]: ['administrador', 'supremo'] } },
       });
@@ -247,7 +245,7 @@ if (errores.length > 0) {
     if (!ipCliente) ipCliente = await IpCliente.create({ ip });
     await vincularIpConCliente(ipCliente.id, clienteFinal.id);
 
-    // 📩 Notificaciones por Email y WhatsApp
+    // 📩 Notificaciones
     const vendedor = usuarioId ? await Usuario.findByPk(usuarioId) : null;
 
     if (!pedidoId) {
@@ -258,7 +256,7 @@ if (errores.length > 0) {
       await enviarWhatsappPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
     }
 
-    // ✅ Respuesta final
+    // ✅ Final
     res.status(201).json({
       message: pedidoId ? 'Pedido editado correctamente' : 'Pedido en edición',
       pedidoId: pedido.id,
@@ -267,7 +265,11 @@ if (errores.length > 0) {
 
   } catch (error) {
     console.error('❌ Error en crearOEditarPedido:', error);
-    next(error);
+    res.status(500).json({
+      mensaje: "Error al enviar el pedido",
+      error: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+    });
   }
 };
 
