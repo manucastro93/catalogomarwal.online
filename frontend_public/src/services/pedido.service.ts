@@ -7,17 +7,30 @@ export const enviarPedido = async (
 ): Promise<{ pedidoId: number; clienteId: number }> => {
   try {
     const res = await fetch(`${API_URL}/pedidos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
 
-    const json = await res.json().catch(() => ({}));
+    const text = await res.text();
 
-    if (!res.ok) {
+    let json: any;
+    try {
+      json = JSON.parse(text);
+    } catch (err) {
+      console.warn("❌ No se pudo parsear JSON:", err);
       throw {
         status: res.status,
-        mensaje: json?.mensaje || 'Error al enviar el pedido',
+        mensaje: "Respuesta inválida del servidor",
+        errores: [],
+        carritoActualizado: [],
+      };
+    }
+
+    if (!res.ok || !json?.pedidoId || !json?.clienteId) {
+      throw {
+        status: res.status,
+        mensaje: json?.mensaje || "Error al enviar el pedido",
         errores: json?.errores || [],
         carritoActualizado: json?.carritoActualizado || [],
       };
@@ -25,11 +38,10 @@ export const enviarPedido = async (
 
     return json;
   } catch (err) {
-    console.error("❌ Error al enviar pedido:", err);
+    console.error("❌ Error al enviar pedido (debug):", err);
     throw err;
   }
 };
-
 
 export const obtenerMisPedidos = async (): Promise<Pedido[]> => {
   try {
