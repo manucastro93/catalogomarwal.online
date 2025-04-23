@@ -11,6 +11,7 @@ import authRoutes from './auth.routes.js';
 import estadisticasRoutes from './estadisticas.routes.js';
 import logClienteRoutes from './logCliente.routes.js';
 import notificacionRoutes from './notificacion.routes.js';
+import reporteProduccionRoutes from "./reporteProduccion.routes.js";
 
 const router = express.Router();
 
@@ -25,5 +26,6 @@ router.use('/auth', authRoutes);
 router.use('/estadisticas', estadisticasRoutes);
 router.use('/logs-cliente', logClienteRoutes);
 router.use('/notificaciones', notificacionRoutes);
+router.use('/produccion-diaria', reporteProduccionRoutes);
 
 export default router;

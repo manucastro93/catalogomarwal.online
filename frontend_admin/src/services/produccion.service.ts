@@ -1,0 +1,13 @@
+import api from "./api";
+import { CrearReporteProduccion } from "../types/produccion";
+
+export const obtenerReportesProduccion = async () => {
+  const { data } = await api.get("/produccion-diaria");
+  return data;
+};
+
+export const guardarReporteProduccion = async (reporte: CrearReporteProduccion) => {
+  const { data } = await api.post("/produccion-diaria", reporte);
+  return data;
+};
+  

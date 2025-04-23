@@ -71,6 +71,7 @@ export const {
   Notificacion,
   HistorialCliente,
   IpClienteCliente,
+  ReporteProduccion,
 } = db;
 
 export { sequelize, Sequelize };

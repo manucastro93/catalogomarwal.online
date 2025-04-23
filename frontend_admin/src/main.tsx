@@ -13,6 +13,7 @@ import Pagina from './pages/Pagina';
 import Estadisticas from './pages/Estadisticas';
 import PedidoRapido from './pages/PedidoRapido';
 import LogsCliente from './pages/LogsCliente';
+import ProduccionDiaria from './pages/ProduccionDiaria';
 
 import DefinirContrasena from './components/Usuario/DefinirContrasena';
 import { checkLocalStorage, useAuth } from './store/auth';
@@ -38,5 +39,6 @@ render(() => (
     <Route path="/Pagina" component={() => <ProtectedRoute><Layout><Pagina /></Layout></ProtectedRoute>} />
     <Route path="/Estadisticas" component={() => <ProtectedRoute><Layout><Estadisticas /></Layout></ProtectedRoute>} />
     <Route path="/LogsCliente" component={() => <ProtectedRoute><Layout><LogsCliente /></Layout></ProtectedRoute>} />
+    <Route path="/Produccion/ProduccionDiaria" component={() => <ProtectedRoute><Layout><ProduccionDiaria /></Layout></ProtectedRoute>} />
   </Router>
 ), document.getElementById('root') as HTMLElement);
