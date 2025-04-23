@@ -6,6 +6,7 @@ import {
   onCleanup,
   onMount,
 } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import {
   carrito,
   setCarrito,
@@ -31,7 +32,7 @@ export default function CarritoSlideOver() {
       (sum, p) => sum + (Number(p.precio) || 0) * (Number(p.cantidad) || 0),
       0
     );
-
+  const navigate = useNavigate();
   const [mensaje, setMensaje] = createSignal("");
   const [enviando, setEnviando] = createSignal(false);
   const [showMobile, setShowMobile] = createSignal(false);
@@ -77,7 +78,6 @@ export default function CarritoSlideOver() {
         if (pedido.estadoEdicion === "editando") {
           setIsEditing(true);
         } else {
-          console.warn("⏳ Pedido no está en edición");
           limpiarModoEdicion();
         }
       } catch {
@@ -154,11 +154,15 @@ export default function CarritoSlideOver() {
       localStorage.setItem("clienteId", String(res.clienteId));
       limpiarCarrito();
       localStorage.removeItem("modoEdicionPedidoId");
+      window.dispatchEvent(new CustomEvent("pedidoEditadoConfirmado"));
       setPid(null);
       setCarritoAbierto(false);
   
       setMensajeExito("¡Pedido enviado con éxito!. Podés revisarlo en la sección 'Mis Pedidos'.");
-      setTimeout(() => setMensaje(""), 9000);
+      setTimeout(() => {
+        setMensajeExito("");
+        navigate("/"); // Navegar después de mostrar el mensaje
+      }, 2500);
     } catch (error: any) {
       console.error("❌ ERROR CATCH:", error);
   
@@ -193,8 +197,7 @@ export default function CarritoSlideOver() {
       setEnviando(false);
     }
   };
-  
-  
+
 
   return (
     <>

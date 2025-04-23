@@ -12,6 +12,7 @@ export interface ReporteProduccion {
       id: number;
       nombre: string;
       sku: string;
+      precioUnitario: number;
     };
   
     usuario?: {

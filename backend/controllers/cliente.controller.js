@@ -1,7 +1,7 @@
 import { Cliente, Provincia, Localidad, Usuario, Pedido, DetallePedido, Producto, LogCliente, IpCliente, HistorialCliente } from '../models/index.js';
 import { Op, fn, col, literal } from 'sequelize';
 import { validationResult } from 'express-validator';
-import { geocodificarDireccion } from '../utils/geocodificarDireccion.js';
+import { geocodificarDireccion } from '../utils/geocodificacion.js';
 import { registrarHistorialCliente } from '../utils/registrarHistorialCliente.js';
 
 export const listarClientes = async (req, res) => {
@@ -56,49 +56,6 @@ export const listarClientes = async (req, res) => {
   } catch (err) {
     console.error('❌ Error al listar clientes:', err);
     res.status(500).json({ message: 'Error al obtener clientes' });
-  }
-};
-
-export const crearCliente = async (req, res, next) => {
-  try {
-    const errores = validationResult(req);
-    if (!errores.isEmpty()) {
-      return res.status(400).json({ mensaje: 'Error de validación', errores: errores.array() });
-    }
-
-    const {
-      nombre, telefono, email, razonSocial,
-      direccion, provinciaId, localidadId, cuit_cuil
-    } = req.body;
-
-    if (!nombre || !telefono || !email || !direccion || !cuit_cuil) {
-      return res.status(400).json({ mensaje: 'Faltan campos obligatorios' });
-    }
-
-    if (provinciaId && !(await Provincia.findByPk(provinciaId))) {
-      return res.status(400).json({ mensaje: 'Provincia no encontrada' });
-    }
-    if (localidadId && !(await Localidad.findByPk(localidadId))) {
-      return res.status(400).json({ mensaje: 'Localidad no encontrada' });
-    }
-
-    const provinciaNombre = provinciaId ? (await Provincia.findByPk(provinciaId))?.nombre : '';
-    const localidadNombre = localidadId ? (await Localidad.findByPk(localidadId))?.nombre : '';
-    const direccionCompleta = `${direccion}, ${localidadNombre}, ${provinciaNombre}, Argentina`;
-    const { latitud, longitud } = await geocodificarDireccion(direccionCompleta);
-
-    const nuevo = await Cliente.create({
-      nombre, telefono, email, razonSocial, direccion,
-      provinciaId: provinciaId || null,
-      localidadId: localidadId || null,
-      cuit_cuil,
-      vendedorId: req.usuario?.id || null,
-      latitud, longitud,
-    });
-
-    res.status(201).json(nuevo);
-  } catch (error) {
-    next(error);
   }
 };
 

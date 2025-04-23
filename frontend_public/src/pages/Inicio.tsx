@@ -5,6 +5,7 @@ import {
   createResource,
   Show,
   createEffect,
+  onCleanup
 } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import ProductoCard from "../components/ProductoCard";
@@ -85,7 +86,7 @@ export default function Inicio(props: InicioProps) {
     await fetchProductos();
     const cats = await obtenerCategorias();
     setCategorias(["Todas", ...cats.map((c: any) => c.nombre)]);
-
+    const handler = () => setMensajeEdicion("");
     const categoriaInicial = params.categoria;
     if (categoriaInicial) {
       const categoriaDecodificada = Array.isArray(categoriaInicial)
@@ -125,12 +126,19 @@ export default function Inicio(props: InicioProps) {
 
     // ✅ Si viene desde props, lo setea también
     if (props.pedidoIdEdicion) {
-      console.log("🟢 Seteando modoEdicionPedidoId desde props:", props.pedidoIdEdicion);
       localStorage.setItem("modoEdicionPedidoId", props.pedidoIdEdicion);
       localStorage.setItem("abrirCarrito", "1");
     }
+
+    window.addEventListener("pedidoEditadoConfirmado", () => {
+      setMensajeEdicion("");
+    });
+    onCleanup(() => {
+      window.removeEventListener("pedidoEditadoConfirmado", handler);
+    });
   });
 
+  
   createEffect(() => {
     fetchProductos();
   });

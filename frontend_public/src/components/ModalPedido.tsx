@@ -89,7 +89,7 @@ export default function ModalPedido({
       localStorage.setItem("modoEdicionPedidoId", String(pedido.id));
       localStorage.setItem("abrirCarrito", "1");
       setCarrito(nuevoCarrito);
-
+      localStorage.setItem("carrito", JSON.stringify(nuevoCarrito));
       setActivandoEdicion(true);
       await marcarComoEditando(pedido.id);
 
@@ -109,7 +109,7 @@ export default function ModalPedido({
       </Show>
 
       <Show when={cancelando()}>
-        <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+        <div class="fixed inset-0 bg-black/40 z-80 flex items-center justify-center">
           <div class="bg-white px-6 py-4 rounded-lg shadow-lg text-lg font-semibold">
             Cancelando pedido...
           </div>
@@ -223,7 +223,7 @@ export default function ModalPedido({
                 onClick={() => setShowConfirm(true)}
                 disabled={duplicando() || showConfirm()}
               >
-                Cancelar Edición
+                Cancelar Pedido
               </button>
             </Show>
 

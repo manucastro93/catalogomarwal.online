@@ -2,7 +2,6 @@ import express from 'express';
 import {
   obtenerPedidos,
   obtenerPedidoPorId,
-  crearPedido,
   crearPedidoDesdePanel,
   actualizarEstadoPedido,
   validarCarritoSolo,
