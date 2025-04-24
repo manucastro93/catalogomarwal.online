@@ -5,7 +5,7 @@ import {
   createResource,
   Show,
   createEffect,
-  onCleanup
+  onCleanup,
 } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import ProductoCard from "../components/ProductoCard";
@@ -48,17 +48,24 @@ export default function Inicio(props: InicioProps) {
   const [pagina, setPagina] = createSignal(1);
   const [totalPaginas, setTotalPaginas] = createSignal(1);
   const [banners] = createResource(obtenerBanners);
-  const [productoSeleccionado, setProductoSeleccionado] = createSignal<any | null>(null);
+  const [productoSeleccionado, setProductoSeleccionado] = createSignal<
+    any | null
+  >(null);
   const [mostrarDetalle, setMostrarDetalle] = createSignal(false);
   const [mensajeEdicion, setMensajeEdicion] = createSignal("");
 
   const obtenerOrdenYDireccion = () => {
     switch (ordenSeleccionado()) {
-      case "precioAsc": return { orden: "precioPorBulto", direccion: "ASC" };
-      case "precioDesc": return { orden: "precioPorBulto", direccion: "DESC" };
-      case "nombreAsc": return { orden: "nombre", direccion: "ASC" };
-      case "nombreDesc": return { orden: "nombre", direccion: "DESC" };
-      default: return { orden: "createdAt", direccion: "DESC" };
+      case "precioAsc":
+        return { orden: "precioPorBulto", direccion: "ASC" };
+      case "precioDesc":
+        return { orden: "precioPorBulto", direccion: "DESC" };
+      case "nombreAsc":
+        return { orden: "nombre", direccion: "ASC" };
+      case "nombreDesc":
+        return { orden: "nombre", direccion: "DESC" };
+      default:
+        return { orden: "createdAt", direccion: "DESC" };
     }
   };
 
@@ -82,11 +89,17 @@ export default function Inicio(props: InicioProps) {
     setTotalPaginas(res.totalPaginas);
   };
 
-  onMount(async () => {
+  onMount(() => {
+    const handler = () => setMensajeEdicion("");
+    window.addEventListener("pedidoEditadoConfirmado", handler);
+
+    onCleanup(() => {
+      window.removeEventListener("pedidoEditadoConfirmado", handler);
+    });
+    (async () => {
     await fetchProductos();
     const cats = await obtenerCategorias();
     setCategorias(["Todas", ...cats.map((c: any) => c.nombre)]);
-    const handler = () => setMensajeEdicion("");
     const categoriaInicial = params.categoria;
     if (categoriaInicial) {
       const categoriaDecodificada = Array.isArray(categoriaInicial)
@@ -129,20 +142,12 @@ export default function Inicio(props: InicioProps) {
       localStorage.setItem("modoEdicionPedidoId", props.pedidoIdEdicion);
       localStorage.setItem("abrirCarrito", "1");
     }
+  })();
+});
 
-    window.addEventListener("pedidoEditadoConfirmado", () => {
-      setMensajeEdicion("");
-    });
-    onCleanup(() => {
-      window.removeEventListener("pedidoEditadoConfirmado", handler);
-    });
-  });
-
-  
   createEffect(() => {
     fetchProductos();
   });
-
   return (
     <div class="flex flex-col">
       <Show when={mensajeEdicion()}>
@@ -218,14 +223,17 @@ export default function Inicio(props: InicioProps) {
             </div>
           </div>
 
-          <Show when={!mostrarDetalle()} fallback={
-            <div class="animate-fade-in">
-              <DetalleProductoInline
-                producto={productoSeleccionado()}
-                onVolver={() => setMostrarDetalle(false)}
-              />
-            </div>
-          }>
+          <Show
+            when={!mostrarDetalle()}
+            fallback={
+              <div class="animate-fade-in">
+                <DetalleProductoInline
+                  producto={productoSeleccionado()}
+                  onVolver={() => setMostrarDetalle(false)}
+                />
+              </div>
+            }
+          >
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-5">
               <For each={productos()}>
                 {(prod) => (
@@ -234,7 +242,9 @@ export default function Inicio(props: InicioProps) {
                     sku={prod.sku}
                     nombre={prod.nombre}
                     precio={parseFloat(prod.precioUnitario) || 0}
-                    precioPorBulto={parseFloat(prod.precioPorBulto) || undefined}
+                    precioPorBulto={
+                      parseFloat(prod.precioPorBulto) || undefined
+                    }
                     unidadPorBulto={prod.unidadPorBulto || undefined}
                     imagen={prod.Imagenes?.[0]?.url}
                     segundaImagen={prod.Imagenes?.[1]?.url}
@@ -260,7 +270,9 @@ export default function Inicio(props: InicioProps) {
                   Página {pagina()} de {totalPaginas()}
                 </span>
                 <button
-                  onClick={() => setPagina((p) => Math.min(totalPaginas(), p + 1))}
+                  onClick={() =>
+                    setPagina((p) => Math.min(totalPaginas(), p + 1))
+                  }
                   class="px-3 py-1 border rounded disabled:opacity-50"
                   disabled={pagina() === totalPaginas()}
                 >

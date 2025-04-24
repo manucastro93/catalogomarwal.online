@@ -1,19 +1,78 @@
-import { createSignal, createResource, For, Show } from "solid-js";
-import { obtenerReportesProduccion, eliminarReporteProduccion } from "../services/produccion.service";
-import { useAuth } from "../store/auth";
+import {
+  createSignal,
+  createResource,
+  createMemo,
+  Show,
+  createEffect,
+} from "solid-js";
+import {
+  obtenerReportesProduccion,
+  eliminarReporteProduccion,
+} from "../services/produccion.service";
+import { obtenerPlantas } from "../services/planta.service";
 import ModalNuevoReporte from "../components/Produccion/ModalNuevoReporte";
-import type { ReporteProduccion } from "../types/produccion";
 import ModalMensaje from "../components/Layout/ModalMensaje";
 import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
 import Loader from "../components/Layout/Loader";
-import { formatearPrecio } from "../utils/formato";
+import TablaProduccionDiaria from "../components/Produccion/TablaProduccionDiaria";
+import FiltrosProduccionDiaria from "../components/Produccion/FiltrosProduccionDiaria";
+import type { ReporteProduccion, ProduccionParams } from "../types/produccion";
+import type { Planta } from "../types/planta";
+
+const TURNOS_VALIDOS = ["mañana", "tarde", "noche"];
 
 export default function ProduccionDiaria() {
-  const { usuario } = useAuth();
-  const [modalAbierto, setModalAbierto] = createSignal(false);
+  const [pagina, setPagina] = createSignal(1);
+  const [orden, setOrden] = createSignal("createdAt");
+  const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
   const [mensaje, setMensaje] = createSignal("");
-  const [reporteAEliminar, setReporteAEliminar] = createSignal<ReporteProduccion | null>(null);
-  const [reportes, { refetch }] = createResource<ReporteProduccion[]>(obtenerReportesProduccion);
+  const [modalAbierto, setModalAbierto] = createSignal(false);
+  const [reporteAEliminar, setReporteAEliminar] =
+    createSignal<ReporteProduccion | null>(null);
+
+  // Filtros
+  const [desde, setDesde] = createSignal("");
+  const [hasta, setHasta] = createSignal("");
+  const [turno, setTurno] = createSignal("");
+  const [plantaId, setPlantaId] = createSignal("");
+  const [plantas] = createResource(obtenerPlantas);
+  const [plantasCargadas, setPlantasCargadas] = createSignal<Planta[]>([]);
+  createEffect(() => {
+    const p = plantas();
+    if (Array.isArray(p)) {
+      setPlantasCargadas(p);
+    }
+  });
+
+  const fetchParams = createMemo<ProduccionParams>(() => {
+    const turnoVal = turno();
+    return {
+      page: pagina(),
+      limit: 10,
+      orden: orden(),
+      direccion: direccion(),
+      desde: desde() || undefined,
+      hasta: hasta() || undefined,
+      turno: TURNOS_VALIDOS.includes(turnoVal)
+        ? (turnoVal as "mañana" | "tarde" | "noche")
+        : undefined,
+      plantaId: plantaId() ? Number(plantaId()) : undefined,
+    };
+  });
+
+  const [respuesta, { refetch }] = createResource(
+    fetchParams,
+    obtenerReportesProduccion
+  );
+
+  const cambiarOrden = (col: string) => {
+    if (orden() === col) {
+      setDireccion(direccion() === "asc" ? "desc" : "asc");
+    } else {
+      setOrden(col);
+      setDireccion("asc");
+    }
+  };
 
   const confirmarEliminacion = async () => {
     if (!reporteAEliminar()) return;
@@ -35,45 +94,53 @@ export default function ProduccionDiaria() {
         </button>
       </div>
 
-      <Show when={!reportes.loading} fallback={<Loader />}>
-        <div class="overflow-x-auto bg-white shadow rounded">
-          <table class="min-w-full text-sm text-left">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="p-2">Fecha</th>
-                <th class="p-2">SKU</th>
-                <th class="p-2">Producto</th>
-                <th class="p-2">Cantidad</th>
-                <th class="p-2">Cargado por</th>
-                <th class="p-2">Total</th>
-                <th class="p-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <For each={reportes()}>
-                {(r) => (
-                  <tr class="border-t hover:bg-gray-50">
-                    <td class="p-2">{new Date(r.createdAt).toLocaleDateString()}</td>
-                    <td class="p-2">{r.producto?.sku}</td>
-                    <td class="p-2">{r.producto?.nombre}</td>
-                    <td class="p-2">{r.cantidad}</td>
-                    <td class="p-2">{r.usuario?.nombre}</td>
-                    <td class="p-2">{formatearPrecio((r.producto?.precioUnitario ?? 0) * (r.cantidad ?? 0))}</td>
-                    <td class="p-2 text-right">
-                      <button
-                        onClick={() => setReporteAEliminar(r)}
-                        class="text-red-600 hover:underline text-sm"
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                )}
-              </For>
-            </tbody>
-          </table>
-        </div>
+      <Show when={plantasCargadas().length > 0}>
+        <FiltrosProduccionDiaria
+          desde={desde()}
+          hasta={hasta()}
+          turno={turno()}
+          plantaId={plantaId()}
+          plantas={plantasCargadas()}
+          setDesde={setDesde}
+          setHasta={setHasta}
+          setTurno={setTurno}
+          setPlantaId={setPlantaId}
+          setPagina={setPagina}
+        />
       </Show>
+
+      <Show when={!respuesta.loading} fallback={<Loader />}>
+        <TablaProduccionDiaria
+          reportes={respuesta()?.data ?? []}
+          onEliminar={setReporteAEliminar}
+          onOrdenar={cambiarOrden}
+          orden={orden()}
+          direccion={direccion()}
+        />
+      </Show>
+
+      <div class="flex justify-center items-center gap-2 mt-4">
+        <button
+          onClick={() => setPagina((p) => Math.max(1, p - 1))}
+          class="px-3 py-1 border rounded disabled:opacity-50"
+          disabled={pagina() === 1}
+        >
+          ◀
+        </button>
+        <span class="text-sm">
+          Página {respuesta()?.pagina ?? "-"} de{" "}
+          {respuesta()?.totalPaginas ?? "-"}
+        </span>
+        <button
+          onClick={() =>
+            setPagina((p) => Math.min(respuesta()?.totalPaginas || p, p + 1))
+          }
+          class="px-3 py-1 border rounded disabled:opacity-50"
+          disabled={pagina() === (respuesta()?.totalPaginas ?? 1)}
+        >
+          ▶
+        </button>
+      </div>
 
       <Show when={modalAbierto()}>
         <ModalNuevoReporte
@@ -96,4 +163,4 @@ export default function ProduccionDiaria() {
       </Show>
     </div>
   );
-} 
+}

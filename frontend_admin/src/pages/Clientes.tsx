@@ -1,6 +1,6 @@
 import { createSignal, createResource, createMemo, For, Show } from "solid-js";
 import * as XLSX from "xlsx";
-import { obtenerClientes, eliminarCliente } from "../services/cliente.service";
+import { obtenerClientes } from "../services/cliente.service";
 import {
   obtenerProvincias,
   obtenerLocalidades,
@@ -8,7 +8,6 @@ import {
 import { useAuth } from "../store/auth";
 import type { Cliente } from "../types/cliente";
 import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import ModalCliente from "../components/Cliente/ModalCliente";
 import VerClienteModal from "../components/Cliente/VerClienteModal";
 import { obtenerVendedores } from "../services/vendedor.service";
 import Loader from "../components/Layout/Loader";
@@ -90,14 +89,6 @@ export default function Clientes() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Clientes");
     XLSX.writeFile(wb, "clientes.xlsx");
-  };
-
-  const confirmarEliminacion = async () => {
-    if (!clienteAEliminar()) return;
-    await eliminarCliente(clienteAEliminar()!.id);
-    setClienteAEliminar(null);
-    setModalConfirmar(false);
-    refetch();
   };
 
   return (
@@ -193,30 +184,9 @@ export default function Clientes() {
         </button>
       </div>
 
-      <ModalCliente
-        abierto={modalAbierto()}
-        cliente={clienteSeleccionado()}
-        onClose={() => {
-          setModalAbierto(false);
-          refetch();
-        }}
-      />
-
       <VerClienteModal
         cliente={verCliente()}
         onCerrar={() => setVerCliente(null)}
-      />
-
-      <ModalConfirmacion
-        abierto={modalConfirmar()}
-        mensaje={`¿Estás seguro que querés eliminar al cliente "${
-          clienteAEliminar()?.nombre
-        }"?`}
-        onCancelar={() => {
-          setClienteAEliminar(null);
-          setModalConfirmar(false);
-        }}
-        onConfirmar={confirmarEliminacion}
       />
 
       <ModalMapaClientes

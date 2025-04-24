@@ -12,6 +12,7 @@ import estadisticasRoutes from './estadisticas.routes.js';
 import logClienteRoutes from './logCliente.routes.js';
 import notificacionRoutes from './notificacion.routes.js';
 import reporteProduccionRoutes from "./reporteProduccion.routes.js";
+import plantaRoutes from './planta.routes.js';
 
 const router = express.Router();
 
@@ -27,5 +28,6 @@ router.use('/estadisticas', estadisticasRoutes);
 router.use('/logs-cliente', logClienteRoutes);
 router.use('/notificaciones', notificacionRoutes);
 router.use('/produccion-diaria', reporteProduccionRoutes);
+router.use('/plantas', plantaRoutes);
 
 export default router;

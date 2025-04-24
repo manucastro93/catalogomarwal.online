@@ -59,6 +59,34 @@ export const listarClientes = async (req, res) => {
   }
 };
 
+export const crearCliente = async (req, res) => {
+  try { 
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const {
+      nombre, telefono, email, razonSocial,
+      direccion, provinciaId, localidadId, cuit_cuil
+    } = req.body;
+    const provinciaNombre = provinciaId ? ((await Provincia.findByPk(provinciaId))?.nombre || '').replace('-GBA', '').trim(): '';
+    const localidadNombre = localidadId ? (await Localidad.findByPk(localidadId))?.nombre : '';
+    const direccionCompleta = `${direccion}, ${localidadNombre}, ${provinciaNombre}, Argentina`;
+    const { latitud, longitud } = await geocodificarDireccion(direccionCompleta);
+    const nuevoCliente = await Cliente.create({
+      nombre, telefono, email, razonSocial, direccion,
+      provinciaId: provinciaId || null,
+      localidadId: localidadId || null,
+      cuit_cuil,
+      latitud, longitud,
+    });
+    res.status(201).json(nuevoCliente);
+  } catch (error) {
+    console.error('❌ Error al crear cliente:', error); 
+    res.status(500).json({ message: 'Error al crear cliente' });
+  }
+};  
+
 export const actualizarCliente = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -86,16 +114,6 @@ export const actualizarCliente = async (req, res, next) => {
     await registrarHistorialCliente(anterior, actualizado, req.usuario?.id);
 
     res.json(actualizado);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const eliminarCliente = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    await Cliente.destroy({ where: { id } });
-    res.json({ mensaje: 'Cliente eliminado correctamente' });
   } catch (error) {
     next(error);
   }

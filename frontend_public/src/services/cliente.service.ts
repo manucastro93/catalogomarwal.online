@@ -1,15 +1,7 @@
-const API_URL = import.meta.env.VITE_BACKEND_URL;
+import api from './api';
+import type { LogClienteInput } from '../types/cliente';
 
-export interface LogClienteInput {
-  categoriaId?: number;
-  busqueda?: string;
-  tiempoEnPantalla?: number;
-  ubicacion?: string;
-  sesion?: string;
-  clienteId?: number; 
-  referer?: string;
-}
-
+// Registra una búsqueda del cliente
 export function registrarBusqueda(busqueda: string) {
   const sesion = localStorage.getItem("sesionId") || crypto.randomUUID();
   localStorage.setItem("sesionId", sesion);
@@ -26,43 +18,26 @@ export function registrarBusqueda(busqueda: string) {
   });
 }
 
+// POST /public/logs-cliente
 export const registrarLogCliente = async (data: LogClienteInput) => {
-  try {
-    const res = await fetch(`${API_URL}/logs-cliente`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error('Error al registrar log del cliente');
-    return await res.json();
-  } catch (error) {
-    console.error('❌ Error al registrar log cliente:', error);
-  }
+  const res = await api.post('/logs', data);
+  return res.data;
 };
 
+// GET /public/cliente-por-ip
 export const detectarClientePorIp = async () => {
   try {
-    const res = await fetch(`${API_URL}/public/cliente-por-ip`);
-    if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
-      const data = await res.json();
-      if (data?.clienteId) {
-        localStorage.setItem("clienteId", data.clienteId.toString());
-      }
-    } else {
-      console.warn("ℹ️ No se encontró cliente por IP");
+    const res = await api.get('/cliente-por-ip');
+    if (res.data?.clienteId) {
+      localStorage.setItem("clienteId", res.data.clienteId.toString());
     }
   } catch (err) {
     console.error("❌ No se pudo detectar cliente por IP:", err);
   }
 };
 
+// GET /public/cliente/:id
 export const obtenerClientePorId = async (id: number) => {
-  try {
-    const res = await fetch(`${API_URL}/public/cliente/${id}`);
-    if (!res.ok) throw new Error("No se pudo obtener el cliente");
-    return await res.json();
-  } catch (error) {
-    console.error("❌ Error al obtener cliente por ID:", error);
-    throw error;
-  }
+  const res = await api.get(`/cliente/${id}`);
+  return res.data;
 };
