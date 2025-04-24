@@ -27,7 +27,7 @@ export default function FiltrosProduccionDiaria({
   setPagina,
 }: Props) {
   return (
-    <div class="flex flex-wrap gap-3 mb-6 items-center text-base">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6 text-base">
       <input
         type="date"
         value={desde}
@@ -35,7 +35,7 @@ export default function FiltrosProduccionDiaria({
           setDesde(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10"
+        class="border rounded px-3 py-2 h-10 w-full"
       />
       <input
         type="date"
@@ -44,7 +44,7 @@ export default function FiltrosProduccionDiaria({
           setHasta(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10"
+        class="border rounded px-3 py-2 h-10 w-full"
       />
       <select
         value={turno}
@@ -52,7 +52,7 @@ export default function FiltrosProduccionDiaria({
           setTurno(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10"
+        class="border rounded px-3 py-2 h-10 w-full"
       >
         <option value="">Turno</option>
         <option value="mañana">Mañana</option>
@@ -65,7 +65,7 @@ export default function FiltrosProduccionDiaria({
           setPlantaId(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10"
+        class="border rounded px-3 py-2 h-10 w-full"
       >
         <option value="">Planta</option>
         <For each={plantas}>
