@@ -27,55 +27,62 @@ export default function FiltrosProduccionDiaria({
   setPagina,
 }: Props) {
   return (
-    <div class="flex flex-wrap gap-3 mb-6 items-center text-base">
-      <input
-        type={desde ? "date" : "text"}
-        placeholder="Desde"
-        value={desde}
-        onFocus={(e) => (e.currentTarget.type = "date")}
-        onBlur={(e) => {
-          if (!e.currentTarget.value) e.currentTarget.type = "text";
-        }}
-        onInput={(e) => {
-          setDesde(e.currentTarget.value);
-          setPagina(1);
-        }}
-        class="border rounded px-3 py-2 h-10 w-[140px]"
-      />
-      <input
-        type={hasta ? "date" : "text"}
-        placeholder="Hasta"
-        value={hasta}
-        onFocus={(e) => (e.currentTarget.type = "date")}
-        onBlur={(e) => {
-          if (!e.currentTarget.value) e.currentTarget.type = "text";
-        }}
-        onInput={(e) => {
-          setHasta(e.currentTarget.value);
-          setPagina(1);
-        }}
-        class="border rounded px-3 py-2 h-10 w-[140px]"
-      />
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6 items-center text-base">
+      <div class="relative">
+        <input
+          type="date"
+          value={desde}
+          onInput={(e) => {
+            setDesde(e.currentTarget.value);
+            setPagina(1);
+          }}
+          class="border rounded px-3 py-2 h-10 w-full appearance-none"
+        />
+        {!desde && (
+          <span class="absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none">
+            Desde
+          </span>
+        )}
+      </div>
+
+      <div class="relative">
+        <input
+          type="date"
+          value={hasta}
+          onInput={(e) => {
+            setHasta(e.currentTarget.value);
+            setPagina(1);
+          }}
+          class="border rounded px-3 py-2 h-10 w-full appearance-none"
+        />
+        {!hasta && (
+          <span class="absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none">
+            Hasta
+          </span>
+        )}
+      </div>
+
       <select
         value={turno}
         onChange={(e) => {
           setTurno(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10"
+        class="border rounded px-3 py-2 h-10 w-full"
       >
         <option value="">Turno</option>
         <option value="mañana">Mañana</option>
         <option value="tarde">Tarde</option>
         <option value="noche">Noche</option>
       </select>
+
       <select
         value={plantaId.toString()}
         onChange={(e) => {
           setPlantaId(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10"
+        class="border rounded px-3 py-2 h-10 w-full"
       >
         <option value="">Planta</option>
         <For each={plantas}>
