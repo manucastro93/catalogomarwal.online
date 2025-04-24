@@ -36,7 +36,9 @@ export default function FiltrosProduccionDiaria({
       defaultDate: desde ? new Date(desde) : undefined,
       onChange: ([date]) => {
         if (date) {
-          setDesde(date.toISOString().split("T")[0]);
+          const iso = date.toISOString().split("T")[0];
+          inputDesde!.value = date.toLocaleDateString("es-AR");
+          setDesde(iso);
           setPagina(1);
         }
       },
@@ -47,11 +49,17 @@ export default function FiltrosProduccionDiaria({
       defaultDate: hasta ? new Date(hasta) : undefined,
       onChange: ([date]) => {
         if (date) {
-          setHasta(date.toISOString().split("T")[0]);
+          const iso = date.toISOString().split("T")[0];
+          inputHasta!.value = date.toLocaleDateString("es-AR");
+          setHasta(iso);
           setPagina(1);
         }
       },
     });
+
+    // Inicializar visiblemente en el input
+    if (desde) inputDesde!.value = new Date(desde).toLocaleDateString("es-AR");
+    if (hasta) inputHasta!.value = new Date(hasta).toLocaleDateString("es-AR");
   });
 
   return (
@@ -100,9 +108,7 @@ export default function FiltrosProduccionDiaria({
       >
         <option value="">Planta</option>
         <For each={plantas}>
-          {(p) => (
-            <option value={p.id.toString()}>{p.nombre}</option>
-          )}
+          {(p) => <option value={p.id.toString()}>{p.nombre}</option>}
         </For>
       </select>
     </div>
