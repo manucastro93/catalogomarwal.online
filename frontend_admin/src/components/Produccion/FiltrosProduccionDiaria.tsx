@@ -1,7 +1,6 @@
-import { createSignal, onMount } from "solid-js";
-import flatpickr from "flatpickr";
-import { Spanish } from "flatpickr/dist/l10n/es";
-import "flatpickr/dist/flatpickr.min.css";
+import { For } from "solid-js";
+import InputFecha from "../Layout/InputFecha";
+import type { Planta } from "../../types/planta";
 
 interface Props {
   desde: string;
@@ -12,7 +11,7 @@ interface Props {
   setHasta: (v: string) => void;
   setTurno: (v: string) => void;
   setPlantaId: (v: string) => void;
-  plantas: { id: number; nombre: string }[];
+  plantas: Planta[];
   setPagina: (v: number) => void;
 }
 
@@ -28,58 +27,26 @@ export default function FiltrosProduccionDiaria({
   plantas,
   setPagina,
 }: Props) {
-  let inputDesde: HTMLInputElement;
-  let inputHasta: HTMLInputElement;
-
-  onMount(() => {
-    flatpickr.localize(Spanish);
-
-    flatpickr(inputDesde, {
-      dateFormat: "d/m/Y",
-      defaultDate: desde ? new Date(desde) : undefined,
-      onChange: ([date]) => {
-        if (date) {
-          const iso = date.toISOString().split("T")[0];
-          inputDesde.value = date.toLocaleDateString("es-AR");
-          setDesde(iso);
-          setPagina(1);
-        }
-      },
-    });
-
-    flatpickr(inputHasta, {
-      dateFormat: "d/m/Y",
-      defaultDate: hasta ? new Date(hasta) : undefined,
-      onChange: ([date]) => {
-        if (date) {
-          const iso = date.toISOString().split("T")[0];
-          inputHasta.value = date.toLocaleDateString("es-AR");
-          setHasta(iso);
-          setPagina(1);
-        }
-      },
-    });
-
-    if (desde) inputDesde.value = new Date(desde).toLocaleDateString("es-AR");
-    if (hasta) inputHasta.value = new Date(hasta).toLocaleDateString("es-AR");
-  });
-
   return (
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:flex gap-3 mb-6 items-center text-sm md:text-base">
-      <input
-        ref={el => (inputDesde = el)}
-        type="text"
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6 items-center text-base w-full">
+      <InputFecha
+        valor={desde}
+        onChange={(v) => {
+          setDesde(v);
+          setPagina(1);
+        }}
         placeholder="Desde"
-        class="border rounded px-3 py-2 h-10 w-full"
-        readonly
       />
-      <input
-        ref={el => (inputHasta = el)}
-        type="text"
+
+      <InputFecha
+        valor={hasta}
+        onChange={(v) => {
+          setHasta(v);
+          setPagina(1);
+        }}
         placeholder="Hasta"
-        class="border rounded px-3 py-2 h-10 w-full"
-        readonly
       />
+
       <select
         value={turno}
         onChange={(e) => {
@@ -93,8 +60,9 @@ export default function FiltrosProduccionDiaria({
         <option value="tarde">Tarde</option>
         <option value="noche">Noche</option>
       </select>
+
       <select
-        value={plantaId}
+        value={plantaId.toString()}
         onChange={(e) => {
           setPlantaId(e.currentTarget.value);
           setPagina(1);
@@ -102,9 +70,9 @@ export default function FiltrosProduccionDiaria({
         class="border rounded px-3 py-2 h-10 w-full"
       >
         <option value="">Planta</option>
-        {plantas.map((p) => (
-          <option value={p.id.toString()}>{p.nombre}</option>
-        ))}
+        <For each={plantas}>
+          {(p) => <option value={p.id.toString()}>{p.nombre}</option>}
+        </For>
       </select>
     </div>
   );
