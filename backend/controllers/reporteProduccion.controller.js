@@ -6,9 +6,8 @@ export const obtenerReportesProduccion = async (req, res, next) => {
     const pagina = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (pagina - 1) * limit;
-    const orden = req.query.orden || "createdAt";
+    const orden = req.query.orden || "fecha";
     const direccion = req.query.direccion?.toUpperCase() === "ASC" ? "ASC" : "DESC";
-
     const where = {};
 
     if (req.query.turno) {
@@ -20,10 +19,21 @@ export const obtenerReportesProduccion = async (req, res, next) => {
     }
 
     if (req.query.desde && req.query.hasta) {
-      where.createdAt = {
-        [Op.between]: [new Date(req.query.desde), new Date(req.query.hasta)],
+      const desde = new Date(req.query.desde + 'T00:00:00');
+      const hasta = new Date(req.query.hasta + 'T23:59:59');
+      where.fecha = {
+        [Op.between]: [new Date(desde), new Date(hasta)],
       };
     }
+
+    let order;
+    if (orden.includes(".")) {
+      const partes = orden.split(".");
+      order = [[...partes, direccion]];
+    } else {
+      order = [[orden, direccion]];
+    }
+
 
     const { count, rows } = await ReporteProduccion.findAndCountAll({
       where,
@@ -32,7 +42,7 @@ export const obtenerReportesProduccion = async (req, res, next) => {
         { model: Usuario, as: "usuario", attributes: ["id", "nombre", "email"] },
         { model: Planta, as: "planta", attributes: ["id", "nombre", "direccion"] }
       ],
-      order: [[orden, direccion]],
+      order,
       limit,
       offset,
     });

@@ -23,7 +23,7 @@ const TURNOS_VALIDOS = ["mañana", "tarde", "noche"];
 
 export default function ProduccionDiaria() {
   const [pagina, setPagina] = createSignal(1);
-  const [orden, setOrden] = createSignal("createdAt");
+  const [orden, setOrden] = createSignal("fecha");
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
   const [mensaje, setMensaje] = createSignal("");
   const [modalAbierto, setModalAbierto] = createSignal(false);

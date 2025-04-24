@@ -10,22 +10,25 @@ interface Props {
   direccion: "asc" | "desc";
 }
 
-export default function TablaProduccionDiaria({ reportes, onEliminar, onOrdenar, orden, direccion }: Props) {
+export default function TablaProduccionDiaria({
+  reportes,
+  onEliminar,
+  onOrdenar,
+  orden,
+  direccion,
+}: Props) {
   const th = (label: string, col: string) => (
-    <th
-      class="p-2 cursor-pointer select-none"
-      onClick={() => onOrdenar(col)}
-    >
+    <th class="p-2 cursor-pointer select-none" onClick={() => onOrdenar(col)}>
       {label} {orden === col ? (direccion === "asc" ? "▲" : "▼") : null}
     </th>
   );
 
   return (
-    <div class="overflow-x-auto bg-white shadow rounded">
-      <table class="min-w-full text-sm text-left">
-        <thead class="bg-gray-200">
+    <div class="overflow-auto border rounded-lg">
+      <table class="w-full text-sm border-collapse hidden md:table">
+        <thead class="bg-gray-100 sticky top-0">
           <tr>
-            {th("Fecha", "createdAt")}
+            {th("Fecha", "fecha")}
             {th("SKU", "producto.sku")}
             {th("Producto", "producto.nombre")}
             <th class="p-2">CostoMP</th>
@@ -49,7 +52,11 @@ export default function TablaProduccionDiaria({ reportes, onEliminar, onOrdenar,
                 <td class="p-2 capitalize">{r.turno}</td>
                 <td class="p-2">{r.planta?.nombre ?? r.plantaId}</td>
                 <td class="p-2">{r.usuario?.nombre}</td>
-                <td class="p-2">{formatearPrecio((r.producto?.precioUnitario ?? 0) * (r.cantidad ?? 0))}</td>
+                <td class="p-2">
+                  {formatearPrecio(
+                    (r.producto?.precioUnitario ?? 0) * (r.cantidad ?? 0)
+                  )}
+                </td>
                 <td class="p-2 text-right">
                   <button
                     onClick={() => onEliminar(r)}
@@ -63,6 +70,55 @@ export default function TablaProduccionDiaria({ reportes, onEliminar, onOrdenar,
           </For>
         </tbody>
       </table>
+
+      {/* Tabla MOBILE */}
+      <div class="md:hidden space-y-4">
+        <For each={reportes}>
+          {(r) => (
+            <div class="border rounded-lg p-3 shadow-sm text-sm bg-white">
+              <div>
+                <strong>Fecha:</strong> {new Date(r.fecha).toLocaleDateString()}
+              </div>
+              <div>
+                <strong>SKU:</strong> {r.producto?.sku}
+              </div>
+              <div>
+                <strong>Producto:</strong> {r.producto?.nombre}
+              </div>
+              <div>
+                <strong>CostoMP:</strong> {formatearPrecio(r.producto?.costoMP)}
+              </div>
+              <div>
+                <strong>Cantidad:</strong> {r.cantidad}
+              </div>
+              <div>
+                <strong>Turno:</strong>{" "}
+                <span class="capitalize">{r.turno}</span>
+              </div>
+              <div>
+                <strong>Planta:</strong> {r.planta?.nombre ?? r.plantaId}
+              </div>
+              <div>
+                <strong>Usuario:</strong> {r.usuario?.nombre}
+              </div>
+              <div>
+                <strong>Total:</strong>{" "}
+                {formatearPrecio(
+                  (r.producto?.precioUnitario ?? 0) * (r.cantidad ?? 0)
+                )}
+              </div>
+              <div class="text-right mt-2">
+                <button
+                  onClick={() => onEliminar(r)}
+                  class="text-red-600 hover:underline text-sm"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          )}
+        </For>
+      </div>
     </div>
   );
 }
