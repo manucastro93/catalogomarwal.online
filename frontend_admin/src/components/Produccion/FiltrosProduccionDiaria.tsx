@@ -64,25 +64,26 @@ export default function FiltrosProduccionDiaria({
 
   return (
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 text-base">
-      <label class="relative w-full">
-        <input
-          ref={inputDesde}
-          type="text"
-          placeholder="Desde"
-          class="w-full border rounded px-3 py-2 h-10 appearance-none"
-          readonly
-        />
-      </label>
+      <label class="w-full">
+  <input
+    ref={inputDesde}
+    type="text"
+    class="w-full border rounded px-3 py-2 h-10"
+    placeholder="Desde"
+    readonly
+  />
+</label>
 
-      <label class="relative w-full">
-        <input
-          ref={inputHasta}
-          type="text"
-          placeholder="Hasta"
-          class="w-full border rounded px-3 py-2 h-10 appearance-none"
-          readonly
-        />
-      </label>
+<label class="w-full">
+  <input
+    ref={inputHasta}
+    type="text"
+    class="w-full border rounded px-3 py-2 h-10"
+    placeholder="Hasta"
+    readonly
+  />
+</label>
+
 
       <select
         value={turno}
