@@ -27,24 +27,34 @@ export default function FiltrosProduccionDiaria({
   setPagina,
 }: Props) {
   return (
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6 text-base">
+    <div class="flex flex-wrap gap-3 mb-6 items-center text-base">
       <input
-        type="date"
+        type={desde ? "date" : "text"}
+        placeholder="Desde"
         value={desde}
+        onFocus={(e) => (e.currentTarget.type = "date")}
+        onBlur={(e) => {
+          if (!e.currentTarget.value) e.currentTarget.type = "text";
+        }}
         onInput={(e) => {
           setDesde(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10 w-full"
+        class="border rounded px-3 py-2 h-10 w-[140px]"
       />
       <input
-        type="date"
+        type={hasta ? "date" : "text"}
+        placeholder="Hasta"
         value={hasta}
+        onFocus={(e) => (e.currentTarget.type = "date")}
+        onBlur={(e) => {
+          if (!e.currentTarget.value) e.currentTarget.type = "text";
+        }}
         onInput={(e) => {
           setHasta(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10 w-full"
+        class="border rounded px-3 py-2 h-10 w-[140px]"
       />
       <select
         value={turno}
@@ -52,7 +62,7 @@ export default function FiltrosProduccionDiaria({
           setTurno(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10 w-full"
+        class="border rounded px-3 py-2 h-10"
       >
         <option value="">Turno</option>
         <option value="mañana">Mañana</option>
@@ -65,7 +75,7 @@ export default function FiltrosProduccionDiaria({
           setPlantaId(e.currentTarget.value);
           setPagina(1);
         }}
-        class="border rounded px-3 py-2 h-10 w-full"
+        class="border rounded px-3 py-2 h-10"
       >
         <option value="">Planta</option>
         <For each={plantas}>
