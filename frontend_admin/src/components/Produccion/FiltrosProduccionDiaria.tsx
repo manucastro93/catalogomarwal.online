@@ -1,6 +1,7 @@
-import { createSignal, For, onMount } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 import flatpickr from "flatpickr";
-import type { Planta } from "../../types/planta";
+import { Spanish } from "flatpickr/dist/l10n/es";
+import "flatpickr/dist/flatpickr.min.css";
 
 interface Props {
   desde: string;
@@ -11,7 +12,7 @@ interface Props {
   setHasta: (v: string) => void;
   setTurno: (v: string) => void;
   setPlantaId: (v: string) => void;
-  plantas: Planta[];
+  plantas: { id: number; nombre: string }[];
   setPagina: (v: number) => void;
 }
 
@@ -27,64 +28,58 @@ export default function FiltrosProduccionDiaria({
   plantas,
   setPagina,
 }: Props) {
-  let inputDesde: HTMLInputElement | undefined;
-  let inputHasta: HTMLInputElement | undefined;
+  let inputDesde: HTMLInputElement;
+  let inputHasta: HTMLInputElement;
 
   onMount(() => {
-    flatpickr(inputDesde!, {
+    flatpickr.localize(Spanish);
+
+    flatpickr(inputDesde, {
       dateFormat: "d/m/Y",
       defaultDate: desde ? new Date(desde) : undefined,
       onChange: ([date]) => {
         if (date) {
           const iso = date.toISOString().split("T")[0];
-          inputDesde!.value = date.toLocaleDateString("es-AR");
+          inputDesde.value = date.toLocaleDateString("es-AR");
           setDesde(iso);
           setPagina(1);
         }
       },
     });
 
-    flatpickr(inputHasta!, {
+    flatpickr(inputHasta, {
       dateFormat: "d/m/Y",
       defaultDate: hasta ? new Date(hasta) : undefined,
       onChange: ([date]) => {
         if (date) {
           const iso = date.toISOString().split("T")[0];
-          inputHasta!.value = date.toLocaleDateString("es-AR");
+          inputHasta.value = date.toLocaleDateString("es-AR");
           setHasta(iso);
           setPagina(1);
         }
       },
     });
 
-    // Inicializar visiblemente en el input
-    if (desde) inputDesde!.value = new Date(desde).toLocaleDateString("es-AR");
-    if (hasta) inputHasta!.value = new Date(hasta).toLocaleDateString("es-AR");
+    if (desde) inputDesde.value = new Date(desde).toLocaleDateString("es-AR");
+    if (hasta) inputHasta.value = new Date(hasta).toLocaleDateString("es-AR");
   });
 
   return (
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 text-base">
-      <label class="w-full">
-  <input
-    ref={inputDesde}
-    type="text"
-    class="w-full border rounded px-3 py-2 h-10"
-    placeholder="Desde"
-    readonly
-  />
-</label>
-
-<label class="w-full">
-  <input
-    ref={inputHasta}
-    type="text"
-    class="w-full border rounded px-3 py-2 h-10"
-    placeholder="Hasta"
-    readonly
-  />
-</label>
-
-
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:flex gap-3 mb-6 items-center text-sm md:text-base">
+      <input
+        ref={el => (inputDesde = el)}
+        type="text"
+        placeholder="Desde"
+        class="border rounded px-3 py-2 h-10 w-full"
+        readonly
+      />
+      <input
+        ref={el => (inputHasta = el)}
+        type="text"
+        placeholder="Hasta"
+        class="border rounded px-3 py-2 h-10 w-full"
+        readonly
+      />
       <select
         value={turno}
         onChange={(e) => {
@@ -98,9 +93,8 @@ export default function FiltrosProduccionDiaria({
         <option value="tarde">Tarde</option>
         <option value="noche">Noche</option>
       </select>
-
       <select
-        value={plantaId.toString()}
+        value={plantaId}
         onChange={(e) => {
           setPlantaId(e.currentTarget.value);
           setPagina(1);
@@ -108,9 +102,9 @@ export default function FiltrosProduccionDiaria({
         class="border rounded px-3 py-2 h-10 w-full"
       >
         <option value="">Planta</option>
-        <For each={plantas}>
-          {(p) => <option value={p.id.toString()}>{p.nombre}</option>}
-        </For>
+        {plantas.map((p) => (
+          <option value={p.id.toString()}>{p.nombre}</option>
+        ))}
       </select>
     </div>
   );
