@@ -35,7 +35,9 @@ export interface ReporteProduccion {
 export interface CrearReporteProduccion {
     productoId: number;
     cantidad?: number;
+    turno: "mañana" | "tarde" | "noche"; 
     usuarioId: number;
+    plantaId: number;  
   }
   
 export interface ProduccionParams {
