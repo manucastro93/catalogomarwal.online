@@ -1,4 +1,5 @@
-import { For } from "solid-js";
+import { createSignal, For, onMount } from "solid-js";
+import flatpickr from "flatpickr";
 import type { Planta } from "../../types/planta";
 
 interface Props {
@@ -26,46 +27,54 @@ export default function FiltrosProduccionDiaria({
   plantas,
   setPagina,
 }: Props) {
+  let inputDesde: HTMLInputElement | undefined;
+  let inputHasta: HTMLInputElement | undefined;
+
+  onMount(() => {
+    flatpickr(inputDesde!, {
+      dateFormat: "d/m/Y",
+      defaultDate: desde ? new Date(desde) : undefined,
+      onChange: ([date]) => {
+        if (date) {
+          setDesde(date.toISOString().split("T")[0]);
+          setPagina(1);
+        }
+      },
+    });
+
+    flatpickr(inputHasta!, {
+      dateFormat: "d/m/Y",
+      defaultDate: hasta ? new Date(hasta) : undefined,
+      onChange: ([date]) => {
+        if (date) {
+          setHasta(date.toISOString().split("T")[0]);
+          setPagina(1);
+        }
+      },
+    });
+  });
+
   return (
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6 items-center text-base">
-      <div class="relative">
-  <input
-    type="date"
-    value={desde}
-    onInput={(e) => {
-      setDesde(e.currentTarget.value);
-      setPagina(1);
-    }}
-    class="border rounded px-3 py-2 h-10 w-full appearance-none"
-  />
-  <span
-    class={`absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none transition-opacity ${
-      desde ? "invisible" : "opacity-100"
-    }`}
-  >
-    Desde
-  </span>
-</div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 text-base">
+      <label class="relative w-full">
+        <input
+          ref={inputDesde}
+          type="text"
+          placeholder="Desde"
+          class="w-full border rounded px-3 py-2 h-10 appearance-none"
+          readonly
+        />
+      </label>
 
-<div class="relative">
-  <input
-    type="date"
-    value={hasta}
-    onInput={(e) => {
-      setHasta(e.currentTarget.value);
-      setPagina(1);
-    }}
-    class="border rounded px-3 py-2 h-10 w-full appearance-none"
-  />
-  <span
-    class={`absolute left-3 top-2.5 text-gray-400 text-sm pointer-events-none transition-opacity ${
-      hasta ? "invisible" : "opacity-100"
-    }`}
-  >
-    Hasta
-  </span>
-</div>
-
+      <label class="relative w-full">
+        <input
+          ref={inputHasta}
+          type="text"
+          placeholder="Hasta"
+          class="w-full border rounded px-3 py-2 h-10 appearance-none"
+          readonly
+        />
+      </label>
 
       <select
         value={turno}

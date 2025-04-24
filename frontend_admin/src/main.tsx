@@ -1,6 +1,8 @@
 import { render } from 'solid-js/web';
 import { Router, Route } from '@solidjs/router';
 import './index.css';
+import "flatpickr/dist/flatpickr.min.css";
+
 import Login from './pages/Login';
 import Inicio from './pages/Inicio';
 import Productos from './pages/Productos';
