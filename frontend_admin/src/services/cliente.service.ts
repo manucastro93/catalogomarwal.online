@@ -7,11 +7,6 @@ export const obtenerClientes = async (params: any) => {
   return data;
 };
 
-export const eliminarCliente = async (id: number) => {
-  const { data } = await api.delete(`/clientes/${id}`);
-  return data;
-};
-
 export const crearCliente = async (cliente: Partial<Cliente>) => {
   const response = await api.post('/clientes', cliente);
   return response.data;

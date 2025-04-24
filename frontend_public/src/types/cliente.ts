@@ -22,3 +22,14 @@ export interface Cliente {
   localidad?: Localidad;
   vendedor?: Vendedor;
 }
+
+export type LogClienteInput = {
+  categoriaId?: number;
+  busqueda?: string;
+  tiempoEnPantalla?: number;
+  ubicacion?: string;
+  sesion?: string;
+  clienteId?: number;
+  referer?: string;
+};
+

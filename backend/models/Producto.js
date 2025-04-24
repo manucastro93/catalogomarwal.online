@@ -37,8 +37,17 @@ export default (sequelize, DataTypes) => {
         key: 'id',
       },
     },
+    costoMP: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
+  }, {
+    tableName: 'Productos',
+    timestamps: true,
+    paranoid: true,
   });
-  
+
   Producto.associate = (models) => {
     Producto.belongsTo(models.Categoria, {
       foreignKey: 'categoriaId',
@@ -50,7 +59,6 @@ export default (sequelize, DataTypes) => {
       as: 'Imagenes',
     });
   };
-
 
   return Producto;
 };

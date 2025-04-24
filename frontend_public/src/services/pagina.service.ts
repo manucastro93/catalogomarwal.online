@@ -1,14 +1,12 @@
-import axios from 'axios';
+import api from './api';
 import type { Pagina } from '../types/pagina';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL;
-
-export async function obtenerPagina(): Promise<Pagina> {
-  const res = await axios.get(`${API_URL}/pagina`);
+export const obtenerPagina = async (): Promise<Pagina> => {
+  const res = await api.get('/pagina');
   return res.data;
-}
+};
 
 export const obtenerBanners = async () => {
-  const res = await axios.get(`${API_URL}/pagina/banners`);
+  const res = await api.get('/banners');
   return res.data;
 };

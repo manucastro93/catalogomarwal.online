@@ -1,8 +1,8 @@
 import api from "./api";
-import { CrearReporteProduccion } from "../types/produccion";
+import { CrearReporteProduccion, ProduccionParams } from "../types/produccion";
 
-export const obtenerReportesProduccion = async () => {
-  const { data } = await api.get("/produccion-diaria");
+export const obtenerReportesProduccion = async (params: ProduccionParams) => {
+  const { data } = await api.get("/produccion-diaria", { params });
   return data;
 };
 

@@ -6,7 +6,6 @@ export const obtenerCategorias = async () => {
   return data.data; 
 };
 
-
 export const crearCategoria = async (categoria: Partial<Categoria>) => {
   const { data } = await api.post('/categorias', categoria);
   return data;

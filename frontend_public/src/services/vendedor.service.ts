@@ -1,9 +1,8 @@
-const API_URL = import.meta.env.VITE_BACKEND_URL ;
+import api from './api';
 
 export const obtenerVendedorPorLink = async (link: string) => {
-  const res = await fetch(`${API_URL}/usuarios/vendedores/vendedor-por-link/${link}`);
-  if (!res.ok) throw new Error('No se encontró el vendedor');
-  return res.json();
+  const res = await api.get(`/usuarios/vendedores/vendedor-por-link/${link}`);
+  return res.data;
 };
 
 export const guardarVendedorEnLocalStorage = (vendedor: any) => {
