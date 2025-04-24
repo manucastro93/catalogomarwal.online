@@ -15,6 +15,7 @@ export interface ReporteProduccion {
       nombre: string;
       sku: string;
       precioUnitario: number;
+      costoMP?: number;
     };
   
     usuario?: {
@@ -37,7 +38,7 @@ export interface CrearReporteProduccion {
     usuarioId: number;
   }
   
-  export interface ProduccionParams {
+export interface ProduccionParams {
     page?: number;
     limit?: number;
     orden?: string;

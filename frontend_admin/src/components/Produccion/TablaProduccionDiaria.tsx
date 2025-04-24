@@ -28,6 +28,7 @@ export default function TablaProduccionDiaria({ reportes, onEliminar, onOrdenar,
             {th("Fecha", "createdAt")}
             {th("SKU", "producto.sku")}
             {th("Producto", "producto.nombre")}
+            <th class="p-2">CostoMP</th>
             <th class="p-2">Cantidad</th>
             <th class="p-2">Turno</th>
             <th class="p-2">Planta</th>
@@ -43,6 +44,7 @@ export default function TablaProduccionDiaria({ reportes, onEliminar, onOrdenar,
                 <td class="p-2">{new Date(r.fecha).toLocaleDateString()}</td>
                 <td class="p-2">{r.producto?.sku}</td>
                 <td class="p-2">{r.producto?.nombre}</td>
+                <td class="p-2">{formatearPrecio(r.producto?.costoMP)}</td>
                 <td class="p-2">{r.cantidad}</td>
                 <td class="p-2 capitalize">{r.turno}</td>
                 <td class="p-2">{r.planta?.nombre ?? r.plantaId}</td>
