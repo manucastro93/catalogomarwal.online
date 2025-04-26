@@ -1,3 +1,4 @@
+// 🔵 SolidJS imports
 import {
   createSignal,
   For,
@@ -8,20 +9,18 @@ import {
   onCleanup,
 } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
-import ProductoCard from "../components/ProductoCard";
-import CategoriaButton from "../components/CategoriaButton";
-import DetalleProductoInline from "../components/DetalleProductoInline";
-import {
-  obtenerCategorias,
-  obtenerProductos,
-} from "../services/producto.service";
-import { obtenerBanners } from "../services/pagina.service";
-import {
-  registrarLogCliente,
-  detectarClientePorIp,
-  obtenerClientePorId,
-} from "../services/cliente.service";
-import { registrarBusqueda } from "../hooks/useLogBusqueda";
+// 🧩 UI Components
+import ProductoCard from "@/components/UI/ProductoCard";
+import CategoriaButton from "@/components/UI/CategoriaButton";
+// 📦 Pedido Components
+import DetalleProductoInline from "@/components/Pedido/DetalleProductoInline";
+// 🌐 Services
+import { obtenerCategorias, obtenerProductos } from "@/services/producto.service";
+import { obtenerBanners } from "@/services/pagina.service";
+import { registrarLogCliente, detectarClientePorIp, obtenerClientePorId } from "@/services/cliente.service";
+// 🪝 Hooks
+import { registrarBusqueda } from "@/hooks/useLogBusqueda";
+
 
 let timeoutBusqueda: number;
 

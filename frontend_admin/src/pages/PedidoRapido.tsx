@@ -14,8 +14,10 @@ import {
   obtenerProvincias,
   obtenerLocalidades,
 } from "../services/ubicacion.service";
+import { useAuth } from "../store/auth";
 
 export default function PedidoRapido() {
+  const { usuario } = useAuth();
   const [paso, setPaso] = createSignal<1 | 2 | 3>(1);
   const [clienteBusqueda, setClienteBusqueda] = createSignal("");
   const [clientes, setClientes] = createSignal<Cliente[]>([]);
@@ -135,9 +137,7 @@ export default function PedidoRapido() {
     const clienteData = clienteSeleccionado();
     if (!clienteData) return;
 
-    const vendedorId =
-      clienteData.vendedorId ??
-      JSON.parse(window.localStorage.getItem("vendedor") || "{}")?.id;
+    const vendedorId = usuario()?.id;
 
     const payload: PedidoPayload = {
       cliente: { ...clienteData, vendedorId },

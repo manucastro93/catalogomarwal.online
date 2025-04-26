@@ -1,4 +1,3 @@
-
 export function formatearPrecio(precio?: number | string): string {
   const num = typeof precio === "string" ? parseFloat(precio) : precio;
   if (!num && num !== 0) return ""; // undefined o null

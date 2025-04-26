@@ -29,7 +29,8 @@
     "sequelize": "^6.37.7",
     "socket.io": "^4.8.1",
     "twilio": "^5.5.2",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.3"
   },
   "devDependencies": {
     "eslint-plugin-solid": "^0.14.5",

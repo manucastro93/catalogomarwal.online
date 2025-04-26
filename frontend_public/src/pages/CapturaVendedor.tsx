@@ -1,9 +1,9 @@
-import { useParams, useNavigate } from '@solidjs/router';
-import { onMount } from 'solid-js';
-import {
-  obtenerVendedorPorLink,
-  guardarVendedorEnLocalStorage,
-} from '../services/vendedor.service';
+// 🔵 SolidJS imports
+import { onMount } from "solid-js";
+import { useParams, useNavigate } from "@solidjs/router";
+// 🌐 Services
+import { obtenerVendedorPorLink, guardarVendedorEnLocalStorage } from "@/services/vendedor.service";
+
 
 export default function CapturaVendedor() {
   const params = useParams();

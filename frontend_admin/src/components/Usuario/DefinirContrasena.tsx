@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import api from '../../services/api';
 import { useAuth } from '../../store/auth';
+import { cambiarContrasena } from '../../services/usuario.service';
 
 export default function DefinirContrasena() {
   const [contraseña, setContraseña] = createSignal('');
@@ -28,12 +28,14 @@ export default function DefinirContrasena() {
     }
 
     try {
-      const { data } = await api.put(`/usuarios/${user.id}`, {
-        contraseña: contraseña().trim(),
-      });
+      await cambiarContrasena(user.id, contraseña().trim());
 
-      // Volvemos a guardar usuario actualizado en el contexto
-      login(data, token() || '');
+      // Actualizamos solo la contraseña en el auth context
+      await login(
+        { ...user, contraseña: 'actualizada' }, // evitamos mandar la real
+        token() || ''
+      );
+
       navigate('/Inicio');
     } catch (err) {
       console.error(err);

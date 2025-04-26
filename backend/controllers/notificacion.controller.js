@@ -9,7 +9,7 @@ export const obtenerNotificaciones = async (req, res, next) => {
       where: {
         [Op.or]: [
           { usuarioId },
-          { usuarioId: null }, // notificaciones globales
+          { usuarioId: null },
         ],
       },
       order: [['createdAt', 'DESC']],

@@ -1,5 +1,5 @@
 import api from './api';
-import type { LogClienteInput } from '../types/cliente';
+import type { LogClienteInput } from '@/types/cliente';
 
 // Registra una búsqueda del cliente
 export function registrarBusqueda(busqueda: string) {

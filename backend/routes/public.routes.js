@@ -15,7 +15,6 @@ import {
   obtenerPedidoPorId,
   marcarComoEditando,
   revertirEditando,
-  actualizarEstadoPedido,
   validarCarritoSolo,
   duplicarPedido,
   cancelarPedidoDesdeCliente,
@@ -52,7 +51,6 @@ router.get('/pedidos/id-cliente', obtenerPedidosClientePorId);
 router.get('/pedidos/:id', obtenerPedidoPorId);
 router.put('/pedidos/:id/editando', marcarComoEditando);
 router.put('/pedidos/:id/revertir-editando', revertirEditando);
-router.put('/pedidos/:id/estado', actualizarEstadoPedido);
 router.post('/pedidos/validar', validarCarritoSolo);
 router.post('/pedidos/duplicar', duplicarPedido);
 router.put('/pedidos/:id/cancelar-desde-cliente', cancelarPedidoDesdeCliente);

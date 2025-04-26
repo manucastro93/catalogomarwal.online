@@ -1,6 +1,9 @@
-import { createSignal } from 'solid-js';
-import type { Usuario } from '../types/usuario';
-import { useNavigate } from '@solidjs/router';
+// 🔵 SolidJS imports
+import { createSignal } from "solid-js";
+import { useNavigate } from "@solidjs/router";
+// 📋 Types
+import type { Usuario } from "@/types/usuario";
+
 
 const [usuario, setUsuario] = createSignal<Usuario | null>(null);
 const [token, setToken] = createSignal<string | null>(null);

@@ -6,17 +6,18 @@ import { obtenerResumenDelMes } from "../services/estadisticas.service";
 import { obtenerPedidosInicio } from "../services/pedido.service";
 import { formatearPrecio } from "../utils/formato";
 import ResumenInicioMensual from "../components/Estadistica/ResumenInicioMensual";
+import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
 
 export default function Inicio() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
   const [resumen] = createResource(obtenerResumenDelMes);
   const [pedidos] = createResource(() =>
-    obtenerPedidosInicio(usuario()?.rol === "vendedor" ? usuario()?.id : undefined)
+    obtenerPedidosInicio(usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR ? usuario()?.id : undefined)
   );
 
   const linkVendedor =
-    usuario()?.rol === "vendedor" && usuario()?.link
+    usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR && usuario()?.link
       ? `https://catalogomarwal.online?${usuario()?.link}`
       : "";
   const mensaje = `Hola! Te comparto el catálogo de Marwal para que veas los productos: ${linkVendedor}`;
@@ -27,7 +28,17 @@ export default function Inicio() {
 
   return (
     <div class="p-6 space-y-6">
-      <Show when={usuario()?.rol === "vendedor"}>
+      <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.OPERARIO}>
+        <div class="flex justify-end">
+          <button
+            onClick={() => navigate("/Produccion/ProduccionDiaria")}
+            class="bg-blue-600 text-white px-5 py-2 rounded text-base hover:bg-blue-700 transition"
+          >
+            ➕ Registrar producción diaria
+          </button>
+        </div>
+      </Show>
+      <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}>
         <div class="flex justify-end gap-4">
           <button
             onClick={() => navigate("/pedido-rapido")}
@@ -44,47 +55,48 @@ export default function Inicio() {
           </button>
         </div>
       </Show>
-
-      <div>
-        <h1 class="text-2xl font-bold mb-2">Resumen del mes</h1>
-        <Show when={resumen()}>
-          <ResumenInicioMensual resumen={resumen()} />
-        </Show>
-      </div>
-
-      <Show when={pedidos()}>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h2 class="text-xl font-semibold mb-3">Pedidos Pendientes</h2>
-            <ul class="space-y-2">
-              <For each={pedidos()?.pendientes}>
-                {(pedido) => (
-                  <li class="border rounded px-4 py-2 shadow">
-                    <div class="font-medium">{pedido.cliente?.nombre}</div>
-                    <div class="text-sm text-gray-500">
-                      Total: {formatearPrecio(pedido.total)} · {pedido.createdAt.slice(0, 10)}
-                    </div>
-                  </li>
-                )}
-              </For>
-            </ul>
-          </div>
-          <div>
-            <h2 class="text-xl font-semibold mb-3">Confirmado / Preparando</h2>
-            <ul class="space-y-2">
-              <For each={pedidos()?.confirmados}>
-                {(pedido) => (
-                  <li class="border rounded px-4 py-2 shadow">
-                    <div class="font-medium">{pedido.cliente?.nombre}</div>
-                    <div class="text-sm text-gray-500">
-                      Total: {formatearPrecio(pedido.total)} · {pedido.createdAt.slice(0, 10)}
-                    </div>
-                  </li>
-                )}
-              </For>
-            </ul>
-          </div>
+      <Show when={usuario()?.rolUsuarioId !== ROLES_USUARIOS.OPERARIO}>
+        <div>
+          <h1 class="text-2xl font-bold mb-2">Resumen del mes</h1>
+          <Show when={resumen()}>
+            <ResumenInicioMensual resumen={resumen()} />
+          </Show>
         </div>
+      
+        <Show when={pedidos()}>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h2 class="text-xl font-semibold mb-3">Pedidos Pendientes</h2>
+              <ul class="space-y-2">
+                <For each={pedidos()?.pendientes}>
+                  {(pedido) => (
+                    <li class="border rounded px-4 py-2 shadow">
+                      <div class="font-medium">{pedido.cliente?.nombre}</div>
+                      <div class="text-sm text-gray-500">
+                        Total: {formatearPrecio(pedido.total)} · {pedido.createdAt.slice(0, 10)}
+                      </div>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </div>
+            <div>
+              <h2 class="text-xl font-semibold mb-3">Confirmado / Preparando</h2>
+              <ul class="space-y-2">
+                <For each={pedidos()?.confirmados}>
+                  {(pedido) => (
+                    <li class="border rounded px-4 py-2 shadow">
+                      <div class="font-medium">{pedido.cliente?.nombre}</div>
+                      <div class="text-sm text-gray-500">
+                        Total: {formatearPrecio(pedido.total)} · {pedido.createdAt.slice(0, 10)}
+                      </div>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </div>
+          </div>
+        </Show>
       </Show>
     </div>
   );

@@ -3,6 +3,7 @@ import { Op, fn, col, literal } from 'sequelize';
 import { validationResult } from 'express-validator';
 import { geocodificarDireccion } from '../utils/geocodificacion.js';
 import { registrarHistorialCliente } from '../utils/registrarHistorialCliente.js';
+import { crearAuditoria } from '../utils/auditoria.js';
 
 export const listarClientes = async (req, res) => {
   try {
@@ -112,7 +113,7 @@ export const actualizarCliente = async (req, res, next) => {
 
     const actualizado = await Cliente.findByPk(id);
     await registrarHistorialCliente(anterior, actualizado, req.usuario?.id);
-
+    await crearAuditoria('clientes', 'actualiza cliente', id, req.usuario?.id || null);
     res.json(actualizado);
   } catch (error) {
     next(error);

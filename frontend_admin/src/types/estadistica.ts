@@ -1,4 +1,3 @@
-// Punto diario para gráficos de evolución
 export interface PuntoEstadistica {
   fecha: string;   // formato YYYY-MM-DD
   total: number;   // facturación

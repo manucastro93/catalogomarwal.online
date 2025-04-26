@@ -12,7 +12,10 @@ import { initSockets } from './sockets/index.js';
 dotenv.config();
 
 const app = express();
+
 app.set('trust proxy', true);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -37,8 +40,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 // 👇 Rutas centralizadas

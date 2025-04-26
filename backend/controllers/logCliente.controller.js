@@ -2,6 +2,7 @@ import { LogCliente, IpCliente, Cliente, Categoria } from '../models/index.js';
 import { Op } from 'sequelize';
 import { getClientIp } from '../utils/getClientIp.js';
 import dayjs from 'dayjs';
+
 export const registrarLogCliente = async (req, res, next) => {
   try {
     const ip = getClientIp(req);

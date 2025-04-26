@@ -1,23 +1,13 @@
 import type { Cliente } from './cliente.js';
 import type { Usuario } from './usuario.js';
 import type { DetallePedido } from './detallePedido.js';
-
-export type EstadoPedido =
-  | "pendiente"
-  | "confirmado"
-  | "preparando"
-  | "enviado"
-  | "entregado"
-  | "cancelado"
-  | "rechazado"
-  | "editando";
-
-export type EstadoEdicion = 'pendiente' | 'editando';
+import type { EstadoPedido } from './estadoPedido.js';
 
 export interface Pedido {
   id: number;
-  estado: EstadoPedido;
-  estadoEdicion: EstadoEdicion;
+  estadoPedidoId: number;
+  estadoPedido?: EstadoPedido;
+  estadoEdicion: boolean;
   observaciones?: string | null;
   total: number;
   clienteId: number;
@@ -39,10 +29,19 @@ export interface Pedido {
 export interface PedidoPayload {
   cliente: Cliente;
   carrito: {
-    id: number; 
+    id: number;
     cantidad: number;
-    precio: number; 
+    precio: number;
     unidadPorBulto: number;
   }[];
   usuarioId?: number | null;
+}
+
+export interface RespuestaPaginadaPedidos {
+  data: Pedido[];
+  pagina: number;
+  totalPaginas: number;
+  totalItems: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }

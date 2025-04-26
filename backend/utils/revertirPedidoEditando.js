@@ -2,13 +2,15 @@ import { Op } from 'sequelize';
 import { Usuario, Notificacion } from '../models/index.js';
 import { enviarEmailReversionEditando } from './notificaciones/email.js';
 import { enviarWhatsappReversionEditando } from './notificaciones/whatsapp.js';
+import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
+import { ESTADOS_PEDIDO } from '../constants/estadosPedidos.js';
 
 export async function revertirPedidoEditando(pedido) {
-  if (!pedido || pedido.estadoEdicion !== 'editando') return;
+  if (!pedido || pedido.estadoEdicion !== true) return;
 
   await pedido.update({
-    estadoEdicion: 'pendiente',
-    estado: 'pendiente'
+    estadoEdicion: false,
+    estadoPedidoId: ESTADOS_PEDIDO.PENDIENTE,
   });
 
   await enviarEmailReversionEditando({ pedido });
@@ -29,7 +31,7 @@ export async function revertirPedidoEditando(pedido) {
 
   // Notificación para administradores
   const admins = await Usuario.findAll({
-    where: { rol: { [Op.in]: ['administrador', 'supremo'] } },
+    where: { rolUsuarioId: { [Op.in]: [ROLES_USUARIOS.ADMINISTRADOR, ROLES_USUARIOS.SUPREMO] } },
   });
 
   for (const admin of admins) {

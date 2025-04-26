@@ -10,7 +10,7 @@ cron.schedule('*/5 * * * *', async () => {
   const cutoff = dayjs().subtract(30, 'minutes').toDate();
   const pedidosEditando = await Pedido.findAll({
     where: {
-      estadoEdicion: 'editando',
+      estadoEdicion: true,
       updatedAt: { [Op.lte]: cutoff },
     },
   });

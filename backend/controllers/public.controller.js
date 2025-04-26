@@ -14,7 +14,8 @@ import {
   LogCliente,
   Notificacion,
   HistorialCliente,
-  IpClienteCliente
+  IpClienteCliente,
+  EstadoPedido
 } from '../models/index.js';
 
 import { Op, Sequelize } from 'sequelize';
@@ -155,7 +156,6 @@ export const crearOEditarPedido = async (req, res, next) => {
       return res.status(400).json({ message: 'Faltan datos del cliente o carrito vacío' });
     }
 
-    // 🧍 Cliente
     let clienteFinal;
     const clienteExistente = await Cliente.findOne({ where: { email: cliente.email }, paranoid: false });
 
@@ -172,55 +172,41 @@ export const crearOEditarPedido = async (req, res, next) => {
         }
       }
 
-      // 🧭 Geocodificar si se actualiza
-      const provinciaNombre = cliente.provinciaId ? ((await Provincia.findByPk(cliente.provinciaId))?.nombre || '').replace('-GBA', '').trim(): '';
+      const provinciaNombre = cliente.provinciaId ? ((await Provincia.findByPk(cliente.provinciaId))?.nombre || '').replace('-GBA', '').trim() : '';
       const localidadNombre = cliente.localidadId ? (await Localidad.findByPk(cliente.localidadId))?.nombre : '';
       const direccionCompleta = `${cliente.direccion}, ${localidadNombre}, ${provinciaNombre}, Argentina`;
       const { latitud, longitud } = await geocodificarDireccion(direccionCompleta);
-      await clienteExistente.update({
-        ...cliente,
-        latitud,
-        longitud,
-      });
+      await clienteExistente.update({ ...cliente, latitud, longitud });
 
       clienteFinal = clienteExistente;
     } else {
       clienteFinal = await crearClienteConGeocodificacion(cliente, usuarioId);
     }
 
-    // 🔄 Validación productos
     const { errores, carritoActualizado } = await verificarProductosDelCarrito(carrito);
-
     if (errores.length > 0) {
-      return res.status(400).json({
-        mensaje: 'Algunos productos fueron modificados.',
-        errores,
-        carritoActualizado,
-      });
+      return res.status(400).json({ mensaje: 'Algunos productos fueron modificados.', errores, carritoActualizado });
     }
 
-    // 🔒 Evitar múltiples pedidos en edición
     if (!pedidoId) {
       const otroEditando = await Pedido.findOne({
         where: {
           clienteId: clienteFinal.id,
-          estadoEdicion: 'editando'
+          estadoEdicion: true,
         }
       });
-
       if (otroEditando) {
         return res.status(409).json({ message: 'Ya hay un pedido en modo edición. Confirmalo o cancelalo.' });
       }
     }
 
-    // 📦 Pedido
     let pedido;
 
     if (pedidoId) {
       pedido = await Pedido.findByPk(pedidoId);
       if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
-      await pedido.update({ estado: 'pendiente', estadoEdicion: 'pendiente' });
+      await pedido.update({ estadoPedidoId: ESTADOS_PEDIDO.PENDIENTE, estadoEdicion: false });
 
       await Notificacion.create({
         titulo: 'Edición confirmada',
@@ -231,7 +217,7 @@ export const crearOEditarPedido = async (req, res, next) => {
       });
 
       const admins = await Usuario.findAll({
-        where: { rol: { [Op.in]: ['administrador', 'supremo'] } },
+        where: { rolUsuarioId: { [Op.in]: [ROLES_USUARIO.SUPREMO, ROLES_USUARIO.ADMINISTRADOR] } },
       });
 
       for (const admin of admins) {
@@ -250,12 +236,11 @@ export const crearOEditarPedido = async (req, res, next) => {
         clienteId: clienteFinal.id,
         usuarioId,
         total: 0,
-        estado: 'pendiente',
-        estadoEdicion: 'pendiente',
+        estadoPedidoId: ESTADOS_PEDIDO.PENDIENTE,
+        estadoEdicion: true,
       });
     }
 
-    // 💲 Calcular total
     let total = 0;
     for (const item of carrito) {
       const productoDb = await Producto.findByPk(item.id);
@@ -279,35 +264,33 @@ export const crearOEditarPedido = async (req, res, next) => {
 
     await pedido.update({ total });
 
-    // 🌐 IP y vinculación
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
     let ipCliente = await IpCliente.findOne({ where: { ip } });
     if (!ipCliente) ipCliente = await IpCliente.create({ ip });
     await vincularIpConCliente(ipCliente.id, clienteFinal.id);
 
-    // 📩 Notificaciones
     const vendedor = usuarioId ? await Usuario.findByPk(usuarioId) : null;
 
     if (!pedidoId) {
       await enviarEmailEstadoEditando({ pedido });
-      //await enviarWhatsappEstadoEditando({ pedido });
+      // await enviarWhatsappEstadoEditando({ pedido });
     } else {
-        await enviarEmailPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
-        // 📲 Crear lead en Kommo para disparar WhatsApp
-        try {
-          await crearLeadKommo({
-            nombre: clienteFinal.nombre,
-            telefono: clienteFinal.telefono,
-            total: total,
-          });
-          console.log('📤 Lead enviado a Kommo');
-        } catch (kommoError) {
-          console.error('❌ Error al crear lead en Kommo:', kommoError.message);
-        }
-      //await enviarWhatsappPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
+      await enviarEmailPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
+
+      try {
+        await crearLeadKommo({
+          nombre: clienteFinal.nombre,
+          telefono: clienteFinal.telefono,
+          total: total,
+        });
+        console.log('📤 Lead enviado a Kommo');
+      } catch (kommoError) {
+        console.error('❌ Error al crear lead en Kommo:', kommoError.message);
+      }
+
+      // await enviarWhatsappPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
     }
 
-    // ✅ Final
     res.status(201).json({
       message: pedidoId ? 'Pedido editado correctamente' : 'Pedido en edición',
       pedidoId: pedido.id,
@@ -328,27 +311,22 @@ export const obtenerPedidosClientePorId = async (req, res, next) => {
   try {
     const ip = getClientIp(req);
 
-    // Buscar IP registrada
     const ipCliente = await IpCliente.findOne({ where: { ip } });
 
     if (!ipCliente) {
-      return res.status(200).json([]); // IP no registrada
+      return res.status(200).json([]);
     }
 
-    // Buscar clienteIds relacionados a esa IP
     const relaciones = await IpClienteCliente.findAll({
-      where: {
-        ipClienteId: ipCliente.id,
-      },
+      where: { ipClienteId: ipCliente.id },
     });
 
     const clienteIds = relaciones.map((r) => r.clienteId).filter(Boolean);
 
     if (clienteIds.length === 0) {
-      return res.status(200).json([]); // No hay clientes asociados
+      return res.status(200).json([]);
     }
 
-    // Buscar pedidos con esos clienteIds
     const pedidos = await Pedido.findAll({
       where: {
         clienteId: { [Op.in]: clienteIds },
@@ -367,6 +345,7 @@ export const obtenerPedidosClientePorId = async (req, res, next) => {
         },
         { model: Cliente, as: 'cliente' },
         { model: Usuario, as: 'usuario' },
+        { model: EstadoPedido, as: 'estadoPedido' }, 
       ],
       order: [['createdAt', 'DESC']],
     });
@@ -385,9 +364,20 @@ export const obtenerPedidoPorId = async (req, res, next) => {
 
     const pedido = await Pedido.findByPk(id, {
       include: [
-        { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto' }] },
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [
+            {
+              model: Producto,
+              as: 'producto',
+              include: [{ model: ImagenProducto, as: 'Imagenes' }], 
+            },
+          ],
+        },
         { model: Cliente, as: 'cliente' },
         { model: Usuario, as: 'usuario' },
+        { model: EstadoPedido, as: 'estadoPedido' }, 
       ],
     });
 
@@ -403,20 +393,24 @@ export const obtenerPedidoPorId = async (req, res, next) => {
 export const marcarComoEditando = async (req, res, next) => {
   try {
     const { id } = req.params;
+
     const pedido = await Pedido.findByPk(id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
-    if (req.usuario?.rol === 'vendedor' || req.usuario?.rol === 'administrador') {
+    if (
+      req.usuario?.rolUsuarioId === ROLES_USUARIO.VENDEDOR ||
+      req.usuario?.rolUsuarioId === ROLES_USUARIO.ADMINISTRADOR
+    ) {
       return res.status(403).json({ message: 'No autorizado a marcar como editando' });
     }
 
     // ✅ Revertir otros pedidos en edición del mismo cliente
     await Pedido.update(
-      { estado: 'pendiente', estadoEdicion: 'pendiente' },
+      { estadoEdicion: false },
       {
         where: {
           clienteId: pedido.clienteId,
-          estadoEdicion: 'editando',
+          estadoEdicion: true,
           id: { [Op.ne]: pedido.id }
         }
       }
@@ -424,15 +418,14 @@ export const marcarComoEditando = async (req, res, next) => {
 
     // ✅ Activar modo edición en este pedido
     await pedido.update({
-      estadoEdicion: 'editando',
-      estado: 'editando'
+      estadoEdicion: true
     });
 
     // Notificaciones
     await enviarEmailEstadoEditando({ pedido });
     await enviarWhatsappEstadoEditando({ pedido });
 
-    res.json({ message: 'Pedido en edición', estado: pedido.estado });
+    res.json({ message: 'Pedido en edición', estadoEdicion: true });
   } catch (error) {
     console.error('❌ Error marcarComoEditando:', error);
     next(error);
@@ -442,49 +435,20 @@ export const marcarComoEditando = async (req, res, next) => {
 export const revertirEditando = async (req, res, next) => {
   try {
     const { id } = req.params;
+
     const pedido = await Pedido.findByPk(id);
     if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
 
-    await revertirPedidoEditando(pedido);
+    // ✅ Solo revertir el campo de edición
+    await pedido.update({ estadoEdicion: false });
 
     // Notificaciones
     await enviarEmailReversionEditando({ pedido });
     await enviarWhatsappReversionEditando({ pedido });
 
-    res.json({ message: 'Edición revertida a pendiente', estado: pedido.estado });
+    res.json({ message: 'Edición revertida', estadoEdicion: false });
   } catch (error) {
     console.error('❌ Error revertirEditando:', error);
-    next(error);
-  }
-};
-
-export const actualizarEstadoPedido = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { estado } = req.body;
-    const pedido = await Pedido.findByPk(id);
-    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
-
-    // Bloquear cambios si cliente está editando
-    if (pedido.estadoEdicion === 'editando') {
-      return res.status(409).json({ message: 'Pedido en edición por cliente. No se puede cambiar estado.' });
-    }
-
-    const estados_validos = ['pendiente','confirmado','preparando','enviado','entregado','cancelado','rechazado','editando'];
-    if (!estados_validos.includes(estado)) return res.status(400).json({ message: 'Estado inválido' });
-
-    await pedido.update({ estado });
-
-    // Notificar cambio de estado
-    const tituloBase = estado === 'cancelado' ? 'Pedido cancelado' : 'Pedido actualizado';
-    const mensajeBase = estado === 'cancelado' ? `El pedido #${pedido.id} fue cancelado.` : `El estado del pedido #${pedido.id} ahora es "${estado}".`;
-    await Notificacion.create({ titulo: tituloBase, mensaje: mensajeBase, tipo: 'pedido', usuarioId: pedido.usuarioId });
-    const admins = await Usuario.findAll({ where: { rol: { [Op.in]: ['administrador','supremo'] } } });
-    for (const admin of admins) Notificacion.create({ titulo: tituloBase, mensaje: mensajeBase, tipo: 'pedido', usuarioId: admin.id });
-
-    res.json({ message: 'Estado actualizado correctamente', estado });
-  } catch (error) {
-    console.error('❌ Error al actualizar estado del pedido:', error);
     next(error);
   }
 };
@@ -529,13 +493,12 @@ export const validarCarritoSolo = async (req, res, next) => {
 
 export const duplicarPedido = async (req, res, next) => {
   try {
-    const { pedidoId } = req.body; 
+    const { pedidoId } = req.body;
 
     if (!pedidoId) {
       return res.status(400).json({ message: 'Pedido ID es obligatorio' });
     }
 
-    // Buscar el pedido original
     const pedidoOriginal = await Pedido.findByPk(pedidoId, {
       include: [
         { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto' }] },
@@ -548,15 +511,14 @@ export const duplicarPedido = async (req, res, next) => {
       return res.status(404).json({ message: 'Pedido no encontrado' });
     }
 
-    // Crear un nuevo pedido duplicado
     const nuevoPedido = await Pedido.create({
       clienteId: pedidoOriginal.clienteId,
       usuarioId: pedidoOriginal.usuarioId,
       total: 0,
-      estado: 'pendiente', // Cambiar el estado si es necesario
+      estadoPedidoId: ESTADOS_PEDIDO.PENDIENTE,
+      estadoEdicion: false,
     });
 
-    // Duplicar los detalles del pedido original
     let total = 0;
     for (const item of pedidoOriginal.detalles) {
       const productoDb = await Producto.findByPk(item.productoId);
@@ -579,17 +541,14 @@ export const duplicarPedido = async (req, res, next) => {
       total += subtotal;
     }
 
-    // Actualizar el total del nuevo pedido
-    nuevoPedido.total = total;
-    await nuevoPedido.save();
+    await nuevoPedido.update({ total });
 
     res.status(201).json({
       message: 'Pedido duplicado correctamente',
       pedidoId: nuevoPedido.id,
       clienteId: pedidoOriginal.clienteId,
     });
-    
-    // Notificaciones (no deben bloquear la respuesta)
+
     try {
       const vendedor = await Usuario.findByPk(nuevoPedido.usuarioId);
       await enviarEmailPedido({
@@ -598,19 +557,21 @@ export const duplicarPedido = async (req, res, next) => {
         carrito: pedidoOriginal.detalles,
         vendedor,
       });
+
       try {
-      await enviarWhatsappPedido({
-        cliente: pedidoOriginal.cliente,
-        pedido: nuevoPedido,
-        carrito: pedidoOriginal.detalles,
-        vendedor,
-      });} catch (e) {
+        await enviarWhatsappPedido({
+          cliente: pedidoOriginal.cliente,
+          pedido: nuevoPedido,
+          carrito: pedidoOriginal.detalles,
+          vendedor,
+        });
+      } catch (e) {
         console.warn("⚠️ WhatsApp no enviado:", e.message);
       }
     } catch (e) {
       console.warn("⚠️ Error enviando notificaciones duplicado:", e.message);
     }
-    
+
   } catch (error) {
     console.error('❌ Error en duplicarPedido:', error);
     next(error);
@@ -622,12 +583,14 @@ export const cancelarPedidoDesdeCliente = async (req, res, next) => {
     const { id } = req.params;
 
     const pedido = await Pedido.findByPk(id);
-    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
+    if (!pedido) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
 
-    // ⚠️ Permitimos cancelar incluso si está en edición
+    // ⚠️ Permitimos cancelar incluso si está en edición, pero reiniciamos estadoEdicion
     await pedido.update({
-      estado: 'cancelado',
-      estadoEdicion: 'pendiente',
+      estadoPedidoId: ESTADOS_PEDIDO.CANCELADO,
+      estadoEdicion: false,
     });
 
     const cliente = await pedido.getCliente();
@@ -878,7 +841,10 @@ export const buscarVendedorPorLink = async (req, res, next) => {
     const { link } = req.params;
 
     const vendedor = await Usuario.findOne({
-      where: { link, rol: 'vendedor' },
+      where: {
+        link,
+        rolUsuarioId: ROLES_USUARIO.VENDEDOR,
+      },
       attributes: ['id', 'nombre', 'email', 'telefono', 'link'],
     });
 
@@ -891,6 +857,3 @@ export const buscarVendedorPorLink = async (req, res, next) => {
     next(error);
   }
 };
-
-
-

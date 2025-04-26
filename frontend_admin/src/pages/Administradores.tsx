@@ -1,29 +1,27 @@
 import { createSignal, createResource, createMemo, For, Show } from "solid-js";
 import {
-  obtenerAdministradores,
-  agregarAdministrador,
-  editarAdministrador,
-  eliminarAdministrador,
-} from "../services/administrador.service";
+  obtenerUsuariosPorRol,
+  crearUsuario,
+  editarUsuario,
+  eliminarUsuario,
+} from "../services/usuario.service";
 import type { Usuario } from "../types/usuario";
-import ModalNuevoAdministrador from "../components/Usuario/ModalNuevoAdministrador";
-import VerAdministradorModal from "../components/Usuario/VerAdministradorModal";
+import ModalNuevoAdministrador from "../components/Usuario/Administrador/ModalNuevoAdministrador";
+import VerAdministradorModal from "../components/Usuario/Administrador/VerAdministradorModal";
 import ModalMensaje from "../components/Layout/ModalMensaje";
 import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import TablaAdministradores from "../components/Usuario/TablaAdministradores";
+import TablaAdministradores from "../components/Usuario/Administrador/TablaAdministradores";
 
 export default function Administradores() {
   const [busqueda, setBusqueda] = createSignal("");
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [adminSeleccionado, setAdminSeleccionado] =
-    createSignal<Usuario | null>(null);
+  const [adminSeleccionado, setAdminSeleccionado] = createSignal<Usuario | null>(null);
   const [verAdmin, setVerAdmin] = createSignal<Usuario | null>(null);
-
   const [modalMensaje, setModalMensaje] = createSignal("");
   const [modalConfirmar, setModalConfirmar] = createSignal(false);
   const [idAEliminar, setIdAEliminar] = createSignal<number | null>(null);
 
-  const [respuesta, { refetch }] = createResource(obtenerAdministradores);
+  const [respuesta, { refetch }] = createResource(() => obtenerUsuariosPorRol("Administrador"));
 
   const administradoresFiltrados = createMemo(() => {
     const buscar = busqueda().toLowerCase();
@@ -44,9 +42,14 @@ export default function Administradores() {
 
   const handleEliminar = async () => {
     if (!idAEliminar()) return;
-    await eliminarAdministrador(idAEliminar()!);
-    setModalMensaje("Administrador eliminado correctamente");
-    refetch();
+    try {
+      await eliminarUsuario(idAEliminar()!, "Administradores"); // 👉 PASAR MODULO
+      setModalMensaje("Administrador eliminado correctamente");
+      refetch();
+    } catch (error) {
+      console.error(error);
+      setModalMensaje("Error al eliminar administrador");
+    }
   };
 
   const verDetalle = (a: Usuario) => {
@@ -64,16 +67,21 @@ export default function Administradores() {
   };
 
   const handleGuardar = async (datos: Partial<Usuario>) => {
-    if (adminSeleccionado()) {
-      await editarAdministrador(adminSeleccionado()!.id, datos);
-      setModalMensaje("Administrador editado correctamente");
-    } else {
-      await agregarAdministrador(datos);
-      setModalMensaje("Administrador creado correctamente");
+    try {
+      if (adminSeleccionado()) {
+        await editarUsuario(adminSeleccionado()!.id, datos, "Administradores"); // 👉 PASAR MODULO
+        setModalMensaje("Administrador editado correctamente");
+      } else {
+        await crearUsuario({ ...datos, rolUsuarioId: 2 }, "Administradores"); // 👉 PASAR MODULO
+        setModalMensaje("Administrador creado correctamente");
+      }
+      refetch();
+      setModalAbierto(false);
+      setAdminSeleccionado(null);
+    } catch (error) {
+      console.error(error);
+      setModalMensaje("Error al guardar administrador");
     }
-    refetch();
-    setModalAbierto(false);
-    setAdminSeleccionado(null);
   };
 
   return (

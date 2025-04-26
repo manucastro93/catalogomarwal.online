@@ -45,7 +45,7 @@ export default function TablaPedidos(props: {
                   <td class="p-3">{p.id}</td>
                   <td class="p-3">{p.cliente?.nombre || "—"}</td>
                   <td class="p-3">{p.usuario?.nombre || "—"}</td>
-                  <td class="p-3">{p.estado}</td>
+                  <td class="p-3">{p.estadoPedido?.nombre || "—"}</td>
                   <td class="p-3">{formatearPrecio(p.total)}</td>
                   <td class="p-3">{new Date(p.createdAt).toLocaleString()}</td>
                   <td class="p-3 flex gap-2">
@@ -53,25 +53,27 @@ export default function TablaPedidos(props: {
                       Ver
                     </button>
                     <Show
-  when={!props.esVendedor}
-  fallback={
-    <Show when={p.estadoEdicion === "editando"}>
-      <span class="text-sm text-yellow-600 font-semibold">🛠 En edición</span>
-    </Show>
-  }
->
-  <Show when={p.estadoEdicion !== "editando"} fallback={
-    <span class="text-sm text-yellow-600 font-semibold">🛠 En edición</span>
-  }>
-    <button
-      class="text-yellow-600 hover:underline"
-      onClick={() => props.onCambiarEstado(p)}
-    >
-      Cambiar estado
-    </button>
-  </Show>
-</Show>
-
+                      when={!props.esVendedor}
+                      fallback={
+                        <Show when={p.estadoEdicion === true}>
+                          <span class="text-sm text-yellow-600 font-semibold">🛠 En edición</span>
+                        </Show>
+                      }
+                    >
+                      <Show
+                        when={p.estadoEdicion === false}
+                        fallback={
+                          <span class="text-sm text-yellow-600 font-semibold">🛠 En edición</span>
+                        }
+                      >
+                        <button
+                          class="text-yellow-600 hover:underline"
+                          onClick={() => props.onCambiarEstado(p)}
+                        >
+                          Cambiar estado
+                        </button>
+                      </Show>
+                    </Show>
                   </td>
                 </tr>
               )}

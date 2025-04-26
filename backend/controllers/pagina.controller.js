@@ -1,6 +1,7 @@
 import { Pagina, Banner } from '../models/index.js';
 import path from 'path';
 import cache from '../utils/cache.js';
+import { crearAuditoria } from '../utils/auditoria.js';
 
 export const obtenerPagina = async (req, res, next) => {
   try {
@@ -29,6 +30,7 @@ export const actualizarPagina = async (req, res, next) => {
     if (!pagina) return res.status(404).json({ message: 'Datos de página no encontrados' });
 
     await pagina.update(req.body);
+    await crearAuditoria('pagina', 'actualiza datos', pagina.id, req.usuario?.id || null);
     cache.del('pagina');
     res.json(pagina);
   } catch (error) {
@@ -45,6 +47,7 @@ export const subirLogo = async (req, res, next) => {
 
     pagina.logo = `/uploads/logo/${req.file.filename}`;
     await pagina.save();
+    await crearAuditoria('pagina', 'sube logo', pagina.id, req.usuario?.id || null);
     cache.del('pagina');
     res.json({ message: 'Logo actualizado correctamente', logo: pagina.logo });
   } catch (error) {
@@ -85,7 +88,7 @@ export const crearBanner = async (req, res, next) => {
       fechaFin: fechaFin || null,
       paginaId: pagina.id,
     });
-
+    await crearAuditoria('banners', 'crea banner', banner.id, req.usuario?.id || null);
     cache.del('bannersActivos');
     res.status(201).json({ message: 'Banner creado correctamente', banner });
   } catch (error) {
@@ -100,6 +103,7 @@ export const actualizarBanner = async (req, res, next) => {
     if (!banner) return res.status(404).json({ message: 'Banner no encontrado' });
 
     await banner.update(req.body);
+    await crearAuditoria('banners', 'actualiza banner', id, req.usuario?.id || null);
     cache.del('bannersActivos');
     res.json({ message: 'Banner actualizado correctamente', banner });
   } catch (error) {
@@ -114,6 +118,7 @@ export const eliminarBanner = async (req, res, next) => {
     if (!banner) return res.status(404).json({ message: 'Banner no encontrado' });
 
     await banner.destroy();
+    await crearAuditoria('banners', 'elimina banner', id, req.usuario?.id || null);
     cache.del('bannersActivos');
     res.json({ message: 'Banner eliminado correctamente' });
   } catch (error) {

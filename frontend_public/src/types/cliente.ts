@@ -15,7 +15,7 @@ export interface Cliente {
   vendedorId?: number;
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string;
+  deletedAt?: string | null;
 
   // Relaciones
   provincia?: Provincia;
@@ -32,4 +32,3 @@ export type LogClienteInput = {
   clienteId?: number;
   referer?: string;
 };
-

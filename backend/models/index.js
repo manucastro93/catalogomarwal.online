@@ -73,6 +73,10 @@ export const {
   IpClienteCliente,
   ReporteProduccion,
   Planta,
+  RolUsuario,
+  EstadoPedido,
+  PermisosUsuario,
+  Modulo,
 } = db;
 
 export { sequelize, Sequelize };

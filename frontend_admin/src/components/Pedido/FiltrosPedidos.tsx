@@ -1,16 +1,20 @@
 import { For, Show } from "solid-js";
 import type { Usuario } from "../../types/usuario";
+import type { EstadoPedido } from "types/estadoPedido";
+import { ESTADOS_PEDIDO } from "../../constants/estadosPedidos";
 
 export default function FiltrosPedidos(props: {
   busqueda: string;
-  vendedorId: string;
-  estado: string;
+  vendedorId: number | undefined;
+  estado?: number;
   esVendedor: boolean;
   vendedores: Usuario[];
+  estados: EstadoPedido[];
   onBuscar: (text: string) => void;
-  onVendedorSeleccionado: (id: string) => void;
-  onEstadoSeleccionado: (estado: string) => void;
+  onVendedorSeleccionado: (id: number | undefined) => void;
+  onEstadoSeleccionado: (estado: number | undefined) => void;
 }) {
+
   return (
     <div class="flex flex-wrap items-center gap-2 mb-4">
       <input
@@ -24,8 +28,12 @@ export default function FiltrosPedidos(props: {
       <Show when={!props.esVendedor}>
         <select
           class="p-2 border rounded"
-          value={props.vendedorId}
-          onInput={(e) => props.onVendedorSeleccionado(e.currentTarget.value)}
+          value={props.vendedorId?.toString() ?? ""}
+          onChange={(e) =>
+            props.onVendedorSeleccionado(
+              e.currentTarget.value ? Number(e.currentTarget.value) : undefined
+            )
+          }
         >
           <option value="">Todos los vendedores</option>
           <For each={props.vendedores}>
@@ -35,18 +43,18 @@ export default function FiltrosPedidos(props: {
       </Show>
 
       <select
-        class="p-2 border rounded"
-        value={props.estado}
-        onInput={(e) => props.onEstadoSeleccionado(e.currentTarget.value)}
+        class="border p-2 rounded"
+        value={props.estado || ""}
+        onChange={(e) => props.onEstadoSeleccionado(e.currentTarget.value ? Number(e.currentTarget.value) : undefined)}
       >
         <option value="">Todos los estados</option>
-        <option value="pendiente">Pendiente</option>
-        <option value="confirmado">Confirmado</option>
-        <option value="preparando">En preparación</option>
-        <option value="enviado">Enviado</option>
-        <option value="entregado">Entregado</option>
-        <option value="cancelado">Cancelado</option>
-        <option value="rechazado">Rechazado</option>
+        <For each={props.estados}>
+          {(estado) => (
+            <option value={estado.id}>
+              {estado.nombre}
+            </option>
+          )}
+        </For>
       </select>
     </div>
   );
