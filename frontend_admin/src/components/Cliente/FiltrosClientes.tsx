@@ -1,9 +1,10 @@
 import { For, Show } from 'solid-js';
 import type { Provincia, Localidad } from '../../types/ubicacion';
 import type { Usuario } from '../../types/usuario';
+import { ROLES_USUARIOS } from '../../constants/rolesUsuarios';
 
 export default function FiltrosClientes(props: {
-  usuarioRol: string;
+  usuarioRol: number;
   busqueda: string;
   onBuscar: (valor: string) => void;
   provincias: Provincia[];
@@ -18,7 +19,7 @@ export default function FiltrosClientes(props: {
 }) {
   return (
     <div class="flex gap-4 mb-4 flex-wrap">
-      <Show when={props.usuarioRol !== 'vendedor'}>
+      <Show when={props.usuarioRol !== ROLES_USUARIOS.VENDEDOR}>
         <select
           class="p-2 border rounded"
           value={props.vendedorSeleccionado}

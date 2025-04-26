@@ -1,14 +1,16 @@
-export type RolUsuario = 'supremo' | 'administrador' | 'vendedor';
+import type { PermisoUsuario } from './permisoUsuario';
 
 export interface Usuario {
   id: number;
   nombre: string;
   email: string;
   telefono: string;
-  rol: RolUsuario;
+  rolUsuarioId: number;
   contraseña?: string | null;
-  link?: string | null; // solo para vendedores
+  link?: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
+
+  permisos?: PermisoUsuario[];
 }

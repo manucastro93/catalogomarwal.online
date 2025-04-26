@@ -1,6 +1,7 @@
 import { Categoria } from '../models/index.js';
 import Sequelize from 'sequelize';
 import cache from '../utils/cache.js';
+import { crearAuditoria } from '../utils/auditoria.js';
 
 export const listarCategorias = async (req, res) => {
   try {
@@ -61,8 +62,8 @@ export const crearCategoria = async (req, res) => {
     }
 
     const nuevaCategoria = await Categoria.create({ nombre, orden, estado });
+    await crearAuditoria('categorias', 'crea categoría', id, req.usuario?.id || null);
     cache.del('categoriasPublicas');
-
     return res.status(201).json({ message: 'Categoría creada correctamente', categoria: nuevaCategoria });
   } catch (error) {
     console.error(error);
@@ -105,7 +106,7 @@ export const editarCategoria = async (req, res) => {
     categoria.orden = orden;
     categoria.estado = estado;
     await categoria.save();
-
+    await crearAuditoria('categorias', 'edita categoría', id, req.usuario?.id || null);
     cache.del('categoriasPublicas');
     res.json({ message: 'Categoría actualizada correctamente', categoria });
   } catch (error) {
@@ -124,6 +125,7 @@ export const eliminarCategoria = async (req, res) => {
     }
 
     await categoria.destroy();
+    await crearAuditoria('categorias', 'elimina categoría', id, req.usuario?.id || null);
     cache.del('categoriasPublicas');
 
     res.json({ message: 'Categoría eliminada correctamente' });

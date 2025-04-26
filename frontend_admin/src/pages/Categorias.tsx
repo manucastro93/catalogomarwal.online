@@ -10,6 +10,7 @@ import type { Categoria } from "../types/categoria";
 import { useAuth } from "../store/auth";
 import Loader from "../components/Layout/Loader";
 import TablaCategorias from "../components/Categoria/TablaCategorias";
+import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
 
 export default function Categorias() {
   const { usuario } = useAuth();
@@ -25,8 +26,12 @@ export default function Categorias() {
   const [categorias, { refetch }] = createResource(obtenerCategorias);
 
   const puedeEditar = () =>
-    ["supremo", "administrador"].includes(usuario()?.rol || "");
-  const puedeEliminar = () => usuario()?.rol === "supremo";
+    [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(
+      usuario()?.rolUsuarioId as (typeof ROLES_USUARIOS)["SUPREMO"] | (typeof ROLES_USUARIOS)["ADMINISTRADOR"]
+    );
+  
+
+  const puedeEliminar = () => usuario()?.rolUsuarioId === ROLES_USUARIOS.SUPREMO;
 
   const confirmarEliminacion = async () => {
     if (!categoriaAEliminar()) return;

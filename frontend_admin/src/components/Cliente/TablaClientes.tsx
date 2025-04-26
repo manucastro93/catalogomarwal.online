@@ -4,10 +4,8 @@ import type { Cliente } from '../../types/cliente';
 export default function TablaClientes(props: {
   clientes: Cliente[];
   puedeEditar: boolean;
-  puedeEliminar: boolean;
   onVer: (c: Cliente) => void;
   onEditar: (c: Cliente) => void;
-  onEliminar: (c: Cliente) => void;
   onOrdenar: (col: string) => void;
 }) {
   return (
@@ -26,7 +24,7 @@ export default function TablaClientes(props: {
         </thead>
         <tbody>
           <Show when={props.clientes.length > 0} fallback={
-            <tr><td colspan="7" class="text-center p-4 text-gray-500">No se encontraron clientes</td></tr>
+            <tr><td colspan="6" class="text-center p-4 text-gray-500">No se encontraron clientes</td></tr>
           }>
             <For each={props.clientes}>
               {(c) => (
@@ -42,9 +40,7 @@ export default function TablaClientes(props: {
                     <Show when={props.puedeEditar}>
                       <button class="text-green-600 hover:underline" onClick={() => props.onEditar(c)}>Editar</button>
                     </Show>
-                    <Show when={props.puedeEliminar}>
-                      <button class="text-red-600 hover:underline" onClick={() => props.onEliminar(c)}>Eliminar</button>
-                    </Show>
+                    
                   </td>
                 </tr>
               )}

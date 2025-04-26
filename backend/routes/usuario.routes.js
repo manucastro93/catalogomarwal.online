@@ -1,44 +1,53 @@
 import express from 'express';
 import {
-  obtenerUsuarios,
+  obtenerUsuariosPorRol,
   crearUsuario,
   actualizarUsuario,
   eliminarUsuario,
-  obtenerVendedores,
-  crearVendedor,
-  actualizarVendedor,
-  eliminarVendedor,
-  buscarVendedorPorLink,
-  obtenerAdministradores,
-  crearAdministrador,
-  actualizarAdministrador,
-  eliminarAdministrador,
-  obtenerEstadisticasVendedor
+  obtenerUsuariosPorRolId,
+  cambiarContrasena,
 } from '../controllers/usuario.controller.js';
 
 import { validarUsuario } from '../validaciones/usuario.validation.js';
-import { registrarAuditoria } from '../middlewares/auditoria.js';
+import { checkPermiso } from '../middlewares/checkPermiso.js';
+import { verificarToken } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// ================== USUARIOS GENERALES ==================
-router.get('/', obtenerUsuarios);
-router.post('/', validarUsuario, crearUsuario, registrarAuditoria('Usuario', 'creado'));
-router.put('/:id', validarUsuario, actualizarUsuario, registrarAuditoria('Usuario', 'modificado'));
-router.delete('/:id', eliminarUsuario, registrarAuditoria('Usuario', 'eliminado'));
+// Primero SIEMPRE verificar token
+router.use(verificarToken);
 
-// ================== VENDEDORES ==================
-router.get('/vendedores', obtenerVendedores);
-router.get('/vendedores/vendedor-por-link/:link', buscarVendedorPorLink);
-router.get('/:id/estadisticas-vendedor', obtenerEstadisticasVendedor);
-router.post('/vendedores', validarUsuario, crearVendedor, registrarAuditoria('Usuario', 'creado'));
-router.put('/vendedores/:id', validarUsuario, actualizarVendedor, registrarAuditoria('Usuario', 'modificado'));
-router.delete('/vendedores/:id', eliminarVendedor, registrarAuditoria('Usuario', 'eliminado'));
+// Obtener usuarios por rol
+router.get('/rol/:rol', checkPermiso('Vendedores', 'ver'), obtenerUsuariosPorRol);
+router.get('/rol-id/:id', checkPermiso('Vendedores', 'ver'), obtenerUsuariosPorRolId);
 
-// ================== ADMINISTRADORES ==================
-router.get('/administradores', obtenerAdministradores);
-router.post('/administradores', validarUsuario, crearAdministrador, registrarAuditoria('Usuario', 'creado'));
-router.put('/administradores/:id', validarUsuario, actualizarAdministrador, registrarAuditoria('Usuario', 'modificado'));
-router.delete('/administradores/:id', eliminarAdministrador, registrarAuditoria('Usuario', 'eliminado'));
+// Crear usuario
+router.post(
+  '/',
+  checkPermiso(null, 'crear'),
+  validarUsuario,
+  crearUsuario
+);
+
+// Editar usuario
+router.put(
+  '/:id',
+  checkPermiso(null, 'editar'),
+  validarUsuario,
+  actualizarUsuario
+);
+
+// Cambia contraseña
+router.put(
+  '/:id/cambiar-contrasena',
+  cambiarContrasena
+);
+
+// Eliminar usuario
+router.delete(
+  '/:id',
+  checkPermiso(null, 'eliminar'),
+  eliminarUsuario
+);
 
 export default router;

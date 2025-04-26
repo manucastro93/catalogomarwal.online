@@ -1,5 +1,5 @@
 import { createResource, Show } from "solid-js";
-import { obtenerPagina } from "../services/pagina.service";
+import { obtenerPagina } from "@/services/pagina.service";
 
 export default function SinAcceso() {
   const [pagina] = createResource(obtenerPagina);

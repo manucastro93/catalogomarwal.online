@@ -1,8 +1,14 @@
-import { body } from 'express-validator';
+import { usuarioSchema } from './usuario.schema.js';
+export const validarUsuario = (req, res, next) => {
 
-export const validarUsuario = [
-  body('nombre').notEmpty().withMessage('El nombre es obligatorio'),
-  body('email').isEmail().withMessage('Debe ser un email válido'),
-  body('telefono').notEmpty().withMessage('El teléfono es obligatorio'),
-  body('rol').isIn(['vendedor', 'administrador', 'supremo']).withMessage('Rol inválido'),
-];
+  const resultado = usuarioSchema.safeParse(req.body);
+
+  if (!resultado.success) {
+    const errores = resultado.error.flatten().fieldErrors;
+    console.error('❌ Errores de validación:', errores);
+    return res.status(400).json({ message: 'Datos inválidos', errores });
+  }
+
+  req.body = resultado.data;
+  next();
+};

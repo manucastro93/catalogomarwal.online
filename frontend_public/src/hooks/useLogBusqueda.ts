@@ -1,4 +1,4 @@
-import { registrarLogCliente } from "../services/cliente.service";
+import { registrarLogCliente } from "@/services/cliente.service";
 
 export function registrarBusqueda(busqueda: string) {
   const sesion = localStorage.getItem("sesionId") || crypto.randomUUID();

@@ -1,20 +1,31 @@
-import { createSignal, Show, createEffect } from 'solid-js';
+import { createSignal, Show, createEffect, For } from "solid-js";
 import type { Pedido } from '../../types/pedido';
 import { actualizarEstadoPedido } from '../../services/pedido.service';
 import ModalMensaje from '../Layout/ModalMensaje';
+import { ESTADOS_PEDIDO } from '../../constants/estadosPedidos';
+
+const nombresEstados: Record<number, string> = {
+  [ESTADOS_PEDIDO.PENDIENTE]: "Pendiente",
+  [ESTADOS_PEDIDO.CONFIRMADO]: "Confirmado",
+  [ESTADOS_PEDIDO.PREPARANDO]: "Preparando",
+  [ESTADOS_PEDIDO.TERMINADO]: "Terminado",
+  [ESTADOS_PEDIDO.ENVIADO]: "Enviado",
+  [ESTADOS_PEDIDO.FINALIZADO]: "Finalizado",
+  [ESTADOS_PEDIDO.RECHAZADO]: "Rechazado",
+  [ESTADOS_PEDIDO.CANCELADO]: "Cancelado",
+};
 
 export default function ModalActualizarEstadoPedido(props: {
   pedido: Pedido | null;
   onCerrar: () => void;
   onActualizado: () => void;
 }) {
-  const [nuevoEstado, setNuevoEstado] = createSignal<Pedido['estado']>('pendiente');
+  const [nuevoEstado, setNuevoEstado] = createSignal<number>(ESTADOS_PEDIDO.PENDIENTE);
   const [mensajeExito, setMensajeExito] = createSignal('');
 
-  // 🔄 Actualiza el estado del select cuando cambia el pedido
   createEffect(() => {
-    if (props.pedido) {
-      setNuevoEstado(props.pedido.estado);
+    if (props.pedido?.estadoPedidoId) {
+      setNuevoEstado(props.pedido.estadoPedidoId);
     }
   });
 
@@ -25,7 +36,6 @@ export default function ModalActualizarEstadoPedido(props: {
       setMensajeExito('Estado actualizado correctamente');
       props.onActualizado();
 
-      // ⏳ Espera un segundo antes de cerrar todo (opcional)
       setTimeout(() => {
         setMensajeExito('');
         props.onCerrar();
@@ -50,15 +60,13 @@ export default function ModalActualizarEstadoPedido(props: {
               id="estado"
               class="border px-2 py-1 w-full rounded"
               value={nuevoEstado()}
-              onInput={(e) => setNuevoEstado(e.currentTarget.value as Pedido['estado'])}
+              onInput={(e) => setNuevoEstado(Number(e.currentTarget.value))}
             >
-              <option value="pendiente">Pendiente</option>
-              <option value="confirmado">Confirmado</option>
-              <option value="preparando">Preparando</option>
-              <option value="enviado">Enviado</option>
-              <option value="entregado">Entregado</option>
-              <option value="cancelado">Cancelado</option>
-              <option value="rechazado">Rechazado</option>
+              <For each={Object.entries(nombresEstados)}>
+                {([id, nombre]) => (
+                  <option value={Number(id)}>{nombre}</option>
+                )}
+              </For>
             </select>
           </div>
 

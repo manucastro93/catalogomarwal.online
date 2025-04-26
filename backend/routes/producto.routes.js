@@ -13,7 +13,6 @@ import {
 } from '../controllers/producto.controller.js';
 
 import { validarProducto } from '../validaciones/producto.validation.js';
-import { registrarAuditoria } from '../middlewares/auditoria.js';
 import { uploadImagenesProducto } from '../middlewares/upload.js';
 
 const router = express.Router();
@@ -21,28 +20,26 @@ const router = express.Router();
 router.get('/', obtenerProductos);
 router.get('/:id', obtenerProductoPorId);
 
-router.post('/', validarProducto, crearProducto, registrarAuditoria('Producto', 'creado'));
+router.post('/', validarProducto, crearProducto);
 router.post(
   '/con-imagenes',
   uploadImagenesProducto.array('imagenes'),
-  crearProductoConImagenes,
-  registrarAuditoria('Producto', 'creado')
+  crearProductoConImagenes
 );
 
-router.put('/:id', validarProducto, actualizarProducto, registrarAuditoria('Producto', 'modificado'));
+router.put('/:id', validarProducto, actualizarProducto);
 router.put(
   '/:id/con-imagenes',
   uploadImagenesProducto.array('imagenes'),
-  actualizarProductoConImagenes,
-  registrarAuditoria('Producto', 'modificado')
+  actualizarProductoConImagenes
 );
 
 
-router.delete('/:id', eliminarProducto, registrarAuditoria('Producto', 'eliminado'));
+router.delete('/:id', eliminarProducto);
 
-router.delete('/imagen/:id', eliminarImagenProducto); // sin validación/auditoría porque es un recurso secundario
+router.delete('/imagen/:id', eliminarImagenProducto);
 
-router.post('/importar', importarProductosDesdeExcel); // Excel: validación se hace adentro
-router.put('/imagenes/ordenar', actualizarOrdenImagenes); // Orden de imágenes
+router.post('/importar', importarProductosDesdeExcel);
+router.put('/imagenes/ordenar', actualizarOrdenImagenes); 
 
 export default router;

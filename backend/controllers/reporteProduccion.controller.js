@@ -1,5 +1,6 @@
 import { ReporteProduccion, Producto, Usuario, LogAuditoria, Planta } from "../models/index.js";
 import { Op } from "sequelize";
+import { crearAuditoria } from "../utils/auditoria.js";
 
 export const obtenerReportesProduccion = async (req, res, next) => {
   try {
@@ -62,7 +63,7 @@ export const obtenerReportesProduccion = async (req, res, next) => {
 
 export const crearReporteProduccion = async (req, res, next) => {
   try {
-    const { productoId, cantidad } = req.body;
+    const { productoId, cantidad, plantaId, turno } = req.body;
     const usuarioId = req.usuario?.id || req.body.usuarioId;
 
     if (!productoId || !cantidad || !usuarioId) {
@@ -73,8 +74,10 @@ export const crearReporteProduccion = async (req, res, next) => {
       productoId,
       cantidad,
       usuarioId,
+      plantaId,
+      turno,
     });
-
+    await crearAuditoria("reporte produccion diaria", "crea reporte", nuevo.id, usuarioId);
     res.json(nuevo);
   } catch (error) {
     next(error);
@@ -93,14 +96,7 @@ export const eliminarReporteProduccion = async (req, res, next) => {
     // 1. Eliminar el reporte
     await ReporteProduccion.destroy({ where: { id } });
 
-    // 2. Registrar la auditoría
-    await LogAuditoria.create({
-      tabla: "ReporteProduccion",
-      accion: "eliminado",
-      registroId: id,
-      usuarioId,
-    });
-
+    await crearAuditoria("reporte produccion diaria", "elimina reporte", id, usuarioId);
     res.json({ mensaje: "Reporte eliminado y registrado correctamente" });
   } catch (error) {
     next(error);

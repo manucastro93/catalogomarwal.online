@@ -1,17 +1,10 @@
 import api from './api';
-import type { Pedido, PedidoPayload } from '../types/pedido';
+import type { Pedido, PedidoPayload, RespuestaPaginadaPedidos } from '../types/pedido';
+import type { FiltrosPedidos } from 'types/filtros'; 
 
-export const obtenerPedidos = async (params: {
-  pagina?: number;
-  orden?: string;
-  direccion?: string;
-  busqueda?: string;
-}): Promise<{
-  data: Pedido[];
-  total: number;
-  pagina: number;
-  totalPaginas: number;
-}> => {
+export const obtenerPedidos = async (
+  params: FiltrosPedidos
+): Promise<RespuestaPaginadaPedidos> => {
   const { data } = await api.get('/pedidos', { params });
   return data;
 };
@@ -23,14 +16,10 @@ export const obtenerPedidoPorId = async (id: number): Promise<Pedido> => {
 
 export const actualizarEstadoPedido = async (
   id: number,
-  estado: string
-): Promise<{ message: string; estado: string }> => {
-  const { data } = await api.put(`/pedidos/${id}/estado`, { estado });
+  estadoPedidoId: number
+): Promise<{ message: string; estadoPedidoId: number }> => {
+  const { data } = await api.put(`/pedidos/${id}/estado`, { estadoPedidoId });
   return data;
-};
-
-export const eliminarPedido = async (id: number): Promise<void> => {
-  await api.delete(`/pedidos/${id}`);
 };
 
 export const crearPedidoDesdePanel = async (
@@ -38,14 +27,6 @@ export const crearPedidoDesdePanel = async (
 ): Promise<Pedido> => {
   const { data } = await api.post('/pedidos/desde-panel', payload);
   return data;
-};
-
-export const marcarComoEditando = async (id: number): Promise<void> => {
-  await api.put(`/pedidos/${id}/editando`);
-};
-
-export const revertirEditando = async (id: number): Promise<void> => {
-  await api.put(`/pedidos/${id}/revertir-editando`);
 };
 
 export const obtenerPedidosInicio = async (

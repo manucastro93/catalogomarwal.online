@@ -1,19 +1,19 @@
-import { createSignal, createResource, createMemo, For, Show } from "solid-js";
-import * as XLSX from "xlsx";
+import { createSignal, createResource, createMemo, Show } from "solid-js";
 import { obtenerClientes } from "../services/cliente.service";
 import {
   obtenerProvincias,
   obtenerLocalidades,
 } from "../services/ubicacion.service";
+import * as XLSX from "xlsx";
 import { useAuth } from "../store/auth";
 import type { Cliente } from "../types/cliente";
-import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
 import VerClienteModal from "../components/Cliente/VerClienteModal";
-import { obtenerVendedores } from "../services/vendedor.service";
+import { obtenerUsuariosPorRolPorId } from "../services/usuario.service";
 import Loader from "../components/Layout/Loader";
 import ModalMapaClientes from "../components/Cliente/ModalMapaClientes";
 import TablaClientes from "../components/Cliente/TablaClientes";
 import FiltrosClientes from "../components/Cliente/FiltrosClientes";
+import { ROLES_USUARIOS } from "../constants/rolesUsuarios"; 
 
 export default function Clientes() {
   const { usuario } = useAuth();
@@ -38,7 +38,8 @@ export default function Clientes() {
   const [modalConfirmar, setModalConfirmar] = createSignal(false);
   const [mostrarMapa, setMostrarMapa] = createSignal(false);
 
-  const [vendedores] = createResource(obtenerVendedores);
+  const [vendedores] = createResource(() => obtenerUsuariosPorRolPorId(ROLES_USUARIOS.VENDEDOR));
+
   const [provincias] = createResource(obtenerProvincias);
   const [localidades] = createResource(
     () => provinciaSeleccionada(),
@@ -68,11 +69,10 @@ export default function Clientes() {
   };
 
   const puedeEditar = () =>
-    ["supremo", "administrador"].includes(usuario()?.rol || "");
-  const puedeEliminar = () => usuario()?.rol === "supremo";
-  const puedeAgregar = () =>
-    ["supremo", "vendedor"].includes(usuario()?.rol || "");
-
+    [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(
+      usuario()?.rolUsuarioId as typeof ROLES_USUARIOS.SUPREMO | typeof ROLES_USUARIOS.ADMINISTRADOR
+    );
+  
   const exportarExcel = () => {
     const clientes = respuesta()?.data || [];
     const filas = clientes.map((c: Cliente) => ({
@@ -102,21 +102,12 @@ export default function Clientes() {
           >
             Ver mapa de clientes
           </button>
-          <Show when={puedeAgregar()}>
-            <button
-              onClick={exportarExcel}
-              class="bg-green-600 text-white px-3 py-1 rounded text-sm"
-            >
-              Exportar Excel
-            </button>
-
-            
-          </Show>
+          
         </div>
       </div>
 
       <FiltrosClientes
-        usuarioRol={usuario()?.rol || ""}
+        usuarioRol={usuario()?.rolUsuarioId ?? 0}
         busqueda={busqueda()}
         onBuscar={(v) => {
           setBusqueda(v);
@@ -146,17 +137,12 @@ export default function Clientes() {
       <Show when={!respuesta.loading} fallback={<Loader />}>
         <TablaClientes
           clientes={respuesta()?.data ?? []}
-          puedeEditar={puedeEditar()}
-          puedeEliminar={puedeEliminar()}
+          puedeEditar={puedeEditar()}          
           onVer={setVerCliente}
           onEditar={(c) => {
             setClienteSeleccionado(c);
             setModalAbierto(true);
-          }}
-          onEliminar={(c) => {
-            setClienteAEliminar(c);
-            setModalConfirmar(true);
-          }}
+          }}    
           onOrdenar={cambiarOrden}
         />
       </Show>

@@ -24,6 +24,10 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    usuarioId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    }
   }, {
     tableName: 'Notificaciones',
     timestamps: true,

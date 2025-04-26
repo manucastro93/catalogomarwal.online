@@ -39,7 +39,7 @@ export default function VerPedidoModal(props: {
     };
   };
 
-  const isEditing = props.pedido?.estadoEdicion === 'editando';
+  const isEditing = props.pedido?.estadoEdicion === true;
 
   return (
     <Show when={props.pedido != null}>
@@ -55,14 +55,12 @@ export default function VerPedidoModal(props: {
             </button>
           </div>
 
-          {/* Banner de edición */}
           <Show when={isEditing}>
             <div class="bg-yellow-100 text-yellow-800 px-4 py-2 mb-4 rounded">
               ⚠️ <strong>Pedido en edición por el cliente.</strong> No se puede modificar el estado hasta que finalice o expire (30 minutos).
             </div>
           </Show>
 
-          {/* CONTENIDO A IMPRIMIR */}
           <div id="contenido-a-imprimir" class="space-y-4">
             <div>
               <strong>Cliente:</strong> {props.pedido!.cliente?.nombre} (
@@ -72,7 +70,7 @@ export default function VerPedidoModal(props: {
               <strong>Vendedor:</strong> {props.pedido!.usuario?.nombre || "—"}
             </div>
             <div>
-              <strong>Estado:</strong> {props.pedido!.estado}
+              <strong>Estado:</strong> {props.pedido!.estadoPedido?.nombre || "—"}
             </div>
             <div>
               <strong>Observaciones:</strong>{" "}
@@ -113,7 +111,9 @@ export default function VerPedidoModal(props: {
                         <td class="border px-2 py-1">
                           {formatearPrecio(detalle.precioXBulto)}
                         </td>
-                        <td class="border px-2 py-1">{formatearPrecio((detalle.precioXBulto ?? 0) * detalle.cantidad)}</td>
+                        <td class="border px-2 py-1">
+                          {formatearPrecio((detalle.precioXBulto ?? 0) * detalle.cantidad)}
+                        </td>
                       </tr>
                     )}
                   </For>
@@ -125,7 +125,6 @@ export default function VerPedidoModal(props: {
             <strong>Total:</strong> {formatearPrecio(props.pedido!.total)}
           </div>
 
-          {/* BOTONES */}
           <div class="mt-6 flex justify-end gap-2">
             <button
               class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

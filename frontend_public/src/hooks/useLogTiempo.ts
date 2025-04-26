@@ -1,5 +1,5 @@
 import { onCleanup } from "solid-js";
-import { registrarLogCliente } from "../services/cliente.service";
+import { registrarLogCliente } from "@/services/cliente.service";
 
 export function useLogTiempo({ ubicacion, categoriaId }: { ubicacion: string; categoriaId?: number }) {
   const inicio = Date.now();

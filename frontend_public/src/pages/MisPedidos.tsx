@@ -1,12 +1,18 @@
-// src/pages/MisPedidos.tsx
+// 🔵 SolidJS imports
 import { createResource, For, Show, createSignal } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { obtenerMisPedidos } from "../services/pedido.service";
-import { obtenerBanners } from "../services/pagina.service";
-import ModalPedido from "../components/ModalPedido";
-import ModalMensaje from "../components/ModalMensaje";
-import { formatearPrecio } from "../utils/formato";
+// 🌐 Services
+import { obtenerMisPedidos } from "@/services/pedido.service";
+import { obtenerBanners } from "@/services/pagina.service";
+// 🧩 Pedido Components
+import ModalPedido from "@/components/Pedido/ModalPedido";
+// 🧩 UI Components
+import ModalMensaje from "@/components/UI/ModalMensaje";
+// 🛠️ Utils
+import { formatearPrecio } from "@/utils/formato";
+// 📅 External libraries
 import dayjs from "dayjs";
+
 
 export default function MisPedidos() {
   const [banners] = createResource(obtenerBanners);
@@ -60,11 +66,11 @@ export default function MisPedidos() {
                   <div
                     classList={{
                       "border rounded-xl p-6 shadow-md hover:shadow-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 w-full": true,
-                      "bg-yellow-100": pedido.estado === "pendiente",
-                      "bg-blue-100": pedido.estado === "confirmado" || pedido.estado === "enviado",
-                      "bg-indigo-100": pedido.estado === "preparando",
-                      "bg-green-100": pedido.estado === "entregado",
-                      "bg-red-100": pedido.estado === "cancelado" || pedido.estado === "rechazado",
+                      "bg-yellow-100": pedido.estadoPedido?.nombre === "Pendiente",
+                      "bg-blue-100": pedido.estadoPedido?.nombre === "Confirmado" || pedido.estadoPedido?.nombre === "Enviado",
+                      "bg-indigo-100": pedido.estadoPedido?.nombre === "Preparando",
+                      "bg-green-100": pedido.estadoPedido?.nombre === "Entregado",
+                      "bg-red-100": pedido.estadoPedido?.nombre === "Cancelado" || pedido.estadoPedido?.nombre === "Rechazado",
                     }}
                     onClick={() => setPedidoSeleccionado(pedido)}
                   >
@@ -79,7 +85,7 @@ export default function MisPedidos() {
                       <span>{formatearPrecio(pedido.total)}</span>
                     </div>
                     <p class="mt-1 text-base font-semibold text-gray-700">
-                      Estado: <span class="capitalize">{pedido.estado}</span>
+                      Estado: <span class="capitalize">{pedido.estadoPedido?.nombre || '—'}</span>
                     </p>
                   </div>
                 </div>

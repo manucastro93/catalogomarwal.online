@@ -1,4 +1,5 @@
 import { Pedido, DetallePedido, Producto, Cliente, Usuario, Categoria, ImagenProducto, LogCliente } from '../models/index.js';
+import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
 import { Op, fn, col, literal } from 'sequelize';
 import dayjs from 'dayjs';
 import cache from '../utils/cache.js';
@@ -8,16 +9,22 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
     const inicioMes = dayjs().startOf('month').toDate();
     const finMes = dayjs().endOf('month').toDate();
 
-    const cacheKey = `resumenEstadisticas_${dayjs().format('YYYY_MM')}`;
+    const cacheKey = `resumenEstadisticas_${req.usuario.id}_${dayjs().format('YYYY_MM')}`;
     const cached = cache.get(cacheKey);
     if (cached) return res.json(cached);
 
-    const totalPedidos = await Pedido.count({ where: { createdAt: { [Op.between]: [inicioMes, finMes] } } });
-    const totalFacturado = await Pedido.sum('total', { where: { createdAt: { [Op.between]: [inicioMes, finMes] } } });
+    const wherePedidos = { createdAt: { [Op.between]: [inicioMes, finMes] } };
+    if (req.usuario?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {
+      wherePedidos.usuarioId = req.usuario.id;
+    }
+
+    // Consultas principales
+    const totalPedidos = await Pedido.count({ where: wherePedidos });
+    const totalFacturado = await Pedido.sum('total', { where: wherePedidos });
 
     const productoTop = await DetallePedido.findOne({
       attributes: ['productoId', [fn('SUM', col('cantidad')), 'totalVendidas'], [fn('SUM', col('subtotal')), 'totalFacturado']],
-      where: { createdAt: { [Op.between]: [inicioMes, finMes] } },
+      include: [{ model: Pedido, as: 'pedido', where: wherePedidos, attributes: [] }],
       group: ['productoId'],
       order: [[literal('totalVendidas'), 'DESC']],
       raw: true,
@@ -30,13 +37,13 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
         attributes: ['id', 'nombre'],
         paranoid: false,
       });
-      
+
       productoEstrella = {
         productoId: productoTop.productoId,
         totalVendidas: Number(productoTop.totalVendidas),
         totalFacturado: Number(productoTop.totalFacturado),
         Producto: {
-          nombre: producto?.nombre,
+          nombre: producto?.nombre || null,
           imagenUrl: Array.isArray(producto?.Imagenes) ? producto.Imagenes[0]?.url || null : null,
         },
       };
@@ -45,7 +52,7 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
     const vendedorTop = await Pedido.findOne({
       attributes: ['usuarioId', [fn('COUNT', col('Pedido.id')), 'cantidad'], [fn('SUM', col('Pedido.total')), 'totalFacturado']],
       include: [{ model: Usuario, as: 'usuario', attributes: ['nombre'] }],
-      where: { createdAt: { [Op.between]: [inicioMes, finMes] } },
+      where: wherePedidos,
       group: ['usuarioId'],
       order: [[literal('cantidad'), 'DESC']],
       limit: 1,
@@ -54,7 +61,7 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
     const mejoresClientes = await Pedido.findAll({
       attributes: ['clienteId', [fn('SUM', col('total')), 'totalGastado']],
       include: [{ model: Cliente, as: 'cliente', attributes: ['nombre'] }],
-      where: { createdAt: { [Op.between]: [inicioMes, finMes] } },
+      where: wherePedidos,
       group: ['clienteId'],
       order: [[literal('totalGastado'), 'DESC']],
       limit: 5,
@@ -62,8 +69,16 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
 
     const categoriaTop = await DetallePedido.findOne({
       attributes: [[col('producto.categoriaId'), 'categoriaId'], [fn('SUM', col('subtotal')), 'totalFacturado']],
-      include: [{ model: Producto, as: 'producto', attributes: [], include: [{ model: Categoria, as: 'Categoria', attributes: ['nombre'], required: true }], required: true }],
-      where: { createdAt: { [Op.between]: [inicioMes, finMes] } },
+      include: [
+        { 
+          model: Producto,
+          as: 'producto',
+          attributes: [],
+          include: [{ model: Categoria, as: 'Categoria', attributes: ['nombre'], required: true }],
+          required: true
+        },
+        { model: Pedido, as: 'pedido', where: wherePedidos, attributes: [] }
+      ],
       group: ['producto.categoriaId'],
       order: [[literal('totalFacturado'), 'DESC']],
       raw: true,
@@ -79,8 +94,9 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
       mejoresClientes,
     };
 
-    cache.set(cacheKey, result);
+    cache.set(cacheKey, result, 60 * 10); // cachea por 10 minutos
     res.json(result);
+
   } catch (error) {
     console.error('❌ Error en resumen de estadísticas:', error);
     next(error);

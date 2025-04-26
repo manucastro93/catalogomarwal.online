@@ -1,18 +1,5 @@
 export default (sequelize, DataTypes) => {
   const Pedido = sequelize.define('Pedido', {
-    estado: {
-      type: DataTypes.ENUM(
-        'pendiente',
-        'confirmado',
-        'preparando',
-        'enviado',
-        'entregado',
-        'cancelado',
-        'rechazado',
-        'editando'
-      ),
-      defaultValue: 'pendiente',
-    },
     observaciones: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -38,8 +25,17 @@ export default (sequelize, DataTypes) => {
       }
     },
     estadoEdicion: {
-      type: DataTypes.ENUM('pendiente', 'editando'),
-      defaultValue: 'pendiente',
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },    
+    estadoPedidoId: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+      references: {
+        model: 'EstadosPedidos',
+        key: 'id',
+      },
     },
   });
 
@@ -61,6 +57,10 @@ export default (sequelize, DataTypes) => {
       as: 'detalles',
       onDelete: 'CASCADE',
       onUpdate: 'CASCADE'
+    });
+    Pedido.belongsTo(models.EstadoPedido, {
+      foreignKey: 'estadoPedidoId',
+      as: 'estadoPedido',
     });
   };
 

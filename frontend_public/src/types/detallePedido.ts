@@ -9,11 +9,13 @@ export interface DetallePedido {
   cantidad: number;
   precioUnitario: number;
   precioXBulto?: number;
-  subtotal?: number;
+  subtotal: number;
   descuento?: number;
   observaciones?: string;
   dispositivo?: string;
   createdAt: string;
   updatedAt: string;
-  Producto?: Producto; 
+
+  // Relaciones
+  producto?: Producto;
 }

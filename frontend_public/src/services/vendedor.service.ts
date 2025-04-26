@@ -13,7 +13,3 @@ export const obtenerVendedorGuardado = (): any | null => {
   const data = localStorage.getItem('vendedor');
   return data ? JSON.parse(data) : null;
 };
-
-export const borrarVendedor = () => {
-  localStorage.removeItem('vendedor');
-};

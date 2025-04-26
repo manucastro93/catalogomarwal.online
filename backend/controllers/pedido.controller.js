@@ -1,13 +1,12 @@
-import { Pedido, DetallePedido, Producto, Cliente, Usuario, IpCliente, Notificacion, HistorialCliente, Provincia, Localidad } from '../models/index.js';
-import { vincularIpConCliente } from './ipCliente.controller.js';
-import { verificarProductosDelCarrito } from '../utils/validarPedido.js';
-import { geocodificarDireccion } from '../utils/geocodificacion.js';
+import { Pedido, DetallePedido, Producto, Cliente, Usuario, Notificacion, EstadoPedido } from '../models/index.js';
+import { ESTADOS_PEDIDO } from '../constants/estadosPedidos.js';
+import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
 import { crearLeadKommo } from '../services/kommo.service.js';
 import { Op } from 'sequelize';
-import { enviarEmailPedido, enviarEmailEstadoEditando, enviarEmailReversionEditando } from "../utils/notificaciones/email.js";
+import { enviarEmailPedido } from "../utils/notificaciones/email.js";
 import { enviarWhatsappPedido, enviarWhatsappEstadoEditando, enviarWhatsappReversionEditando } from "../utils/notificaciones/whatsapp.js";
 import { crearClienteConGeocodificacion } from '../helpers/clientes.js';
-import dayjs from 'dayjs';
+import { crearAuditoria } from '../utils/auditoria.js';
 
 export const obtenerPedidos = async (req, res, next) => {
   try {
@@ -17,45 +16,85 @@ export const obtenerPedidos = async (req, res, next) => {
       orden = 'createdAt',
       direccion = 'DESC',
       busqueda = '',
-      vendedorId,
+      vendedorId: vendedorIdQuery,
       estado,
     } = req.query;
 
     const offset = (pagina - 1) * limit;
+
+    // 💡 Filtros dinámicos
     const where = {};
 
-    if (req.usuario?.rol === 'vendedor') {
-      where.usuarioId = req.usuario.id;
+    // ✅ Si es VENDEDOR logueado, filtrar por SU ID
+    if (req.usuario?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {
+      where.vendedorId = req.usuario.id;
     }
 
-    if (vendedorId) where.usuarioId = vendedorId;
-    if (estado) where.estado = estado;
+    // ✅ Si en query viene vendedorId (y el usuario NO es vendedor) filtramos por ese
+    if (vendedorIdQuery && req.usuario?.rolUsuarioId !== ROLES_USUARIOS.VENDEDOR) {
+      where.vendedorId = vendedorIdQuery;
+    }
 
-    const whereFinal = { ...where };
-    if (busqueda) whereFinal['$cliente.nombre$'] = { [Op.like]: `%${busqueda}%` };
+    if (estado) {
+      where.estadoPedidoId = estado;
+    }
 
-    let orderBy = [[orden, direccion]];
-    if (orden === 'cliente') orderBy = [[{ model: Cliente, as: 'cliente' }, 'nombre', direccion]];
-    else if (orden === 'vendedor') orderBy = [[{ model: Usuario, as: 'usuario' }, 'nombre', direccion]];
+    const whereCliente = busqueda
+      ? { nombre: { [Op.like]: `%${busqueda}%` } }
+      : undefined;
 
-    const includeBase = [
-      { model: Cliente, as: 'cliente', required: true },
-      { model: Usuario, as: 'usuario' },
-      { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto' }] },
-    ];
+    const orderBy = (() => {
+      if (orden === 'cliente') return [[{ model: Cliente, as: 'cliente' }, 'nombre', direccion]];
+      if (orden === 'vendedor') return [[{ model: Usuario, as: 'usuario' }, 'nombre', direccion]];
+      return [[orden, direccion]];
+    })();
 
-    const includePaginacion = [
-      { model: Cliente, as: 'cliente', where: busqueda ? { nombre: { [Op.like]: `%${busqueda}%` } } : undefined, required: !!busqueda },
-      { model: Usuario, as: 'usuario' },
-    ];
+    // 🥇 Primero paginamos solo los IDs
+    const idsPaginados = await Pedido.findAll({
+      attributes: ['id'],
+      where,
+      include: [
+        { model: Cliente, as: 'cliente', where: whereCliente, required: !!busqueda },
+      ],
+      limit: Number(limit),
+      offset,
+      order: orderBy,
+      subQuery: false,
+    });
 
-    const idsPaginados = await Pedido.findAll({ attributes: ['id'], where: whereFinal, include: includePaginacion, limit: Number(limit), offset, order: orderBy, subQuery: false });
-    const ids = idsPaginados.map(p => p.id);
-    const rows = await Pedido.findAll({ where: { id: ids }, include: includeBase, order: orderBy });
-    const count = await Pedido.count({ where, include: [{ model: Cliente, as: 'cliente', where: busqueda ? { nombre: { [Op.like]: `%${busqueda}%` } } : undefined, required: !!busqueda }], distinct: true, col: 'id' });
+    const ids = idsPaginados.map((p) => p.id);
+
+    // 🥈 Traemos los datos completos
+    const pedidos = await Pedido.findAll({
+      where: { id: ids },
+      include: [
+        { model: Cliente, as: 'cliente', required: true },
+        { model: Usuario, as: 'usuario' },
+        { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto' }] },
+        { model: EstadoPedido, as: 'estadoPedido' },
+      ],
+      order: orderBy,
+    });
+
+    const count = await Pedido.count({
+      where,
+      include: [
+        { model: Cliente, as: 'cliente', where: whereCliente, required: !!busqueda },
+      ],
+      distinct: true,
+      col: 'id',
+    });
+
     const totalPaginas = Math.ceil(count / limit);
 
-    res.json({ data: rows, pagina: Number(pagina), totalPaginas, totalItems: count, hasNextPage: Number(pagina) < totalPaginas, hasPrevPage: Number(pagina) > 1 });
+    res.json({
+      data: pedidos,
+      pagina: Number(pagina),
+      totalPaginas,
+      totalItems: count,
+      hasNextPage: Number(pagina) < totalPaginas,
+      hasPrevPage: Number(pagina) > 1,
+    });
   } catch (error) {
     console.error('❌ ERROR en obtenerPedidos:', error);
     next(error);
@@ -65,28 +104,76 @@ export const obtenerPedidos = async (req, res, next) => {
 export const actualizarEstadoPedido = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { estado } = req.body;
-    const pedido = await Pedido.findByPk(id);
-    if (!pedido) return res.status(404).json({ message: 'Pedido no encontrado' });
+    const { estadoPedidoId } = req.body;
 
-    // Bloquear cambios si cliente está editando
-    if (pedido.estadoEdicion === 'editando') {
-      return res.status(409).json({ message: 'Pedido en edición por cliente. No se puede cambiar estado.' });
+    // Validación rápida del ID de pedido
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'ID inválido' });
     }
 
-    const estados_validos = ['pendiente','confirmado','preparando','enviado','entregado','cancelado','rechazado','editando'];
-    if (!estados_validos.includes(estado)) return res.status(400).json({ message: 'Estado inválido' });
+    const pedido = await Pedido.findByPk(id);
+    if (!pedido) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
 
-    await pedido.update({ estado });
+    // 🚫 Bloqueo si el pedido está en modo edición por el cliente
+    if (pedido.estadoEdicion === true) {
+      return res.status(409).json({
+        message: 'El pedido está siendo editado por el cliente. No se puede cambiar el estado hasta que finalice la edición.',
+      });
+    }
 
-    // Notificar cambio de estado
-    const tituloBase = estado === 'cancelado' ? 'Pedido cancelado' : 'Pedido actualizado';
-    const mensajeBase = estado === 'cancelado' ? `El pedido #${pedido.id} fue cancelado.` : `El estado del pedido #${pedido.id} ahora es "${estado}".`;
-    await Notificacion.create({ titulo: tituloBase, mensaje: mensajeBase, tipo: 'pedido', usuarioId: pedido.usuarioId });
-    const admins = await Usuario.findAll({ where: { rol: { [Op.in]: ['administrador','supremo'] } } });
-    for (const admin of admins) Notificacion.create({ titulo: tituloBase, mensaje: mensajeBase, tipo: 'pedido', usuarioId: admin.id });
+    // Validar que el estadoPedidoId recibido sea un estado válido
+    const estadoPedido = await EstadoPedido.findByPk(estadoPedidoId);
+    if (!estadoPedido) {
+      return res.status(400).json({ message: 'Estado de pedido no válido' });
+    }
 
-    res.json({ message: 'Estado actualizado correctamente', estado });
+    // Actualizar el estado del pedido
+    await pedido.update({ estadoPedidoId });
+
+    // 📣 Crear notificación para el usuario asociado al pedido
+    const estadoNombre = estadoPedido.nombre;
+    const tituloBase = estadoNombre === 'Cancelado' ? 'Pedido cancelado' : 'Pedido actualizado';
+    const mensajeBase = estadoNombre === 'Cancelado'
+      ? `El pedido #${pedido.id} ha sido cancelado.`
+      : `El estado del pedido #${pedido.id} ahora es "${estadoNombre}".`;
+
+    if (pedido.usuarioId) {
+      await Notificacion.create({
+        titulo: tituloBase,
+        mensaje: mensajeBase,
+        tipo: 'pedido',
+        usuarioId: pedido.usuarioId,
+        pedidoId: pedido.id,
+      });
+    }
+
+    // 🔔 Notificar también a todos los administradores y supremos
+    const admins = await Usuario.findAll({
+      where: { rolUsuarioId: { [Op.in]: [ROLES_USUARIO.SUPREMO, ROLES_USUARIO.ADMINISTRADOR] } },
+    });
+
+    for (const admin of admins) {
+      await Notificacion.create({
+        titulo: tituloBase,
+        mensaje: mensajeBase,
+        tipo: 'pedido',
+        usuarioId: admin.id,
+        pedidoId: pedido.id,
+      });
+    }
+
+    // 🕵🏻‍♂️ Auditar la acción de cambio de estado
+    await crearAuditoria('pedidos', 'actualiza estado', id, req.usuario?.id || null);
+
+    // 🔥 Devolver respuesta final
+    res.json({
+      message: 'Estado del pedido actualizado correctamente',
+      estadoPedidoId,
+      estadoNombre,
+    });
+
   } catch (error) {
     console.error('❌ Error al actualizar estado del pedido:', error);
     next(error);
@@ -114,12 +201,15 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
       clienteFinal = buscado;
     }
 
+    // Estado por defecto (Recibido o Pendiente)
+    const estadoPedidoId = 1; // ID de "Recibido", según tu tabla
+
     // Crear el pedido
     const pedido = await Pedido.create({
       clienteId: clienteFinal.id,
       usuarioId,
       total: 0,
-      estado: 'pendiente',
+      estadoPedidoId,
     });
 
     let total = 0;
@@ -161,7 +251,7 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
 
     // Notificaciones a administradores
     const admins = await Usuario.findAll({
-      where: { rol: { [Op.in]: ['administrador', 'supremo'] } },
+      where: { rolUsuarioId: { [Op.in]: [1, 2] } }, // supremo y administrador
     });
 
     for (const admin of admins) {
@@ -175,6 +265,7 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
 
     // Envío por email y WhatsApp
     await enviarEmailPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
+
     try {
       await crearLeadKommo({
         nombre: clienteFinal.nombre,
@@ -185,8 +276,7 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
     } catch (kommoError) {
       console.error('❌ Error al crear lead en Kommo:', kommoError.message);
     }
-    //await enviarWhatsappPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
-
+    await crearAuditoria('pedidos', 'crea pedido desde panel', pedido.id, req.usuario?.id || null);
     res.status(201).json({ message: 'Pedido creado correctamente', pedidoId: pedido.id });
   } catch (err) {
     console.error('❌ Error al crear pedido desde panel:', err);
@@ -239,9 +329,14 @@ export const obtenerPedidoPorId = async (req, res, next) => {
 
     const pedido = await Pedido.findByPk(id, {
       include: [
-        { model: DetallePedido, as: 'detalles', include: [{ model: Producto, as: 'producto' }] },
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [{ model: Producto, as: 'producto' }],
+        },
         { model: Cliente, as: 'cliente' },
         { model: Usuario, as: 'usuario' },
+        { model: EstadoPedido, as: 'estadoPedido' }, // ✅ agregado
       ],
     });
 
@@ -254,34 +349,53 @@ export const obtenerPedidoPorId = async (req, res, next) => {
   }
 };
 
-export const obtenerPedidosInicio = async (req, res) => {
+export const obtenerPedidosInicio = async (req, res, next) => {
   try {
-    const { vendedorId } = req.query;
-    const where = {};
+    const { vendedorId: vendedorIdQuery } = req.query;
 
-    if (vendedorId) where.usuarioId = vendedorId;
+    const wherePedido = {};
+
+    // Si el logueado es vendedor, filtra por su propio usuarioId
+    if (req.usuario?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {
+      wherePedido.usuarioId = req.usuario.id;
+    }
+
+    // Si en query mandan vendedorId (ej: admin quiere ver otro vendedor)
+    if (vendedorIdQuery && req.usuario?.rolUsuarioId !== ROLES_USUARIOS.VENDEDOR) {
+      wherePedido.usuarioId = vendedorIdQuery;
+    }
 
     const pendientes = await Pedido.findAll({
-      where: { ...where, estado: "pendiente" },
-      include: [{ model: Cliente, as: "cliente" }],
+      where: {
+        ...wherePedido,
+        estadoPedidoId: ESTADOS_PEDIDO.PENDIENTE,
+      },
+      include: [
+        { model: Cliente, as: "cliente" },
+        { model: EstadoPedido, as: "estadoPedido" },
+      ],
       order: [["createdAt", "DESC"]],
       limit: 5,
     });
 
     const confirmados = await Pedido.findAll({
       where: {
-        ...where,
-        estado: { [Op.in]: ["confirmado", "preparando"] },
+        ...wherePedido,
+        estadoPedidoId: {
+          [Op.in]: [ESTADOS_PEDIDO.CONFIRMADO, ESTADOS_PEDIDO.PREPARANDO],
+        },
       },
-      include: [{ model: Cliente, as: "cliente" }],
+      include: [
+        { model: Cliente, as: "cliente" },
+        { model: EstadoPedido, as: "estadoPedido" },
+      ],
       order: [["createdAt", "DESC"]],
       limit: 5,
     });
 
     res.json({ pendientes, confirmados });
   } catch (error) {
-    console.error("Error al obtener pedidos de inicio:", error);
-    res.status(500).json({ message: "Error al obtener pedidos" });
+    console.error("❌ Error al obtener pedidos de inicio:", error);
+    next(error);
   }
 };
-

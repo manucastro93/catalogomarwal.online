@@ -1,43 +1,121 @@
-import { Usuario, Pedido, DetallePedido,Producto, Cliente, Provincia, Localidad, IpCliente, LogCliente } from '../models/index.js';
-import { Op, fn, col, literal } from 'sequelize';
+import { Usuario, RolUsuario } from '../models/index.js';
 import bcrypt from 'bcryptjs';
+import { Op } from 'sequelize';
+import { nanoid } from 'nanoid';
+import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
+import { puedeActualizarUsuario } from '../utils/puedeActualizarUsuario.js';
+import { crearAuditoria } from '../utils/auditoria.js';
 
-// ================== USUARIOS GENERALES ==================
-
-export const obtenerUsuarios = async (req, res, next) => {
+export const crearUsuario = async (req, res, next) => {
   try {
-    const usuarios = await Usuario.findAll({ order: [['createdAt', 'DESC']] });
-    res.json(usuarios);
+    const { nombre, email, telefono, rolUsuarioId } = req.body;
+    
+    // Validaciones extra
+    if (!nombre || !email || !rolUsuarioId) {
+      return res.status(400).json({ message: 'Faltan campos obligatorios' });
+    }
+
+    // Verificar si el email ya existe
+    const existente = await Usuario.findOne({ where: { email } });
+    if (existente) {
+      return res.status(400).json({ message: 'El email ya está en uso.' });
+    }
+
+    // Buscar qué rol es
+    if (![ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR, ROLES_USUARIOS.VENDEDOR, ROLES_USUARIOS.OPERARIO].includes(rolUsuarioId)) {
+      return res.status(400).json({ message: 'Rol inválido' });
+    }
+
+    // Para Vendedor o Administrador, el teléfono es obligatorio
+    if ((rolUsuarioId === ROLES_USUARIOS.VENDEDOR || rolUsuarioId === ROLES_USUARIOS.ADMINISTRADOR) && !telefono) {
+      return res.status(400).json({ message: 'El teléfono es obligatorio para este tipo de usuario.' });
+    }
+
+    // Para vendedor, generar link único
+    let link = null;
+    if (rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {
+      link = nanoid(4).toUpperCase();
+    }
+
+    // Crear el usuario
+    const usuario = await Usuario.create({
+      nombre,
+      email,
+      telefono: telefono || null,
+      rolUsuarioId,
+      contraseña: null,
+      link,
+    });
+
+    await crearAuditoria({
+      tabla: 'usuarios',
+      accion: 'crea usuario',
+      registroId: usuario.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se creó el usuario ${usuario.nombre}`,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
+    
+
+    res.status(201).json(usuario);
+  } catch (error) {
+    console.error('❌ Error en crearUsuario:', error);
+    next(error);
+  }
+};
+
+export const obtenerUsuariosPorRol = async (req, res, next) => {
+  try {
+    const rol = req.params.rol?.toLowerCase();
+
+    const rolEncontrado = await RolUsuario.findOne({
+      where: { nombre: { [Op.like]: rol } }
+    });
+
+    if (!rolEncontrado) {
+      return res.status(400).json({ mensaje: 'Rol no válido' });
+    }
+
+    const { page = 1, limit = 20, busqueda = '' } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {
+      rolUsuarioId: rolEncontrado.id,
+      [Op.or]: [
+        { nombre: { [Op.like]: `%${busqueda}%` } },
+        { email: { [Op.like]: `%${busqueda}%` } }
+      ]
+    };
+
+    const { rows: usuarios, count: total } = await Usuario.findAndCountAll({
+      where,
+      limit: parseInt(limit),
+      offset,
+      order: [['nombre', 'ASC']],
+      include: [
+        { model: RolUsuario, as: 'rolUsuario', attributes: ['nombre'] }
+      ]
+    });
+
+    res.json({
+      usuarios,
+      total,
+      pagina: parseInt(page),
+      totalPaginas: Math.ceil(total / limit)
+    });
   } catch (error) {
     next(error);
   }
 };
 
-export const crearUsuario = async (req, res, next) => {
+export const obtenerUsuariosPorRolId = async (req, res, next) => {
   try {
-    const { nombre, email, contraseña, rol, telefono } = req.body;
-
-    const existente = await Usuario.findOne({ where: { email } });
-    if (existente) return res.status(400).json({ message: 'El email ya está en uso.' });
-
-    let hash = null;
-    if (contraseña) {
-      hash = await bcrypt.hash(contraseña, 10);
-    }
-
-    if ((rol === 'vendedor' || rol === 'administrador') && !telefono) {
-      return res.status(400).json({ message: 'El teléfono es obligatorio para este tipo de usuario.' });
-    }
-
-    const usuario = await Usuario.create({
-      nombre,
-      email,
-      rol,
-      telefono,
-      contraseña: hash,
+    const rolUsuarioId = Number(req.params.id);
+    const usuarios = await Usuario.findAll({
+      where: { rolUsuarioId },
+      order: [['nombre', 'ASC']],
     });
-
-    res.status(201).json(usuario);
+    res.json(usuarios);
   } catch (error) {
     next(error);
   }
@@ -48,14 +126,79 @@ export const actualizarUsuario = async (req, res, next) => {
     const { id } = req.params;
     const usuario = await Usuario.findByPk(id);
     if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' });
+    const datosAntes = usuario.toJSON();
+    
+    const puede = puedeActualizarUsuario({
+      usuarioLogueado: req.usuario,
+      usuarioObjetivo: usuario,
+      bodyUpdate: req.body,
+    });
 
-    const { contraseña, ...resto } = req.body;
-    if (contraseña) {
-      resto.contraseña = await bcrypt.hash(contraseña, 10);
+    if (!puede) {
+      return res.status(403).json({ message: 'No autorizado para actualizar este usuario.' });
     }
 
+    const { contraseña, ...resto } = req.body;
+
+    // 🚫 No se actualiza la contraseña desde acá nunca más
     await usuario.update(resto);
+
+    const datosDespues = usuario.toJSON();
+    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null;
+    await crearAuditoria({
+      tabla: 'usuarios',
+      accion: 'actualiza usuario',
+      registroId: usuario.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Usuario ${usuario.nombre} actualizado.`,
+      datosAntes,
+      datosDespues,
+      ip,
+    });
+
     res.json(usuario);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const cambiarContrasena = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { contraseña } = req.body;
+
+    if (!contraseña) {
+      return res.status(400).json({ message: 'La contraseña es obligatoria.' });
+    }
+
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+
+    const puede = puedeActualizarUsuario({
+      usuarioLogueado: req.usuario,
+      usuarioObjetivo: usuario,
+      bodyUpdate: { contraseña },
+    });
+    if (!puede) {
+      return res.status(403).json({ message: 'No autorizado para cambiar contraseña.' });
+    }
+
+    const hash = await bcrypt.hash(contraseña, 10);
+    await usuario.update({ contraseña: hash });
+    
+    await crearAuditoria({
+      tabla: 'usuarios',
+      accion: 'cambia contraseña',
+      registroId: usuario.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se cambió la contraseña de ${usuario.nombre}`,
+      ip,
+    });
+    
+
+    res.json({ message: 'Contraseña actualizada exitosamente.' });
   } catch (error) {
     next(error);
   }
@@ -65,221 +208,27 @@ export const eliminarUsuario = async (req, res, next) => {
   try {
     const { id } = req.params;
     const usuario = await Usuario.findByPk(id);
-    if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' });
+    console.log('Usuario encontrado:', usuario);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
 
+    const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null;
+    console.log('IP del usuario:', ip);
     await usuario.destroy();
+
+    await crearAuditoria({
+      tabla: 'usuarios',
+      accion: 'elimina usuario',
+      registroId: usuario.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se eliminó el usuario "${usuario.nombre}"`,
+      ip,
+    });
+
     res.json({ message: 'Usuario eliminado' });
   } catch (error) {
-    next(error);
-  }
-};
-
-// ================== VENDEDORES ==================
-
-export const obtenerVendedores = async (req, res, next) => {
-  try {
-    const usuarios = await Usuario.findAll({
-      where: { rol: 'vendedor' },
-      order: [['createdAt', 'DESC']],
-    });
-    res.json(usuarios);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const crearVendedor = async (req, res, next) => {
-  try {
-    const { nombre, email, telefono } = req.body;
-
-    const existente = await Usuario.findOne({ where: { email } });
-    if (existente) return res.status(400).json({ message: 'El email ya está en uso.' });
-    if (!telefono) return res.status(400).json({ message: 'El teléfono es obligatorio.' });
-
-    const vendedor = await Usuario.create({
-      nombre,
-      email,
-      telefono,
-      rol: 'vendedor',
-      contraseña: null,
-    });
-
-    res.status(201).json(vendedor);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const actualizarVendedor = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const vendedor = await Usuario.findByPk(id);
-    if (!vendedor) return res.status(404).json({ message: 'Vendedor no encontrado' });
-
-    const { contraseña, ...resto } = req.body;
-    if (contraseña) {
-      resto.contraseña = await bcrypt.hash(contraseña, 10);
-    }
-
-    await vendedor.update(resto);
-    res.json(vendedor);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const eliminarVendedor = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const vendedor = await Usuario.findByPk(id);
-    if (!vendedor) return res.status(404).json({ message: 'Vendedor no encontrado' });
-
-    await vendedor.destroy();
-    res.json({ message: 'Vendedor eliminado' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const buscarVendedorPorLink = async (req, res, next) => {
-  try {
-    const { link } = req.params;
-
-    const vendedor = await Usuario.findOne({
-      where: { link, rol: 'vendedor' },
-      attributes: ['id', 'nombre', 'email', 'telefono', 'link'],
-    });
-
-    if (!vendedor) {
-      return res.status(404).json({ error: 'Vendedor no encontrado' });
-    }
-
-    res.json(vendedor);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const obtenerEstadisticasVendedor = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Ventas totales
-    const pedidos = await Pedido.findAll({
-      where: { usuarioId: id },
-      attributes: ['id', 'total', 'createdAt'],
-    });
-
-    // Producto más vendido
-    const productoTop = await DetallePedido.findOne({
-      where: { usuarioId: id },
-      attributes: [
-        'productoId',
-        [fn('SUM', col('cantidad')), 'totalVendidas'],
-      ],
-      include: [{ model: Producto, as: 'producto', attributes: ['nombre'] }],
-      group: ['productoId'],
-      order: [[literal('totalVendidas'), 'DESC']],
-    });
-
-    // Clientes
-    const clientes = await Cliente.findAll({
-      where: { vendedorId: id },
-      include: [
-        { model: Provincia, as: 'provincia', attributes: ['nombre'] },
-        { model: Localidad, as: 'localidad', attributes: ['nombre'] },
-      ],
-    });
-
-    const clienteIds = clientes.map(c => c.id);
-
-    // Logs de visitas al catálogo
-    const ipClientes = await IpCliente.findAll({ where: { clienteId: { [Op.in]: clienteIds } } });
-    const ipIds = ipClientes.map(i => i.id);
-
-    const visitasCatalogo = await LogCliente.count({
-      where: {
-        ipClienteId: { [Op.in]: ipIds },
-      },
-    });
-
-    res.json({
-      totalPedidos: pedidos.length,
-      totalFacturado: pedidos.reduce((acc, p) => acc + p.total, 0),
-      productoTop,
-      cantidadClientes: clientes.length,
-      clientes,
-      visitasCatalogo,
-    });
-  } catch (error) {
-    console.error("❌ Error en estadísticas del vendedor:", error);
-    res.status(500).json({ message: 'Error al obtener estadísticas del vendedor' });
-  }
-};
-
-// ================== ADMINISTRADORES ==================
-
-export const obtenerAdministradores = async (req, res, next) => {
-  try {
-    const usuarios = await Usuario.findAll({
-      where: { rol: 'administrador' },
-      order: [['createdAt', 'DESC']],
-    });
-    res.json(usuarios);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const crearAdministrador = async (req, res, next) => {
-  try {
-    const { nombre, email, telefono } = req.body;
-
-    const existente = await Usuario.findOne({ where: { email } });
-    if (existente) return res.status(400).json({ message: 'El email ya está en uso.' });
-    if (!telefono) return res.status(400).json({ message: 'El teléfono es obligatorio.' });
-
-    const administrador = await Usuario.create({
-      nombre,
-      email,
-      telefono,
-      rol: 'administrador',
-      contraseña: null,
-    });
-
-    res.status(201).json(administrador);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const actualizarAdministrador = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const admin = await Usuario.findByPk(id);
-    if (!admin) return res.status(404).json({ message: 'Administrador no encontrado' });
-
-    const { contraseña, ...resto } = req.body;
-    if (contraseña) {
-      resto.contraseña = await bcrypt.hash(contraseña, 10);
-    }
-
-    await admin.update(resto);
-    res.json(admin);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const eliminarAdministrador = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const admin = await Usuario.findByPk(id);
-    if (!admin) return res.status(404).json({ message: 'Administrador no encontrado' });
-
-    await admin.destroy();
-    res.json({ message: 'Administrador eliminado' });
-  } catch (error) {
+    console.error('❌ Error al eliminar usuario:', error);
     next(error);
   }
 };

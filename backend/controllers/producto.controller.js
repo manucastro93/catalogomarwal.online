@@ -2,6 +2,7 @@ import { Producto, Categoria, ImagenProducto } from '../models/index.js';
 import { Op } from 'sequelize';
 import { leerExcelProductos } from '../utils/leerExcel.js';
 import cache from '../utils/cache.js';
+import { crearAuditoria } from '../utils/auditoria.js';
 
 export const obtenerProductos = async (req, res, next) => {
   try {
@@ -149,7 +150,7 @@ export const crearProductoConImagenes = async (req, res, next) => {
       }));
       await ImagenProducto.bulkCreate(imagenes);
     }
-
+    await crearAuditoria('productos', 'crear', producto.id, req.usuario?.id || null);
     cache.flushAll();
     res.json({ producto });
   } catch (error) {
@@ -208,7 +209,7 @@ export const actualizarProductoConImagenes = async (req, res, next) => {
       }));
       await ImagenProducto.bulkCreate(imagenes);
     }
-
+    await crearAuditoria('productos', 'actualizar', id, req.usuario?.id || null);
     cache.flushAll();
     res.json({ producto });
   } catch (error) {
@@ -223,6 +224,7 @@ export const eliminarProducto = async (req, res, next) => {
     if (!producto) return res.status(404).json({ message: 'Producto no encontrado' });
 
     await producto.destroy();
+    await crearAuditoria('productos', 'eliminar', id, req.usuario?.id || null);
     cache.flushAll();
     res.json({ message: 'Producto eliminado correctamente' });
   } catch (error) {
@@ -285,7 +287,7 @@ export const importarProductosDesdeExcel = async (req, res, next) => {
 
       productosCreados.push(producto);
     }
-
+    await crearAuditoria('productos', 'importar', null, req.usuario?.id || null);
     cache.flushAll();
     res.json({
       mensaje: `${productosCreados.length} productos importados correctamente`,
@@ -303,7 +305,7 @@ export const actualizarOrdenImagenes = async (req, res, next) => {
     for (const { id, orden } of imagenes) {
       await ImagenProducto.update({ orden }, { where: { id } });
     }
-
+    await crearAuditoria('productos', 'actualizar orden imagenes', null, req.usuario?.id || null);
     res.json({ mensaje: 'Orden actualizado correctamente' });
   } catch (error) {
     next(error);
@@ -317,6 +319,7 @@ export const eliminarImagenProducto = async (req, res, next) => {
     if (!imagen) return res.status(404).json({ message: 'Imagen no encontrada' });
 
     await imagen.destroy();
+    await crearAuditoria('productos', 'eliminar imagen', id, req.usuario?.id || null);
     res.json({ message: 'Imagen eliminada correctamente' });
   } catch (error) {
     console.error('❌ Error al eliminar imagen del producto:', error);

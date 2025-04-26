@@ -1,7 +1,11 @@
+// 🔵 SolidJS imports
 import { createSignal, onMount, Show } from "solid-js";
-import { obtenerProductoPorId } from "../services/producto.service";
-import { agregarAlCarrito, setCarritoAbierto } from "../store/carrito";
-import { registrarLogCliente } from "../services/cliente.service";
+// 🌐 Services
+import { obtenerProductoPorId } from "@/services/producto.service";
+import { registrarLogCliente } from "@/services/cliente.service";
+// 🗂️ Store
+import { agregarAlCarrito, setCarritoAbierto } from "@/store/carrito";
+
 
 export default function DetalleProductoInline(props: { id: number }) {
   const [producto, setProducto] = createSignal<any>(null);

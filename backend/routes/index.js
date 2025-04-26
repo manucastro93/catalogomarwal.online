@@ -13,6 +13,9 @@ import logClienteRoutes from './logCliente.routes.js';
 import notificacionRoutes from './notificacion.routes.js';
 import reporteProduccionRoutes from "./reporteProduccion.routes.js";
 import plantaRoutes from './planta.routes.js';
+import rolUsuarioRoutes from './rolUsuario.routes.js';
+import estadoPedidoRoutes from './estadoPedido.routes.js';
+import graficosRoutes from './graficos.routes.js';
 
 const router = express.Router();
 
@@ -29,5 +32,8 @@ router.use('/logs-cliente', logClienteRoutes);
 router.use('/notificaciones', notificacionRoutes);
 router.use('/produccion-diaria', reporteProduccionRoutes);
 router.use('/plantas', plantaRoutes);
+router.use('/roles-usuario', rolUsuarioRoutes);
+router.use('/estados-pedidos', estadoPedidoRoutes);
+router.use('/graficos', graficosRoutes);
 
 export default router;

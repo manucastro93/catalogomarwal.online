@@ -1,47 +1,48 @@
-import { createSignal, createResource, createMemo, For, Show } from "solid-js";
-import {
-  obtenerVendedores,
-  agregarVendedor,
-  editarVendedor,
-  eliminarVendedor,
-} from "../services/vendedor.service";
-import ModalNuevoVendedor from "../components/Usuario/ModalNuevoVendedor";
-import VerVendedorModal from "../components/Usuario/VerVendedorModal";
-import type { Vendedor } from "../types/vendedor";
-import ModalMensaje from "../components/Layout/ModalMensaje";
+import { createSignal, createResource, createMemo, Show } from "solid-js";
+import { obtenerUsuariosPorRolPorId, eliminarUsuario } from "../services/usuario.service";
+import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
+import FiltrosVendedores from "../components/Usuario/Vendedor/FiltrosVendedores";
+import TablaVendedores from "../components/Usuario/Vendedor/TablaVendedores";
+import ModalNuevoVendedor from "../components/Usuario/Vendedor/ModalNuevoVendedor";
+import VerVendedorModal from "../components/Usuario/Vendedor/VerVendedorModal";
 import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import Loader from "../components/Layout/Loader";
-import TablaVendedores from "../components/Usuario/TablaVendedores";
-import FiltrosVendedores from "../components/Usuario/FiltrosVendedores";
+import ModalMensaje from "../components/Layout/ModalMensaje";
+import { useAuth } from "../store/auth";
 
 export default function Vendedores() {
-  const [pagina, setPagina] = createSignal(1);
-  const [orden, setOrden] = createSignal("createdAt");
-  const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
-
+  const { usuario } = useAuth();
+  
   const [busqueda, setBusqueda] = createSignal("");
-  const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [vendedorSeleccionado, setVendedorSeleccionado] =
-    createSignal<Vendedor | null>(null);
-  const [verVendedor, setVerVendedor] = createSignal<Vendedor | null>(null);
+  const [orden, setOrden] = createSignal("nombre");
+  const [direccion, setDireccion] = createSignal<"asc" | "desc">("asc");
 
-  const [modalMensaje, setModalMensaje] = createSignal("");
-  const [modalConfirmar, setModalConfirmar] = createSignal(false);
-  const [idAEliminar, setIdAEliminar] = createSignal<string | null>(null);
+  const [vendedorSeleccionado, setVendedorSeleccionado] = createSignal<any>(null);
+  const [modalVerAbierto, setModalVerAbierto] = createSignal(false);
+  const [modalNuevoAbierto, setModalNuevoAbierto] = createSignal(false);
+  const [modalConfirmarAbierto, setModalConfirmarAbierto] = createSignal(false);
+  const [idEliminar, setIdEliminar] = createSignal<number | null>(null);
+  const [mensaje, setMensaje] = createSignal('');
 
-  const [respuesta, { refetch }] = createResource(obtenerVendedores);
+  const [vendedores, { refetch }] = createResource(() =>
+    obtenerUsuariosPorRolPorId(ROLES_USUARIOS.VENDEDOR)
+  );
 
   const vendedoresFiltrados = createMemo(() => {
-    const buscar = busqueda().toLowerCase();
-    return (
-      respuesta()?.filter(
-        (v) =>
-          v.nombre?.toLowerCase().includes(buscar) ||
-          v.email?.toLowerCase().includes(buscar) ||
-          v.telefono?.includes(buscar)
-      ) || []
+    const texto = busqueda().toLowerCase().trim();
+    return (vendedores() || []).filter((v) =>
+      v.nombre.toLowerCase().includes(texto) || v.email.toLowerCase().includes(texto)
     );
   });
+
+  const puedeEliminar = () =>
+    [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(
+      usuario()?.rolUsuarioId as (typeof ROLES_USUARIOS)["SUPREMO"] | (typeof ROLES_USUARIOS)["ADMINISTRADOR"]
+    );
+
+  const puedeEditar = () =>
+    [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(
+      usuario()?.rolUsuarioId as (typeof ROLES_USUARIOS)["SUPREMO"] | (typeof ROLES_USUARIOS)["ADMINISTRADOR"]
+    );
 
   const cambiarOrden = (col: string) => {
     if (orden() === col) {
@@ -53,56 +54,16 @@ export default function Vendedores() {
   };
 
   const confirmarEliminar = (id: number) => {
-    setIdAEliminar(String(id));
-    setModalConfirmar(true);
+    setIdEliminar(id);
+    setModalConfirmarAbierto(true);
   };
 
-  const handleEliminar = async () => {
-    if (!idAEliminar()) return;
-    await eliminarVendedor(idAEliminar()!);
-    setModalMensaje("Vendedor eliminado correctamente");
-    refetch();
-  };
-
-  const verDetalle = (v: Vendedor) => {
-    setVerVendedor(v);
-  };
-
-  const editarVendedorCompleto = (v: Vendedor) => {
-    setVendedorSeleccionado(v);
-    setModalAbierto(true);
-  };
-
-  const nuevoVendedor = () => {
-    setVendedorSeleccionado(null);
-    setModalAbierto(true);
-  };
-
-  const handleGuardarVendedor = async (
-    datos: Partial<Omit<Vendedor, "id">>
-  ) => {
-    if (vendedorSeleccionado()?.id != null) {
-      await editarVendedor(
-        String(vendedorSeleccionado()!.id),
-        datos as Partial<Omit<Vendedor, "id">>
-      );
-      setModalMensaje("Vendedor editado correctamente");
-    } else {
-      await agregarVendedor(datos);
-      setModalMensaje("Vendedor creado correctamente");
-    }
-    refetch();
-    setModalAbierto(false);
-    setVendedorSeleccionado(null);
-  };
-
-  const copiarLink = async (id: string | number | undefined) => {
-    try {
-      const link = `https://www.catalogomarwal.online/${String(id || "")}`;
-      await navigator.clipboard.writeText(link);
-      setModalMensaje("¡Link copiado al portapapeles!");
-    } catch (err) {
-      setModalMensaje("Error al copiar el link");
+  const eliminar = async () => {
+    if (idEliminar()) {
+      await eliminarUsuario(idEliminar()!, "Vendedores");
+      await refetch();
+      setModalConfirmarAbierto(false);
+      setMensaje('Vendedor eliminado correctamente');
     }
   };
 
@@ -110,55 +71,63 @@ export default function Vendedores() {
     <div class="p-6">
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold">Vendedores</h1>
-        <FiltrosVendedores
-          busqueda={busqueda()}
-          onBuscar={(valor) => setBusqueda(valor)}
-          onNuevo={nuevoVendedor}
-        />
       </div>
 
-      <Show when={!respuesta.loading} fallback={<Loader />}>
+      <FiltrosVendedores
+        busqueda={busqueda()}
+        onBuscar={setBusqueda}
+        onNuevo={() => {
+          setVendedorSeleccionado(null);
+          setModalNuevoAbierto(true);
+        }}
+      />
+
+      <Show when={!vendedores.loading}>
         <TablaVendedores
           vendedores={vendedoresFiltrados()}
           orden={orden()}
           direccion={direccion()}
+          puedeEditar={puedeEditar()}
+          puedeEliminar={puedeEliminar()}
           onOrdenar={cambiarOrden}
-          onVer={verDetalle}
-          onEditar={editarVendedorCompleto}
-          onEliminar={confirmarEliminar}
-          onCopiarLink={copiarLink}
+          onVer={(v) => {
+            setVendedorSeleccionado(() => v);
+            setModalVerAbierto(true);
+          }}
+          onEditar={(v) => {
+            setVendedorSeleccionado(() => v);
+            setModalNuevoAbierto(true);
+          }}
+          onEliminar={(id) => confirmarEliminar(id)}
+          onCopiarLink={(link) =>
+            navigator.clipboard.writeText(`https://catalogomarwal.online/${link}`)
+          }
         />
       </Show>
 
-      <ModalNuevoVendedor
-        abierto={modalAbierto()}
-        cerrar={() => {
-          setModalAbierto(false);
-          setVendedorSeleccionado(null);
-        }}
-        vendedor={vendedorSeleccionado()}
-        onGuardar={handleGuardarVendedor}
+      <VerVendedorModal
+        abierto={modalVerAbierto()}
+        usuario={vendedorSeleccionado()}
+        onCerrar={() => setModalVerAbierto(false)}
       />
 
-      <VerVendedorModal
-        vendedor={verVendedor()}
-        abierto={verVendedor() !== null && !modalAbierto()}
-        onCerrar={() => setVerVendedor(null)}
+      <ModalNuevoVendedor
+        abierto={modalNuevoAbierto()}
+        usuario={vendedorSeleccionado()}
+        onCerrar={async (mensajeExito?: string) => {
+          setModalNuevoAbierto(false);
+          await refetch();
+          if (mensajeExito) setMensaje(mensajeExito);
+        }}
       />
+
+      <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje('')} />
 
       <ModalConfirmacion
-        abierto={modalConfirmar()}
-        onCancelar={() => setModalConfirmar(false)}
-        onConfirmar={() => {
-          setModalConfirmar(false);
-          handleEliminar();
-        }}
-        mensaje="¿Estás seguro que querés eliminar este vendedor?"
-      />
-
-      <ModalMensaje
-        mensaje={modalMensaje()}
-        cerrar={() => setModalMensaje("")}
+        abierto={modalConfirmarAbierto()}
+        mensaje="¿Seguro que querés eliminar este vendedor?"
+        onConfirmar={eliminar}
+        onCancelar={() => setModalConfirmarAbierto(false)}
       />
     </div>
   );

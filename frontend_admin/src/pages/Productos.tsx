@@ -5,6 +5,7 @@ import {
   eliminarProducto,
 } from "../services/producto.service";
 import { useAuth } from "../store/auth";
+import ConPermiso from "../components/Layout/ConPermiso";
 import { obtenerCategorias } from "../services/categoria.service";
 import ModalNuevoProducto from "../components/Producto/ModalNuevoProducto";
 import ModalImportarExcel from "../components/Producto/ModalImportarExcel";
@@ -13,9 +14,9 @@ import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
 import ModalMensaje from "../components/Layout/ModalMensaje";
 import Loader from "../components/Layout/Loader";
 import type { Producto } from "../types/producto";
-import { formatearPrecio } from "../utils/formato";
 import FiltrosProductos from "../components/Producto/FiltrosProductos";
 import TablaProductos from "../components/Producto/TablaProductos";
+import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
 
 export default function Productos() {
   const [pagina, setPagina] = createSignal(1);
@@ -34,7 +35,8 @@ export default function Productos() {
     createSignal<Producto | null>(null);
   const [mensaje, setMensaje] = createSignal("");
   const { usuario } = useAuth();
-  const esVendedor = usuario()?.rol === "vendedor";
+
+  const esVendedor = usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR;
   const [categorias] = createResource(obtenerCategorias);
 
   const fetchParams = createMemo(() => ({
@@ -89,15 +91,17 @@ export default function Productos() {
             >
               Importar Excel
             </button>
-            <button
-              onClick={() => {
-                setProductoSeleccionado(null);
-                setModalAbierto(true);
-              }}
-              class="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-            >
-              + Nuevo Producto
-            </button>
+            <ConPermiso modulo="Productos" accion="crear">
+              <button
+                onClick={() => {
+                  setProductoSeleccionado(null);
+                  setModalAbierto(true);
+                }}
+                class="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+              >
+                + Nuevo Producto
+              </button>
+            </ConPermiso>
           </div>
         )}
       </div>

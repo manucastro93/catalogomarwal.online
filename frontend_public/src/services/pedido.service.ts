@@ -1,5 +1,6 @@
 import api from './api';
-import type { Pedido, PedidoPayload } from '../types/pedido';
+import type { Pedido, PedidoPayload } from '@/types/pedido';
+import { ESTADOS_PEDIDO } from '../constants/estadosPedidos';
 
 export const obtenerMisPedidos = async (): Promise<Pedido[]> => {
   const res = await api.get('/pedidos/id-cliente');
@@ -50,15 +51,6 @@ export const cancelarPedidoDesdeCliente = async (
   id: number
 ): Promise<{ message: string }> => {
   const res = await api.put(`/pedidos/${id}/cancelar-desde-cliente`);
-  return res.data;
-};
-
-export const cancelarPedido = async (
-  id: number
-): Promise<{ message: string; estado: string }> => {
-  const res = await api.put(`/pedidos/${id}/estado`, {
-    estado: 'cancelado',
-  });
   return res.data;
 };
 

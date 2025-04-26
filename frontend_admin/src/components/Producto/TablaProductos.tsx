@@ -21,6 +21,7 @@ export default function TablaProductos(props: {
             {[
               "sku",
               "nombre",
+              "costoMP",
               "precioUnitario",
               "precioPorBulto",
               "activo",
@@ -31,6 +32,8 @@ export default function TablaProductos(props: {
               >
                 {col === "precioUnitario"
                   ? "PrecioXUn"
+                  : col === "costoMP"
+                  ? "costoMP"
                   : col === "precioPorBulto"
                   ? "PrecioXBulto"
                   : col === "activo"
@@ -71,6 +74,11 @@ export default function TablaProductos(props: {
                   </td>
                   <td class="p-3">{p.sku}</td>
                   <td class="p-3">{p.nombre}</td>
+                  <td class="p-3">
+                    {p.costoMP != null
+                      ? formatearPrecio(p.costoMP)
+                      : "—"}
+                  </td>
                   <td class="p-3">{formatearPrecio(p.precioUnitario)}</td>
                   <td class="p-3">
                     {p.precioPorBulto != null
