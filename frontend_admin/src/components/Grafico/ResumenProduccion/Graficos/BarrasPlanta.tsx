@@ -11,16 +11,45 @@ export default function BarrasPlanta({ datos, modo }: Props) {
 
   const labels = datos.map(r => r.planta);
   const valores = datos.map(r => modo === "cantidad" ? r.totalCantidad : r.totalValor);
-  //const key = modo + "_" + labels.join("|");
-  //console.log("producto", datos[0].producto);
+  const key = modo + "_" + labels.join("|");
+
   return (
-    <div class="w-full h-[400px] p-4 shadow rounded bg-white flex flex-col">
-      <h2 class="text-xl font-semibold mb-4 text-center">Producción por Planta</h2>
+    <div class="w-full min-h-[320px] md:min-h-[400px] p-2 md:p-4 shadow rounded bg-white flex flex-col">
+  <h2 class="text-base md:text-xl font-semibold mb-2 md:mb-4 text-center">
+    Producción por Planta
+  </h2>
+  <div class="flex-1">
+    <div class="relative w-full h-[280px] md:h-[380px]">
       <Bar
-        key={modo}
-        data={{ labels, datasets: [{ label: modo === "cantidad" ? "Cantidad" : "Valor $", data: valores }] }}
-        options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }}
+        key={key}
+        data={{
+          labels,
+          datasets: [
+            {
+              label: modo === "cantidad" ? "Cantidad" : "Valor $",
+              data: valores,
+            }
+          ]
+        }}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: 10 },
+          scales: {
+            y: { beginAtZero: true }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                font: { size: 10 }
+              }
+            }
+          }
+        }}
       />
     </div>
+  </div>
+</div>
+
   );
 }
