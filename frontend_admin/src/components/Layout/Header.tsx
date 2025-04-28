@@ -1,9 +1,11 @@
-import { useAuth } from "../../store/auth";
+import { useAuth, logout as cerrarSesion } from "../../store/auth";
 import NotificacionesDropdown from "./NotificacionesDropdown";
 import { ROLES_USUARIOS } from "../../constants/rolesUsuarios";
+import { useNavigate } from "@solidjs/router";
 
 export default function Header() {
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
+  const navigate = useNavigate();
   const rolId = usuario()?.rolUsuarioId;
 
   const titulo =
@@ -12,6 +14,11 @@ export default function Header() {
       : rolId === ROLES_USUARIOS.OPERARIO
       ? "Panel de producción Marwal"
       : "Panel de administración del catálogo";
+
+  const handleLogout = () => {
+    cerrarSesion();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <header class="fixed top-0 left-0 right-0 z-40 bg-white border-b shadow-sm h-16 flex items-center justify-between px-4 lg:pl-72">
@@ -26,7 +33,7 @@ export default function Header() {
           {usuario()?.nombre}
         </span>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition text-xs sm:text-sm"
         >
           Cerrar sesión

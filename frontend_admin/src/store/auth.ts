@@ -1,24 +1,12 @@
 import { createSignal } from 'solid-js';
 import type { Usuario } from '../types/usuario';
 import type { PermisoUsuario } from '../types/permisoUsuario';
-import { useNavigate } from '@solidjs/router';
 
 const [usuario, setUsuario] = createSignal<Usuario | null>(null);
 const [token, setToken] = createSignal<string | null>(null);
 const [permisos, setPermisos] = createSignal<PermisoUsuario[]>([]);
 
 export const useAuth = () => {
-  const navigate = useNavigate();
-
-  const logout = () => {
-    setUsuario(null);
-    setToken(null);
-    setPermisos([]);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('usuario');
-    navigate('/login');
-  };
-
   return { usuario, token, permisos, login, logout };
 };
 
@@ -28,6 +16,14 @@ export const login = (userData: Usuario, authToken: string) => {
   setPermisos(userData.permisos || []);
   localStorage.setItem('authToken', authToken);
   localStorage.setItem('usuario', JSON.stringify(userData));
+};
+
+export const logout = () => {
+  setUsuario(null);
+  setToken(null);
+  setPermisos([]);
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('usuario');
 };
 
 export const checkLocalStorage = () => {

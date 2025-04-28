@@ -66,10 +66,10 @@ export const crearUsuario = async (req, res, next) => {
 
 export const obtenerUsuariosPorRol = async (req, res, next) => {
   try {
-    const rol = req.params.rol?.toLowerCase();
+    const rol = req.params.rol;
 
     const rolEncontrado = await RolUsuario.findOne({
-      where: { nombre: { [Op.like]: rol } }
+      where: whereSequelize(fn('LOWER', col('nombre')), rol.toLowerCase())
     });
 
     if (!rolEncontrado) {
@@ -107,7 +107,6 @@ export const obtenerUsuariosPorRol = async (req, res, next) => {
     next(error);
   }
 };
-
 export const obtenerUsuariosPorRolId = async (req, res, next) => {
   try {
     const rolUsuarioId = Number(req.params.id);

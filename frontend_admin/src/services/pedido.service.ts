@@ -1,6 +1,6 @@
 import api from './api';
 import type { Pedido, PedidoPayload, RespuestaPaginadaPedidos } from '../types/pedido';
-import type { FiltrosPedidos } from 'types/filtros'; 
+import type { FiltrosPedidos } from 'types/filtro'; 
 
 export const obtenerPedidos = async (
   params: FiltrosPedidos

@@ -1,20 +1,24 @@
-import { createSignal, createResource, onMount, onCleanup, Show, For } from "solid-js";
-import { Bar, Pie } from "solid-chartjs";
-import flatpickr from "flatpickr";
-import type { Instance } from "flatpickr/dist/types/instance";
-import "flatpickr/dist/flatpickr.min.css";
-
+import { createSignal, createResource, onMount, Show, For } from "solid-js";
 import {
   fetchResumenProduccion,
   fetchResumenProduccionPorPlanta,
   fetchResumenProduccionPorCategoria,
   fetchResumenProduccionPorTurno,
   fetchResumenProduccionGeneral,
+  fetchResumenProduccionEvolucion,
 } from "../../services/graficos.service";
 import { obtenerPlantas } from "../../services/planta.service";
 import { obtenerCategorias } from "../../services/categoria.service";
+import { useAuth } from "../../store/auth";
+import { ROLES_USUARIOS } from "../../constants/rolesUsuarios";
+import FiltrosProduccion from "../../components/Grafico/ResumenProduccion/FiltrosProduccion";
+import TablaProduccion from "../../components/Grafico/ResumenProduccion/TablaProduccion";
+import GraficosProduccion from "../../components/Grafico/ResumenProduccion/GraficosProduccion";
 
 export default function ResumenProduccion() {
+  const { usuario } = useAuth();
+  const rolUsuarioId = usuario()?.rolUsuarioId || ROLES_USUARIOS.OPERARIO;
+
   const today = new Date();
   const primerDiaMes = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -23,76 +27,39 @@ export default function ResumenProduccion() {
   const [turno, setTurno] = createSignal("");
   const [plantaId, setPlantaId] = createSignal("");
   const [categoriaId, setCategoriaId] = createSignal("");
+  const [producto, setProducto] = createSignal("");
+  const [modo, setModo] = createSignal<"cantidad" | "valor">("valor");
+
+  const [page, setPage] = createSignal(1);
+  const limit = 10;
 
   const [plantas] = createResource(obtenerPlantas);
   const [categorias] = createResource(obtenerCategorias);
 
-  const [resumen, { refetch: refetchResumen }] = createResource(
-    () => ({ desde: desde(), hasta: hasta(), turno: turno(), plantaId: plantaId(), categoriaId: categoriaId() }),
+  const filtros = () => ({
+    desde: desde(),
+    hasta: hasta(),
+    turno: turno(),
+    plantaId: plantaId(),
+    categoriaId: categoriaId(),
+    producto: producto(),
+    modo: modo(),
+  });
+
+  const [resumen] = createResource(
+    () => ({ ...filtros(), page: page(), limit }),
     fetchResumenProduccion
   );
-  const [resumenPlanta, { refetch: refetchResumenPlanta }] = createResource(
-    () => ({ desde: desde(), hasta: hasta(), turno: turno(), plantaId: plantaId(), categoriaId: categoriaId() }),
-    fetchResumenProduccionPorPlanta
-  );
-  const [resumenCategoria, { refetch: refetchResumenCategoria }] = createResource(
-    () => ({ desde: desde(), hasta: hasta(), turno: turno(), plantaId: plantaId(), categoriaId: categoriaId() }),
-    fetchResumenProduccionPorCategoria
-  );
-  const [resumenTurno, { refetch: refetchResumenTurno }] = createResource(
-    () => ({ desde: desde(), hasta: hasta(), turno: turno(), plantaId: plantaId(), categoriaId: categoriaId() }),
-    fetchResumenProduccionPorTurno
-  );
-  const [resumenGeneral, { refetch: refetchResumenGeneral }] = createResource(
-    () => ({ desde: desde(), hasta: hasta(), turno: turno(), plantaId: plantaId(), categoriaId: categoriaId() }),
-    fetchResumenProduccionGeneral
-  );
+  const [resumenPlanta] = createResource(filtros, fetchResumenProduccionPorPlanta);
+  const [resumenCategoria] = createResource(filtros, fetchResumenProduccionPorCategoria);
+  const [resumenTurno] = createResource(filtros, fetchResumenProduccionPorTurno);
+  const [resumenGeneral] = createResource(filtros, fetchResumenProduccionGeneral);
+  const [resumenEvolucion] = createResource(filtros, fetchResumenProduccionEvolucion);
 
-  let desdeInput: HTMLInputElement | undefined;
-  let hastaInput: HTMLInputElement | undefined;
-  let desdePicker: Instance | undefined;
-  let hastaPicker: Instance | undefined;
-
+  
   function actualizarFiltros() {
-    refetchResumen();
-    refetchResumenPlanta();
-    refetchResumenCategoria();
-    refetchResumenTurno();
-    refetchResumenGeneral();
+    setPage(1);
   }
-
-  onMount(() => {
-    if (desdeInput) {
-      desdePicker = flatpickr(desdeInput, {
-        dateFormat: "Y-m-d",
-        defaultDate: primerDiaMes,
-        onChange: ([selectedDate]) => {
-          if (selectedDate) {
-            setDesde(selectedDate.toISOString().slice(0, 10));
-            actualizarFiltros();
-          }
-        },
-      });
-    }
-
-    if (hastaInput) {
-      hastaPicker = flatpickr(hastaInput, {
-        dateFormat: "Y-m-d",
-        defaultDate: today,
-        onChange: ([selectedDate]) => {
-          if (selectedDate) {
-            setHasta(selectedDate.toISOString().slice(0, 10));
-            actualizarFiltros();
-          }
-        },
-      });
-    }
-  });
-
-  onCleanup(() => {
-    desdePicker?.destroy();
-    hastaPicker?.destroy();
-  });
 
   function limpiarFiltros() {
     setDesde(primerDiaMes.toISOString().slice(0, 10));
@@ -100,150 +67,88 @@ export default function ResumenProduccion() {
     setTurno("");
     setPlantaId("");
     setCategoriaId("");
-    if (desdeInput) desdeInput.value = primerDiaMes.toISOString().slice(0, 10);
-    if (hastaInput) hastaInput.value = today.toISOString().slice(0, 10);
-    actualizarFiltros();
+    setProducto("");
+    setModo("valor");
+    setPage(1);
   }
 
-  function totalizar(data: any[], campo: string) {
-    return data.reduce((acc, item) => acc + (Number(item[campo]) || 0), 0);
-  }
+  onMount(actualizarFiltros);
 
   return (
     <div class="p-6 space-y-8">
       <h1 class="text-2xl font-bold mb-4">Resumen de Producción Diaria 📈</h1>
 
-      {/* Filtros */}
-      <div class="flex flex-wrap gap-4 mb-6 items-center">
-        <input ref={(el) => desdeInput = el} class="border p-2 rounded" placeholder="Desde" readonly />
-        <input ref={(el) => hastaInput = el} class="border p-2 rounded" placeholder="Hasta" readonly />
+      <FiltrosProduccion
+        desde={desde()|| new Date().toISOString().slice(0, 10)}
+        hasta={hasta()|| new Date().toISOString().slice(0, 10)}
+        turno={turno()}
+        plantaId={plantaId()}
+        categoriaId={categoriaId()}
+        producto={producto()}
+        plantas={plantas() || []}
+        categorias={categorias() || []}
+        setDesde={v => { setDesde(v); actualizarFiltros(); }}
+        setHasta={v => { setHasta(v); actualizarFiltros(); }}
+        setTurno={v => { setTurno(v); actualizarFiltros(); }}
+        setPlantaId={v => { setPlantaId(v); actualizarFiltros(); }}
+        setCategoriaId={v => { setCategoriaId(v); actualizarFiltros(); }}
+        setProducto={v => { setProducto(v); actualizarFiltros() }}
+        modo={modo()}
+        setModo={v => { setModo(v as "cantidad" | "valor"); actualizarFiltros(); }}
+        limpiarFiltros={limpiarFiltros}
+      />
 
-        <select value={turno()} onInput={(e) => { setTurno(e.currentTarget.value); actualizarFiltros(); }} class="border p-2 rounded">
-          <option value="">Todos los Turnos</option>
-          <option value="mañana">Mañana</option>
-          <option value="tarde">Tarde</option>
-          <option value="noche">Noche</option>
-        </select>
-
-        <select value={plantaId()} onInput={(e) => { setPlantaId(e.currentTarget.value); actualizarFiltros(); }} class="border p-2 rounded">
-          <option value="">Todas las Plantas</option>
-          <For each={plantas()}>
-            {(planta) => <option value={planta.id}>{planta.nombre}</option>}
-          </For>
-        </select>
-
-        <select value={categoriaId()} onInput={(e) => { setCategoriaId(e.currentTarget.value); actualizarFiltros(); }} class="border p-2 rounded">
-          <option value="">Todas las Categorías</option>
-          <For each={categorias()}>
-            {(categoria) => <option value={categoria.id}>{categoria.nombre}</option>}
-          </For>
-        </select>
-
-        <button onClick={limpiarFiltros} class="bg-gray-400 text-white px-4 py-2 rounded">Limpiar</button>
+      <div class="bg-gray-100 p-4 rounded shadow-md">
+        <p><b>Total Cantidad:</b> {Number(resumenGeneral()?.totalCantidad || 0).toLocaleString()}</p>
+        <p><b>Total Costo MP:</b> ${Number(resumenGeneral()?.totalCostoMP || 0).toLocaleString()}</p>
+        <p><b>Total Precio de Venta:</b> ${Number(resumenGeneral()?.totalValor || 0).toLocaleString()}</p>
       </div>
 
-      {/* Totales generales */}
-      <Show when={resumenGeneral()}>
-        <div class="bg-gray-100 p-4 rounded shadow-md">
-          <p><b>Total Costo MP:</b> ${Number(resumenGeneral()?.totalCostoMP).toLocaleString()}</p>
-          <p><b>Total Precio Unitario:</b> ${Number(resumenGeneral()?.totalPrecioUnitario).toLocaleString()}</p>
-        </div>
+      <Show when={!resumenPlanta.loading && !resumenCategoria.loading && !resumenTurno.loading}>
+      <For each={[modo()]}>
+          {m => (
+            <GraficosProduccion
+              resumenPlanta={resumenPlanta()!}
+              resumenCategoria={resumenCategoria()!}
+              resumenTurno={resumenTurno()!}
+              resumenEvolucion={resumenEvolucion()!}
+              filtros={{
+                plantaId: plantaId(),
+                categoriaId: categoriaId(),
+                turno: turno(),
+                producto: producto(),
+              }}
+              rolUsuarioId={rolUsuarioId}
+              modo={m}
+            />
+          )}
+        </For>
       </Show>
 
-      {/* Gráficos en Fila */}
-      <div class="flex flex-wrap">
-
-        {/* Planta */}
-        <div class="w-full md:w-1/3 flex flex-col justify-between h-[500px] p-4 shadow rounded bg-white">
-          <h2 class="text-xl font-semibold mb-4 text-center">Producción por Planta</h2>
-          <Show when={resumenPlanta() && resumenPlanta()!.length > 0} fallback={<p class="text-center text-gray-500 mt-10">No se encontraron datos</p>}>
-            <div class="flex-1">
-              <Bar
-                data={{
-                  labels: resumenPlanta()!.map(p => p.planta),
-                  datasets: [
-                    { label: "Precio Unitario", data: resumenPlanta()!.map(p => p.totalPrecioUnitario), backgroundColor: "rgba(54, 162, 235, 0.6)" },
-                    { label: "Costo MP", data: resumenPlanta()!.map(p => p.totalCostoMP), backgroundColor: "rgba(255, 99, 132, 0.6)" }
-                  ]
-                }}
-              />
-            </div>
-            <div class="text-sm text-center mt-4">
-              <p><b>Total Costo MP Planta:</b> ${totalizar(resumenPlanta() ?? [], "totalCostoMP").toLocaleString()}</p>
-              <p><b>Total Precio Unitario Planta:</b> ${totalizar(resumenPlanta() ?? [], "totalPrecioUnitario").toLocaleString()}</p>
-            </div>
-          </Show>
-        </div>
-
-        {/* Categoría */}
-        <div class="w-full md:w-1/3 flex flex-col justify-between h-[500px] p-4 shadow rounded bg-white">
-          <h2 class="text-xl font-semibold mb-4 text-center">Producción por Categoría</h2>
-          <Show when={resumenCategoria() && resumenCategoria()!.length > 0} fallback={<p class="text-center text-gray-500 mt-10">No se encontraron datos</p>}>
-            <div class="flex-1">
-              <Pie
-                data={{
-                  labels: resumenCategoria()!.map(c => c.categoria),
-                  datasets: [
-                    { data: resumenCategoria()!.map(c => c.totalPrecioUnitario),
-                      backgroundColor: ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1", "#a4de6c", "#d0ed57", "#ffc0cb"] }
-                  ]
-                }}
-              />
-            </div>
-          </Show>
-        </div>
-
-        {/* Turno */}
-        <div class="w-full md:w-1/3 flex flex-col justify-between h-[500px] p-4 shadow rounded bg-white">
-          <h2 class="text-xl font-semibold mb-4 text-center">Producción por Turno</h2>
-          <Show when={resumenTurno() && resumenTurno()!.length > 0} fallback={<p class="text-center text-gray-500 mt-10">No se encontraron datos</p>}>
-            <div class="flex-1">
-              <Bar
-                data={{
-                  labels: resumenTurno()!.map(t => t.turno),
-                  datasets: [
-                    { label: "Precio Unitario", data: resumenTurno()!.map(t => t.totalPrecioUnitario), backgroundColor: "rgba(255, 206, 86, 0.6)" }
-                  ]
-                }}
-              />
-            </div>
-          </Show>
-        </div>
-
-      </div>
-
-            {/* Tabla de producción */}
-            <Show when={resumen()}>
-        <div class="overflow-x-auto">
-          <table class="w-full table-auto border border-collapse">
-            <thead class="bg-gray-200">
-              <tr>
-                <th class="border p-2">Fecha</th>
-                <th class="border p-2">Planta</th>
-                <th class="border p-2">Categoría</th>
-                <th class="border p-2">Turno</th>
-                <th class="border p-2">Costo MP</th>
-                <th class="border p-2">Precio Unitario</th>
-              </tr>
-            </thead>
-            <tbody>
-              <For each={resumen()}>
-                {(item) => (
-                  <tr class="text-center hover:bg-gray-100">
-                    <td class="border p-2">{item.fecha}</td>
-                    <td class="border p-2">{item.planta}</td>
-                    <td class="border p-2">{item.categoria}</td>
-                    <td class="border p-2">{item.turno}</td>
-                    <td class="border p-2">${Number(item.totalCostoMP).toLocaleString()}</td>
-                    <td class="border p-2">${Number(item.totalPrecioUnitario).toLocaleString()}</td>
-                  </tr>
-                )}
-              </For>
-            </tbody>
-          </table>
+      <Show when={resumen()}>
+        <TablaProduccion
+          items={resumen()!.items}
+          rolUsuarioId={rolUsuarioId}
+          modo={modo()}
+        />
+        <div class="flex justify-center items-center gap-4 mt-4">
+          <button
+            disabled={page() <= 1}
+            onClick={() => setPage(page() - 1)}
+            class="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+          >
+            Anterior
+          </button>
+          <span>Página {page()} de {resumen()!.totalPages}</span>
+          <button
+            disabled={page() >= resumen()!.totalPages}
+            onClick={() => setPage(page() + 1)}
+            class="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
+          >
+            Siguiente
+          </button>
         </div>
       </Show>
-
     </div>
   );
 }

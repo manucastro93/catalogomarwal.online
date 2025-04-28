@@ -11,6 +11,13 @@ export const obtenerProductoPorId = async (id: number): Promise<Producto> => {
   return data;
 };
 
+export const buscarProductosPorTexto = async (texto: string): Promise<Producto[]> => {
+  const { data } = await api.get('/productos', {
+    params: { buscar: texto, limit: 10 },
+  });
+  return data.data || [];
+};
+
 export const crearProducto = async (producto: Partial<Producto>) => {
   const { data } = await api.post('/productos', producto);
   return data;
@@ -60,11 +67,4 @@ export const importarProductosDesdeExcel = async (formData: FormData) => {
 export const actualizarOrdenImagenes = async (imagenes: { id: number; orden: number }[]) => {
   const { data } = await api.put('/productos/imagenes/ordenar', { imagenes });
   return data;
-};
-
-export const buscarProductosPorTexto = async (texto: string): Promise<Producto[]> => {
-  const { data } = await api.get('/productos', {
-    params: { buscar: texto, limit: 10 },
-  });
-  return data.data || [];
 };
