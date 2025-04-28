@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { useAuth } from '../../store/auth';
-import { cambiarContrasena } from '../../services/usuario.service';
+import { useAuth } from '@/store/auth';
+import { cambiarContrasena } from '@/services/usuario.service';
 
 export default function DefinirContrasena() {
   const [contraseña, setContraseña] = createSignal('');

@@ -1,6 +1,6 @@
 import api from './api';
-import type { Cliente } from '../types/cliente';
-import type { Producto } from '../types/producto';
+import type { Cliente } from '@/types/cliente';
+import type { Producto } from '@/types/producto';
 
 export const obtenerClientes = async (params: any) => {
   const { data } = await api.get('/clientes', { params });

@@ -1,18 +1,18 @@
-import { createSignal, createResource, createMemo, Show } from "solid-js";
-import { useNavigate } from "@solidjs/router";
-import { useAuth } from "../store/auth";
-import { obtenerPedidos } from "../services/pedido.service";
-import { obtenerUsuariosPorRolPorId } from "../services/usuario.service";
-import { obtenerEstadosPedido } from "../services/estadoPedido.service";
-import { exportarPedidosExcel } from "../utils/exportarExcel";
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
-import ModalActualizarEstadoPedido from "../components/Pedido/ModalActualizarEstadoPedido";
-import ModalMensaje from "../components/Layout/ModalMensaje";
-import VerPedidoModal from "../components/Pedido/VerPedidoModal";
-import TablaPedidos from "../components/Pedido/TablaPedidos";
-import FiltrosPedidos from "../components/Pedido/FiltrosPedidos";
-import Loader from "../components/Layout/Loader";
-import type { Pedido } from "../types/pedido";
+import { createSignal, createResource, createMemo, Show } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
+import { useAuth } from '@/store/auth';
+import { obtenerPedidos } from '@/services/pedido.service';
+import { obtenerUsuariosPorRolPorId } from '@/services/usuario.service';
+import { obtenerEstadosPedido } from '@/services/estadoPedido.service';
+import { exportarPedidosExcel } from '@/utils/exportarExcel';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import ModalActualizarEstadoPedido from '@/components/Pedido/ModalActualizarEstadoPedido';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import VerPedidoModal from '@/components/Pedido/VerPedidoModal';
+import TablaPedidos from '@/components/Pedido/TablaPedidos';
+import FiltrosPedidos from '@/components/Pedido/FiltrosPedidos';
+import Loader from '@/components/Layout/Loader';
+import type { Pedido } from '@/types/pedido';
 
 export default function Pedidos() {
   const { usuario } = useAuth();

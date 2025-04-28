@@ -6,7 +6,7 @@ import type {
   ResumenProduccionTurno,
   ResumenProduccionGeneral,
   EvolucionProduccion
-} from "../types/grafico";
+} from "@/types/grafico";
 
 export async function fetchResumenProduccion(params: any): Promise<any> {
   const { data } = await api.get("/graficos/produccion/resumen", { params });

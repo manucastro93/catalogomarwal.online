@@ -1,6 +1,6 @@
-import { useAuth, logout as cerrarSesion } from "../../store/auth";
+import { useAuth, logout as cerrarSesion } from "@/store/auth";
 import NotificacionesDropdown from "./NotificacionesDropdown";
-import { ROLES_USUARIOS } from "../../constants/rolesUsuarios";
+import { ROLES_USUARIOS } from "@/constants/rolesUsuarios";
 import { useNavigate } from "@solidjs/router";
 
 export default function Header() {

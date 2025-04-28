@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import type { Cliente } from '../../types/cliente';
+import type { Cliente } from '@/types/cliente';
 
 export default function TablaClientes(props: {
   clientes: Cliente[];

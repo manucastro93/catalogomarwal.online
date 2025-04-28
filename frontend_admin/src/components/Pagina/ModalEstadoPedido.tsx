@@ -1,6 +1,6 @@
 import { createSignal, Show, onMount } from "solid-js";
-import type { EstadoPedido } from "../../types/estadoPedido";
-import { crearEstadoPedido, editarEstadoPedido } from "../../services/estadoPedido.service";
+import type { EstadoPedido } from "@/types/estadoPedido";
+import { crearEstadoPedido, editarEstadoPedido } from "@/services/estadoPedido.service";
 
 interface Props {
   estado?: EstadoPedido;

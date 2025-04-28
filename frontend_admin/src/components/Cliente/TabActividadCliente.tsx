@@ -1,7 +1,7 @@
 import { For, Show, createResource } from 'solid-js';
-import type { Cliente } from '../../types/cliente';
-import { obtenerLogsCliente } from '../../services/log.service';
-import { formatearFechaHora } from '../../utils/formato';
+import type { Cliente } from '@/types/cliente';
+import { obtenerLogsCliente } from '@/services/log.service';
+import { formatearFechaHora } from '@/utils/formato';
 
 interface Props {
   clienteId: number;

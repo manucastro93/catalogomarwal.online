@@ -1,6 +1,6 @@
 import { createResource, createSignal, Show } from "solid-js";
-import { obtenerPagina, subirLogo } from "../../services/pagina.service";
-import ModalMensaje from "../../components/Layout/ModalMensaje";
+import { obtenerPagina, subirLogo } from "@/services/pagina.service";
+import ModalMensaje from "@/components/Layout/ModalMensaje";
 
 export default function Logo() {
   const [pagina, { refetch }] = createResource(obtenerPagina);

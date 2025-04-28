@@ -1,15 +1,15 @@
 import { createResource, createSignal, For, Show, createMemo } from "solid-js";
-import { useAuth } from "../../store/auth";
-import type { Notificacion } from "../../types/notificacion";
-import { formatearFechaHora } from "../../utils/formato";
+import { useAuth } from "@/store/auth";
+import type { Notificacion } from "@/types/notificacion";
+import { formatearFechaHora } from "@/utils/formato";
 import {
   obtenerNotificaciones,
   marcarNotificacionComoLeida,
-} from "../../services/notificacion.service";
+} from "@/services/notificacion.service";
 import VerPedidoModal from "../Pedido/VerPedidoModal";
-import { obtenerPedidoPorId } from "../../services/pedido.service";
-import type { Pedido } from "../../types/pedido";
-import { ROLES_USUARIOS } from "../../constants/rolesUsuarios";
+import { obtenerPedidoPorId } from "@/services/pedido.service";
+import type { Pedido } from "@/types/pedido";
+import { ROLES_USUARIOS } from "@/constants/rolesUsuarios";
 
 export default function NotificacionesDropdown() {
   const { usuario } = useAuth();

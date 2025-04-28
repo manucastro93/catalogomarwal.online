@@ -1,13 +1,13 @@
-import { createSignal, createResource, createMemo, Show } from "solid-js";
-import { obtenerUsuariosPorRolPorId, eliminarUsuario } from "../services/usuario.service";
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
-import FiltrosVendedores from "../components/Usuario/Vendedor/FiltrosVendedores";
-import TablaVendedores from "../components/Usuario/Vendedor/TablaVendedores";
-import ModalNuevoVendedor from "../components/Usuario/Vendedor/ModalNuevoVendedor";
-import VerVendedorModal from "../components/Usuario/Vendedor/VerVendedorModal";
-import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import ModalMensaje from "../components/Layout/ModalMensaje";
-import { useAuth } from "../store/auth";
+import { createSignal, createResource, createMemo, Show } from 'solid-js';
+import { obtenerUsuariosPorRolPorId, eliminarUsuario } from '@/services/usuario.service';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import FiltrosVendedores from '@/components/Usuario/Vendedor/FiltrosVendedores';
+import TablaVendedores from '@/components/Usuario/Vendedor/TablaVendedores';
+import ModalNuevoVendedor from '@/components/Usuario/Vendedor/ModalNuevoVendedor';
+import VerVendedorModal from '@/components/Usuario/Vendedor/VerVendedorModal';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import { useAuth } from '@/store/auth';
 
 export default function Vendedores() {
   const { usuario } = useAuth();

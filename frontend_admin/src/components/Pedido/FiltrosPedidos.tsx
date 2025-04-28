@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
-import type { Usuario } from "../../types/usuario";
+import type { Usuario } from "@/types/usuario";
 import type { EstadoPedido } from "types/estadoPedido";
-import { ESTADOS_PEDIDO } from "../../constants/estadosPedidos";
+import { ESTADOS_PEDIDO } from "@/constants/estadosPedidos";
 
 export default function FiltrosPedidos(props: {
   busqueda: string;

@@ -1,8 +1,8 @@
 import { createResource, Show } from 'solid-js';
-import { obtenerResumenDelMes } from '../services/estadisticas.service';
-import ResumenEstadisticasMensuales from '../components/Estadistica/ResumenEstadisticasMensuales';
-import GraficoVentasPorCategoria from '../components/Estadistica/GraficoVentasPorCategoria';
-import Loader from '../components/Layout/Loader';
+import { obtenerResumenDelMes } from '@/services/estadisticas.service';
+import ResumenEstadisticasMensuales from '@/components/Estadistica/ResumenEstadisticasMensuales';
+import GraficoVentasPorCategoria from '@/components/Estadistica/GraficoVentasPorCategoria';
+import Loader from '@/components/Layout/Loader';
 
 export default function Estadisticas() {
   const [resumen] = createResource(obtenerResumenDelMes);

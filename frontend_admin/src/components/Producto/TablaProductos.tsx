@@ -1,7 +1,8 @@
 import { For, Show } from "solid-js";
-import { formatearPrecio } from "../../utils/formato";
-import type { Producto } from "../../types/producto";
-import ConPermiso from "../Layout/ConPermiso";
+import { formatearPrecio } from "@/utils/formato";
+import type { Producto } from "@/types/producto";
+import ConPermiso from "@/components/Layout/ConPermiso";
+
 export default function TablaProductos(props: {
   productos: Producto[];
   orden: string;

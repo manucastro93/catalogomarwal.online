@@ -29,6 +29,7 @@
     "@tailwindcss/vite": "^4.1.3",
     "chart": "^0.1.2",
     "chart.js": "^4.4.9",
+    "chartjs-plugin-datalabels": "^2.2.0",
     "dayjs": "^1.11.13",
     "flatpickr": "^4.6.13",
     "leaflet": "^1.9.4",

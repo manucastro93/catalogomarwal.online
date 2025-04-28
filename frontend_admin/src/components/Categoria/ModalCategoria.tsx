@@ -1,7 +1,7 @@
 import { createSignal, createEffect, Show, onCleanup } from 'solid-js';
-import { crearCategoria, editarCategoria } from '../../services/categoria.service';
-import type { Categoria } from '../../types/categoria';
-import { categoriaSchema } from '../../validations/categoria.schema';
+import { crearCategoria, editarCategoria } from '@/services/categoria.service';
+import { categoriaSchema } from '@/validations/categoria.schema';
+import type { Categoria } from '@/types/categoria';
 
 interface Props {
   abierto: boolean;

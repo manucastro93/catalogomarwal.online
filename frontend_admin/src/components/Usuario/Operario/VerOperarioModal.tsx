@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import type { Usuario } from '../../../types/usuario';
+import type { Usuario } from '@/types/usuario';
 
 interface Props {
   abierto: boolean;

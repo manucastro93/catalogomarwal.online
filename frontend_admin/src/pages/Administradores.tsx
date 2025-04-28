@@ -1,17 +1,12 @@
-import { createSignal, createResource, createMemo, For, Show } from "solid-js";
-import {
-  obtenerUsuariosPorRolPorId,
-  crearUsuario,
-  editarUsuario,
-  eliminarUsuario,
-} from "../services/usuario.service";
-import type { Usuario } from "../types/usuario";
-import ModalNuevoAdministrador from "../components/Usuario/Administrador/ModalNuevoAdministrador";
-import VerAdministradorModal from "../components/Usuario/Administrador/VerAdministradorModal";
-import ModalMensaje from "../components/Layout/ModalMensaje";
-import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import TablaAdministradores from "../components/Usuario/Administrador/TablaAdministradores";
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
+import { createSignal, createResource, createMemo, For, Show } from 'solid-js';
+import { obtenerUsuariosPorRolPorId, crearUsuario, editarUsuario, eliminarUsuario } from '@/services/usuario.service';
+import ModalNuevoAdministrador from '@/components/Usuario/Administrador/ModalNuevoAdministrador';
+import VerAdministradorModal from '@/components/Usuario/Administrador/VerAdministradorModal';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import TablaAdministradores from '@/components/Usuario/Administrador/TablaAdministradores';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import type { Usuario } from '@/types/usuario';
 
 export default function Administradores() {
   const [busqueda, setBusqueda] = createSignal("");

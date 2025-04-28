@@ -1,20 +1,14 @@
-import { createSignal, For, Show, createEffect, onCleanup } from "solid-js";
-import { debounce } from "../utils/debounce";
-import type { Producto } from "../types/producto";
-import type { Cliente } from "../types/cliente";
-import type { PedidoPayload } from "../types/pedido";
-import {
-  buscarClientesPorTexto,
-  crearCliente,
-} from "../services/cliente.service";
-import { buscarProductosPorTexto } from "../services/producto.service";
-import { crearPedidoDesdePanel } from "../services/pedido.service";
-import { formatearPrecio } from "../utils/formato";
-import {
-  obtenerProvincias,
-  obtenerLocalidades,
-} from "../services/ubicacion.service";
-import { useAuth } from "../store/auth";
+import { createSignal, For, Show, createEffect, onCleanup } from 'solid-js';
+import { debounce } from '@/utils/debounce';
+import { buscarClientesPorTexto, crearCliente } from '@/services/cliente.service';
+import { buscarProductosPorTexto } from '@/services/producto.service';
+import { crearPedidoDesdePanel } from '@/services/pedido.service';
+import { obtenerProvincias, obtenerLocalidades } from '@/services/ubicacion.service';
+import { formatearPrecio } from '@/utils/formato';
+import { useAuth } from '@/store/auth';
+import type { Producto } from '@/types/producto';
+import type { Cliente } from '@/types/cliente';
+import type { PedidoPayload } from '@/types/pedido';
 
 export default function PedidoRapido() {
   const { usuario } = useAuth();

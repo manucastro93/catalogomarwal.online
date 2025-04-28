@@ -1,23 +1,14 @@
-import {
-  createSignal,
-  createResource,
-  createMemo,
-  Show,
-  createEffect,
-} from "solid-js";
-import {
-  obtenerReportesProduccion,
-  eliminarReporteProduccion,
-} from "../services/produccion.service";
-import { obtenerPlantas } from "../services/planta.service";
-import ModalNuevoReporte from "../components/Produccion/ModalNuevoReporte";
-import ModalMensaje from "../components/Layout/ModalMensaje";
-import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import Loader from "../components/Layout/Loader";
-import TablaProduccionDiaria from "../components/Produccion/TablaProduccionDiaria";
-import FiltrosProduccionDiaria from "../components/Produccion/FiltrosProduccionDiaria";
-import type { ReporteProduccion, ProduccionParams } from "../types/produccion";
-import type { Planta } from "../types/planta";
+import { createSignal, createResource, createMemo, Show, createEffect } from 'solid-js';
+import { obtenerReportesProduccion, eliminarReporteProduccion } from '@/services/produccion.service';
+import { obtenerPlantas } from '@/services/planta.service';
+import ModalNuevoReporte from '@/components/Produccion/ModalNuevoReporte';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import Loader from '@/components/Layout/Loader';
+import TablaProduccionDiaria from '@/components/Produccion/TablaProduccionDiaria';
+import FiltrosProduccionDiaria from '@/components/Produccion/FiltrosProduccionDiaria';
+import type { ReporteProduccion, ProduccionParams } from '@/types/produccion';
+import type { Planta } from '@/types/planta';
 
 const TURNOS_VALIDOS = ["mañana", "tarde", "noche"];
 

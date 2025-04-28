@@ -1,5 +1,5 @@
-import type { Producto } from '../../../types/producto';
-import { formatearPrecio } from '../../../utils/formato';
+import type { Producto } from '@/types/producto';
+import { formatearPrecio } from '@/utils/formato';
 
 export default function TabDetalles(props: { producto: Producto }) {
   const p = props.producto;

@@ -1,21 +1,10 @@
-import {
-  createEffect,
-  createSignal,
-  createResource,
-  For,
-  Show,
-} from "solid-js";
-import type { Producto, ImagenProducto } from "../../types/producto";
-import {
-  crearProductoConImagenes,
-  actualizarProductoConImagenes,
-  eliminarImagenProducto,
-  actualizarOrdenImagenes
-} from "../../services/producto.service";
-import { obtenerCategorias } from "../../services/categoria.service";
-import { productoSchema } from "../../validations/producto.schema";
-import { formatearPrecio } from "../../utils/formato";
-import ModalMensaje from "../Layout/ModalMensaje";
+import { createEffect, createSignal, createResource, For, Show } from 'solid-js';
+import { crearProductoConImagenes, actualizarProductoConImagenes, eliminarImagenProducto, actualizarOrdenImagenes } from '@/services/producto.service';
+import { obtenerCategorias } from '@/services/categoria.service';
+import { productoSchema } from '@/validations/producto.schema';
+import { formatearPrecio } from '@/utils/formato';
+import ModalMensaje from '../Layout/ModalMensaje';
+import type { Producto, ImagenProducto } from '@/types/producto';
 
 export default function ModalNuevoProducto(props: {
   abierto: boolean;

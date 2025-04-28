@@ -1,19 +1,13 @@
 import { createSignal, createResource, onMount, Show, For } from "solid-js";
-import {
-  fetchResumenProduccion,
-  fetchResumenProduccionPorPlanta,
-  fetchResumenProduccionPorCategoria,
-  fetchResumenProduccionPorTurno,
-  fetchResumenProduccionGeneral,
-  fetchResumenProduccionEvolucion,
-} from "../../services/graficos.service";
-import { obtenerPlantas } from "../../services/planta.service";
-import { obtenerCategorias } from "../../services/categoria.service";
-import { useAuth } from "../../store/auth";
-import { ROLES_USUARIOS } from "../../constants/rolesUsuarios";
-import FiltrosProduccion from "../../components/Grafico/ResumenProduccion/FiltrosProduccion";
-import TablaProduccion from "../../components/Grafico/ResumenProduccion/TablaProduccion";
-import GraficosProduccion from "../../components/Grafico/ResumenProduccion/GraficosProduccion";
+import {fetchResumenProduccion,fetchResumenProduccionPorPlanta,fetchResumenProduccionPorCategoria,fetchResumenProduccionPorTurno,fetchResumenProduccionGeneral,fetchResumenProduccionEvolucion,} from "@/services/graficos.service";
+import { obtenerPlantas } from "@/services/planta.service";
+import { obtenerCategorias } from "@/services/categoria.service";
+import { useAuth } from "@/store/auth";
+import { ROLES_USUARIOS } from "@/constants/rolesUsuarios";
+import FiltrosProduccion from "@/components/Grafico/ResumenProduccion/FiltrosProduccion";
+import TablaProduccion from "@/components/Grafico/ResumenProduccion/TablaProduccion";
+import GraficosProduccion from "@/components/Grafico/ResumenProduccion/GraficosProduccion";
+import { formatearPrecio, formatearMiles } from "@/utils/formato";
 
 export default function ResumenProduccion() {
   const { usuario } = useAuth();
@@ -29,7 +23,6 @@ export default function ResumenProduccion() {
   const [categoriaId, setCategoriaId] = createSignal("");
   const [producto, setProducto] = createSignal("");
   const [modo, setModo] = createSignal<"cantidad" | "valor">("valor");
-
   const [page, setPage] = createSignal(1);
   const limit = 10;
 
@@ -37,8 +30,8 @@ export default function ResumenProduccion() {
   const [categorias] = createResource(obtenerCategorias);
 
   const filtros = () => ({
-    desde: desde() || new Date().toISOString().slice(0, 10),
-    hasta: hasta() || new Date().toISOString().slice(0, 10),
+    desde: desde(),
+    hasta: hasta(),
     turno: turno(),
     plantaId: plantaId(),
     categoriaId: categoriaId(),
@@ -71,8 +64,10 @@ export default function ResumenProduccion() {
   onMount(actualizarFiltros);
 
   return (
-    <div class="px-3 py-4 md:p-6 space-y-6 md:space-y-8">
-      <h1 class="text-lg md:text-2xl font-bold mb-4 text-center">Resumen de Producción Diaria 📈</h1>
+    <div class="w-full max-w-screen-xl mx-auto px-3 py-4 md:p-6 space-y-6 md:space-y-8">
+      <h1 class="text-lg md:text-2xl font-bold mb-4 text-center">
+        Resumen de Producción Diaria 📈
+      </h1>
 
       <div class="space-y-4">
         <FiltrosProduccion
@@ -97,15 +92,15 @@ export default function ResumenProduccion() {
       </div>
 
       <div class="bg-gray-100 p-4 rounded shadow-md text-sm md:text-base space-y-2">
-        <p><b>Total Cantidad:</b> {Number(resumenGeneral()?.totalCantidad || 0).toLocaleString()}</p>
-        <p><b>Total Costo MP:</b> ${Number(resumenGeneral()?.totalCostoMP || 0).toLocaleString()}</p>
-        <p><b>Total Precio de Venta:</b> ${Number(resumenGeneral()?.totalValor || 0).toLocaleString()}</p>
+        <p><b>Total Cantidad:</b> {formatearMiles(resumenGeneral()?.totalCantidad || 0)}</p>
+        <p><b>Total Costo MP:</b> {formatearPrecio(resumenGeneral()?.totalCostoMP || 0)}</p>
+        <p><b>Total Precio de Venta:</b> {formatearPrecio(resumenGeneral()?.totalValor || 0)}</p>
       </div>
 
       <Show when={!resumenPlanta.loading && !resumenCategoria.loading && !resumenTurno.loading}>
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-4 md:gap-6">
           <For each={[modo()]}>
-            {m => (
+            {(m) => (
               <GraficosProduccion
                 resumenPlanta={resumenPlanta()!}
                 resumenCategoria={resumenCategoria()!}
@@ -140,7 +135,9 @@ export default function ResumenProduccion() {
             >
               Anterior
             </button>
-            <span class="text-sm md:text-base">Página {page()} de {resumen()!.totalPages}</span>
+            <span class="text-center text-sm md:text-base">
+              Página {page()} de {resumen()!.totalPages}
+            </span>
             <button
               disabled={page() >= resumen()!.totalPages}
               onClick={() => setPage(page() + 1)}
@@ -154,4 +151,3 @@ export default function ResumenProduccion() {
     </div>
   );
 }
-

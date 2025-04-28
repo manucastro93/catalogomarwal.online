@@ -1,6 +1,6 @@
 import { For, Show } from "solid-js";
-import { formatearPrecio } from "../../utils/formato";
-import type { ResumenEstadisticas } from "../../types/estadistica"; // ajustalo si lo tenés
+import { formatearPrecio } from "@/utils/formato";
+import type { ResumenEstadisticas } from "@/types/estadistica";
 
 export default function ResumenInicioMensual(props: {
   resumen: ResumenEstadisticas;

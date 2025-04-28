@@ -1,9 +1,9 @@
 import { createSignal, createResource, For, Show } from 'solid-js';
 import * as XLSX from 'xlsx';
-import { importarProductosDesdeExcel } from '../../services/producto.service';
-import { obtenerCategorias } from '../../services/categoria.service';
-import ModalMensaje from '../Layout/ModalMensaje';
-import type { Categoria } from '../../types/categoria';
+import { importarProductosDesdeExcel } from '@/services/producto.service';
+import { obtenerCategorias } from '@/services/categoria.service';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import type { Categoria } from '@/types/categoria';
 
 const HEADERS = [
   'sku',

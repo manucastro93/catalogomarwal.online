@@ -1,12 +1,12 @@
-import { createResource, For, Show } from "solid-js";
-import { useNavigate } from "@solidjs/router";
-import { FaBrandsWhatsapp } from "solid-icons/fa";
-import { useAuth } from "../store/auth";
-import { obtenerResumenDelMes } from "../services/estadisticas.service";
-import { obtenerPedidosInicio } from "../services/pedido.service";
-import { formatearPrecio } from "../utils/formato";
-import ResumenInicioMensual from "../components/Estadistica/ResumenInicioMensual";
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
+import { createResource, For, Show } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
+import { FaBrandsWhatsapp } from 'solid-icons/fa';
+import { useAuth } from '@/store/auth';
+import { obtenerResumenDelMes } from '@/services/estadisticas.service';
+import { obtenerPedidosInicio } from '@/services/pedido.service';
+import { formatearPrecio } from '@/utils/formato';
+import ResumenInicioMensual from '@/components/Estadistica/ResumenInicioMensual';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 
 export default function Inicio() {
   const { usuario } = useAuth();

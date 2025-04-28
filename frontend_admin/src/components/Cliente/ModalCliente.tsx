@@ -1,8 +1,9 @@
 import { createEffect, createSignal, Show, For } from 'solid-js';
-import type { Cliente } from '../../types/cliente';
-import { editarCliente } from '../../services/cliente.service';
-import { obtenerProvincias, obtenerLocalidades } from '../../services/ubicacion.service';
 import { z } from 'zod';
+import { editarCliente } from '@/services/cliente.service';
+import { obtenerProvincias, obtenerLocalidades } from '@/services/ubicacion.service';
+import type { Cliente } from '@/types/cliente';
+
 
 const schema = z.object({
   nombre: z.string().min(1, 'El nombre es obligatorio'),

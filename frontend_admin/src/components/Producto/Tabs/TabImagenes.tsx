@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import type { ImagenProducto } from '../../../types/producto';
+import type { ImagenProducto } from '@/types/producto';
 
 export default function TabImagenes(props: { imagenes: ImagenProducto[] }) {
   const link: string = import.meta.env.VITE_BACKEND_URL;

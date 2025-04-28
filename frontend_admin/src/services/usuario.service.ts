@@ -1,5 +1,5 @@
 import api from './api';
-import type { Usuario } from '../types/usuario';
+import type { Usuario } from '@/types/usuario';
 
 export const obtenerUsuariosPorRol = async (rol: string): Promise<Usuario[]> => {
   try {

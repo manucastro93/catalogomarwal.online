@@ -1,5 +1,5 @@
-import { ResumenProduccion } from "../../../types/grafico";
-import { ROLES_USUARIOS } from "../../../constants/rolesUsuarios";
+import { ResumenProduccion } from "@/types/grafico";
+import { ROLES_USUARIOS } from "@/constants/rolesUsuarios";
 
 interface Props {
   items: ResumenProduccion[];

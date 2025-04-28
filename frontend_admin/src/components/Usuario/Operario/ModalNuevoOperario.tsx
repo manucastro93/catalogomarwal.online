@@ -1,7 +1,7 @@
 import { createSignal, createEffect, Show } from 'solid-js';
-import type { Usuario } from '../../../types/usuario';
-import { usuarioSchema } from '../../../validations/usuario.schema';
-import { crearUsuario, editarUsuario } from '../../../services/usuario.service';
+import type { Usuario } from '@/types/usuario';
+import { usuarioSchema } from '@/validations/usuario.schema';
+import { crearUsuario, editarUsuario } from '@/services/usuario.service';
 
 interface ModalNuevoOperarioProps {
   abierto: boolean;

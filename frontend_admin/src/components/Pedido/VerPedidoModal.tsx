@@ -1,6 +1,6 @@
 import { Show, For } from "solid-js";
-import type { Pedido } from "../../types/pedido";
-import { formatearPrecio } from "../../utils/formato";
+import type { Pedido } from "@/types/pedido";
+import { formatearPrecio } from "@/utils/formato";
 
 export default function VerPedidoModal(props: {
   pedido: Pedido | null;

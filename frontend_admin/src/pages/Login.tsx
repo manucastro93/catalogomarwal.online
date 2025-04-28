@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { loginUsuario } from '../services/auth.service';
-import { useAuth } from '../store/auth';
+import { loginUsuario } from '@/services/auth.service';
+import { useAuth } from '@/store/auth';
 
 export default function Login() {
   const [email, setEmail] = createSignal('');

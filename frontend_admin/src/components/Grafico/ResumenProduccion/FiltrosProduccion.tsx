@@ -1,7 +1,7 @@
 // src/components/Grafico/ResumenProduccion/FiltrosProduccion.tsx
 import { createSignal, onMount, onCleanup, Show, For, createEffect } from "solid-js";
-import { buscarProductosPorTexto } from "../../../services/producto.service";
-import InputFecha from "../../Layout/InputFecha";
+import { buscarProductosPorTexto } from "@/services/producto.service";
+import InputFecha from "@/components/Layout/InputFecha";
 
 interface Props {
   desde: string;

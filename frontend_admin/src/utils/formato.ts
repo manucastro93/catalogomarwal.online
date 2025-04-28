@@ -23,3 +23,8 @@ export function capitalizarTexto(texto: string): string {
     .toLowerCase()
     .replace(/(^|\s)\S/g, (letra) => letra.toUpperCase());
 }
+
+export function formatearMiles(numero?: number): string {
+  if (typeof numero !== "number" || isNaN(numero)) return "0";
+  return numero.toLocaleString("es-AR");
+}

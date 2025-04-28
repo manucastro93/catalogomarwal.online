@@ -1,6 +1,6 @@
 import { createSignal, Show, onMount } from "solid-js";
-import type { RolUsuario } from "../../types/rolUsuario";
-import { crearRolUsuario, editarRolUsuario } from "../../services/rolUsuario.service";
+import type { RolUsuario } from "@/types/rolUsuario";
+import { crearRolUsuario, editarRolUsuario } from "@/services/rolUsuario.service";
 
 interface Props {
   rol?: RolUsuario;

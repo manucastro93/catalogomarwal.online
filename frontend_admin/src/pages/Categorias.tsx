@@ -1,16 +1,13 @@
-import { createSignal, createResource, For, Show } from "solid-js";
-import {
-  obtenerCategorias,
-  eliminarCategoria,
-} from "../services/categoria.service";
-import ModalCategoria from "../components/Categoria/ModalCategoria";
-import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import ModalMensaje from "../components/Layout/ModalMensaje";
-import type { Categoria } from "../types/categoria";
-import { useAuth } from "../store/auth";
-import Loader from "../components/Layout/Loader";
-import TablaCategorias from "../components/Categoria/TablaCategorias";
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
+import { createSignal, createResource, For, Show } from 'solid-js';
+import { obtenerCategorias, eliminarCategoria } from '@/services/categoria.service';
+import ModalCategoria from '@/components/Categoria/ModalCategoria';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import Loader from '@/components/Layout/Loader';
+import TablaCategorias from '@/components/Categoria/TablaCategorias';
+import { useAuth } from '@/store/auth';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import type { Categoria } from '@/types/categoria';
 
 export default function Categorias() {
   const { usuario } = useAuth();

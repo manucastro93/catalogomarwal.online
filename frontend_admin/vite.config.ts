@@ -1,20 +1,35 @@
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
+import path from 'path';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   base: '/',
   plugins: [solidPlugin()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
   build: {
-    outDir: 'dist', // Carpeta donde se va a generar el build
-    assetsDir: 'assets', // Directorio para los assets
-    sourcemap: true, // Mapas de fuente para facilitar la depuración
-    emptyOutDir: true, // Limpiar la carpeta de salida antes de cada build
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: true,
+    emptyOutDir: true,
   },
   server: {
-    port: 3001, // Asegúrate de que el puerto esté libre
+    host: 'localhost',
+    port: 3001,
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 3001,
+    },
     proxy: {
-      '/api': 'http://localhost:3000', // Ajusta esto si necesitas redirigir algunas peticiones
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 });

@@ -1,8 +1,7 @@
-import { createSignal, createResource, For, Show } from "solid-js";
-import dayjs from "dayjs";
-import { obtenerLogsGenerales } from "../services/log.service";
-import { formatearFechaHora } from "../utils/formato";
-import type { LogCliente } from "../types/log";
+import { createSignal, createResource, For, Show } from 'solid-js';
+import { obtenerLogsGenerales } from '@/services/log.service';
+import { formatearFechaHora } from '@/utils/formato';
+import type { LogCliente } from '@/types/log';
 
 // Parámetros para la consulta
 interface LogsParams {

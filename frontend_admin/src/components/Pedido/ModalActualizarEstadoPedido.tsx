@@ -1,8 +1,8 @@
 import { createSignal, Show, createEffect, For } from "solid-js";
-import type { Pedido } from '../../types/pedido';
-import { actualizarEstadoPedido } from '../../services/pedido.service';
+import type { Pedido } from '@/types/pedido';
+import { actualizarEstadoPedido } from '@/services/pedido.service';
 import ModalMensaje from '../Layout/ModalMensaje';
-import { ESTADOS_PEDIDO } from '../../constants/estadosPedidos';
+import { ESTADOS_PEDIDO } from '@/constants/estadosPedidos';
 
 const nombresEstados: Record<number, string> = {
   [ESTADOS_PEDIDO.PENDIENTE]: "Pendiente",

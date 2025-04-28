@@ -1,6 +1,6 @@
 import { createSignal } from 'solid-js';
-import type { Usuario } from '../types/usuario';
-import type { PermisoUsuario } from '../types/permisoUsuario';
+import type { Usuario } from '@/types/usuario';
+import type { PermisoUsuario } from '@/types/permisoUsuario';
 
 const [usuario, setUsuario] = createSignal<Usuario | null>(null);
 const [token, setToken] = createSignal<string | null>(null);
