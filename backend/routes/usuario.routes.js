@@ -18,8 +18,8 @@ const router = express.Router();
 router.use(verificarToken);
 
 // Obtener usuarios por rol
-router.get('/rol/:rol', checkPermiso('Vendedores', 'ver'), obtenerUsuariosPorRol);
-router.get('/rol-id/:id', checkPermiso('Vendedores', 'ver'), obtenerUsuariosPorRolId);
+router.get('/rol/:rol', checkPermiso(null, 'ver'), obtenerUsuariosPorRol);
+router.get('/rol-id/:id', checkPermiso(null, 'ver'), obtenerUsuariosPorRolId);
 
 // Crear usuario
 router.post(

@@ -43,7 +43,7 @@ export default function Administradores() {
   const handleEliminar = async () => {
     if (!idAEliminar()) return;
     try {
-      await eliminarUsuario(idAEliminar()!, "Administradores"); // 👉 PASAR MODULO
+      await eliminarUsuario(idAEliminar()!, "Administradores");
       setModalMensaje("Administrador eliminado correctamente");
       refetch();
     } catch (error) {
@@ -69,10 +69,10 @@ export default function Administradores() {
   const handleGuardar = async (datos: Partial<Usuario>) => {
     try {
       if (adminSeleccionado()) {
-        await editarUsuario(adminSeleccionado()!.id, datos, "Administradores"); // 👉 PASAR MODULO
+        await editarUsuario(adminSeleccionado()!.id, datos, "Administradores"); 
         setModalMensaje("Administrador editado correctamente");
       } else {
-        await crearUsuario({ ...datos, rolUsuarioId: 2 }, "Administradores"); // 👉 PASAR MODULO
+        await crearUsuario({ ...datos, rolUsuarioId: 2 }, "Administradores");
         setModalMensaje("Administrador creado correctamente");
       }
       refetch();

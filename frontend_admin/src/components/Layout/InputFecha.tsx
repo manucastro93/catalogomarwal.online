@@ -1,7 +1,6 @@
 import { createSignal, onMount } from "solid-js";
 import flatpickr from "flatpickr";
 import { Spanish } from "flatpickr/dist/l10n/es";
-import "flatpickr/dist/flatpickr.min.css";
 
 interface Props {
   valor: string;
@@ -14,9 +13,9 @@ export default function InputFecha({ valor, onChange, placeholder }: Props) {
   let inputEl: HTMLInputElement;
 
   onMount(() => {
-    flatpickr.localize(Spanish);
     flatpickr(inputEl, {
-      dateFormat: "d/m/Y",
+      locale: Spanish,
+      dateFormat: "d-m-Y",
       defaultDate: valor ? new Date(valor) : undefined,
       onChange: ([date]) => {
         if (date) {

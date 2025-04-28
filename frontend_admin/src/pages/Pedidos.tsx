@@ -33,9 +33,12 @@ export default function Pedidos() {
   >(undefined);
   const [verPedido, setVerPedido] = createSignal<Pedido | null>(null);
 
-  const [vendedores] = createResource(() =>
-    obtenerUsuariosPorRolPorId(ROLES_USUARIOS.VENDEDOR)
-  );
+  const [vendedores] = createResource(async () => {
+    if (usuario()?.rolUsuarioId && [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(usuario()!.rolUsuarioId as typeof ROLES_USUARIOS.SUPREMO | typeof ROLES_USUARIOS.ADMINISTRADOR)) {
+      return await obtenerUsuariosPorRolPorId(ROLES_USUARIOS.VENDEDOR);
+    }
+    return [];
+  });
   const [estadosPedido] = createResource(obtenerEstadosPedido);
 
   const fetchParams = createMemo(() => ({
