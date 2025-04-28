@@ -85,13 +85,13 @@ export default function Productos() {
         <h1 class="text-2xl font-bold">Productos</h1>
         {!esVendedor && (
           <div class="flex gap-2">
+            <ConPermiso modulo="Productos" accion="crear">
             <button
               onClick={() => setModalExcel(true)}
               class="bg-green-600 text-white px-3 py-1 rounded text-sm"
             >
               Importar Excel
             </button>
-            <ConPermiso modulo="Productos" accion="crear">
               <button
                 onClick={() => {
                   setProductoSeleccionado(null);

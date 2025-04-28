@@ -150,7 +150,17 @@ export const crearProductoConImagenes = async (req, res, next) => {
       }));
       await ImagenProducto.bulkCreate(imagenes);
     }
-    await crearAuditoria('productos', 'crear', producto.id, req.usuario?.id || null);
+    
+    await crearAuditoria({
+      tabla: 'productos',
+      accion: 'crea producto',
+      registroId: producto.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se creó el prodcuto ${producto.nombre}`,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
+    
+    
     cache.flushAll();
     res.json({ producto });
   } catch (error) {
@@ -209,7 +219,18 @@ export const actualizarProductoConImagenes = async (req, res, next) => {
       }));
       await ImagenProducto.bulkCreate(imagenes);
     }
-    await crearAuditoria('productos', 'actualizar', id, req.usuario?.id || null);
+
+    await crearAuditoria({
+      tabla: 'productos',
+      accion: 'actualiza producto',
+      registroId: producto.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se actualizó el producto ${producto.nombre}`,
+      datosAntes: producto,
+      datosDespues: req.body,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
+
     cache.flushAll();
     res.json({ producto });
   } catch (error) {
@@ -319,7 +340,17 @@ export const eliminarImagenProducto = async (req, res, next) => {
     if (!imagen) return res.status(404).json({ message: 'Imagen no encontrada' });
 
     await imagen.destroy();
-    await crearAuditoria('productos', 'eliminar imagen', id, req.usuario?.id || null);
+
+    await crearAuditoria({
+      tabla: 'productos',
+      accion: 'eliminar imagen',
+      registroId: imagen.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se creó el usuario ${imagen.url}`,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
+    
+
     res.json({ message: 'Imagen eliminada correctamente' });
   } catch (error) {
     console.error('❌ Error al eliminar imagen del producto:', error);

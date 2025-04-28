@@ -107,6 +107,7 @@ export const obtenerUsuariosPorRol = async (req, res, next) => {
     next(error);
   }
 };
+
 export const obtenerUsuariosPorRolId = async (req, res, next) => {
   try {
     const rolUsuarioId = Number(req.params.id);

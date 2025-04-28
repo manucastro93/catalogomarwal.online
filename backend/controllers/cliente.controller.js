@@ -113,7 +113,18 @@ export const actualizarCliente = async (req, res, next) => {
 
     const actualizado = await Cliente.findByPk(id);
     await registrarHistorialCliente(anterior, actualizado, req.usuario?.id);
-    await crearAuditoria('clientes', 'actualiza cliente', id, req.usuario?.id || null);
+   
+    await crearAuditoria({
+      tabla: 'clientes',
+      accion: 'actualiza cliente',
+      registroId: actualizado.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Cliente ${actualizado.nombre} actualizado.`,
+      datosAntes: anterior,
+      datosDespues: actualizado,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
+    
     res.json(actualizado);
   } catch (error) {
     next(error);

@@ -12,8 +12,13 @@ export const obtenerUsuariosPorRol = async (rol: string): Promise<Usuario[]> => 
 };
 
 export const obtenerUsuariosPorRolPorId = async (rolUsuarioId: number): Promise<Usuario[]> => {
-  const response = await api.get(`/usuarios/rol-id/${rolUsuarioId}`);
-  return response.data;
+  try {
+    const response = await api.get(`/usuarios/rol-id/${rolUsuarioId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener usuarios', error);
+    throw error;
+  }
 };
 
 export const obtenerUsuarios = async (): Promise<Usuario[]> => {
@@ -45,9 +50,7 @@ export const editarUsuario = async (id: number, usuario: Partial<Usuario>, modul
 
 export const eliminarUsuario = async (id: number, modulo: string): Promise<void> => {
   try {
-    await api.delete(`/usuarios/${id}`, {
-      data: { modulo },
-    });
+    await api.delete(`/usuarios/${id}?modulo=${encodeURIComponent(modulo)}`);
   } catch (error) {
     console.error('Error al eliminar usuario', error);
     throw error;
