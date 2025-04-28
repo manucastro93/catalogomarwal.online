@@ -1,6 +1,6 @@
 import { For } from "solid-js";
-import type { ReporteProduccion } from "../../types/produccion";
-import { formatearPrecio } from "../../utils/formato";
+import type { ReporteProduccion } from "@/types/produccion";
+import { formatearPrecio } from "@/utils/formato";
 
 interface Props {
   reportes: ReporteProduccion[];

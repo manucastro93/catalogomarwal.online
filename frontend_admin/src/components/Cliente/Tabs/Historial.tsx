@@ -1,7 +1,6 @@
 import { createResource, Show, For } from 'solid-js';
 import dayjs from 'dayjs';
-import { obtenerHistorialCliente } from '../../../services/cliente.service'; // ruta según tu estructura
-import type { HistorialCambio } from '../../../types/cliente';
+import { obtenerHistorialCliente } from '@/services/cliente.service';
 
 interface Props {
   clienteId: number;

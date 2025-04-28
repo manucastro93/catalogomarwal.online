@@ -1,9 +1,9 @@
 
 import { A, useLocation } from '@solidjs/router';
 import { Show, createSignal, createResource } from 'solid-js';
-import { useAuth } from '../../store/auth';
-import { obtenerPagina } from '../../services/pagina.service';
-import { ROLES_USUARIOS } from '../../constants/rolesUsuarios';
+import { useAuth } from '@/store/auth';
+import { obtenerPagina } from '@/services/pagina.service';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 import {
   ChevronDown, ChevronUp, Home, Package, Users,
   ChartLine, Layers, Settings

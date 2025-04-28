@@ -1,16 +1,13 @@
-import { createSignal, createResource, createMemo, Show } from "solid-js";
-import {
-  obtenerUsuariosPorRolPorId,
-  eliminarUsuario,
-} from "../services/usuario.service";
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
-import TablaOperarios from "../components/Usuario/Operario/TablaOperarios";
-import FiltrosOperarios from "../components/Usuario/Operario/FiltrosOperarios";
-import ModalNuevoOperario from "../components/Usuario/Operario/ModalNuevoOperario";
-import VerOperarioModal from "../components/Usuario/Operario/VerOperarioModal";
-import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import ModalMensaje from "../components/Layout/ModalMensaje";
-import { useAuth } from "../store/auth";
+import { createSignal, createResource, createMemo, Show } from 'solid-js';
+import { obtenerUsuariosPorRolPorId, eliminarUsuario } from '@/services/usuario.service';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import TablaOperarios from '@/components/Usuario/Operario/TablaOperarios';
+import FiltrosOperarios from '@/components/Usuario/Operario/FiltrosOperarios';
+import ModalNuevoOperario from '@/components/Usuario/Operario/ModalNuevoOperario';
+import VerOperarioModal from '@/components/Usuario/Operario/VerOperarioModal';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import { useAuth } from '@/store/auth';
 
 export default function Operarios() {
   const { usuario } = useAuth();

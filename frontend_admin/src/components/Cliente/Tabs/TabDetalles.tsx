@@ -1,4 +1,4 @@
-import type { Cliente } from '../../../types/cliente';
+import type { Cliente } from '@/types/cliente';
 
 export default function TabDetallesCliente(props: { cliente: Cliente }) {
   const { cliente } = props;

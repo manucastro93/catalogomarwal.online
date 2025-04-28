@@ -1,32 +1,38 @@
+// 🔵 Librerías externas
 import { render } from 'solid-js/web';
 import { Router, Route } from '@solidjs/router';
-import './index.css';
+
+// 🎨 Estilos
 import "flatpickr/dist/flatpickr.min.css";
+import './index.css';
 
-import Login from './pages/Login';
-import Inicio from './pages/Inicio';
-import Productos from './pages/Productos';
-import Clientes from './pages/Clientes';
-import Pedidos from './pages/Pedidos';
-import Categorias from './pages/Categorias';
-import Vendedores from './pages/Vendedores';
+// 📄 Páginas
 import Administradores from './pages/Administradores';
-import Estadisticas from './pages/Estadisticas';
-import PedidoRapido from './pages/PedidoRapido';
-import LogsCliente from './pages/LogsCliente';
-import ProduccionDiaria from './pages/ProduccionDiaria';
-import Operarios from './pages/Operarios';
-import ResumenProduccion from './pages/Graficos/ResumenProduccion'; 
-
-import Logo from './pages/Pagina/Logo';
 import Banners from './pages/Pagina/Banners';
+import Categorias from './pages/Categorias';
+import Clientes from './pages/Clientes';
+import Estadisticas from './pages/Estadisticas';
+import Inicio from './pages/Inicio';
+import LogsCliente from './pages/LogsCliente';
+import Login from './pages/Login';
+import Operarios from './pages/Operarios';
+import PedidoRapido from './pages/PedidoRapido';
+import Pedidos from './pages/Pedidos';
+import Productos from './pages/Productos';
+import ProduccionDiaria from './pages/ProduccionDiaria';
+import ResumenProduccion from './pages/Graficos/ResumenProduccion';
 import RolesUsuarios from './pages/Pagina/RolesUsuarios';
 import EstadosPedidos from './pages/Pagina/EstadosPedidos';
+import Logo from './pages/Pagina/Logo';
+import Vendedores from './pages/Vendedores';
 
+// 🧩 Componentes
 import DefinirContrasena from './components/Usuario/DefinirContrasena';
-import { checkLocalStorage } from './store/auth';
-import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// 🛠️ Funciones / Store
+import { checkLocalStorage } from './store/auth';
 
 // ✅ Restaurar sesión si existe
 checkLocalStorage();

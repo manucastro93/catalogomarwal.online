@@ -1,10 +1,10 @@
-import { createSignal, Show, For, createResource } from "solid-js";
-import { buscarProductosPorTexto } from "../../services/producto.service";
-import { guardarReporteProduccion } from "../../services/produccion.service";
-import { obtenerPlantas } from "../../services/planta.service";
-import { useAuth } from "../../store/auth";
-import type { Producto } from "../../types/producto";
-import type { CrearReporteProduccion } from "../../types/produccion";
+import { createSignal, Show, For, createResource } from 'solid-js';
+import { buscarProductosPorTexto } from '@/services/producto.service';
+import { guardarReporteProduccion } from '@/services/produccion.service';
+import { obtenerPlantas } from '@/services/planta.service';
+import { useAuth } from '@/store/auth';
+import type { Producto } from '@/types/producto';
+import type { CrearReporteProduccion } from '@/types/produccion';
 
 export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
   const [busqueda, setBusqueda] = createSignal("");

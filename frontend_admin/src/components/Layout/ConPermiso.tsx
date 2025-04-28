@@ -1,7 +1,7 @@
 import { JSX } from 'solid-js';
 import { Show } from 'solid-js';
-import { useAuth } from '../../store/auth';
-import { tienePermiso } from '../../utils/permisoUsuario';
+import { useAuth } from '@/store/auth';
+import { tienePermiso } from '@/utils/permisoUsuario';
 
 interface Props {
   modulo: string;

@@ -1,4 +1,3 @@
-// src/validations/vendedor.schema.ts
 import { z } from "zod";
 
 const capitalizar = (str: string) =>

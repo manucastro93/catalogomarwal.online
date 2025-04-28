@@ -1,7 +1,7 @@
 import { onCleanup, createResource, onMount } from "solid-js";
 import Chart from "chart.js/auto";
-import { obtenerVentasPorCategoria } from "../../services/estadisticas.service";
-import { formatearPrecio } from "../../utils/formato";
+import { obtenerVentasPorCategoria } from "@/services/estadisticas.service";
+import { formatearPrecio } from "@/utils/formato";
 
 let canvasRef: HTMLCanvasElement;
 

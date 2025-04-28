@@ -1,9 +1,9 @@
 import { createSignal, createResource, Show } from 'solid-js';
-import { obtenerEstadisticasPorFecha } from '../../services/estadisticas.service';
+import { obtenerEstadisticasPorFecha } from '@/services/estadisticas.service';
 import dayjs from 'dayjs';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line } from 'solid-chartjs';
-import type { PuntoEstadistica } from '../../types/estadistica';
+import type { PuntoEstadistica } from '@/types/estadistica';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function GraficoEstadisticasPorFecha() {

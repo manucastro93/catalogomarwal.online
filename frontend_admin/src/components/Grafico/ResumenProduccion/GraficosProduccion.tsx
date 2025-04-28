@@ -1,17 +1,16 @@
-import { Show } from "solid-js";
 import {
   BarrasPlanta,
   TortaCategoria,
   BarrasTurno,
   LineasEvolucionProduccion,
 } from "./Graficos";
-import { deberiaMostrarGrafico } from "../../../helpers/graficoHelper";
+import { deberiaMostrarGrafico } from "@/helpers/graficoHelper";
 import type {
   ResumenProduccionPlanta,
   ResumenProduccionCategoria,
   ResumenProduccionTurno,
   EvolucionProduccion,
-} from "../../../types/grafico";
+} from "@/types/grafico";
 
 interface Props {
   resumenPlanta: ResumenProduccionPlanta[];

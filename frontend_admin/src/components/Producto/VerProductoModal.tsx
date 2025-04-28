@@ -1,5 +1,5 @@
 import { createSignal, Show } from 'solid-js';
-import type { Producto } from '../../types/producto';
+import type { Producto } from '@/types/producto';
 import TabDetalles from './Tabs/TabDetalles';
 import TabEstadisticas from './Tabs/TabEstadisticas';
 import TabImagenes from './Tabs/TabImagenes';

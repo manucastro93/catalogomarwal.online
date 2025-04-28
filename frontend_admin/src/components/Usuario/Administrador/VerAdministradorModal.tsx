@@ -1,4 +1,4 @@
-import type { Usuario } from '../../types/usuario';
+import type { Usuario } from '@/types/usuario';
 
 interface VerAdministradorModalProps {
   administrador: Usuario | null;

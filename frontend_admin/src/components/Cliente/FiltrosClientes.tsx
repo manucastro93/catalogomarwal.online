@@ -1,7 +1,8 @@
 import { For, Show } from 'solid-js';
-import type { Provincia, Localidad } from '../../types/ubicacion';
-import type { Usuario } from '../../types/usuario';
-import { ROLES_USUARIOS } from '../../constants/rolesUsuarios';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import type { Provincia, Localidad } from '@/types/ubicacion';
+import type { Usuario } from '@/types/usuario';
+
 
 export default function FiltrosClientes(props: {
   usuarioRol: number;

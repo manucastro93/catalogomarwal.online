@@ -1,22 +1,19 @@
-import { createSignal, createResource, createMemo, For, Show } from "solid-js";
-import {
-  obtenerProductos,
-  obtenerProductoPorId,
-  eliminarProducto,
-} from "../services/producto.service";
-import { useAuth } from "../store/auth";
-import ConPermiso from "../components/Layout/ConPermiso";
-import { obtenerCategorias } from "../services/categoria.service";
-import ModalNuevoProducto from "../components/Producto/ModalNuevoProducto";
-import ModalImportarExcel from "../components/Producto/ModalImportarExcel";
-import VerProductoModal from "../components/Producto/VerProductoModal";
-import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import ModalMensaje from "../components/Layout/ModalMensaje";
-import Loader from "../components/Layout/Loader";
-import type { Producto } from "../types/producto";
-import FiltrosProductos from "../components/Producto/FiltrosProductos";
-import TablaProductos from "../components/Producto/TablaProductos";
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
+import { createSignal, createResource, createMemo, For, Show } from 'solid-js';
+import { obtenerProductos, obtenerProductoPorId, eliminarProducto } from '@/services/producto.service';
+import { obtenerCategorias } from '@/services/categoria.service';
+import { useAuth } from '@/store/auth';
+import ConPermiso from '@/components/Layout/ConPermiso';
+import ModalNuevoProducto from '@/components/Producto/ModalNuevoProducto';
+import ModalImportarExcel from '@/components/Producto/ModalImportarExcel';
+import VerProductoModal from '@/components/Producto/VerProductoModal';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import Loader from '@/components/Layout/Loader';
+import FiltrosProductos from '@/components/Producto/FiltrosProductos';
+import TablaProductos from '@/components/Producto/TablaProductos';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import type { Producto } from '@/types/producto';
+
 
 export default function Productos() {
   const [pagina, setPagina] = createSignal(1);

@@ -1,6 +1,6 @@
 import { For, Show } from "solid-js";
-import { formatearPrecio } from "../../utils/formato";
-import type { Pedido } from "../../types/pedido";
+import { formatearPrecio } from "@/utils/formato";
+import type { Pedido } from "@/types/pedido";
 
 export default function TablaPedidos(props: {
   pedidos: Pedido[];

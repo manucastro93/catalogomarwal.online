@@ -1,6 +1,6 @@
 import { createResource, Show } from 'solid-js';
-import { formatearPrecio } from '../../../utils/formato';
-import { obtenerEstadisticasProducto } from '../../../services/estadisticas.service';
+import { formatearPrecio } from '@/utils/formato';
+import { obtenerEstadisticasProducto } from '@/services/estadisticas.service';
 
 export default function TabEstadisticas(props: { productoId: number }) {
   const [estadisticas] = createResource(() =>

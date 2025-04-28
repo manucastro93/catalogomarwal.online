@@ -1,15 +1,10 @@
-import { createResource, createSignal, For, Show } from "solid-js";
-import {
-  obtenerPagina,
-  subirLogo,
-  crearBanner,
-  eliminarBanner,
-} from "../services/pagina.service";
-import type { Pagina } from "../types/pagina";
-import type { Banner } from "../types/banner";
-import ModalMensaje from "../components/Layout/ModalMensaje";
-import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
-import dayjs from "dayjs";
+import { createResource, createSignal, For, Show } from 'solid-js';
+import dayjs from 'dayjs';
+import { obtenerPagina, subirLogo, crearBanner, eliminarBanner } from '@/services/pagina.service';
+import ModalMensaje from '@/components/Layout/ModalMensaje';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import type { Pagina } from '@/types/pagina';
+import type { Banner } from '@/types/banner';
 
 export default function Pagina() {
   const [pagina, { refetch }] = createResource(obtenerPagina);

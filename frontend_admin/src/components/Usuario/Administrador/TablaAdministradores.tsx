@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import type { Usuario } from '../../types/usuario';
+import type { Usuario } from '@/types/usuario';
 
 export default function TablaAdministradores(props: {
   administradores: Usuario[];

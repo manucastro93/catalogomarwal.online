@@ -1,5 +1,5 @@
 import api from './api';
-import type { RolUsuario } from '../types/rolUsuario';
+import type { RolUsuario } from '@/types/rolUsuario';
 
 export const obtenerRolesUsuario = async (): Promise<RolUsuario[]> => {
   const { data } = await api.get('/rol-usuario');

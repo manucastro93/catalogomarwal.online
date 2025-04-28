@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js";
-import type { Categoria } from "../../types/categoria";
+import type { Categoria } from "@/types/categoria";
 
 export default function TablaCategorias(props: {
   categorias: Categoria[];

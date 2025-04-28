@@ -1,5 +1,5 @@
 import api from './api';
-import type { EstadoPedido } from '../types/estadoPedido';
+import type { EstadoPedido } from '@/types/estadoPedido';
 
 export const obtenerEstadosPedido = async (): Promise<EstadoPedido[]> => {
   const { data } = await api.get('/estados-pedidos');

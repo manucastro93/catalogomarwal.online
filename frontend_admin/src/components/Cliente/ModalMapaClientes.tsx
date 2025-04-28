@@ -1,8 +1,8 @@
 import { createSignal, createEffect, onCleanup, For, Show } from "solid-js";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { Cliente } from "../../types/cliente";
-import { obtenerClientesConVentas } from "../../services/cliente.service";
+import type { Cliente } from "@/types/cliente";
+import { obtenerClientesConVentas } from "@/services/cliente.service";
 
 interface Props {
   abierto: boolean;

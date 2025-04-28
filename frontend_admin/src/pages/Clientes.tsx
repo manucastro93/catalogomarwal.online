@@ -1,19 +1,16 @@
-import { createSignal, createResource, createMemo, Show } from "solid-js";
-import { obtenerClientes } from "../services/cliente.service";
-import {
-  obtenerProvincias,
-  obtenerLocalidades,
-} from "../services/ubicacion.service";
-import * as XLSX from "xlsx";
-import { useAuth } from "../store/auth";
-import type { Cliente } from "../types/cliente";
-import VerClienteModal from "../components/Cliente/VerClienteModal";
-import { obtenerUsuariosPorRolPorId } from "../services/usuario.service";
-import Loader from "../components/Layout/Loader";
-import ModalMapaClientes from "../components/Cliente/ModalMapaClientes";
-import TablaClientes from "../components/Cliente/TablaClientes";
-import FiltrosClientes from "../components/Cliente/FiltrosClientes";
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios"; 
+import { createSignal, createResource, createMemo, Show } from 'solid-js';
+import * as XLSX from 'xlsx';
+import { obtenerClientes } from '@/services/cliente.service';
+import { obtenerProvincias, obtenerLocalidades } from '@/services/ubicacion.service';
+import { obtenerUsuariosPorRolPorId } from '@/services/usuario.service';
+import { useAuth } from '@/store/auth';
+import VerClienteModal from '@/components/Cliente/VerClienteModal';
+import ModalMapaClientes from '@/components/Cliente/ModalMapaClientes';
+import TablaClientes from '@/components/Cliente/TablaClientes';
+import FiltrosClientes from '@/components/Cliente/FiltrosClientes';
+import Loader from '@/components/Layout/Loader';
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import type { Cliente } from '@/types/cliente';
 
 export default function Clientes() {
   const { usuario } = useAuth();

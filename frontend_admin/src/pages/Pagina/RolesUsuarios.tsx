@@ -1,11 +1,8 @@
-import { createResource, createSignal, Show, For } from "solid-js";
-import {
-  obtenerRolesUsuario,
-  eliminarRolUsuario,
-} from "../../services/rolUsuario.service";
-import type { RolUsuario } from "../../types/rolUsuario";
-import ModalRolUsuario from "../../components/Pagina/ModalRolUsuario";
-import ModalConfirmacion from "../../components/Layout/ModalConfirmacion";
+import { createResource, createSignal, Show, For } from 'solid-js';
+import { obtenerRolesUsuario, eliminarRolUsuario } from '@/services/rolUsuario.service';
+import ModalRolUsuario from '@/components/Pagina/ModalRolUsuario';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import type { RolUsuario } from '@/types/rolUsuario';
 
 export default function RolesUsuarios() {
   const [modalAbierto, setModalAbierto] = createSignal(false);

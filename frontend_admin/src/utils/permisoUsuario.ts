@@ -1,4 +1,4 @@
-import type { PermisoUsuario } from '../types/permisoUsuario';
+import type { PermisoUsuario } from '@/types/permisoUsuario';
 
 export function tienePermiso(
   permisos: PermisoUsuario[] = [],

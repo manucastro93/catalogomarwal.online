@@ -1,12 +1,8 @@
-// src/pages/pagina/EstadosPedidos.tsx
-import { createResource, createSignal, Show, For } from "solid-js";
-import {
-  obtenerEstadosPedido,
-  eliminarEstadoPedido,
-} from "../../services/estadoPedido.service";
-import type { EstadoPedido } from "../../types/estadoPedido";
-import ModalEstadoPedido from "../../components/Pagina/ModalEstadoPedido";
-import ModalConfirmacion from "../../components/Layout/ModalConfirmacion";
+import { createResource, createSignal, Show, For } from 'solid-js';
+import { obtenerEstadosPedido, eliminarEstadoPedido } from '@/services/estadoPedido.service';
+import ModalEstadoPedido from '@/components/Pagina/ModalEstadoPedido';
+import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
+import type { EstadoPedido } from '@/types/estadoPedido';
 
 export default function EstadosPedidos() {
   const [modalAbierto, setModalAbierto] = createSignal(false);

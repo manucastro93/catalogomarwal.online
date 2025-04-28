@@ -1,7 +1,7 @@
 import { createSignal, createResource, Show, For } from 'solid-js';
 import dayjs from 'dayjs';
-import api from '../../services/api';
-import { formatearPrecio } from '../../utils/formato';
+import api from '@/services/api';
+import { formatearPrecio } from '@/utils/formato';
 
 export default function ComparadorDeRangos() {
   const hoy = dayjs();

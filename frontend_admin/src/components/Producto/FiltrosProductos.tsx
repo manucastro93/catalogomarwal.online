@@ -1,5 +1,5 @@
 import { For } from "solid-js";
-import type { Categoria } from "../../types/categoria";
+import type { Categoria } from "@/types/categoria";
 
 export default function FiltrosProductos(props: {
   busqueda: string;

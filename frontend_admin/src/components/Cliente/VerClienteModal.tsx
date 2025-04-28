@@ -4,7 +4,7 @@ import {
   createEffect,
   onCleanup
 } from 'solid-js';
-import type { Cliente } from '../../types/cliente';
+import type { Cliente } from '@/types/cliente';
 import TabEstadisticasCliente from './Tabs/TabEstadisticas';
 import TabDatosCliente from './Tabs/TabDetalles';
 import TabHistorialCliente from './Tabs/Historial';

@@ -1,4 +1,4 @@
-import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
+import { ROLES_USUARIOS } from "@/constants/rolesUsuarios";
 
 export function deberiaMostrarGrafico(
   tipo: "planta" | "categoria" | "turno",

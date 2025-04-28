@@ -1,7 +1,7 @@
 import { createSignal, createResource, Show, For } from 'solid-js';
 import dayjs from 'dayjs';
-import { obtenerRankingEstadisticas } from '../../services/estadisticas.service';
-import { formatearPrecio } from '../../utils/formato';
+import { obtenerRankingEstadisticas } from '@/services/estadisticas.service';
+import { formatearPrecio } from '@/utils/formato';
 
 export default function RankingEstadisticas() {
   const hoy = dayjs();

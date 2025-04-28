@@ -1,8 +1,8 @@
-import { createSignal, createResource, For, Show } from "solid-js";
-import { obtenerEstadisticasCliente } from "../../../services/estadisticas.service";
-import { obtenerPedidoPorId } from "../../../services/pedido.service";
-import { formatearPrecio } from "../../../utils/formato";
-import VerPedidoModal from "../../Pedido/VerPedidoModal";
+import { createSignal, createResource, For, Show } from 'solid-js';
+import { obtenerEstadisticasCliente } from '@/services/estadisticas.service';
+import { obtenerPedidoPorId } from '@/services/pedido.service';
+import { formatearPrecio } from '@/utils/formato';
+import VerPedidoModal from '@/components/Pedido/VerPedidoModal';
 
 export default function TabEstadisticasCliente(props: { clienteId: number }) {
   const [datos] = createResource(() =>

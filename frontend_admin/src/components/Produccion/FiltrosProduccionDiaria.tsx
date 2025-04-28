@@ -1,6 +1,6 @@
 import { For } from "solid-js";
-import InputFecha from "../Layout/InputFecha";
-import type { Planta } from "../../types/planta";
+import InputFecha from "@/components/Layout/InputFecha";
+import type { Planta } from "@/types/planta";
 
 interface Props {
   desde: string;
