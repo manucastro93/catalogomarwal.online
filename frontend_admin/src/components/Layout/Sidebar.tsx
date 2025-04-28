@@ -139,7 +139,7 @@ export default function Sidebar() {
             <ConPermiso modulo="Administradores" accion="ver">
               <A href="/Administradores" class="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 transition"
                 classList={{ 'bg-gray-700 font-bold': esActivo('/Administradores') }}>
-                <Users size={16} /> Usuarios
+                <Users size={16} /> Usuarios Admin
               </A>
             </ConPermiso>
           </Show>

@@ -1,5 +1,4 @@
-// src/components/Grafico/ResumenProduccion/FiltrosProduccion.tsx
-import { createSignal, onMount, onCleanup, Show, For, createEffect } from "solid-js";
+import { createSignal, onMount, onCleanup, Show, For } from "solid-js";
 import { buscarProductosPorTexto } from "@/services/producto.service";
 import InputFecha from "@/components/Layout/InputFecha";
 
@@ -66,23 +65,30 @@ export default function FiltrosProduccion(props: Props) {
   });
 
   return (
-    <div class="flex flex-wrap gap-2 mb-6 items-center">
-      <InputFecha 
-  valor={props.desde}
-  onChange={(v) => props.setDesde(v || new Date().toISOString().slice(0,10))}
-  placeholder="Desde"
-/>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+      {/* Desde */}
+      <div class="w-full">
+        <InputFecha
+          valor={props.desde}
+          onChange={(v) => props.setDesde(v || new Date().toISOString().slice(0,10))}
+          placeholder="Desde"
+        />
+      </div>
 
-<InputFecha 
-  valor={props.hasta}
-  onChange={(v) => props.setHasta(v || new Date().toISOString().slice(0,10))}
-  placeholder="Hasta"
-/>
+      {/* Hasta */}
+      <div class="w-full">
+        <InputFecha
+          valor={props.hasta}
+          onChange={(v) => props.setHasta(v || new Date().toISOString().slice(0,10))}
+          placeholder="Hasta"
+        />
+      </div>
 
+      {/* Turno */}
       <select
         value={props.turno}
         onChange={(e) => { props.setTurno(e.currentTarget.value); setOpen(false); }}
-        class="border p-2 rounded"
+        class="border p-2 rounded w-full"
       >
         <option value="">Todos los Turnos</option>
         <option value="mañana">Mañana</option>
@@ -90,6 +96,7 @@ export default function FiltrosProduccion(props: Props) {
         <option value="noche">Noche</option>
       </select>
 
+      {/* Planta */}
       <select
         value={props.plantaId}
         onChange={(e) => {
@@ -99,12 +106,13 @@ export default function FiltrosProduccion(props: Props) {
           setResultados([]);
           setOpen(false);
         }}
-        class="border p-2 rounded"
+        class="border p-2 rounded w-full"
       >
         <option value="">Todas las Plantas</option>
         <For each={props.plantas}>{p => <option value={p.id}>{p.nombre}</option>}</For>
       </select>
 
+      {/* Categoría */}
       <select
         value={props.categoriaId}
         onChange={(e) => {
@@ -114,13 +122,14 @@ export default function FiltrosProduccion(props: Props) {
           setResultados([]);
           setOpen(false);
         }}
-        class="border p-2 rounded"
+        class="border p-2 rounded w-full"
       >
         <option value="">Todas las Categorías</option>
         <For each={props.categorias}>{c => <option value={c.id}>{c.nombre}</option>}</For>
       </select>
 
-      <div class="relative w-64" ref={el => (contenedor = el!)}>
+      {/* Buscador de producto */}
+      <div class="relative w-full" ref={el => (contenedor = el!)}>
         <input
           type="text"
           value={busqueda()}
@@ -128,7 +137,6 @@ export default function FiltrosProduccion(props: Props) {
           onInput={onInputProducto}
           class="border p-2 rounded w-full"
         />
-
         <Show when={open()}>
           <div class="absolute bg-white border w-full max-h-40 overflow-y-auto rounded shadow z-10">
             <Show when={resultados().length > 0}>
@@ -145,16 +153,21 @@ export default function FiltrosProduccion(props: Props) {
         </Show>
       </div>
 
+      {/* Modo */}
       <select
         value={props.modo}
         onChange={(e) => props.setModo(e.currentTarget.value)}
-        class="border p-2 rounded"
+        class="border p-2 rounded w-full"
       >
         <option value="valor">Valor $</option>
         <option value="cantidad">Cantidad</option>
       </select>
 
-      <button onClick={props.limpiarFiltros} class="bg-gray-400 text-white px-4 py-2 rounded">
+      {/* Botón limpiar */}
+      <button
+        onClick={props.limpiarFiltros}
+        class="bg-gray-400 text-white px-4 py-2 rounded w-full"
+      >
         Limpiar
       </button>
     </div>
