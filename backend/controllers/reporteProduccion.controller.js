@@ -77,7 +77,17 @@ export const crearReporteProduccion = async (req, res, next) => {
       plantaId,
       turno,
     });
-    await crearAuditoria("reporte produccion diaria", "crea reporte", nuevo.id, usuarioId);
+    
+    await crearAuditoria({
+      tabla: 'reporte produccion diaria',
+      accion: 'crea reporte',
+      registroId: nuevo.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se creó el reporte de producción con ID ${nuevo.id}`,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
+    
+
     res.json(nuevo);
   } catch (error) {
     next(error);
@@ -96,7 +106,15 @@ export const eliminarReporteProduccion = async (req, res, next) => {
     // 1. Eliminar el reporte
     await ReporteProduccion.destroy({ where: { id } });
 
-    await crearAuditoria("reporte produccion diaria", "elimina reporte", id, usuarioId);
+    await crearAuditoria({
+      tabla: 'reporte produccion diaria',
+      accion: 'elimina reporte',
+      registroId: id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se eliminó el reporte de producción con ID ${id}`,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
+
     res.json({ mensaje: "Reporte eliminado y registrado correctamente" });
   } catch (error) {
     next(error);

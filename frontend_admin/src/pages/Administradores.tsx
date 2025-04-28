@@ -1,6 +1,6 @@
 import { createSignal, createResource, createMemo, For, Show } from "solid-js";
 import {
-  obtenerUsuariosPorRol,
+  obtenerUsuariosPorRolPorId,
   crearUsuario,
   editarUsuario,
   eliminarUsuario,
@@ -11,6 +11,7 @@ import VerAdministradorModal from "../components/Usuario/Administrador/VerAdmini
 import ModalMensaje from "../components/Layout/ModalMensaje";
 import ModalConfirmacion from "../components/Layout/ModalConfirmacion";
 import TablaAdministradores from "../components/Usuario/Administrador/TablaAdministradores";
+import { ROLES_USUARIOS } from "../constants/rolesUsuarios";
 
 export default function Administradores() {
   const [busqueda, setBusqueda] = createSignal("");
@@ -21,7 +22,9 @@ export default function Administradores() {
   const [modalConfirmar, setModalConfirmar] = createSignal(false);
   const [idAEliminar, setIdAEliminar] = createSignal<number | null>(null);
 
-  const [respuesta, { refetch }] = createResource(() => obtenerUsuariosPorRol("Administrador"));
+  const [respuesta, { refetch }] = createResource(() =>
+      obtenerUsuariosPorRolPorId(ROLES_USUARIOS.ADMINISTRADOR)
+    );
 
   const administradoresFiltrados = createMemo(() => {
     const buscar = busqueda().toLowerCase();

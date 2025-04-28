@@ -165,7 +165,16 @@ export const actualizarEstadoPedido = async (req, res, next) => {
     }
 
     // 🕵🏻‍♂️ Auditar la acción de cambio de estado
-    await crearAuditoria('pedidos', 'actualiza estado', id, req.usuario?.id || null);
+    await crearAuditoria({
+      tabla: 'pedidos',
+      accion: 'actualiza estado',
+      registroId: pedido.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Pedido ${pedido.id} actualizado a estado "${estadoNombre}".`,
+      datosAntes: { estadoPedidoId: pedido.estadoPedidoId },
+      datosDespues: { estadoPedidoId },
+      ip: req.ip,
+    });
 
     // 🔥 Devolver respuesta final
     res.json({
@@ -276,7 +285,18 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
     } catch (kommoError) {
       console.error('❌ Error al crear lead en Kommo:', kommoError.message);
     }
-    await crearAuditoria('pedidos', 'crea pedido desde panel', pedido.id, req.usuario?.id || null);
+    
+    await crearAuditoria({
+      tabla: 'pedidos',
+      accion: 'crea pedido desde panel',
+      registroId: pedido.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Pedido ${pedido.id} creado desde el panel por ${req.usuario?.nombre || 'sistema'}.`,
+      datosAntes: {},
+      datosDespues: { clienteId: clienteFinal.id, total },
+      ip: req.ip,
+    });
+    
     res.status(201).json({ message: 'Pedido creado correctamente', pedidoId: pedido.id });
   } catch (err) {
     console.error('❌ Error al crear pedido desde panel:', err);

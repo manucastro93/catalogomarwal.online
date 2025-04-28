@@ -1,7 +1,7 @@
 import { For, Show } from "solid-js";
 import { formatearPrecio } from "../../utils/formato";
 import type { Producto } from "../../types/producto";
-
+import ConPermiso from "../Layout/ConPermiso";
 export default function TablaProductos(props: {
   productos: Producto[];
   orden: string;
@@ -93,22 +93,23 @@ export default function TablaProductos(props: {
                     >
                       Ver
                     </button>
-                    <Show when={!props.esVendedor}>
-                      <>
+                    <ConPermiso modulo="productos" accion="editar">
                         <button
                           class="text-green-600 hover:underline"
                           onClick={() => props.onEditar(p.id)}
                         >
                           Editar
                         </button>
-                        <button
+                    </ConPermiso>
+                    <ConPermiso modulo="productos" accion="editar">
+                    <button
                           class="text-red-600 hover:underline"
                           onClick={() => props.onEliminar(p.id)}
                         >
                           Eliminar
                         </button>
-                      </>
-                    </Show>
+                    </ConPermiso>
+                    
                   </td>
                 </tr>
               )}

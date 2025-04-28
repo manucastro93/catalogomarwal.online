@@ -62,7 +62,16 @@ export const crearCategoria = async (req, res) => {
     }
 
     const nuevaCategoria = await Categoria.create({ nombre, orden, estado });
-    await crearAuditoria('categorias', 'crea categoría', id, req.usuario?.id || null);
+
+    await crearAuditoria({
+      tabla: 'categorias',
+      accion: 'crea categoria',
+      registroId: categoria.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se creó la categoría ${categoria.nombre}`,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
+
     cache.del('categoriasPublicas');
     return res.status(201).json({ message: 'Categoría creada correctamente', categoria: nuevaCategoria });
   } catch (error) {
@@ -85,6 +94,8 @@ export const editarCategoria = async (req, res) => {
       where: { nombre, deletedAt: null },
     });
 
+    const datosAntes = categoriaExistente.toJSON();
+
     if (categoriaExistente && categoriaExistente.id !== categoria.id) {
       return res.status(400).json({ message: `La categoría '${nombre}' ya existe y está activa` });
     }
@@ -106,7 +117,19 @@ export const editarCategoria = async (req, res) => {
     categoria.orden = orden;
     categoria.estado = estado;
     await categoria.save();
-    await crearAuditoria('categorias', 'edita categoría', id, req.usuario?.id || null);
+    
+    const datosDespues = categoria.toJSON();
+
+    await crearAuditoria({
+      tabla: 'categorias',
+      accion: 'actualiza categoria',
+      registroId: categoria.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Categoria ${categoria.nombre} actualizada.`,
+      datosAntes,
+      datosDespues,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
+    });
     cache.del('categoriasPublicas');
     res.json({ message: 'Categoría actualizada correctamente', categoria });
   } catch (error) {
@@ -125,7 +148,16 @@ export const eliminarCategoria = async (req, res) => {
     }
 
     await categoria.destroy();
-    await crearAuditoria('categorias', 'elimina categoría', id, req.usuario?.id || null);
+
+     await crearAuditoria({
+      tabla: 'categorias',
+      accion: 'elimina categoria',
+      registroId: categoria.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Se eliminó la categoria "${categoria.nombre}"`,
+      ip,
+    });
+    
     cache.del('categoriasPublicas');
 
     res.json({ message: 'Categoría eliminada correctamente' });

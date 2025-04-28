@@ -7,26 +7,34 @@ export const checkPermiso = (moduloManual = null, accion) => {
       if (!usuario) {
         return res.status(401).json({ message: 'No autenticado' });
       }
+      if (usuario.rolUsuarioId === 1) {
+        return next();
+      }
 
-      let nombreModulo = moduloManual || req.body?.modulo || null;
+      // Primero determinar el módulo
+      let nombreModulo = moduloManual || req.query?.modulo || req.body?.modulo || null;
 
-      // 🔥 Intentar deducir el módulo automáticamente
       if (!nombreModulo) {
         let rolUsuarioId = null;
 
-        // Primero si viene en el body (crear o editar)
         if (req.body?.rolUsuarioId) {
           rolUsuarioId = req.body.rolUsuarioId;
-        } 
-        // Si no, intentar buscarlo por ID de usuario en params (eliminar)
-        else if (req.params?.id) {
-          const usuarioTarget = await Usuario.findByPk(req.params.id);
-          if (!usuarioTarget) return res.status(404).json({ message: 'Usuario no encontrado' });
-          rolUsuarioId = usuarioTarget.rolUsuarioId;
+        } else if (req.params?.id) {
+          // Primero intentamos como módulo
+          const moduloTarget = await Modulo.findByPk(req.params.id);
+          if (moduloTarget) {
+            nombreModulo = moduloTarget.nombre;
+          } else {
+            // Si no, como usuario
+            const usuarioTarget = await Usuario.findByPk(req.params.id);
+            if (!usuarioTarget) {
+              return res.status(404).json({ message: 'Usuario o módulo no encontrado' });
+            }
+            rolUsuarioId = usuarioTarget.rolUsuarioId;
+          }
         }
 
-        // Buscar el módulo asociado al rol
-        if (rolUsuarioId) {
+        if (rolUsuarioId && !nombreModulo) {
           const rol = await RolUsuario.findByPk(rolUsuarioId);
           if (!rol) return res.status(400).json({ message: 'Rol de usuario inválido' });
 
@@ -37,13 +45,11 @@ export const checkPermiso = (moduloManual = null, accion) => {
         }
       }
 
-      console.log('✅ Módulo inferido para permiso:', nombreModulo);
-
       if (!nombreModulo) {
         return res.status(400).json({ message: 'No se pudo determinar el módulo para validar permisos' });
       }
-
-      // ✅ Verificar si tiene permiso
+      
+      // Luego validar permisos
       const tienePermiso = await PermisosUsuario.findOne({
         where: {
           rolUsuarioId: usuario.rolUsuarioId,
