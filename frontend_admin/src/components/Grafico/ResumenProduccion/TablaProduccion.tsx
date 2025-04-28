@@ -9,7 +9,7 @@ interface Props {
 
 export default function TablaProduccion(props: Props) {
   return (
-    <div class="overflow-x-auto mt-60">
+    <div class="overflow-x-auto mt-15">
       <table class="w-full table-auto border border-collapse text-sm">
         <thead class="bg-gray-100">
           <tr>

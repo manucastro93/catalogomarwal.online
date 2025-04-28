@@ -3,14 +3,14 @@ import {
   BarrasPlanta,
   TortaCategoria,
   BarrasTurno,
-  LineasEvolucionProduccion
+  LineasEvolucionProduccion,
 } from "./Graficos";
 import { deberiaMostrarGrafico } from "../../../helpers/graficoHelper";
 import type {
   ResumenProduccionPlanta,
   ResumenProduccionCategoria,
   ResumenProduccionTurno,
-  EvolucionProduccion
+  EvolucionProduccion,
 } from "../../../types/grafico";
 
 interface Props {
@@ -29,27 +29,31 @@ interface Props {
 }
 
 export default function GraficosProduccion(props: Props) {
-
   return (
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Show when={deberiaMostrarGrafico("planta", props.filtros)}>
-        <BarrasPlanta datos={props.resumenPlanta} modo={props.modo} />
-      </Show>
-
-      <Show when={deberiaMostrarGrafico("categoria", props.filtros)}>
-        <TortaCategoria datos={props.resumenCategoria} modo={props.modo} />
-      </Show>
-
-      <Show when={deberiaMostrarGrafico("turno", props.filtros)}>
-        <BarrasTurno datos={props.resumenTurno} modo={props.modo} />
-      </Show>
-
-      <Show when={props.resumenEvolucion?.length > 0}>
-        <LineasEvolucionProduccion
-          datos={props.resumenEvolucion}
-          modo={props.modo}
-        />
-      </Show>
+      {deberiaMostrarGrafico("planta", props.filtros) && (
+        <div class="min-h-[320px]">
+          <BarrasPlanta datos={props.resumenPlanta} modo={props.modo} />
+        </div>
+      )}
+      {deberiaMostrarGrafico("categoria", props.filtros) && (
+        <div class="min-h-[320px]">
+          <TortaCategoria datos={props.resumenCategoria} modo={props.modo} />
+        </div>
+      )}
+      {deberiaMostrarGrafico("turno", props.filtros) && (
+        <div class="min-h-[320px]">
+          <BarrasTurno datos={props.resumenTurno} modo={props.modo} />
+        </div>
+      )}
+      {props.resumenEvolucion?.length > 0 && (
+        <div class="min-h-[320px] md:col-span-2">
+          <LineasEvolucionProduccion
+            datos={props.resumenEvolucion}
+            modo={props.modo}
+          />
+        </div>
+      )}
     </div>
   );
 }

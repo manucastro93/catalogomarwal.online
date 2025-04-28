@@ -37,8 +37,8 @@ export default function ResumenProduccion() {
   const [categorias] = createResource(obtenerCategorias);
 
   const filtros = () => ({
-    desde: desde(),
-    hasta: hasta(),
+    desde: desde() || new Date().toISOString().slice(0, 10),
+    hasta: hasta() || new Date().toISOString().slice(0, 10),
     turno: turno(),
     plantaId: plantaId(),
     categoriaId: categoriaId(),
@@ -46,17 +46,13 @@ export default function ResumenProduccion() {
     modo: modo(),
   });
 
-  const [resumen] = createResource(
-    () => ({ ...filtros(), page: page(), limit }),
-    fetchResumenProduccion
-  );
+  const [resumen] = createResource(() => ({ ...filtros(), page: page(), limit }), fetchResumenProduccion);
   const [resumenPlanta] = createResource(filtros, fetchResumenProduccionPorPlanta);
   const [resumenCategoria] = createResource(filtros, fetchResumenProduccionPorCategoria);
   const [resumenTurno] = createResource(filtros, fetchResumenProduccionPorTurno);
   const [resumenGeneral] = createResource(filtros, fetchResumenProduccionGeneral);
   const [resumenEvolucion] = createResource(filtros, fetchResumenProduccionEvolucion);
 
-  
   function actualizarFiltros() {
     setPage(1);
   }
@@ -75,80 +71,87 @@ export default function ResumenProduccion() {
   onMount(actualizarFiltros);
 
   return (
-    <div class="p-6 space-y-8">
-      <h1 class="text-2xl font-bold mb-4">Resumen de Producción Diaria 📈</h1>
+    <div class="px-3 py-4 md:p-6 space-y-6 md:space-y-8">
+      <h1 class="text-lg md:text-2xl font-bold mb-4 text-center">Resumen de Producción Diaria 📈</h1>
 
-      <FiltrosProduccion
-        desde={desde()|| new Date().toISOString().slice(0, 10)}
-        hasta={hasta()|| new Date().toISOString().slice(0, 10)}
-        turno={turno()}
-        plantaId={plantaId()}
-        categoriaId={categoriaId()}
-        producto={producto()}
-        plantas={plantas() || []}
-        categorias={categorias() || []}
-        setDesde={v => { setDesde(v); actualizarFiltros(); }}
-        setHasta={v => { setHasta(v); actualizarFiltros(); }}
-        setTurno={v => { setTurno(v); actualizarFiltros(); }}
-        setPlantaId={v => { setPlantaId(v); actualizarFiltros(); }}
-        setCategoriaId={v => { setCategoriaId(v); actualizarFiltros(); }}
-        setProducto={v => { setProducto(v); actualizarFiltros() }}
-        modo={modo()}
-        setModo={v => { setModo(v as "cantidad" | "valor"); actualizarFiltros(); }}
-        limpiarFiltros={limpiarFiltros}
-      />
+      <div class="space-y-4">
+        <FiltrosProduccion
+          desde={desde()}
+          hasta={hasta()}
+          turno={turno()}
+          plantaId={plantaId()}
+          categoriaId={categoriaId()}
+          producto={producto()}
+          plantas={plantas() || []}
+          categorias={categorias() || []}
+          setDesde={(v) => { setDesde(v); actualizarFiltros(); }}
+          setHasta={(v) => { setHasta(v); actualizarFiltros(); }}
+          setTurno={(v) => { setTurno(v); actualizarFiltros(); }}
+          setPlantaId={(v) => { setPlantaId(v); actualizarFiltros(); }}
+          setCategoriaId={(v) => { setCategoriaId(v); actualizarFiltros(); }}
+          setProducto={(v) => { setProducto(v); actualizarFiltros(); }}
+          modo={modo()}
+          setModo={(v) => { setModo(v as "cantidad" | "valor"); actualizarFiltros(); }}
+          limpiarFiltros={limpiarFiltros}
+        />
+      </div>
 
-      <div class="bg-gray-100 p-4 rounded shadow-md">
+      <div class="bg-gray-100 p-4 rounded shadow-md text-sm md:text-base space-y-2">
         <p><b>Total Cantidad:</b> {Number(resumenGeneral()?.totalCantidad || 0).toLocaleString()}</p>
         <p><b>Total Costo MP:</b> ${Number(resumenGeneral()?.totalCostoMP || 0).toLocaleString()}</p>
         <p><b>Total Precio de Venta:</b> ${Number(resumenGeneral()?.totalValor || 0).toLocaleString()}</p>
       </div>
 
       <Show when={!resumenPlanta.loading && !resumenCategoria.loading && !resumenTurno.loading}>
-      <For each={[modo()]}>
-          {m => (
-            <GraficosProduccion
-              resumenPlanta={resumenPlanta()!}
-              resumenCategoria={resumenCategoria()!}
-              resumenTurno={resumenTurno()!}
-              resumenEvolucion={resumenEvolucion()!}
-              filtros={{
-                plantaId: plantaId(),
-                categoriaId: categoriaId(),
-                turno: turno(),
-                producto: producto(),
-              }}
-              rolUsuarioId={rolUsuarioId}
-              modo={m}
-            />
-          )}
-        </For>
+        <div class="flex flex-col gap-6">
+          <For each={[modo()]}>
+            {m => (
+              <GraficosProduccion
+                resumenPlanta={resumenPlanta()!}
+                resumenCategoria={resumenCategoria()!}
+                resumenTurno={resumenTurno()!}
+                resumenEvolucion={resumenEvolucion()!}
+                filtros={{
+                  plantaId: plantaId(),
+                  categoriaId: categoriaId(),
+                  turno: turno(),
+                  producto: producto(),
+                }}
+                rolUsuarioId={rolUsuarioId}
+                modo={m}
+              />
+            )}
+          </For>
+        </div>
       </Show>
 
       <Show when={resumen()}>
-        <TablaProduccion
-          items={resumen()!.items}
-          rolUsuarioId={rolUsuarioId}
-          modo={modo()}
-        />
-        <div class="flex justify-center items-center gap-4 mt-4">
-          <button
-            disabled={page() <= 1}
-            onClick={() => setPage(page() - 1)}
-            class="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-          >
-            Anterior
-          </button>
-          <span>Página {page()} de {resumen()!.totalPages}</span>
-          <button
-            disabled={page() >= resumen()!.totalPages}
-            onClick={() => setPage(page() + 1)}
-            class="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-          >
-            Siguiente
-          </button>
+        <div class="flex flex-col gap-4">
+          <TablaProduccion
+            items={resumen()!.items}
+            rolUsuarioId={rolUsuarioId}
+            modo={modo()}
+          />
+          <div class="flex flex-col md:flex-row justify-center items-center gap-3 mt-4">
+            <button
+              disabled={page() <= 1}
+              onClick={() => setPage(page() - 1)}
+              class="px-4 py-2 bg-gray-300 rounded w-full md:w-auto disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <span class="text-sm md:text-base">Página {page()} de {resumen()!.totalPages}</span>
+            <button
+              disabled={page() >= resumen()!.totalPages}
+              onClick={() => setPage(page() + 1)}
+              class="px-4 py-2 bg-gray-300 rounded w-full md:w-auto disabled:opacity-50"
+            >
+              Siguiente
+            </button>
+          </div>
         </div>
       </Show>
     </div>
   );
 }
+
