@@ -1,5 +1,10 @@
 export default (sequelize, DataTypes) => {
   const Pedido = sequelize.define('Pedido', {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
     observaciones: {
       type: DataTypes.TEXT,
       allowNull: true,
