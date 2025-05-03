@@ -1,6 +1,7 @@
 export interface PermisoUsuario {
-    modulo: string;
-    accion: string;
-    permitido: boolean;
+  id: number;
+  modulo: { nombre: string };
+  accion: string;
+  permitido: boolean;
   }
   

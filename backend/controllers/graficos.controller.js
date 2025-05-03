@@ -1,4 +1,3 @@
-// backend/controllers/graficos.controller.js
 import { ReporteProduccion, Planta } from "../models/index.js";
 import { construirWhere, construirIncludeProducto } from "../helpers/graficos.js";
 import dayjs from "dayjs";

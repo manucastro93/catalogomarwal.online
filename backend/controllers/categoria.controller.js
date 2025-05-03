@@ -21,7 +21,6 @@ export const listarCategorias = async (req, res) => {
     });
 
     const totalPaginas = Math.ceil(count / limit);
-
     res.json({
       data: rows,
       pagina: Number(page),

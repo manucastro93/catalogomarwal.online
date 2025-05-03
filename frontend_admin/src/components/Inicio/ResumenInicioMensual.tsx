@@ -63,7 +63,7 @@ export default function ResumenInicioMensual(props: {
         <p>{resumen.categoriaTop?.nombre ?? "Sin datos"}</p>
       </div>
 
-      <div class="bg-white p-4 rounded shadow col-span-full">
+      <div class="bg-white p-4 rounded shadow ">
         <h2 class="font-semibold text-gray-700 mb-2">Top 5 Clientes del mes</h2>
         <ul class="list-disc list-inside">
           <For each={resumen.mejoresClientes ?? []}>

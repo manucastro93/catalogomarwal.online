@@ -65,114 +65,113 @@ export default function FiltrosProduccion(props: Props) {
   });
 
   return (
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6 items-center">
-    {/* Desde */}
-    <div class="w-full">
-      <InputFecha
-        valor={props.desde}
-        onChange={(v) => props.setDesde(v || new Date().toISOString().slice(0,10))}
-        placeholder="Desde"
-      />
-    </div>
-  
-    {/* Hasta */}
-    <div class="w-full">
-      <InputFecha
-        valor={props.hasta}
-        onChange={(v) => props.setHasta(v || new Date().toISOString().slice(0,10))}
-        placeholder="Hasta"
-      />
-    </div>
-  
-    {/* Turno */}
-    <select
-      value={props.turno}
-      onChange={(e) => { props.setTurno(e.currentTarget.value); setOpen(false); }}
+<div class="w-full max-w-screen px-4 py-2 grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-center">
+  {/* Desde */}
+  <InputFecha
+    valor={props.desde}
+    onChange={(v) => props.setDesde(v || new Date().toISOString().slice(0, 10))}
+    placeholder="Desde"
+    class="w-full p-2 rounded border"
+  />
+
+  {/* Hasta */}
+  <InputFecha
+    valor={props.hasta}
+    onChange={(v) => props.setHasta(v || new Date().toISOString().slice(0, 10))}
+    placeholder="Hasta"
+    class="w-full p-2 rounded border"
+  />
+
+  {/* Turno */}
+  <select
+    value={props.turno}
+    onChange={(e) => { props.setTurno(e.currentTarget.value); setOpen(false); }}
+    class="border p-2 rounded w-full"
+  >
+    <option value="">Todos los Turnos</option>
+    <option value="mañana">Mañana</option>
+    <option value="tarde">Tarde</option>
+    <option value="noche">Noche</option>
+  </select>
+
+  {/* Planta */}
+  <select
+    value={props.plantaId}
+    onChange={(e) => {
+      props.setPlantaId(e.currentTarget.value);
+      props.setProducto("");
+      setBusqueda("");
+      setResultados([]);
+      setOpen(false);
+    }}
+    class="border p-2 rounded w-full"
+  >
+    <option value="">Todas las Plantas</option>
+    <For each={props.plantas}>{p => <option value={p.id}>{p.nombre}</option>}</For>
+  </select>
+
+  {/* Categoría */}
+  <select
+    value={props.categoriaId}
+    onChange={(e) => {
+      props.setCategoriaId(e.currentTarget.value);
+      props.setProducto("");
+      setBusqueda("");
+      setResultados([]);
+      setOpen(false);
+    }}
+    class="border p-2 rounded w-full"
+  >
+    <option value="">Todas las Categorías</option>
+    <For each={props.categorias}>{c => <option value={c.id}>{c.nombre}</option>}</For>
+  </select>
+
+  {/* Buscar producto */}
+  <div class="relative w-full" ref={el => (contenedor = el!)}>
+    <input
+      type="text"
+      value={busqueda()}
+      placeholder="Buscar Producto"
+      onInput={onInputProducto}
       class="border p-2 rounded w-full"
-    >
-      <option value="">Todos los Turnos</option>
-      <option value="mañana">Mañana</option>
-      <option value="tarde">Tarde</option>
-      <option value="noche">Noche</option>
-    </select>
-  
-    {/* Planta */}
-    <select
-      value={props.plantaId}
-      onChange={(e) => {
-        props.setPlantaId(e.currentTarget.value);
-        props.setProducto("");
-        setBusqueda("");
-        setResultados([]);
-        setOpen(false);
-      }}
-      class="border p-2 rounded w-full"
-    >
-      <option value="">Todas las Plantas</option>
-      <For each={props.plantas}>{p => <option value={p.id}>{p.nombre}</option>}</For>
-    </select>
-  
-    {/* Categoría */}
-    <select
-      value={props.categoriaId}
-      onChange={(e) => {
-        props.setCategoriaId(e.currentTarget.value);
-        props.setProducto("");
-        setBusqueda("");
-        setResultados([]);
-        setOpen(false);
-      }}
-      class="border p-2 rounded w-full"
-    >
-      <option value="">Todas las Categorías</option>
-      <For each={props.categorias}>{c => <option value={c.id}>{c.nombre}</option>}</For>
-    </select>
-  
-    {/* Buscador de producto */}
-    <div class="relative w-full" ref={el => (contenedor = el!)}>
-      <input
-        type="text"
-        value={busqueda()}
-        placeholder="Buscar Producto"
-        onInput={onInputProducto}
-        class="border p-2 rounded w-full"
-      />
-      <Show when={open()}>
-        <div class="absolute bg-white border w-full max-h-40 overflow-y-auto rounded shadow z-10">
-          <Show when={resultados().length > 0}>
-            <For each={resultados()}>{prod =>
-              <div onClick={() => seleccionar(prod)} class="p-2 hover:bg-gray-100 cursor-pointer text-sm">
-                {prod.sku} - {prod.nombre}
-              </div>
-            }</For>
-          </Show>
-          <Show when={resultados().length === 0}>
-            <div class="p-2 text-gray-400 text-sm">Sin resultados</div>
-          </Show>
-        </div>
-      </Show>
-    </div>
-  
-    {/* Modo */}
-    <select
-      value={props.modo}
-      onChange={(e) => props.setModo(e.currentTarget.value)}
-      class="border p-2 rounded w-full"
-    >
-      <option value="valor">Valor $</option>
-      <option value="cantidad">Cantidad</option>
-    </select>
-  
-    {/* Botón limpiar */}
-    <div class="w-full flex justify-center md:justify-end">
-      <button
-        onClick={props.limpiarFiltros}
-        class="bg-gray-400 text-white px-4 py-2 rounded w-full md:w-auto"
-      >
-        Limpiar
-      </button>
-    </div>
+    />
+    <Show when={open()}>
+      <div class="absolute bg-white border w-full max-h-40 overflow-y-auto rounded shadow z-10">
+        <Show when={resultados().length > 0}>
+          <For each={resultados()}>{prod =>
+            <div onClick={() => seleccionar(prod)} class="p-2 hover:bg-gray-100 cursor-pointer text-sm">
+              {prod.sku} - {prod.nombre}
+            </div>
+          }</For>
+        </Show>
+        <Show when={resultados().length === 0}>
+          <div class="p-2 text-gray-400 text-sm">Sin resultados</div>
+        </Show>
+      </div>
+    </Show>
   </div>
+
+  {/* Modo */}
+  <select
+    value={props.modo}
+    onChange={(e) => props.setModo(e.currentTarget.value)}
+    class="border p-2 rounded w-full"
+  >
+    <option value="valor">Valor $</option>
+    <option value="cantidad">Cantidad</option>
+  </select>
+
+  {/* Botón limpiar */}
+  <div class="w-full flex justify-center md:justify-end">
+    <button
+      onClick={props.limpiarFiltros}
+      class="bg-gray-400 text-white px-4 py-2 rounded w-full md:w-auto"
+    >
+      Limpiar
+    </button>
+  </div>
+</div>
+
   
   );
 }

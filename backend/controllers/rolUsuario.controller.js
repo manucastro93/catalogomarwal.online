@@ -1,4 +1,4 @@
-import { RolUsuario } from '../models/index.js';
+import { RolUsuario, PermisosUsuario, Modulo } from '../models/index.js';
 
 export const listarRolesUsuario = async (req, res, next) => {
   try {
@@ -8,6 +8,45 @@ export const listarRolesUsuario = async (req, res, next) => {
     next(error);
   }
 };
+
+export const obtenerPermisosPorRol = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const permisos = await PermisosUsuario.findAll({
+      where: { rolUsuarioId: Number(id) },
+      order: [['moduloId', 'ASC'], ['accion', 'ASC']],
+      include: [
+        {
+          model: Modulo,
+          as: 'modulo',
+          attributes: ['nombre'] // solo trae el nombre
+        }
+      ]
+    });
+    res.json(permisos);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const actualizarPermisosPorRol = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const cambios = req.body; // Array de { id, permitido }
+
+    for (const cambio of cambios) {
+      await PermisosUsuario.update(
+        { permitido: cambio.permitido },
+        { where: { id: cambio.id, rolUsuarioId: Number(id) } }
+      );
+    }
+
+    res.json({ mensaje: 'Permisos actualizados' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 export const crearRolUsuario = async (req, res, next) => {
   try {

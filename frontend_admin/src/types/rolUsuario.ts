@@ -1,6 +1,6 @@
 export interface RolUsuario {
   id: number;
-  nombre: 'Supremo' | 'Administrador' | 'Vendedor' | 'Operario';
+  nombre: string;
   descripcion?: string;
   createdAt: string;
   updatedAt: string;

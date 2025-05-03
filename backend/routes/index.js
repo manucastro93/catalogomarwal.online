@@ -16,6 +16,8 @@ import plantaRoutes from './planta.routes.js';
 import rolUsuarioRoutes from './rolUsuario.routes.js';
 import estadoPedidoRoutes from './estadoPedido.routes.js';
 import graficosRoutes from './graficos.routes.js';
+import informeSemanal from './informeSemanal.routes.js';
+//import chatRoutes from './chat.route.js';
 
 const router = express.Router();
 
@@ -35,5 +37,7 @@ router.use('/plantas', plantaRoutes);
 router.use('/roles-usuario', rolUsuarioRoutes);
 router.use('/estados-pedidos', estadoPedidoRoutes);
 router.use('/graficos', graficosRoutes);
+router.use('/informes-semanales', informeSemanal); 
+//router.use('/chat', chatRoutes); 
 
 export default router;
