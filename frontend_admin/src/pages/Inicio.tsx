@@ -5,7 +5,9 @@ import { useAuth } from '@/store/auth';
 import { obtenerResumenDelMes } from '@/services/estadisticas.service';
 import { obtenerPedidosInicio } from '@/services/pedido.service';
 import { formatearPrecio } from '@/utils/formato';
-import ResumenInicioMensual from '@/components/Estadistica/ResumenInicioMensual';
+import ResumenInicioMensual from '@/components/Inicio/ResumenInicioMensual';
+import InformeSemanalVivo from "@/components/Inicio/InformeSemanalVivo";
+import PedidosPendientes from "@/components/Inicio/PedidosPendientes";
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 
 export default function Inicio() {
@@ -38,6 +40,7 @@ export default function Inicio() {
           </button>
         </div>
       </Show>
+
       <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}>
         <div class="flex justify-end gap-4">
           <button
@@ -55,49 +58,25 @@ export default function Inicio() {
           </button>
         </div>
       </Show>
+
       <Show when={usuario()?.rolUsuarioId !== ROLES_USUARIOS.OPERARIO}>
+
         <div>
           <h1 class="text-2xl font-bold mb-2">Resumen del mes</h1>
           <Show when={resumen()}>
             <ResumenInicioMensual resumen={resumen()} />
           </Show>
         </div>
-      
+        
         <Show when={pedidos()}>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h2 class="text-xl font-semibold mb-3">Pedidos Pendientes</h2>
-              <ul class="space-y-2">
-                <For each={pedidos()?.pendientes}>
-                  {(pedido) => (
-                    <li class="border rounded px-4 py-2 shadow">
-                      <div class="font-medium">{pedido.cliente?.nombre}</div>
-                      <div class="text-sm text-gray-500">
-                        Total: {formatearPrecio(pedido.total)} · {pedido.createdAt.slice(0, 10)}
-                      </div>
-                    </li>
-                  )}
-                </For>
-              </ul>
-            </div>
-            <div>
-              <h2 class="text-xl font-semibold mb-3">Confirmado / Preparando</h2>
-              <ul class="space-y-2">
-                <For each={pedidos()?.confirmados}>
-                  {(pedido) => (
-                    <li class="border rounded px-4 py-2 shadow">
-                      <div class="font-medium">{pedido.cliente?.nombre}</div>
-                      <div class="text-sm text-gray-500">
-                        Total: {formatearPrecio(pedido.total)} · {pedido.createdAt.slice(0, 10)}
-                      </div>
-                    </li>
-                  )}
-                </For>
-              </ul>
-            </div>
-          </div>
+          <PedidosPendientes
+            pendientes={pedidos()?.pendientes || []}
+            confirmados={pedidos()?.confirmados || []}
+          />
         </Show>
+
       </Show>
+      <InformeSemanalVivo />
     </div>
   );
 }

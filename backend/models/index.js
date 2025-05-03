@@ -77,6 +77,7 @@ export const {
   EstadoPedido,
   PermisosUsuario,
   Modulo,
+  InformeSemanal,
 } = db;
 
 export { sequelize, Sequelize };

@@ -21,7 +21,7 @@ export default function Categorias() {
   const [mostrarMensaje, setMostrarMensaje] = createSignal(false);
 
   const [categorias, { refetch }] = createResource(obtenerCategorias);
-
+  
   const puedeEditar = () =>
     [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(
       usuario()?.rolUsuarioId as (typeof ROLES_USUARIOS)["SUPREMO"] | (typeof ROLES_USUARIOS)["ADMINISTRADOR"]
@@ -61,7 +61,7 @@ export default function Categorias() {
 
       <Show when={!categorias.loading} fallback={<Loader />}>
         <TablaCategorias
-          categorias={categorias()?.data ?? []}
+          categorias={categorias() ?? []}
           puedeEditar={puedeEditar()}
           puedeEliminar={puedeEliminar()}
           onEditar={abrirModal}
