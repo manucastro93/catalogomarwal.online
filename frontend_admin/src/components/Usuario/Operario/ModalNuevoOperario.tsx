@@ -76,6 +76,7 @@ export default function ModalNuevoOperario(props: ModalNuevoOperarioProps) {
       } else {
         await crearUsuario(datosValidados, 'Operarios');
       }
+      console.log('➡️ Enviando datos:', datosValidados);
 
       props.onExito('Operario guardado correctamente');
       props.cerrar();
