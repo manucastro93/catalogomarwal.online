@@ -1,4 +1,4 @@
-import { createSignal, createEffect, Show } from 'solid-js';
+import { createSignal, createEffect, Show, For } from 'solid-js';
 import type { Usuario } from '@/types/usuario';
 import { usuarioSchema } from '@/validations/usuario.schema';
 import { crearUsuario, editarUsuario } from '@/services/usuario.service';
@@ -14,17 +14,26 @@ export default function ModalNuevoOperario(props: ModalNuevoOperarioProps) {
   const [nombre, setNombre] = createSignal('');
   const [email, setEmail] = createSignal('');
   const [telefono, setTelefono] = createSignal('');
+  const [rolSeleccionado, setRolSeleccionado] = createSignal<number>(5);
   const [errores, setErrores] = createSignal<{ [key: string]: string }>({});
+
+  const rolesDisponibles = [
+    { id: 5, nombre: 'Operario Hojalatería' },
+    { id: 6, nombre: 'Operario Inyección' },
+    { id: 7, nombre: 'Operario Metalúrgica' }
+  ];
 
   createEffect(() => {
     if (props.usuario) {
       setNombre(props.usuario.nombre || '');
       setEmail(props.usuario.email || '');
       setTelefono(props.usuario.telefono || '');
+      setRolSeleccionado(props.usuario.rolUsuarioId || 5);
     } else {
       setNombre('');
       setEmail('');
       setTelefono('');
+      setRolSeleccionado(5);
       setErrores({});
     }
   });
@@ -57,7 +66,7 @@ export default function ModalNuevoOperario(props: ModalNuevoOperarioProps) {
   const handleSubmit = async () => {
     const datosValidados = {
       ...validar(),
-      rolUsuarioId: 4, // Operario
+      rolUsuarioId: rolSeleccionado(),
     };
     if (!datosValidados) return;
 
@@ -96,6 +105,18 @@ export default function ModalNuevoOperario(props: ModalNuevoOperarioProps) {
               <Show when={errores().nombre}>
                 <p class="text-red-600 text-sm mt-1">{errores().nombre}</p>
               </Show>
+            </div>
+
+            <div>
+              <select
+                class="w-full border p-2 rounded"
+                value={rolSeleccionado()}
+                onChange={(e) => setRolSeleccionado(+e.currentTarget.value)}
+              >
+                <For each={rolesDisponibles}>
+                  {(rol) => <option value={rol.id}>{rol.nombre}</option>}
+                </For>
+              </select>
             </div>
 
             <div>
