@@ -14,6 +14,8 @@ export const usuarioSchema = z.object({
     .string()
     .min(1, { message: "El teléfono es obligatorio" })
     .max(15, { message: "El teléfono no puede tener más de 15 caracteres" }),
-});
 
-export type UsuarioSchema = z.infer<typeof usuarioSchema>;
+  rolUsuarioId: z
+    .number()
+    .int({ message: "El rol debe ser un número entero" })
+});
