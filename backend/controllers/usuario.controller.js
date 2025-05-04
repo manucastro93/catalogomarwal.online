@@ -67,6 +67,30 @@ export const crearUsuario = async (req, res, next) => {
   }
 };
 
+export const obtenerUsuariosOperarios = async (req, res, next) => {
+  try {
+    const usuarios = await Usuario.findAll({
+      where: {
+        rolUsuarioId: {
+          [Op.in]: [4, 5, 6, 7] // 👈 Todos los operarios
+        }
+      },
+      order: [['nombre', 'ASC']],
+      include: [
+        {
+          model: RolUsuario,
+          as: 'rolUsuario',
+          attributes: ['nombre']
+        }
+      ]
+    });
+
+    res.json(usuarios);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const obtenerUsuariosPorRol = async (req, res, next) => {
   try {
     const rol = req.params.rol;

@@ -21,9 +21,9 @@ export const obtenerUsuariosPorRolPorId = async (rolUsuarioId: number): Promise<
   }
 };
 
-export const obtenerUsuarios = async (): Promise<Usuario[]> => {
+export const obtenerUsuariosOperarios = async (): Promise<Usuario[]> => {
   try {
-    const response = await api.get('/usuarios'); 
+    const response = await api.get('/usuarios/operarios'); 
     return response.data;
   } catch (error) {
     console.error('Error al obtener usuarios', error);
