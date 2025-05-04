@@ -47,7 +47,7 @@ export default function TablaProduccion(props: Props) {
         </button>
       </div>
 
-      <div class="overflow-x-auto mt-15">
+      <div class="overflow-x-auto mt-5">
         <table class="w-full table-auto border border-collapse text-sm">
           <thead class="bg-gray-100">
             <tr>
