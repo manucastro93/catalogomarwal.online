@@ -43,25 +43,28 @@ export default function ModalNuevoOperario(props: ModalNuevoOperarioProps) {
       nombre: nombre().trim(),
       email: email().trim(),
       telefono: telefono().trim(),
+      rolUsuarioId: rolSeleccionado()
     };
-
+  
     const result = usuarioSchema.safeParse(datos);
-
+  
     if (!result.success) {
+      console.error('❌ Errores Zod:', result.error.flatten());
       const erroresZod = result.error.flatten().fieldErrors;
       const erroresFormateados: { [key: string]: string } = {};
-
+  
       Object.entries(erroresZod).forEach(([key, value]) => {
         if (value?.[0]) erroresFormateados[key] = value[0];
       });
-
+  
       setErrores(erroresFormateados);
       return null;
     }
-
+  
     setErrores({});
     return result.data;
   };
+  
 
   const handleSubmit = async () => {
     const datosValidados = {
