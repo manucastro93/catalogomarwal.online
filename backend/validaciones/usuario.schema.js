@@ -5,5 +5,5 @@ export const usuarioSchema = z.object({
   email: z.string().email('Debe ser un email válido'),
   telefono: z.string().min(1, 'El teléfono es obligatorio'),
   rolUsuarioId: z.number({ required_error: 'El rolUsuarioId es obligatorio' }),
-  modulo: z.string().optional()
-}).strip(); 
+  modulo: z.string().optional() 
+}).strip();
