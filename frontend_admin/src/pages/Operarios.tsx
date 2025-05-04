@@ -1,5 +1,5 @@
 import { createSignal, createResource, createMemo, Show } from 'solid-js';
-import { obtenerUsuariosPorRolPorId, eliminarUsuario } from '@/services/usuario.service';
+import { obtenerUsuariosOperarios, eliminarUsuario } from '@/services/usuario.service';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 import TablaOperarios from '@/components/Usuario/Operario/TablaOperarios';
 import FiltrosOperarios from '@/components/Usuario/Operario/FiltrosOperarios';
@@ -29,8 +29,9 @@ export default function Operarios() {
   };
 
   const [operarios, { refetch }] = createResource(() =>
-    obtenerUsuariosPorRolPorId(ROLES_USUARIOS.OPERARIO)
+    obtenerUsuariosOperarios()
   );
+  
 
   const operariosFiltrados = createMemo(() => {
     const texto = busqueda().toLowerCase().trim();
