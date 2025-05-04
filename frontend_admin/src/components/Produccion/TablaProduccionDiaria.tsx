@@ -35,8 +35,8 @@ export default function TablaProduccionDiaria({
             <th class="p-2">Cantidad</th>
             <th class="p-2">Turno</th>
             <th class="p-2">Planta</th>
-            <th class="p-2">Cargado por</th>
             <th class="p-2">Total</th>
+            <th class="p-2">Cargado por</th>
             <th class="p-2">Acciones</th>
           </tr>
         </thead>
@@ -51,12 +51,12 @@ export default function TablaProduccionDiaria({
                 <td class="p-2">{r.cantidad}</td>
                 <td class="p-2 capitalize">{r.turno}</td>
                 <td class="p-2">{r.planta?.nombre ?? r.plantaId}</td>
-                <td class="p-2">{r.usuario?.nombre}</td>
                 <td class="p-2">
                   {formatearPrecio(
                     (r.producto?.precioUnitario ?? 0) * (r.cantidad ?? 0)
                   )}
                 </td>
+                <td class="p-2">{r.usuario?.nombre}</td>
                 <td class="p-2 text-right">
                   <button
                     onClick={() => onEliminar(r)}

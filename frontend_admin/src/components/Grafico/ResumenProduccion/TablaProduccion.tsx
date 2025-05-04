@@ -38,7 +38,7 @@ export default function TablaProduccion(props: Props) {
 
   return (
     <>
-      <div class="flex justify-end mb-4">
+      <div class="flex justify-end">
         <button
           onClick={exportarExcel}
           class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
