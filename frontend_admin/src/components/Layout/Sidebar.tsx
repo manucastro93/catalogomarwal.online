@@ -59,7 +59,7 @@ export default function Sidebar() {
               {ventasOpen() ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
             <Show when={ventasOpen()}>
-              <div class="ml-5 flex flex-col gap-1 mt-1">
+              <div class="ml-10 flex flex-col gap-1 mt-1">
                 <Show when={usuario()?.rolUsuarioId !== ROLES_USUARIOS.OPERARIO}>
                   <ConPermiso modulo="Pedidos" accion="ver">
                     <A href="/Pedidos" classList={{ 'text-blue-400': esActivo('/Pedidos') }}>Pedidos</A>
@@ -100,7 +100,7 @@ export default function Sidebar() {
                 {produccionOpen() ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               <Show when={produccionOpen()}>               
-                <div class="ml-5 flex flex-col gap-1 mt-1">
+                <div class="ml-10 flex flex-col gap-1 mt-1">
                 <ConPermiso modulo="Operarios" accion="ver">
                     <A href="/Produccion/Operarios" classList={{ 'text-blue-400': esActivo('/Produccion/Operarios') }}>Operarios</A>
                   </ConPermiso>
@@ -151,7 +151,7 @@ export default function Sidebar() {
                 {paginaOpen() ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               <Show when={paginaOpen()}>
-                <div class="ml-5 flex flex-col gap-1 mt-1">
+                <div class="ml-10 flex flex-col gap-1 mt-1">
                   <ConPermiso modulo="PaginaLogo" accion="ver">
                     <A href="/pagina/logo" classList={{ 'text-blue-400 font-semibold': esActivo('/pagina/logo') }}>Logo</A>
                   </ConPermiso>
@@ -176,7 +176,7 @@ export default function Sidebar() {
                 {graficosOpen() ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               <Show when={graficosOpen()}>
-                <div class="ml-5 flex flex-col gap-1 mt-1">
+                <div class="ml-10 flex flex-col gap-1 mt-1">
                   {/*<A href="/Graficos" classList={{ 'text-blue-400 font-semibold': esActivo('/Graficos') }}>General</A>*/}
                   <A href="/Graficos/ResumenProduccion" classList={{ 'text-blue-400 font-semibold': esActivo('/Graficos/Produccion') }}>Producción</A>
                 </div>
