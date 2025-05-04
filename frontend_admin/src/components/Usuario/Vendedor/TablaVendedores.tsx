@@ -58,7 +58,7 @@ export default function TablaVendedores(props: Props) {
                       Copiar link
                     </button>
                     <a
-                      href={`https://wa.me/?text=Mirá%20el%20catálogo%20de%20Marwal:%20https://www.catalogomarwal.online/${v?.link ?? ''}`}
+                      href={`https://wa.me/?text=Mirá%20el%20catálogo%20de%20Marwal:%20https://www.catalogomarwal.online/${v?.link ?? 'xx'}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       title="Compartir por WhatsApp"
