@@ -22,9 +22,10 @@ export const crearUsuario = async (req, res, next) => {
     }
 
     // Buscar qué rol es
-    if (![ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR, ROLES_USUARIOS.VENDEDOR, ROLES_USUARIOS.OPERARIO].includes(rolUsuarioId)) {
+    if (!Object.values(ROLES_USUARIOS).includes(rolUsuarioId)) {
       return res.status(400).json({ message: 'Rol inválido' });
     }
+    
 
     // Para Vendedor o Administrador, el teléfono es obligatorio
     if ((rolUsuarioId === ROLES_USUARIOS.VENDEDOR || rolUsuarioId === ROLES_USUARIOS.ADMINISTRADOR) && !telefono) {
