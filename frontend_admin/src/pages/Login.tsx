@@ -32,7 +32,7 @@ export default function Login() {
     <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-white px-4">
       <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
         <div class="flex justify-center mb-6">
-          <img src="https://www.catalogomarwal.online/uploads/logo/logo-1744541371501.svg" alt="Logo de la empresa" class="h-16" />
+          <img src="https://www.catalogomarwal.online/uploads/logo/logo-negro.svg" alt="Logo de la empresa" class="h-16" />
         </div>
         <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Iniciar sesión</h1>
   
