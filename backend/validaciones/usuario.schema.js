@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export const usuarioSchema = z.object({
   nombre: z.string().min(1, 'El nombre es obligatorio'),
   email: z.string().email('Debe ser un email válido'),
