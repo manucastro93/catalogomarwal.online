@@ -9,45 +9,48 @@ import { crearAuditoria } from '../utils/auditoria.js';
 export const crearUsuario = async (req, res, next) => {
   try {
     const { nombre, email, telefono, rolUsuarioId } = req.body;
-    
-    // Validaciones extra
-    if (!nombre || !email || !rolUsuarioId) {
+
+    // 🛡️ Validaciones extra
+    if (!nombre || !email || rolUsuarioId == null) {
       return res.status(400).json({ message: 'Faltan campos obligatorios' });
     }
 
-    // Verificar si el email ya existe
+    // 🔍 Asegurar que sea número
+    const idRol = Number(rolUsuarioId);
+    console.log('💬 rolUsuarioId recibido:', rolUsuarioId, 'tipo:', typeof rolUsuarioId);
+
+    if (!Object.values(ROLES_USUARIOS).includes(idRol)) {
+      return res.status(400).json({ message: 'Rol inválido' });
+    }
+
+    // 📧 Verificar si el email ya existe
     const existente = await Usuario.findOne({ where: { email } });
     if (existente) {
       return res.status(400).json({ message: 'El email ya está en uso.' });
     }
 
-    // Buscar qué rol es
-    if (!Object.values(ROLES_USUARIOS).includes(rolUsuarioId)) {
-      return res.status(400).json({ message: 'Rol inválido' });
-    }
-    
-
-    // Para Vendedor o Administrador, el teléfono es obligatorio
-    if ((rolUsuarioId === ROLES_USUARIOS.VENDEDOR || rolUsuarioId === ROLES_USUARIOS.ADMINISTRADOR) && !telefono) {
+    // ☎️ Para vendedor o admin, teléfono es obligatorio
+    if ((idRol === ROLES_USUARIOS.VENDEDOR || idRol === ROLES_USUARIOS.ADMINISTRADOR) && !telefono) {
       return res.status(400).json({ message: 'El teléfono es obligatorio para este tipo de usuario.' });
     }
 
-    // Para vendedor, generar link único
+    // 🔗 Si es vendedor, generar link único
     let link = null;
-    if (rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {
+    if (idRol === ROLES_USUARIOS.VENDEDOR) {
       link = nanoid(4).toUpperCase();
     }
 
-    // Crear el usuario
+    // ✅ Crear el usuario
     const usuario = await Usuario.create({
       nombre,
       email,
       telefono: telefono || null,
-      rolUsuarioId,
+      rolUsuarioId: idRol,
       contraseña: null,
       link,
     });
 
+    // 🧾 Auditoría
     await crearAuditoria({
       tabla: 'usuarios',
       accion: 'crea usuario',
@@ -56,7 +59,6 @@ export const crearUsuario = async (req, res, next) => {
       descripcion: `Se creó el usuario ${usuario.nombre}`,
       ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
     });
-    
 
     res.status(201).json(usuario);
   } catch (error) {
