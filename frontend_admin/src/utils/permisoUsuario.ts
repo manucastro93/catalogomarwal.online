@@ -8,25 +8,31 @@ export function tienePermiso(
 ): boolean {
   const { usuario } = useAuth();
 
-  if (usuario()?.rolUsuarioId === 1) { // SUPREMO
-    return true;
+  if (usuario()?.rolUsuarioId === 1) {
+    return true; // SUPREMO
   }
 
   const moduloLower = modulo.toLowerCase();
   const accionLower = accion.toLowerCase();
 
   for (const p of permisos) {
-    if (p.modulo.nombre === 'supremo') {
+    const nombreModulo = p?.modulo?.nombre?.toLowerCase?.();
+    const nombreAccion = p?.accion?.toLowerCase?.();
+
+    if (!nombreModulo || !nombreAccion) continue;
+
+    if (nombreModulo === 'supremo') {
       return true;
     }
+
     if (
-      p.modulo.nombre.toLowerCase() === moduloLower &&
-      p.accion.toLowerCase() === accionLower &&
+      nombreModulo === moduloLower &&
+      nombreAccion === accionLower &&
       p.permitido
     ) {
       return true;
     }
   }
-  
+
   return false;
 }

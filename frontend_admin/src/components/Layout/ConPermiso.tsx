@@ -12,9 +12,10 @@ interface Props {
 export default function ConPermiso(props: Props) {
   const { permisos } = useAuth();
 
-  return (
-    <Show when={tienePermiso(permisos(), props.modulo, props.accion)}>
-      {props.children}
-    </Show>
-  );
+  const tiene = () =>
+    props.modulo && props.accion
+      ? tienePermiso(permisos(), props.modulo, props.accion)
+      : false;
+
+  return <Show when={tiene()}>{props.children}</Show>;
 }
