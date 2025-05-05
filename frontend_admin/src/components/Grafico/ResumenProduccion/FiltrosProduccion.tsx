@@ -75,7 +75,7 @@ export default function FiltrosProduccion(props: Props) {
           props.setDesde(v || new Date().toISOString().slice(0, 10))
         }
         placeholder="Desde"
-        class="w-fit p-2 rounded border"
+        class="w-full p-2 rounded border"
       />
 
       {/* Hasta */}
@@ -95,7 +95,7 @@ export default function FiltrosProduccion(props: Props) {
           props.setTurno(e.currentTarget.value);
           setOpen(false);
         }}
-        class="border p-2 rounded w-fit"
+        class="border p-2 rounded w-full"
       >
         <option value="">Todos los Turnos</option>
         <option value="mañana">Mañana</option>
@@ -113,7 +113,7 @@ export default function FiltrosProduccion(props: Props) {
           setResultados([]);
           setOpen(false);
         }}
-        class="border p-2 rounded w-fit"
+        class="border p-2 rounded w-full"
       >
         <option value="">Todas las Plantas</option>
         <For each={props.plantas}>
@@ -131,7 +131,7 @@ export default function FiltrosProduccion(props: Props) {
           setResultados([]);
           setOpen(false);
         }}
-        class="border p-2 rounded w-fit"
+        class="border p-2 rounded w-full"
       >
         <option value="">Todas las Categorías</option>
         <For each={props.categorias}>
@@ -180,7 +180,7 @@ export default function FiltrosProduccion(props: Props) {
       </select>
 
       {/* Botones */}
-      <div class="flex flex-col gap-2 md:flex-row md:col-span-1 justify-end w-full">
+      <div class="flex flex-col gap-2 md:flex-row md:col-span-2 justify-end w-full">
         <button
           onClick={props.onExportar}
           class="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
