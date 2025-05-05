@@ -1,3 +1,5 @@
+import * as cptable from 'xlsx-style/dist/cpexcel';
+(window as any).cptable = cptable;
 import * as XLSX from 'xlsx-style';
 
 export function exportarTablaAExcel(idTabla: string, nombreArchivo: string) {
