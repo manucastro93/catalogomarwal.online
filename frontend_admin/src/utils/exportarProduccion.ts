@@ -1,8 +1,4 @@
-import * as cptable from 'xlsx-style/dist/cpexcel';
-if (typeof window !== 'undefined') {
-    (window as any).cptable = cptable;
-  }
-import * as XLSX from 'xlsx-style';
+import * as XLSX from 'xlsx-style-correct';
 
 export function exportarTablaAExcel(idTabla: string, nombreArchivo: string) {
   const tabla = document.getElementById(idTabla) as HTMLTableElement;
