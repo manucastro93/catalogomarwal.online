@@ -4,8 +4,9 @@ import { useAuth } from '@/store/auth';
 import { obtenerPedidos } from '@/services/pedido.service';
 import { obtenerUsuariosPorRolPorId } from '@/services/usuario.service';
 import { obtenerEstadosPedido } from '@/services/estadoPedido.service';
-import { exportarPedidosExcel } from '@/utils/exportarExcel';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import { Download } from 'lucide-solid';
+import { exportarTablaAExcel } from '@/utils/exportarTabla';
 import ModalActualizarEstadoPedido from '@/components/Pedido/ModalActualizarEstadoPedido';
 import ModalMensaje from '@/components/Layout/ModalMensaje';
 import VerPedidoModal from '@/components/Pedido/VerPedidoModal';
@@ -70,14 +71,13 @@ export default function Pedidos() {
         <h1 class="text-2xl font-bold">Pedidos</h1>
 
         <div class="flex gap-2">
-          <button
-            onClick={() =>
-              respuesta()?.data && exportarPedidosExcel(respuesta()!.data)
-            }
-            class="bg-green-600 text-white px-3 py-1 rounded text-sm"
-          >
-            Exportar Excel
-          </button>
+        <button
+          onClick={() => exportarTablaAExcel('tabla-pedidos', 'Pedidos')}
+          class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          <Download size={18} />
+          Exportar Reporte
+        </button>
 
           <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}>
             <button
