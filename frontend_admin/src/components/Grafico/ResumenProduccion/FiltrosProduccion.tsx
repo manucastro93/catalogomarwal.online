@@ -1,4 +1,3 @@
-// ✅ FiltrosProduccion.tsx actualizado para recibir onExportar
 import { createSignal, onMount, onCleanup, Show, For } from "solid-js";
 import { buscarProductosPorTexto } from "@/services/producto.service";
 import InputFecha from "@/components/Layout/InputFecha";
@@ -76,7 +75,7 @@ export default function FiltrosProduccion(props: Props) {
           props.setDesde(v || new Date().toISOString().slice(0, 10))
         }
         placeholder="Desde"
-        class="w-full p-2 rounded border"
+        class="w-fit p-2 rounded border"
       />
 
       {/* Hasta */}
@@ -96,7 +95,7 @@ export default function FiltrosProduccion(props: Props) {
           props.setTurno(e.currentTarget.value);
           setOpen(false);
         }}
-        class="border p-2 rounded w-full"
+        class="border p-2 rounded w-fit"
       >
         <option value="">Todos los Turnos</option>
         <option value="mañana">Mañana</option>
@@ -114,7 +113,7 @@ export default function FiltrosProduccion(props: Props) {
           setResultados([]);
           setOpen(false);
         }}
-        class="border p-2 rounded w-full"
+        class="border p-2 rounded w-fit"
       >
         <option value="">Todas las Plantas</option>
         <For each={props.plantas}>
@@ -132,7 +131,7 @@ export default function FiltrosProduccion(props: Props) {
           setResultados([]);
           setOpen(false);
         }}
-        class="border p-2 rounded w-full"
+        class="border p-2 rounded w-fit"
       >
         <option value="">Todas las Categorías</option>
         <For each={props.categorias}>
@@ -174,7 +173,7 @@ export default function FiltrosProduccion(props: Props) {
       <select
         value={props.modo}
         onChange={(e) => props.setModo(e.currentTarget.value)}
-        class="border p-2 rounded w-full"
+        class="border p-2 rounded w-fit"
       >
         <option value="valor">Valor $</option>
         <option value="cantidad">Cantidad</option>
