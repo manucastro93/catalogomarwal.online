@@ -232,7 +232,6 @@ export const cambiarContrasena = async (req, res, next) => {
   }
 };
 
-
 export const eliminarUsuario = async (req, res, next) => {
   try {
     const { id } = req.params;

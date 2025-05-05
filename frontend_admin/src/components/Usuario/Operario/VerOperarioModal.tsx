@@ -15,6 +15,7 @@ export default function VerOperarioModal(props: Props) {
           <h2 class="text-xl font-bold mb-4">Datos del Operario</h2>
 
           <div class="space-y-2 text-gray-700">
+          <div><strong>Tipo:</strong> {props.usuario?.rolUsuario?.nombre}</div>
             <div><strong>Nombre:</strong> {props.usuario?.nombre}</div>
             <div><strong>Email:</strong> {props.usuario?.email}</div>
             <div><strong>Teléfono:</strong> {props.usuario?.telefono || '-'}</div>
