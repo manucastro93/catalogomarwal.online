@@ -5,6 +5,8 @@ import { obtenerPedidos } from '@/services/pedido.service';
 import { obtenerUsuariosPorRolPorId } from '@/services/usuario.service';
 import { obtenerEstadosPedido } from '@/services/estadoPedido.service';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import { Download } from 'lucide-solid';
+import { exportarDatosAExcel } from '@/utils/exportarDatosAExcel';
 import ModalActualizarEstadoPedido from '@/components/Pedido/ModalActualizarEstadoPedido';
 import ModalMensaje from '@/components/Layout/ModalMensaje';
 import VerPedidoModal from '@/components/Pedido/VerPedidoModal';
@@ -20,24 +22,21 @@ export default function Pedidos() {
   const [pagina, setPagina] = createSignal(1);
   const [orden, setOrden] = createSignal("createdAt");
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
-  const [pedidoParaActualizar, setPedidoParaActualizar] =
-    createSignal<Pedido | null>(null);
+  const [pedidoParaActualizar, setPedidoParaActualizar] = createSignal<Pedido | null>(null);
   const [mensaje, setMensaje] = createSignal("");
   const [busqueda, setBusqueda] = createSignal("");
-  const [vendedorSeleccionado, setVendedorSeleccionado] = createSignal<
-    number | undefined
-  >(undefined);
-  const [estadoSeleccionado, setEstadoSeleccionado] = createSignal<
-    number | undefined
-  >(undefined);
+  const [vendedorSeleccionado, setVendedorSeleccionado] = createSignal<number | undefined>(undefined);
+  const [estadoSeleccionado, setEstadoSeleccionado] = createSignal<number | undefined>(undefined);
   const [verPedido, setVerPedido] = createSignal<Pedido | null>(null);
 
   const [vendedores] = createResource(async () => {
-    if (usuario()?.rolUsuarioId && [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(usuario()!.rolUsuarioId as typeof ROLES_USUARIOS.SUPREMO | typeof ROLES_USUARIOS.ADMINISTRADOR)) {
+    const rol = usuario()?.rolUsuarioId as 1 | 2;
+    if ([1, 2].includes(rol)) {
       return await obtenerUsuariosPorRolPorId(ROLES_USUARIOS.VENDEDOR);
     }
     return [];
   });
+
   const [estadosPedido] = createResource(obtenerEstadosPedido);
 
   const fetchParams = createMemo(() => ({
@@ -63,12 +62,38 @@ export default function Pedidos() {
   const paginaActual = () => Number(respuesta()?.pagina || 1);
   const totalPaginas = () => Number(respuesta()?.totalPaginas || 1);
 
+  async function exportarTodosLosPedidosFiltrados() {
+    const res = await obtenerPedidos({ ...(fetchParams() as any), pagina: 1, limit: 9999 });
+
+    exportarDatosAExcel(
+      res.data,
+      [
+        { label: 'ID', key: 'id' },
+        { label: 'Cliente', key: 'cliente.nombre' },
+        { label: 'Vendedor', key: 'usuario.nombre' },
+        { label: 'Estado', key: 'estado' },
+        { label: 'Total', key: 'total' },
+        { label: 'Fecha', key: 'createdAt' },
+        { label: 'Observaciones', key: 'observaciones' },
+      ],
+      'Reporte Pedidos'
+    );
+  }
+
   return (
     <div class="p-6">
       <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
         <h1 class="text-2xl font-bold">Pedidos</h1>
 
         <div class="flex gap-2">
+          <button
+            onClick={exportarTodosLosPedidosFiltrados}
+            class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            <Download size={18} />
+            Exportar Reporte
+          </button>
+
           <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}>
             <button
               onClick={() => navigate("/pedido-rapido")}
@@ -83,7 +108,7 @@ export default function Pedidos() {
       <FiltrosPedidos
         busqueda={busqueda()}
         vendedorId={vendedorSeleccionado()}
-        estado={estadoSeleccionado()} // 👈 CAMBIÁ ACÁ (antes estaba "estadoId")
+        estado={estadoSeleccionado()}
         vendedores={vendedores() ?? []}
         estados={estadosPedido() ?? []}
         esVendedor={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}

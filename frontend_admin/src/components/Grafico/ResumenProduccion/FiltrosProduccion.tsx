@@ -168,7 +168,10 @@ export default function FiltrosProduccion(props: Props) {
       {/* Botones */}
       <div class="w-full flex justify-end gap-2 md:col-span-4">
         <button
-          onClick={() => exportarDatosAExcel(props.items, props.columnas, 'Reporte Produccion')}
+          onClick={() => {
+            console.log("Exportando", props.items);
+            exportarDatosAExcel(props.items, props.columnas, 'Reporte Produccion');
+          }}
           class=" bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         >
           <Download size={18} />
