@@ -1,5 +1,12 @@
-import { createSignal, createResource, onMount, Show, For } from "solid-js";
-import {fetchResumenProduccion,fetchResumenProduccionPorPlanta,fetchResumenProduccionPorCategoria,fetchResumenProduccionPorTurno,fetchResumenProduccionGeneral,fetchResumenProduccionEvolucion,} from "@/services/graficos.service";
+import { createSignal, createResource, onMount, Show } from "solid-js";
+import {
+  fetchResumenProduccion,
+  fetchResumenProduccionPorPlanta,
+  fetchResumenProduccionPorCategoria,
+  fetchResumenProduccionPorTurno,
+  fetchResumenProduccionGeneral,
+  fetchResumenProduccionEvolucion,
+} from "@/services/graficos.service";
 import { obtenerPlantas } from "@/services/planta.service";
 import { obtenerCategorias } from "@/services/categoria.service";
 import { useAuth } from "@/store/auth";
@@ -8,6 +15,7 @@ import FiltrosProduccion from "@/components/Grafico/ResumenProduccion/FiltrosPro
 import TablaProduccion from "@/components/Grafico/ResumenProduccion/TablaProduccion";
 import GraficosProduccion from "@/components/Grafico/ResumenProduccion/GraficosProduccion";
 import { formatearPrecio, formatearMiles } from "@/utils/formato";
+import { exportarDatosAExcel } from "@/utils/exportarDatosAExcel";
 
 export default function ResumenProduccion() {
   const { usuario } = useAuth();
@@ -61,6 +69,27 @@ export default function ResumenProduccion() {
     setPage(1);
   }
 
+  async function exportarResumenProduccion() {
+    const filtrosConLimite = { ...filtros(), page: 1, limit: 9999 };
+    const dataCompleta = await fetchResumenProduccion(filtrosConLimite);
+
+    exportarDatosAExcel(
+      dataCompleta.items,
+      [
+        { label: "Fecha", key: "fecha" },
+        { label: "Planta", key: "planta" },
+        { label: "Categoría", key: "categoria" },
+        { label: "SKU", key: "producto.sku" },
+        { label: "Producto", key: "producto.nombre" },
+        { label: "Turno", key: "turno" },
+        { label: "Cantidad", key: "cantidad" },
+        { label: "Costo MP", key: "totalCostoMP" },
+        { label: "Valor Total", key: "totalValor" },
+      ],
+      "Reporte Producción"
+    );
+  }
+
   onMount(actualizarFiltros);
 
   return (
@@ -88,6 +117,7 @@ export default function ResumenProduccion() {
           modo={modo()}
           setModo={(v) => { setModo(v as "cantidad" | "valor"); actualizarFiltros(); }}
           limpiarFiltros={limpiarFiltros}
+          onExportar={exportarResumenProduccion}
         />
       </div>
 
@@ -98,26 +128,15 @@ export default function ResumenProduccion() {
       </div>
 
       <Show when={!resumenPlanta.loading && !resumenCategoria.loading && !resumenTurno.loading}>
-        <div class="flex flex-col gap-4 md:gap-6">
-          <For each={[modo()]}>
-            {(m) => (
-              <GraficosProduccion
-                resumenPlanta={resumenPlanta()!}
-                resumenCategoria={resumenCategoria()!}
-                resumenTurno={resumenTurno()!}
-                resumenEvolucion={resumenEvolucion()!}
-                filtros={{
-                  plantaId: plantaId(),
-                  categoriaId: categoriaId(),
-                  turno: turno(),
-                  producto: producto(),
-                }}
-                rolUsuarioId={rolUsuarioId}
-                modo={m}
-              />
-            )}
-          </For>
-        </div>
+        <GraficosProduccion
+          resumenPlanta={resumenPlanta()!}
+          resumenCategoria={resumenCategoria()!}
+          resumenTurno={resumenTurno()!}
+          resumenEvolucion={resumenEvolucion()!}
+          filtros={{ plantaId: plantaId(), categoriaId: categoriaId(), turno: turno(), producto: producto() }}
+          rolUsuarioId={rolUsuarioId}
+          modo={modo()}
+        />
       </Show>
 
       <Show when={resumen()}>
@@ -132,9 +151,7 @@ export default function ResumenProduccion() {
               disabled={page() <= 1}
               onClick={() => setPage(page() - 1)}
               class="px-4 py-2 bg-gray-300 rounded w-full md:w-auto disabled:opacity-50"
-            >
-              Anterior
-            </button>
+            >Anterior</button>
             <span class="text-center text-sm md:text-base">
               Página {page()} de {resumen()!.totalPages}
             </span>
@@ -142,9 +159,7 @@ export default function ResumenProduccion() {
               disabled={page() >= resumen()!.totalPages}
               onClick={() => setPage(page() + 1)}
               class="px-4 py-2 bg-gray-300 rounded w-full md:w-auto disabled:opacity-50"
-            >
-              Siguiente
-            </button>
+            >Siguiente</button>
           </div>
         </div>
       </Show>

@@ -1,8 +1,8 @@
+// ✅ FiltrosProduccion.tsx actualizado para recibir onExportar
 import { createSignal, onMount, onCleanup, Show, For } from "solid-js";
 import { buscarProductosPorTexto } from "@/services/producto.service";
 import InputFecha from "@/components/Layout/InputFecha";
 import { Download } from 'lucide-solid';
-import { exportarDatosAExcel } from '@/utils/exportarDatosAExcel';
 
 interface Props {
   desde: string;
@@ -22,8 +22,7 @@ interface Props {
   setProducto: (v: string) => void;
   setModo: (v: string) => void;
   limpiarFiltros: () => void;
-  items: any[]; // producción completa
-  columnas: { label: string; key: string }[];
+  onExportar: () => void;
 }
 
 export default function FiltrosProduccion(props: Props) {
@@ -168,14 +167,10 @@ export default function FiltrosProduccion(props: Props) {
       {/* Botones */}
       <div class="w-full flex justify-end gap-2 md:col-span-4">
         <button
-          onClick={() => {
-            console.log("Exportando", props.items);
-            exportarDatosAExcel(props.items, props.columnas, 'Reporte Produccion');
-          }}
-          class=" bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          onClick={props.onExportar}
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         >
-          <Download size={18} />
-          Exportar Reporte
+          <Download size={18} /> Exportar Reporte
         </button>
         <button
           onClick={props.limpiarFiltros}
