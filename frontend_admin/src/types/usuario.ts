@@ -13,4 +13,7 @@ export interface Usuario {
   deletedAt?: string | null;
 
   permisos?: PermisoUsuario[];
+  rolUsuario?: {
+    nombre: string;
+  };
 }
