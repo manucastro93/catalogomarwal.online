@@ -22,6 +22,8 @@ interface Props {
   setProducto: (v: string) => void;
   setModo: (v: string) => void;
   limpiarFiltros: () => void;
+  items: any[]; // producción completa
+  columnas: { label: string; key: string }[];
 }
 
 export default function FiltrosProduccion(props: Props) {
@@ -163,24 +165,22 @@ export default function FiltrosProduccion(props: Props) {
         <option value="cantidad">Cantidad</option>
       </select>
 
-      {/* Botón limpiar */}
-      <div class="w-full flex justify-center md:justify-end">
+      {/* Botones */}
+      <div class="w-full flex justify-end gap-2 md:col-span-4">
         <button
-          onClick={() => exportarTablaAExcel('tabla-produccion', 'Reporte Produccion')}
-          class="bg-green-600 text-white px-4 py-2 rounded w-full md:w-auto"
+          onClick={() => exportarTablaAExcel(props.items, props.columnas, 'Reporte Produccion')}
+          class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         >
           <Download size={18} />
           Exportar Reporte
         </button>
         <button
           onClick={props.limpiarFiltros}
-          class="bg-gray-400 text-white px-4 py-2 rounded w-full md:w-auto"
+          class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
         >
           Limpiar
         </button>
       </div>
     </div>
-
-
   );
 }
