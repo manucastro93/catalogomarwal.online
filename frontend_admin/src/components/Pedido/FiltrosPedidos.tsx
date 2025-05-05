@@ -2,6 +2,8 @@ import { For, Show } from "solid-js";
 import type { Usuario } from "@/types/usuario";
 import type { EstadoPedido } from "types/estadoPedido";
 import { ESTADOS_PEDIDO } from "@/constants/estadosPedidos";
+import { Download } from 'lucide-solid';
+import { exportarTablaAExcel } from '@/utils/exportarTabla';
 
 export default function FiltrosPedidos(props: {
   busqueda: string;
@@ -56,6 +58,13 @@ export default function FiltrosPedidos(props: {
           )}
         </For>
       </select>
+      <button
+                onClick={() => exportarTablaAExcel('tabla-produccion', 'Reporte Produccion')}
+                class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              >
+                <Download size={18} />
+                Exportar Reporte
+              </button>
     </div>
   );
 }

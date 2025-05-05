@@ -2,7 +2,7 @@ import { createSignal, onMount, onCleanup, Show, For } from "solid-js";
 import { buscarProductosPorTexto } from "@/services/producto.service";
 import InputFecha from "@/components/Layout/InputFecha";
 import { Download } from 'lucide-solid';
-import { exportarTablaAExcel } from '@/utils/exportarProduccion';
+import { exportarTablaAExcel } from '@/utils/exportarTabla';
 
 interface Props {
   desde: string;
