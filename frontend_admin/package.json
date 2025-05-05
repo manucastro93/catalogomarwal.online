@@ -44,7 +44,7 @@
     "solid-icons": "^1.1.0",
     "solid-js": "^1.9.5",
     "xlsx": "^0.18.5",
-    "xlsx-style-correct": "^1.0.0",
+    "xlsx-style-vite": "^0.0.2",
     "zod": "^3.24.2"
   }
 }
