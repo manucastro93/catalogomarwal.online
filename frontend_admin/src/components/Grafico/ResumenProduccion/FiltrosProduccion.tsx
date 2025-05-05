@@ -75,7 +75,7 @@ export default function FiltrosProduccion(props: Props) {
           props.setDesde(v || new Date().toISOString().slice(0, 10))
         }
         placeholder="Desde"
-        class="w-full p-2 rounded border"
+        class="w-full p-2 rounded"
       />
 
       {/* Hasta */}
@@ -85,7 +85,7 @@ export default function FiltrosProduccion(props: Props) {
           props.setHasta(v || new Date().toISOString().slice(0, 10))
         }
         placeholder="Hasta"
-        class="w-full p-2 rounded border"
+        class="w-full p-2 rounded"
       />
 
       {/* Turno */}
