@@ -9,32 +9,49 @@ interface Props {
 }
 
 export default function TablaProduccion(props: Props) {
+
   function exportarExcel() {
-    const datos = props.items.map((item) => {
-      const fila: any = {
-        Fecha: item.fecha,
-        Planta: item.planta,
-        Categoría: item.categoria,
-        SKU: item.producto?.sku || 'Sin SKU',
-        Producto: item.producto?.nombre || 'Sin Producto',
-        Turno: item.turno,
-        Cantidad: item.cantidad,
-      };
-
-      if (props.rolUsuarioId !== ROLES_USUARIOS.OPERARIO) {
-        fila['Costo MP'] = item.totalCostoMP;
-        fila['Valor Total'] = item.totalValor;
+    const tabla = document.querySelector("#tabla-produccion") as HTMLTableElement;
+    if (!tabla) return;
+  
+    const ws = XLSX.utils.table_to_sheet(tabla);
+    const range = XLSX.utils.decode_range(ws['!ref'] || '');
+  
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[cellAddress];
+        if (!cell) continue;
+  
+        cell.s = {
+          border: {
+            top:    { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "thin", color: { rgb: "000000" } },
+            left:   { style: "thin", color: { rgb: "000000" } },
+            right:  { style: "thin", color: { rgb: "000000" } },
+          },
+          font: {
+            bold: R === 0,
+          },
+          alignment: {
+            horizontal: "center",
+            vertical: "center",
+          },
+          fill: R === 0
+            ? {
+                patternType: "solid",
+                fgColor: { rgb: "F3F4F6" }, // gris claro
+              }
+            : undefined,
+        };
       }
-
-      return fila;
-    });
-
-    const ws = XLSX.utils.json_to_sheet(datos);
+    }
+  
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Producción');
-
-    XLSX.writeFile(wb, 'produccion.xlsx');
+    XLSX.utils.book_append_sheet(wb, ws, "Producción");
+    XLSX.writeFile(wb, "Reporte_Produccion.xlsx");
   }
+  
 
   return (
     <>
@@ -48,7 +65,7 @@ export default function TablaProduccion(props: Props) {
       </div>
 
       <div class="overflow-x-auto mt-5">
-        <table class="w-full table-auto border border-collapse text-sm">
+        <table id="tabla-produccion" class="w-full table-auto border border-collapse text-sm">
           <thead class="bg-gray-100">
             <tr>
               <th class="border p-2">Fecha</th>
