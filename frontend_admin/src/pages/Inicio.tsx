@@ -17,10 +17,12 @@ export default function Inicio() {
   const [pedidos] = createResource(() =>
     obtenerPedidosInicio(usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR ? usuario()?.id : undefined)
   );
+  const esOperario = (rolId: number) =>
+    [4, 5, 6, 7].includes(rolId);
 
   const linkVendedor =
     usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR && usuario()?.link
-      ? `https://catalogomarwal.online?${usuario()?.link}`
+      ? `https://catalogomarwal.online?${usuario()?.link ?? ''}`
       : "";
   const mensaje = `Hola! Te comparto el catálogo de Marwal para que veas los productos: ${linkVendedor}`;
   const compartirPorWhatsapp = () => {
@@ -59,7 +61,10 @@ export default function Inicio() {
         </div>
       </Show>
 
-      <Show when={usuario()?.rolUsuarioId !== ROLES_USUARIOS.OPERARIO}>
+      <Show when={
+        ![4, 5, 6, 7].includes(usuario()?.rolUsuarioId ?? -1)
+      }>
+
 
         <div>
           <h1 class="text-2xl font-bold mb-2">Resumen del mes</h1>
@@ -67,7 +72,7 @@ export default function Inicio() {
             <ResumenInicioMensual resumen={resumen()} />
           </Show>
         </div>
-        
+
         <Show when={pedidos()}>
           <PedidosPendientes
             pendientes={pedidos()?.pendientes || []}
