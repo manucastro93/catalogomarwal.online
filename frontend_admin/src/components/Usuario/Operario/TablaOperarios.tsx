@@ -31,6 +31,7 @@ export default function TablaOperarios(props: Props) {
       <table class="w-full text-sm border-collapse">
         <thead class="bg-gray-100 sticky top-0">
           <tr>
+            <th class="p-2">Tipo</th>
             <th class="p-2 cursor-pointer" onClick={() => ordenar('nombre')}>Nombre</th>
             <th class="p-2 cursor-pointer" onClick={() => ordenar('email')}>Email</th>
             <th class="p-2">Acciones</th>
@@ -39,6 +40,7 @@ export default function TablaOperarios(props: Props) {
         <tbody>
           <For each={operariosOrdenados()}>{(operario) => (
             <tr class="text-center border-t">
+              <td class="p-2">{operario.rolUsuario?.nombre}</td>
               <td class="p-2">{operario.nombre}</td>
               <td class="p-2">{operario.email}</td>
               <td class="p-2 flex justify-center gap-2">
