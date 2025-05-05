@@ -1,4 +1,3 @@
-
 import { A, useLocation } from '@solidjs/router';
 import { Show, createSignal, createResource } from 'solid-js';
 import { useAuth } from '@/store/auth';
@@ -12,18 +11,20 @@ import ConPermiso from './ConPermiso';
 
 export default function Sidebar() {
   const location = useLocation();
-  const { usuario, permisos } = useAuth();
+  const { usuario } = useAuth();
   const [pagina] = createResource(obtenerPagina);
-
-  const esActivo = (path: string) => location.pathname === path;
-  const empiezaCon = (prefix: string) => location.pathname.startsWith(prefix);
 
   const [ventasOpen, setVentasOpen] = createSignal(false);
   const [produccionOpen, setProduccionOpen] = createSignal(false);
   const [metalmecOpen, setMetalmecOpen] = createSignal(false);
-  const [paginaOpen, setPaginaOpen] = createSignal(empiezaCon('/pagina'));
-  const [graficosOpen, setGraficosOpen] = createSignal(empiezaCon('/Graficos'));
+  const [paginaOpen, setPaginaOpen] = createSignal(location.pathname.startsWith('/pagina'));
+  const [graficosOpen, setGraficosOpen] = createSignal(location.pathname.startsWith('/Graficos'));
   const [abierto, setAbierto] = createSignal(false);
+
+  const esActivo = (path: string) => location.pathname === path;
+  const esOperario = (rolId: number | undefined) => [4, 5, 6, 7].includes(rolId ?? -1);
+
+  if (!usuario()) return null;
 
   return (
     <>
@@ -38,12 +39,17 @@ export default function Sidebar() {
       </Show>
 
       <aside class={`fixed top-0 left-0 z-50 h-full w-64 bg-gray-900 text-white p-4 transition-transform duration-300
-        ${abierto() ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:fixed lg:z-50 lg:min-h-screen`}>
+        ${abierto() ? 'translate-x-0' : 'lg:translate-x-0 -translate-x-full'} lg:fixed lg:z-50 lg:min-h-screen`}>
+
         <Show when={abierto()}>
           <button class="absolute top-4 right-4 text-white lg:hidden" onClick={() => setAbierto(false)}>✕</button>
         </Show>
 
-        <img src={`${import.meta.env.VITE_BACKEND_URL}${pagina()?.logo}`} alt="Logo actual" class="h-24 mb-6 mx-auto" />
+        <img
+          src={`${import.meta.env.VITE_BACKEND_URL}${pagina()?.logo || '/logo-default.png'}`}
+          alt="Logo actual"
+          class="h-24 mb-6 mx-auto"
+        />
 
         <nav class="flex flex-col gap-2 text-lg">
           <ConPermiso modulo="Inicio" accion="ver">
@@ -60,7 +66,7 @@ export default function Sidebar() {
             </button>
             <Show when={ventasOpen()}>
               <div class="ml-10 flex flex-col gap-1 mt-1">
-                <Show when={usuario()?.rolUsuarioId !== ROLES_USUARIOS.OPERARIO}>
+                <Show when={!esOperario(usuario()?.rolUsuarioId)}>
                   <ConPermiso modulo="Pedidos" accion="ver">
                     <A href="/Pedidos" classList={{ 'text-blue-400': esActivo('/Pedidos') }}>Pedidos</A>
                   </ConPermiso>
@@ -68,7 +74,7 @@ export default function Sidebar() {
                 <ConPermiso modulo="Productos" accion="ver">
                   <A href="/Productos" classList={{ 'text-blue-400': esActivo('/Productos') }}>Productos</A>
                 </ConPermiso>
-                <Show when={usuario()?.rolUsuarioId !== ROLES_USUARIOS.OPERARIO}>
+                <Show when={!esOperario(usuario()?.rolUsuarioId)}>
                   <ConPermiso modulo="Categorias" accion="ver">
                     <A href="/Categorias" classList={{ 'text-blue-400': esActivo('/Categorias') }}>Categorías</A>
                   </ConPermiso>
@@ -76,7 +82,7 @@ export default function Sidebar() {
                     <A href="/Clientes" classList={{ 'text-blue-400': esActivo('/Clientes') }}>Clientes</A>
                   </ConPermiso>
                 </Show>
-                <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.SUPREMO || usuario()?.rolUsuarioId === ROLES_USUARIOS.ADMINISTRADOR}>
+                <Show when={([ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR] as number[]).includes(usuario()?.rolUsuarioId!)}>
                   <ConPermiso modulo="Vendedores" accion="ver">
                     <A href="/Vendedores" classList={{ 'text-blue-400': esActivo('/Vendedores') }}>Vendedores</A>
                   </ConPermiso>
@@ -84,7 +90,7 @@ export default function Sidebar() {
                 <ConPermiso modulo="Estadisticas" accion="ver">
                   <A href="/Estadisticas" classList={{ 'text-blue-400': esActivo('/Estadisticas') }}>Estadísticas</A>
                 </ConPermiso>
-                <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.SUPREMO || usuario()?.rolUsuarioId === ROLES_USUARIOS.ADMINISTRADOR}>
+                <Show when={([ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR] as number[]).includes(usuario()?.rolUsuarioId!)}>
                   <ConPermiso modulo="LogsCliente" accion="ver">
                     <A href="/LogsCliente" classList={{ 'text-blue-400': esActivo('/LogsCliente') }}>Actividad Clientes</A>
                   </ConPermiso>
@@ -99,9 +105,9 @@ export default function Sidebar() {
                 <span class="flex items-center gap-2"><Layers size={16} /> Producción</span>
                 {produccionOpen() ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
-              <Show when={produccionOpen()}>               
+              <Show when={produccionOpen()}>
                 <div class="ml-10 flex flex-col gap-1 mt-1">
-                <ConPermiso modulo="Operarios" accion="ver">
+                  <ConPermiso modulo="Operarios" accion="ver">
                     <A href="/Produccion/Operarios" classList={{ 'text-blue-400': esActivo('/Produccion/Operarios') }}>Operarios</A>
                   </ConPermiso>
                   <button onClick={() => setMetalmecOpen(!metalmecOpen())} class="flex justify-between items-center">
@@ -144,7 +150,7 @@ export default function Sidebar() {
             </ConPermiso>
           </Show>
 
-          <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.SUPREMO || usuario()?.rolUsuarioId === ROLES_USUARIOS.ADMINISTRADOR}>
+          <Show when={([ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR] as number[]).includes(usuario()?.rolUsuarioId!)}>
             <div>
               <button onClick={() => setPaginaOpen(!paginaOpen())} class="flex items-center justify-between w-full px-2 py-1 hover:bg-gray-700 rounded">
                 <span class="flex items-center gap-2"><Settings size={16} /> Página</span>
@@ -177,13 +183,11 @@ export default function Sidebar() {
               </button>
               <Show when={graficosOpen()}>
                 <div class="ml-10 flex flex-col gap-1 mt-1">
-                  {/*<A href="/Graficos" classList={{ 'text-blue-400 font-semibold': esActivo('/Graficos') }}>General</A>*/}
                   <A href="/Graficos/ResumenProduccion" classList={{ 'text-blue-400 font-semibold': esActivo('/Graficos/Produccion') }}>Producción</A>
                 </div>
               </Show>
             </div>
           </ConPermiso>
-
         </nav>
       </aside>
     </>

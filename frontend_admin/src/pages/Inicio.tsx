@@ -61,11 +61,7 @@ export default function Inicio() {
         </div>
       </Show>
 
-      <Show when={
-        ![4, 5, 6, 7].includes(usuario()?.rolUsuarioId ?? -1)
-      }>
-
-
+      <Show when={![4, 5, 6, 7].includes(usuario()?.rolUsuarioId ?? -1)}>
         <div>
           <h1 class="text-2xl font-bold mb-2">Resumen del mes</h1>
           <Show when={resumen()}>
