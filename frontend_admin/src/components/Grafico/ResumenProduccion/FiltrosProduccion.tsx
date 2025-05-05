@@ -173,14 +173,14 @@ export default function FiltrosProduccion(props: Props) {
       <select
         value={props.modo}
         onChange={(e) => props.setModo(e.currentTarget.value)}
-        class="border p-2 rounded w-fit"
+        class="border p-2 rounded w-full"
       >
         <option value="valor">Valor $</option>
         <option value="cantidad">Cantidad</option>
       </select>
 
       {/* Botones */}
-      <div class="flex flex-col gap-2 md:flex-row md:col-span-2 justify-end w-full">
+      <div class="flex flex-col gap-2 md:flex-row md:col-span-3 justify-end w-full">
         <button
           onClick={props.onExportar}
           class="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
