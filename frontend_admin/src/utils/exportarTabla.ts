@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx-style-vite';
+import * as XLSX from 'xlsx-js-style';
 
 export function exportarTablaAExcel(idTabla: string, nombreArchivo: string) {
   const tabla = document.getElementById(idTabla) as HTMLTableElement;
