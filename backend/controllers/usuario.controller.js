@@ -214,7 +214,9 @@ export const cambiarContrasena = async (req, res, next) => {
 
     const hash = await bcrypt.hash(contraseña, 10);
     await usuario.update({ contraseña: hash });
-    
+
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || '';
+
     await crearAuditoria({
       tabla: 'usuarios',
       accion: 'cambia contraseña',
@@ -223,13 +225,13 @@ export const cambiarContrasena = async (req, res, next) => {
       descripcion: `Se cambió la contraseña de ${usuario.nombre}`,
       ip,
     });
-    
 
     res.json({ message: 'Contraseña actualizada exitosamente.' });
   } catch (error) {
     next(error);
   }
 };
+
 
 export const eliminarUsuario = async (req, res, next) => {
   try {
