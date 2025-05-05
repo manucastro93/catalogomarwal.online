@@ -1,8 +1,6 @@
 import { createSignal, onMount, onCleanup, Show, For } from "solid-js";
 import { buscarProductosPorTexto } from "@/services/producto.service";
 import InputFecha from "@/components/Layout/InputFecha";
-import { Download } from 'lucide-solid';
-import { exportarTablaAExcel } from '@/utils/exportarTabla';
 
 interface Props {
   desde: string;
@@ -164,15 +162,7 @@ export default function FiltrosProduccion(props: Props) {
       </select>
 
       {/* Botón limpiar */}
-      <div class="w-full flex justify-center md:justify-end">
-        <button
-          onClick={() => exportarTablaAExcel('tabla-produccion', 'Reporte Produccion')}
-          class="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-        >
-          <Download size={18} />
-          Exportar Reporte
-        </button>
-
+      <div class="w-full flex justify-center md:justify-end">        
         <button
           onClick={props.limpiarFiltros}
           class="bg-gray-400 text-white px-4 py-2 rounded w-full md:w-auto"
