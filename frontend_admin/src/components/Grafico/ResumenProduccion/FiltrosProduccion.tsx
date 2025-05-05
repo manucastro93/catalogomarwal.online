@@ -181,6 +181,12 @@ export default function FiltrosProduccion(props: Props) {
 
       {/* Botones */}
       <div class="flex flex-col gap-2 md:flex-row md:col-span-3 justify-end w-full">
+      <button
+          onClick={props.limpiarFiltros}
+          class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+        >
+          Limpiar
+        </button>
         <button
           onClick={props.onExportar}
           class="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -188,12 +194,7 @@ export default function FiltrosProduccion(props: Props) {
           <Download size={18} />
           Exportar Reporte
         </button>
-        <button
-          onClick={props.limpiarFiltros}
-          class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-        >
-          Limpiar
-        </button>
+        
       </div>
     </div>
   );
