@@ -1,5 +1,6 @@
 import { ResumenProduccion } from "@/types/grafico";
 import { ROLES_USUARIOS } from "@/constants/rolesUsuarios";
+import { formatearPrecio } from "@/utils/formato";
 
 interface Props {
   items: ResumenProduccion[];
@@ -42,8 +43,8 @@ export default function TablaProduccion(props: Props) {
                 <td class="border p-2">{item.cantidad}</td>
                 {props.rolUsuarioId !== ROLES_USUARIOS.OPERARIO && (
                   <>
-                    <td class="border p-2">${Number(item.totalCostoMP || 0).toLocaleString()}</td>
-                    <td class="border p-2">${Number(item.totalValor || 0).toLocaleString()}</td>
+                    <td class="border p-2">{(formatearPrecio(item.totalCostoMP) || 0)}</td>
+                    <td class="border p-2">{(formatearPrecio(item.totalValor) || 0)}</td>
                   </>
                 )}
               </tr>
