@@ -20,7 +20,6 @@ export default function Administradores() {
   const [respuesta, { refetch }] = createResource(() =>
       obtenerUsuariosPorRolPorId(ROLES_USUARIOS.ADMINISTRADOR)
     );
-
   const administradoresFiltrados = createMemo(() => {
     const buscar = busqueda().toLowerCase();
     return (
