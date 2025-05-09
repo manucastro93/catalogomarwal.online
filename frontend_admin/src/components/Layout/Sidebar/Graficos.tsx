@@ -21,7 +21,9 @@ export default function Graficos() {
             <A href="/Graficos/ResumenProduccion" classList={{ 'text-blue-400 font-semibold': esActivo('/Graficos/Produccion') }}>
               Producción
             </A>
-            
+            <A href="/Graficos/ResumenVentas" classList={{ 'text-blue-400 font-semibold': esActivo('/Graficos/Ventas') }}>
+              Ventas
+            </A>
           </div>
         </Show>
         

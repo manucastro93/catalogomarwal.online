@@ -18,12 +18,21 @@ export const obtenerPedidos = async (req, res, next) => {
       busqueda = '',
       vendedorId: vendedorIdQuery,
       estado,
+      desde,
+      hasta,
     } = req.query;
 
     const offset = (pagina - 1) * limit;
 
     // 💡 Filtros dinámicos
     const where = {};
+
+    // ⏱️ Filtro por fecha
+    if (desde && hasta) {
+      where.createdAt = {
+        [Op.between]: [new Date(desde), new Date(hasta)],
+      };
+    }
 
     // ✅ Si es VENDEDOR logueado, filtrar por SU ID
     if (req.usuario?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {

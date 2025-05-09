@@ -21,6 +21,7 @@ import Pedidos from './pages/Pedidos';
 import Productos from './pages/Productos';
 import ProduccionDiaria from './pages/ProduccionDiaria';
 import ResumenProduccion from './pages/Graficos/ResumenProduccion';
+import ResumenVentas from './pages/Graficos/ResumenVentas';
 import RolesUsuarios from './pages/Pagina/RolesUsuarios';
 import EstadosPedidos from './pages/Pagina/EstadosPedidos';
 import Logo from './pages/Pagina/Logo';
@@ -57,6 +58,7 @@ render(() => (
     <Route path="Produccion/Operarios" component={() => <ProtectedRoute><Layout><Operarios /></Layout></ProtectedRoute>} />
     <Route path="/Produccion/ProduccionDiaria" component={() => <ProtectedRoute><Layout><ProduccionDiaria /></Layout></ProtectedRoute>} />
     <Route path="/Graficos/ResumenProduccion" component={() => <ProtectedRoute><Layout><ResumenProduccion /></Layout></ProtectedRoute>} />
+    <Route path="/Graficos/ResumenVentas" component={() => <ProtectedRoute><Layout><ResumenVentas /></Layout></ProtectedRoute>} />
     {/* Rutas separadas para Página */}
     <Route path="/Pagina/logo" component={() => <ProtectedRoute><Layout><Logo /></Layout></ProtectedRoute>} />
     <Route path="/Pagina/banners" component={() => <ProtectedRoute><Layout><Banners /></Layout></ProtectedRoute>} />

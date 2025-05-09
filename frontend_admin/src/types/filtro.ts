@@ -5,4 +5,6 @@ export interface FiltrosPedidos {
   busqueda?: string;
   estado?: number;
   vendedorId?: number;
+  desde?: string;
+  hasta?: string;
 }
