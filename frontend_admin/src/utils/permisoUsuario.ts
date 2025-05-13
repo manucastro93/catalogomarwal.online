@@ -7,22 +7,19 @@ export function tienePermiso(
   accion: string
 ): boolean {
   const { usuario } = useAuth();
-  if (usuario()?.rolUsuarioId === 1) {
-    return true; // SUPREMO
-  }
+
+  if (usuario()?.rolUsuarioId === 1) return true; // SUPREMO
 
   const moduloLower = modulo.toLowerCase();
   const accionLower = accion.toLowerCase();
 
   for (const p of permisos) {
-    const nombreModulo = moduloLower;
+    const nombreModulo = p?.modulo?.nombre?.toLowerCase?.();
     const nombreAccion = p?.accion?.toLowerCase?.();
 
     if (!nombreModulo || !nombreAccion) continue;
 
-    if (nombreModulo === 'supremo') {
-      return true;
-    }
+    if (nombreModulo === 'supremo') return true;
 
     if (
       nombreModulo === moduloLower &&

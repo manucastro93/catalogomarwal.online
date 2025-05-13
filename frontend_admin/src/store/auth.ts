@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js';
 import type { Usuario } from '@/types/usuario';
 import type { PermisoUsuario } from '@/types/permisoUsuario';
+import { obtenerPermisosPorRol } from '@/services/rolUsuario.service';
 
 const [usuario, setUsuario] = createSignal<Usuario | null>(null);
 const [token, setToken] = createSignal<string | null>(null);
@@ -10,12 +11,16 @@ export const useAuth = () => {
   return { usuario, token, permisos, login, logout };
 };
 
-export const login = (userData: Usuario, authToken: string) => {
+export const login = async (userData: Usuario, authToken: string) => {
   setUsuario(userData);
   setToken(authToken);
-  setPermisos(userData.permisos || []);
   localStorage.setItem('authToken', authToken);
   localStorage.setItem('usuario', JSON.stringify(userData));
+
+  if (userData.rolUsuarioId) {
+    const permisos = await obtenerPermisosPorRol(userData.rolUsuarioId);
+    setPermisos(permisos);
+  }
 };
 
 export const logout = () => {
@@ -26,7 +31,7 @@ export const logout = () => {
   localStorage.removeItem('usuario');
 };
 
-export const checkLocalStorage = () => {
+export const checkLocalStorage = async () => {
   const savedUser = localStorage.getItem('usuario');
   const savedToken = localStorage.getItem('authToken');
 
@@ -34,7 +39,11 @@ export const checkLocalStorage = () => {
     const parsedUser: Usuario = JSON.parse(savedUser);
     setUsuario(parsedUser);
     setToken(savedToken);
-    setPermisos(parsedUser.permisos || []);
+
+    if (parsedUser.rolUsuarioId) {
+      const permisos = await obtenerPermisosPorRol(parsedUser.rolUsuarioId);
+      setPermisos(permisos);
+    }
   }
 };
 
