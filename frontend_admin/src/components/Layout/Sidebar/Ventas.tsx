@@ -11,6 +11,9 @@ export default function Ventas(props: { usuario: any }) {
 
   const esActivo = (path: string) => location.pathname === path;
 
+  if (esOperario(props.usuario?.rolUsuarioId))
+      return null;
+
   return (
     <div>
       <button onClick={() => setOpen(!open())} class="flex items-center justify-between w-full px-2 py-1 hover:bg-gray-700 rounded">
