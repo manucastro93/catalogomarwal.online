@@ -11,7 +11,7 @@ export default function Produccion(props: { usuario: any }) {
   const esActivo = (path: string) => location.pathname === path;
 
   if (props.usuario?.rolUsuarioId === 3) return null; // VENDEDOR
-
+  console.log(props.usuario?.rolUsuarioId)
   return (
     <div>
       <button onClick={() => setOpen(!open())} class="flex items-center justify-between w-full px-2 py-1 hover:bg-gray-700 rounded">
