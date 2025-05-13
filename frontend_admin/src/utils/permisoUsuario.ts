@@ -32,6 +32,7 @@ export function tienePermiso(
     ) {
       return true;
     }
+    console.log("permitido?:",p.permitido, nombreModulo,nombreAccion)
   }
 
   return false;
