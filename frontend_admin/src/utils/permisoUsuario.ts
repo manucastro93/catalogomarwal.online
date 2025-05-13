@@ -7,7 +7,7 @@ export function tienePermiso(
   accion: string
 ): boolean {
   const { usuario } = useAuth();
-  console.log("usuariio: ", usuario)
+  console.log("usuariio: ", usuario())
   if (usuario()?.rolUsuarioId === 1) {
     return true; // SUPREMO
   }
