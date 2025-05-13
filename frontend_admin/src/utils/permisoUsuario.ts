@@ -15,10 +15,8 @@ export function tienePermiso(
   const accionLower = accion.toLowerCase();
 
   for (const p of permisos) {
-    console.log("permiso: ", p);
-    const nombreModulo = p?.modulo?.nombre?.toLowerCase?.();
+    const nombreModulo = moduloLower;
     const nombreAccion = p?.accion?.toLowerCase?.();
-    console.log("nombreModulo: ", nombreModulo, "accion: ", nombreAccion);
 
     if (!nombreModulo || !nombreAccion) continue;
 
