@@ -38,12 +38,10 @@ export default function Sidebar() {
         <Logo />
 
         <nav class="flex flex-col gap-2 text-lg">
-          <ConPermiso modulo="Inicio" accion="ver">
             <A href="/Inicio" class="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-700 transition"
               classList={{ 'bg-gray-700 font-bold': location.pathname === '/Inicio' }}>
               Inicio
             </A>
-          </ConPermiso>
 
           <Ventas usuario={usuario()} />
 
