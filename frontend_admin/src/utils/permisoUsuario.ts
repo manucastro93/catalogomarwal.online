@@ -16,10 +16,11 @@ export function tienePermiso(
   const accionLower = accion.toLowerCase();
 
   for (const p of permisos) {
+    console.log("permiso: ", p);
     const nombreModulo = p?.modulo?.nombre?.toLowerCase?.();
     const nombreAccion = p?.accion?.toLowerCase?.();
-    console.log("nombreModulo: ", nombreModulo)
-    console.log("nombreAcc: ", nombreAccion)
+    console.log("nombreModulo: ", nombreModulo, "accion: ", nombreAccion);
+
     if (!nombreModulo || !nombreAccion) continue;
 
     if (nombreModulo === 'supremo') {
@@ -31,7 +32,6 @@ export function tienePermiso(
       nombreAccion === accionLower &&
       p.permitido
     ) {
-      console.log("Permitido: ",p.permitido)
       return true;
     }
   }
