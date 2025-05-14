@@ -22,6 +22,10 @@ export interface Producto {
   updatedAt: string;
   deletedAt?: string | null;
 
+  stock?: number;
+  marcaId?: number | null;
+  costoDux?: number | null;
   Categoria?: Categoria;
+  Marca?: { id: number; nombre: string };
   Imagenes?: ImagenProducto[];
 }

@@ -29,6 +29,19 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    stock: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    marcaId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Marcas',
+        key: 'id',
+      },
+    },
     categoriaId: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -38,6 +51,11 @@ export default (sequelize, DataTypes) => {
       },
     },
     costoMP: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
+    costoDux: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,
       defaultValue: 0,
@@ -52,6 +70,11 @@ export default (sequelize, DataTypes) => {
     Producto.belongsTo(models.Categoria, {
       foreignKey: 'categoriaId',
       as: 'Categoria',
+    });
+
+    Producto.belongsTo(models.Marca, {
+      foreignKey: 'marcaId',
+      as: 'Marca',
     });
 
     Producto.hasMany(models.ImagenProducto, {
