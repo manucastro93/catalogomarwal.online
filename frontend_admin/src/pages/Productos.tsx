@@ -1,10 +1,20 @@
-import { createSignal, createResource, createMemo, For, Show } from 'solid-js';
-import { obtenerProductos, obtenerProductoPorId, eliminarProducto } from '@/services/producto.service';
+import {
+  createSignal,
+  createResource,
+  createMemo,
+  For,
+  Show,
+} from 'solid-js';
+import {
+  obtenerProductos,
+  obtenerProductoPorId,
+  eliminarProducto,
+  sincronizarProductosDesdeDux,
+} from '@/services/producto.service';
 import { obtenerCategorias } from '@/services/categoria.service';
 import { useAuth } from '@/store/auth';
 import ConPermiso from '@/components/Layout/ConPermiso';
 import ModalNuevoProducto from '@/components/Producto/ModalNuevoProducto';
-import ModalImportarExcel from '@/components/Producto/ModalImportarExcel';
 import VerProductoModal from '@/components/Producto/VerProductoModal';
 import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
 import ModalMensaje from '@/components/Layout/ModalMensaje';
@@ -14,26 +24,27 @@ import TablaProductos from '@/components/Producto/TablaProductos';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 import type { Producto } from '@/types/producto';
 
-
 export default function Productos() {
   const [pagina, setPagina] = createSignal(1);
-  const [orden, setOrden] = createSignal("sku");
-  const [direccion, setDireccion] = createSignal<"asc" | "desc">("asc");
+  const [orden, setOrden] = createSignal('sku');
+  const [direccion, setDireccion] = createSignal<'asc' | 'desc'>('asc');
 
-  const [busqueda, setBusqueda] = createSignal("");
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = createSignal("");
+  const [busqueda, setBusqueda] = createSignal('');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = createSignal('');
 
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [modalExcel, setModalExcel] = createSignal(false);
   const [productoSeleccionado, setProductoSeleccionado] =
     createSignal<Producto | null>(null);
   const [verProducto, setVerProducto] = createSignal<Producto | null>(null);
   const [productoAEliminar, setProductoAEliminar] =
     createSignal<Producto | null>(null);
-  const [mensaje, setMensaje] = createSignal("");
-  const { usuario } = useAuth();
+  const [mensaje, setMensaje] = createSignal('');
+  const [syncCargando, setSyncCargando] = createSignal(false);
+  const [syncMensaje, setSyncMensaje] = createSignal('');
 
+  const { usuario } = useAuth();
   const esVendedor = usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR;
+
   const [categorias] = createResource(obtenerCategorias);
 
   const fetchParams = createMemo(() => ({
@@ -52,10 +63,10 @@ export default function Productos() {
 
   const cambiarOrden = (col: string) => {
     if (orden() === col) {
-      setDireccion(direccion() === "asc" ? "desc" : "asc");
+      setDireccion(direccion() === 'asc' ? 'desc' : 'asc');
     } else {
       setOrden(col);
-      setDireccion("asc");
+      setDireccion('asc');
     }
   };
 
@@ -76,6 +87,20 @@ export default function Productos() {
     );
   };
 
+  const sincronizarDesdeDux = async () => {
+    setSyncCargando(true);
+    try {
+      const msg = await sincronizarProductosDesdeDux();
+      setMensaje(msg);
+      refetch();
+    } catch (e) {
+      setMensaje("Error al sincronizar productos. Revisá la conexión o credenciales.");
+    } finally {
+      setSyncCargando(false);
+      setTimeout(() => setMensaje(''), 4000);
+    }
+  };
+
   return (
     <div class="p-6">
       <div class="flex justify-between items-center mb-4">
@@ -83,12 +108,6 @@ export default function Productos() {
         {!esVendedor && (
           <div class="flex gap-2">
             <ConPermiso modulo="Productos" accion="crear">
-            <button
-              onClick={() => setModalExcel(true)}
-              class="bg-green-600 text-white px-3 py-1 rounded text-sm"
-            >
-              Importar Excel
-            </button>
               <button
                 onClick={() => {
                   setProductoSeleccionado(null);
@@ -98,6 +117,16 @@ export default function Productos() {
               >
                 + Nuevo Producto
               </button>
+              <button
+                onClick={sincronizarDesdeDux}
+                class="bg-yellow-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                disabled={syncCargando()}
+              >
+                {syncCargando() ? 'Sincronizando...' : 'Sincronizar desde Dux'}
+              </button>
+              <Show when={syncMensaje()}>
+                <span class="text-sm text-gray-600 ml-2">{syncMensaje()}</span>
+              </Show>
             </ConPermiso>
           </div>
         )}
@@ -139,12 +168,14 @@ export default function Productos() {
           ◀
         </button>
         <span class="text-sm">
-          Página {respuesta()?.pagina ?? "-"} de{" "}
-          {respuesta()?.totalPaginas ?? "-"}
+          Página {respuesta()?.pagina ?? '-'} de{' '}
+          {respuesta()?.totalPaginas ?? '-'}
         </span>
         <button
           onClick={() =>
-            setPagina((p) => Math.min(respuesta()?.totalPaginas || p, p + 1))
+            setPagina((p) =>
+              Math.min(respuesta()?.totalPaginas || p, p + 1)
+            )
           }
           class="px-3 py-1 border rounded disabled:opacity-50"
           disabled={pagina() === (respuesta()?.totalPaginas ?? 1)}
@@ -163,14 +194,6 @@ export default function Productos() {
         }}
       />
 
-      <ModalImportarExcel
-        abierto={modalExcel()}
-        onCerrar={() => {
-          setModalExcel(false);
-          refetch();
-        }}
-      />
-
       <VerProductoModal
         producto={verProducto()}
         onCerrar={() => setVerProducto(null)}
@@ -185,12 +208,12 @@ export default function Productos() {
             await eliminarProducto(productoAEliminar()!.id);
             setProductoAEliminar(null);
             refetch();
-            setMensaje("Producto eliminado correctamente");
+            setMensaje('Producto eliminado correctamente');
           }
         }}
       />
 
-      <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje("")} />
+      <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje('')} />
     </div>
   );
 }

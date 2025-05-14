@@ -68,3 +68,8 @@ export const actualizarOrdenImagenes = async (imagenes: { id: number; orden: num
   const { data } = await api.put('/productos/imagenes/ordenar', { imagenes });
   return data;
 };
+
+export const sincronizarProductosDesdeDux = async (): Promise<string> => {
+  const { data } = await api.post('/dux/sync-productos');
+  return data.mensaje;
+};
