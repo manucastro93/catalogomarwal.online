@@ -1,40 +1,25 @@
-import { enviarMensajeWhatsapp } from '../../helpers/enviarMensajeWhatsapp.js';
+import { enviarMensajeTemplateWhatsapp } from '../../helpers/enviarMensajeWhatsapp.js';
 import { formatearNumeroWhatsapp } from '../formato.js';
 
 // ✅ Enviar mensaje de confirmación de pedido
-export async function enviarWhatsappPedido({ cliente, pedido, carrito, vendedor, extraMensaje = '' }) {
+export async function enviarWhatsappPedido({ cliente, pedido, carrito, vendedor }) {
   if (!cliente || !pedido || !Array.isArray(carrito)) {
     throw new Error('Faltan datos obligatorios o el carrito no es válido para WhatsApp');
   }
 
-  const mensaje = `
-🛍️ *¡Gracias por tu pedido, ${cliente.nombre}!*
+  const tel = formatearNumeroWhatsapp(cliente?.telefono);
+  if (!tel) return;
 
-📦 *Pedido #${pedido.id}* confirmado
+  const total = `$${pedido.total.toLocaleString('es-AR')}`;
+  const nombreCliente = cliente.nombre;
+  const idPedido = `#${pedido.id}`;
 
-👤 *Atendido por:* ${vendedor?.nombre || 'Nuestro equipo'}
-💬 Tel: ${cliente.telefono}
-💰 *Total:* $${pedido.total.toLocaleString('es-AR')}
-
-🧾 *Detalle:*
-${carrito.map((p) => `• ${p.nombre} x ${p.cantidad} bultos`).join('\n')}
-
-📲 Te mantendremos al tanto por este medio.
-
-${extraMensaje}
-  `.trim();
-
-  const destinatarios = [cliente.telefono, vendedor?.telefono]
-    .map(formatearNumeroWhatsapp)
-    .filter((n) => n?.length > 9);
-
-  for (const tel of destinatarios) {
-    try {
-      await enviarMensajeWhatsapp(tel, mensaje);
-    } catch (e) {
-      console.warn(`❌ Error al enviar WhatsApp a ${tel}:`, e.message);
-    }
-  }
+  // ⚠️ Requiere que tengas un template aprobado llamado 'confirmacion_pedido' con 3 variables
+  await enviarMensajeTemplateWhatsapp(tel, 'confirmacion_pedido', [
+    nombreCliente,
+    idPedido,
+    total,
+  ]);
 }
 
 // ✅ Enviar aviso de modo edición
@@ -43,8 +28,8 @@ export async function enviarWhatsappEstadoEditando({ pedido }) {
   const tel = formatearNumeroWhatsapp(cliente?.telefono);
   if (!tel) return;
 
-  const mensaje = `🛠️ Tu pedido #${pedido.id} está en modo edición. ¡Podés modificarlo desde la web!`;
-  await enviarMensajeWhatsapp(tel, mensaje);
+  // ⚠️ Requiere template 'modo_edicion_activa' con 1 variable (número de pedido)
+  await enviarMensajeTemplateWhatsapp(tel, 'modo_edicion_activa', [`#${pedido.id}`]);
 }
 
 // ✅ Enviar aviso de reversion de edición
@@ -53,8 +38,8 @@ export async function enviarWhatsappReversionEditando({ pedido }) {
   const tel = formatearNumeroWhatsapp(cliente?.telefono);
   if (!tel) return;
 
-  const mensaje = `⌛ *La edición de tu pedido #${pedido.id} expiró y fue revertida a pendiente.*`;
-  await enviarMensajeWhatsapp(tel, mensaje);
+  // ⚠️ Requiere template 'edicion_revertida' con 1 variable (número de pedido)
+  await enviarMensajeTemplateWhatsapp(tel, 'edicion_revertida', [`#${pedido.id}`]);
 }
 
 // ✅ Enviar aviso de cancelación
@@ -62,18 +47,12 @@ export async function enviarWhatsappCancelacion({ cliente, pedido, vendedor }) {
   const telCliente = formatearNumeroWhatsapp(cliente?.telefono);
   const telVendedor = formatearNumeroWhatsapp(vendedor?.telefono);
 
-  const mensaje = `
-🛑 *Se canceló el pedido #${pedido.id}.*
-
-❌ Este pedido fue descartado y no será procesado.
-📩 Contactalo si necesitás más info.
-  `.trim();
-
   const destinatarios = [telCliente, telVendedor].filter((n) => n?.length > 9);
 
+  // ⚠️ Requiere template 'cancelacion_pedido' con 1 variable (#pedido)
   for (const tel of destinatarios) {
     try {
-      await enviarMensajeWhatsapp(tel, mensaje);
+      await enviarMensajeTemplateWhatsapp(tel, 'cancelacion_pedido', [`#${pedido.id}`]);
     } catch (e) {
       console.warn(`❌ Error al enviar WhatsApp de cancelación a ${tel}:`, e.message);
     }

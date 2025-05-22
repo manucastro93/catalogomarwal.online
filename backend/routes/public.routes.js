@@ -87,7 +87,7 @@ router.get('/autocomplete', async (req, res) => {
 
     const response = await fetch(url);
     const data = await response.json();
-    res.json(data);
+    res.json({ predictions: data.predictions || [] });
   } catch (error) {
     console.error('❌ Error en /autocomplete:', error);
     res.status(500).json({ message: 'Error al consultar Google Places' });
@@ -107,7 +107,6 @@ router.get('/direccion-detalle', async (req, res) => {
 
     const response = await fetch(url);
     const data = await response.json();
-
     if (data.status !== "OK" || !data.result) {
       console.error("❌ Google API ERROR:", data);
       return res.status(500).json({

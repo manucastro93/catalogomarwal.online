@@ -1,11 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { enviarMensajeWhatsapp } from '../helpers/enviarMensajeWhatsapp.js';
+import { enviarMensajeTemplateWhatsapp } from '../helpers/enviarMensajeWhatsapp.js';
 
 dotenv.config();
 
 const router = express.Router();
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'marwal123';
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN ;
 
 router.get('/webhook-whatsapp', (req, res) => {
   const mode = req.query['hub.mode'];
@@ -34,8 +34,8 @@ router.post('/webhook-whatsapp', async (req, res) => {
 
       console.log(`👤 Mensaje de ${from}: ${text}`);
 
-      // RESPUESTA AUTOMÁTICA
-      await enviarMensajeWhatsapp(from, '¡Hola! Gracias por tu mensaje. Te responderemos pronto.');
+      // ✅ RESPUESTA AUTOMÁTICA CON TEMPLATE
+      await enviarMensajeTemplateWhatsapp(from, 'respuesta_automatica', []);
     }
   }
 

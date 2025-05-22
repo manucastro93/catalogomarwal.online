@@ -1,4 +1,4 @@
-import { enviarMensajeWhatsapp } from '../../helpers/enviarMensajeWhatsapp.js';
+import { enviarMensajeTemplateWhatsapp } from '../../helpers/enviarMensajeWhatsapp.js';
 
 const codigos = new Map(); // temporal, ideal usar Redis
 
@@ -10,7 +10,7 @@ export const enviarCodigoWhatsapp = async (req, res) => {
   codigos.set(telefono, { codigo, creado: Date.now() });
 
   try {
-    await enviarMensajeWhatsapp(telefono, `Tu código de verificación es: *${codigo}*`);
+    await enviarMensajeTemplateWhatsapp(telefono, 'codigo_verificacion', [codigo]);
     res.status(200).json({ message: 'Código enviado' });
   } catch (err) {
     console.error('❌ Error al enviar WhatsApp:', err);
