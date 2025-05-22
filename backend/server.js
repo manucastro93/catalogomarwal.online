@@ -8,6 +8,7 @@ import errorHandler from './middlewares/errorHandler.js';
 import rutas from './routes/index.js';
 import { createServer } from 'http';
 import { initSockets } from './sockets/index.js';
+import webhookRoutes from './routes/webhook.routes.js';
 
 dotenv.config();
 
@@ -41,6 +42,8 @@ app.use((req, res, next) => {
 });
 
 app.use(express.static('public'));
+
+app.use('/', webhookRoutes);
 
 // 👇 Rutas centralizadas
 app.use('/api', rutas);

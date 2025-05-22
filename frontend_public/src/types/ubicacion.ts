@@ -8,3 +8,16 @@ export interface Localidad {
     provinciaId: number;
   }
   
+  export interface DireccionGoogle {
+  descripcion: string;
+  place_id: string;
+  formatted?: string;
+  components?: {
+    city?: string;
+    state?: string;
+    postcode?: string;
+    suburb?: string;
+    road?: string;
+    house_number?: string;
+  };
+}

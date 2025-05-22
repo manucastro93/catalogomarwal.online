@@ -1,58 +1,88 @@
 import { Show, createSignal } from 'solid-js';
 import { A, useLocation } from '@solidjs/router';
 import ConPermiso from '@/components/Layout/ConPermiso';
-import { Package, ChevronDown, ChevronUp } from 'lucide-solid';
+import { Package, ChevronDown } from '@/icons';
 import { esOperario } from './utils';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import theme from '@/styles/sidebarTheme';
 
-export default function Ventas(props: { usuario: any }) {
+export default function Ventas(props: { usuario: any; expandido: boolean }) {
   const location = useLocation();
-  const [open, setOpen] = createSignal(false);
+  const [open, setOpen] = createSignal(
+    location.pathname.startsWith('/Pedidos') ||
+    location.pathname.startsWith('/Productos') ||
+    location.pathname.startsWith('/Categorias') ||
+    location.pathname.startsWith('/Clientes') ||
+    location.pathname.startsWith('/Vendedores') ||
+    location.pathname.startsWith('/LogsCliente') ||
+    location.pathname.startsWith('/Estadisticas')
+  );
 
   const esActivo = (path: string) => location.pathname === path;
 
-  if (esOperario(props.usuario?.rolUsuarioId))
-      return null;
+  if (esOperario(props.usuario?.rolUsuarioId)) return null;
 
   return (
-    <div>
-      <button onClick={() => setOpen(!open())} class="flex items-center justify-between w-full px-2 py-1 hover:bg-gray-700 rounded">
-        <span class="flex items-center gap-2"><Package size={16} /> Ventas</span>
-        {open() ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+    <div class="text-sm font-medium tracking-wide">
+      <button
+        onClick={() => setOpen(!open())}
+        class={`${theme.itemBase} ${theme.paddingY} ${theme.redondeado} ${
+          open() ? theme.itemActivo : theme.itemHover
+        }`}
+        style={{ color: theme.texto }}
+      >
+        <div class={theme.itemIconoWrapper}>
+          <Package size={18} />
+        </div>
+        <Show when={props.expandido}>
+          <span class={theme.itemTexto}>Ventas</span>
+          <ChevronDown
+            size={18}
+            class={`ml-auto transition-transform duration-200 ${open() ? 'rotate-180' : ''}`}
+          />
+        </Show>
       </button>
-      <Show when={open()}>
-        <div class="ml-10 flex flex-col gap-1 mt-1">
-          <Show when={!esOperario(props.usuario?.rolUsuarioId)}>
-            <ConPermiso modulo="Pedidos" accion="ver">
-              <A href="/Pedidos" classList={{ 'text-blue-400': esActivo('/Pedidos') }}>Pedidos</A>
-            </ConPermiso>
-          </Show>
-          <ConPermiso modulo="Productos" accion="ver">
-            <A href="/Productos" classList={{ 'text-blue-400': esActivo('/Productos') }}>Productos</A>
+
+      <Show when={open() && props.expandido}>
+        <div class="flex flex-col mt-1">
+          <ConPermiso modulo="Pedidos" accion="ver">
+            <SidebarLink href="/Pedidos" texto="Pedidos" activo={esActivo('/Pedidos')} />
           </ConPermiso>
-          <Show when={!esOperario(props.usuario?.rolUsuarioId)}>
-            <ConPermiso modulo="Categorias" accion="ver">
-              <A href="/Categorias" classList={{ 'text-blue-400': esActivo('/Categorias') }}>Categorías</A>
-            </ConPermiso>
-            <ConPermiso modulo="Clientes" accion="ver">
-              <A href="/Clientes" classList={{ 'text-blue-400': esActivo('/Clientes') }}>Clientes</A>
-            </ConPermiso>
-          </Show>
+          <ConPermiso modulo="Productos" accion="ver">
+            <SidebarLink href="/Productos" texto="Productos" activo={esActivo('/Productos')} />
+          </ConPermiso>
+          <ConPermiso modulo="Categorias" accion="ver">
+            <SidebarLink href="/Categorias" texto="Categorías" activo={esActivo('/Categorias')} />
+          </ConPermiso>
+          <ConPermiso modulo="Clientes" accion="ver">
+            <SidebarLink href="/Clientes" texto="Clientes" activo={esActivo('/Clientes')} />
+          </ConPermiso>
           <Show when={[ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(props.usuario?.rolUsuarioId)}>
             <ConPermiso modulo="Vendedores" accion="ver">
-              <A href="/Vendedores" classList={{ 'text-blue-400': esActivo('/Vendedores') }}>Vendedores</A>
+              <SidebarLink href="/Vendedores" texto="Vendedores" activo={esActivo('/Vendedores')} />
             </ConPermiso>
-          </Show>
-          <Show when={[ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(props.usuario?.rolUsuarioId)}>
             <ConPermiso modulo="LogsCliente" accion="ver">
-              <A href="/LogsCliente" classList={{ 'text-blue-400': esActivo('/LogsCliente') }}>Actividad Clientes</A>
+              <SidebarLink href="/LogsCliente" texto="Actividad Clientes" activo={esActivo('/LogsCliente')} />
             </ConPermiso>
           </Show>
           <ConPermiso modulo="Estadisticas" accion="ver">
-                <A href="/Estadisticas" classList={{ 'text-blue-400': esActivo('/Estadisticas') }}>Resumen del mes</A>
-            </ConPermiso>
+            <SidebarLink href="/Estadisticas" texto="Resumen del mes" activo={esActivo('/Estadisticas')} />
+          </ConPermiso>
         </div>
       </Show>
     </div>
+  );
+}
+
+function SidebarLink(props: { href: string; texto: string; activo: boolean }) {
+  return (
+    <A
+      href={props.href}
+      class={`block ${theme.paddingSubitem} text-sm transition-colors ${
+        props.activo ? theme.subitemActivo : theme.textoSubitem
+      }`}
+    >
+      {props.texto}
+    </A>
   );
 }

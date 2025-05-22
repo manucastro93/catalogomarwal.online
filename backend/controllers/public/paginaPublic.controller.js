@@ -1,13 +1,7 @@
-import {
-  Banner,
-  Usuario,
-  Pagina,
-} from '../models/index.js';
-
 import { Op } from 'sequelize';
-import cache from '../utils/cache.js';
+import { Pagina, Banner } from '../../models/index.js';
+import cache from '../../utils/cache.js';
 
-// PÁGINA
 export const obtenerPaginaPublica = async (req, res, next) => {
   try {
     const cacheKey = 'pagina';
@@ -20,6 +14,7 @@ export const obtenerPaginaPublica = async (req, res, next) => {
     cache.set(cacheKey, pagina);
     res.json(pagina);
   } catch (error) {
+    console.error('❌ Error en obtenerPaginaPublica:', error);
     next(error);
   }
 };
@@ -46,29 +41,7 @@ export const listarBanners = async (req, res, next) => {
 
     res.json(banners);
   } catch (error) {
-    next(error);
-  }
-};
-
-// VENDEDOR
-export const buscarVendedorPorLink = async (req, res, next) => {
-  try {
-    const { link } = req.params;
-
-    const vendedor = await Usuario.findOne({
-      where: {
-        link,
-        rolUsuarioId: ROLES_USUARIO.VENDEDOR,
-      },
-      attributes: ['id', 'nombre', 'email', 'telefono', 'link'],
-    });
-
-    if (!vendedor) {
-      return res.status(404).json({ error: 'Vendedor no encontrado' });
-    }
-
-    res.json(vendedor);
-  } catch (error) {
+    console.error('❌ Error en listarBanners:', error);
     next(error);
   }
 };

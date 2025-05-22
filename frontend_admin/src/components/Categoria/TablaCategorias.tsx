@@ -13,7 +13,8 @@ export default function TablaCategorias(props: {
       <table class="w-full text-sm border-collapse">
         <thead class="bg-gray-100">
           <tr>
-            <th class="text-left p-3 border-b">Nombre</th>
+            <th class="text-left p-3 border-b">Nombre (Dux)</th>
+            <th class="text-left p-3 border-b">Nombre Web</th>
             <th class="text-left p-3 border-b">Orden</th>
             <th class="text-left p-3 border-b">Estado</th>
             <th class="text-left p-3 border-b">Acciones</th>
@@ -34,8 +35,9 @@ export default function TablaCategorias(props: {
               {(c) => (
                 <tr class="hover:bg-gray-50 border-b">
                   <td class="p-3">{c.nombre}</td>
-                  <td class="p-3">{c.orden ?? "-"}</td>
-                  <td class="p-3">{c.estado ? "Activa" : "Inactiva"}</td>
+                  <td class="p-3">{c.nombreWeb || '-'}</td>
+                  <td class="p-3">{c.orden ?? '-'}</td>
+                  <td class="p-3">{c.estado ? 'Activa' : 'Inactiva'}</td>
                   <td class="p-3 flex gap-2">
                     <Show when={props.puedeEditar}>
                       <button

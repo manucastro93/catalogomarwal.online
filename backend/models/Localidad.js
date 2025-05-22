@@ -12,6 +12,10 @@ export default (sequelize, DataTypes) => {
         key: 'id',
       },
     },
+    codigoPostal: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   }, {
     sequelize,
     modelName: 'Localidad',

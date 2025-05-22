@@ -16,9 +16,11 @@ export function formatearNumeroWhatsapp(numero) {
   const limpio = numero.replace(/\D/g, "");
 
   if (limpio.startsWith("549")) return `+${limpio}`;
-  if (limpio.startsWith("54")) return `+${limpio}`;
-  if (limpio.startsWith("0")) return `+54${limpio.slice(1)}`;
-  if (limpio.length >= 10 && limpio.length <= 11) return `+549${limpio}`;
+  if (limpio.startsWith("54")) return `+549${limpio.slice(2)}`;
+  if (limpio.startsWith("0")) return `+549${limpio.slice(1)}`;
+  if (limpio.length === 10 && limpio.startsWith("11")) return `+549${limpio}`;
+  if (limpio.length === 10) return `+549${limpio}`;
 
-  return numero;
+  return `+549${limpio}`; // último recurso
 }
+

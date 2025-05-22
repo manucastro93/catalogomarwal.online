@@ -165,7 +165,7 @@ export default function CarritoSlideOver() {
       setMensajeExito("¡Pedido enviado con éxito!. Podés revisarlo en la sección 'Mis Pedidos'.");
       setTimeout(() => {
         setMensajeExito("");
-        navigate("/"); // Navegar después de mostrar el mensaje
+        window.location.reload();
       }, 2500);
     } catch (error: any) {
       console.error("❌ ERROR CATCH:", error);
@@ -201,7 +201,6 @@ export default function CarritoSlideOver() {
       setEnviando(false);
     }
   };
-
 
   return (
     <>

@@ -250,6 +250,37 @@ export default function ModalNuevoProducto(props: {
                 <div>
                   <input
                     class="border p-2 rounded w-full"
+                    type="number"
+                    onKeyDown={(e) => {
+                      const allowed = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab'];
+                      const isNumber = /^[0-9]$/.test(e.key);
+                      if (!isNumber && !allowed.includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    placeholder="Unidades por bulto"
+                    value={unidadPorBulto()}
+                    onInput={(e) => {
+                      const value = e.currentTarget.value;
+                      setUnidadPorBulto(value);
+
+                      const unidades = parseInt(value, 10);
+                      const precio = parseInt(precioUnitario(), 10);
+
+                      if (!isNaN(unidades) && !isNaN(precio)) {
+                        setPrecioPorBulto((unidades * precio).toString());
+                      }
+                    }}
+                  />
+                  <Show when={errores().unidadPorBulto}>
+                    <p class="text-red-600 text-sm mt-1">
+                      {errores().unidadPorBulto}
+                    </p>
+                  </Show>
+                </div>
+                <div>
+                  <input
+                    class="border p-2 rounded w-full"
                     type="text"
                     inputmode="numeric"
                     onKeyDown={(e) => {
@@ -269,27 +300,6 @@ export default function ModalNuevoProducto(props: {
                   <Show when={errores().precioPorBulto}>
                     <p class="text-red-600 text-sm mt-1">
                       {errores().precioPorBulto}
-                    </p>
-                  </Show>
-                </div>
-                <div>
-                  <input
-                    class="border p-2 rounded w-full"
-                    type="number"
-                    onKeyDown={(e) => {
-                      const allowed = ['Backspace', 'ArrowLeft', 'ArrowRight', 'Tab'];
-                      const isNumber = /^[0-9]$/.test(e.key);
-                      if (!isNumber && !allowed.includes(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder="Unidades por bulto"
-                    value={unidadPorBulto()}
-                    onInput={(e) => setUnidadPorBulto(e.currentTarget.value)}
-                  />
-                  <Show when={errores().unidadPorBulto}>
-                    <p class="text-red-600 text-sm mt-1">
-                      {errores().unidadPorBulto}
                     </p>
                   </Show>
                 </div>

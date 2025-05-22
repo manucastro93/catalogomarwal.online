@@ -97,3 +97,24 @@ export async function enviarEmailReversionEditando({ pedido }) {
     html,
   });
 }
+
+export async function enviarEmailCancelacion({ cliente, pedido, vendedor }) {
+  const html = `
+  <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 640px; margin: auto; background-color: #fff7f7; border: 1px solid #ffcccc; border-radius: 10px;">
+    <h2 style="color: #cc0000;">🛑 Pedido cancelado</h2>
+    <p>El pedido <strong>#${pedido.id}</strong> fue cancelado por el cliente.</p>
+    <p><strong>Cliente:</strong> ${cliente.nombre}</p>
+    <p><strong>Email:</strong> ${cliente.email}</p>
+    <p><strong>Teléfono:</strong> ${cliente.telefono}</p>
+
+    <p style="margin-top: 24px;">Este email fue generado automáticamente por Catálogo Marwal.</p>
+  </div>
+  `;
+
+  await transporter.sendMail({
+    from: `"Catálogo Marwal" <${process.env.EMAIL_USER}>`,
+    to: [cliente.email, vendedor?.email].filter(Boolean).join(","),
+    subject: `❌ Pedido #${pedido.id} cancelado – ${cliente.nombre}`,
+    html,
+  });
+}

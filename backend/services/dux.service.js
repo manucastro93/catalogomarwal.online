@@ -1,141 +1,152 @@
 import axios from 'axios';
-import { Op } from 'sequelize';
-import {
-  Producto as ProductoModel,
-  Marca,
-  Categoria,
-  ImagenProducto
-} from '../models/index.js';
+import { Categoria, Producto } from '../models/index.js';
+import { estadoSync } from '../state/estadoSync.js';
 
-const DUX_EMAIL = process.env.DUX_EMAIL;
-const DUX_PASSWORD = process.env.DUX_PASSWORD;
-const LOGIN_URL = process.env.DUX_LOGIN_URL;
-const PRODUCTOS_URL = process.env.DUX_PRODUCTOS_URL;
+const API_URL = process.env.DUX_API_URL_PRODUCTOS;
+const API_KEY = process.env.DUX_API_KEY;
+const NOMBRE_LISTA_GENERAL = process.env.DUX_LISTA_GENERAL;
 
-let tokenDux = null; // se guarda en memoria durante runtime
-
-async function loginDux() {
-  try {
-    const res = await axios.post(LOGIN_URL, {
-      email: DUX_EMAIL,
-      password: DUX_PASSWORD,
-    });
-
-    tokenDux = res.data.token;
-    return true;
-  } catch (err) {
-    console.error('[DUX] Error al hacer login:', err.message);
-    return false;
-  }
+function esperar(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function fetchProductosConToken() {
-  if (!tokenDux) {
-    const ok = await loginDux();
-    if (!ok) throw new Error('No se pudo iniciar sesión en Dux');
-  }
+function calcularStock(item) {
+  if (!Array.isArray(item.stock)) return 0;
+  return item.stock.reduce((acc, s) => acc + parseFloat(s.stock_disponible || '0'), 0);
+}
 
-  try {
-    const res = await axios.get(PRODUCTOS_URL, {
-      headers: {
-        Authorization: `Bearer ${tokenDux}`,
-      },
+function obtenerPrecioLista(listas, nombreBuscado) {
+  if (!Array.isArray(listas)) return 0;
+  const lista = listas.find(p => p.nombre?.toUpperCase().includes(nombreBuscado.toUpperCase()));
+  return lista ? parseFloat(lista.precio || '0') : 0;
+}
+
+function limpiarNombreCategoria(nombre) {
+  return typeof nombre === 'string' && nombre.trim() ? nombre.trim() : 'Sin categoría';
+}
+
+export async function obtenerCategoriasDesdeDux() {
+  const res = await axios.get(`${API_URL}/rubros`, {
+    headers: { Authorization: API_KEY, Accept: 'application/json' }
+  });
+
+  return res.data.results || [];
+}
+
+export async function obtenerTodosLosItemsDesdeDux() {
+  const todos = [];
+  let offset = 0;
+  const limit = 50;
+  let pagina = 1;
+  let total = 1;
+
+  while (true) {
+    console.log(`📦 Pidiendo página ${pagina} (offset ${offset})`);
+
+    const res = await axios.get(API_URL, {
+      headers: { Authorization: API_KEY, Accept: 'application/json' },
+      params: { offset, limit }
     });
-    return res.data;
-  } catch (err) {
-    // Si el token expiró, reintenta una vez
-    if (err.response?.status === 401) {
-      console.warn('[DUX] Token expirado, reintentando login...');
-      const ok = await loginDux();
-      if (!ok) throw new Error('Login fallido al renovar token');
 
-      const res = await axios.get(PRODUCTOS_URL, {
-        headers: { Authorization: `Bearer ${tokenDux}` },
-      });
-      return res.data;
+    const lote = res.data.results;
+    if (!lote?.length) break;
+
+    if (pagina === 1 && res.data.paging?.total) {
+      total = res.data.paging.total;
     }
-    throw err;
+
+    todos.push(...lote);
+    estadoSync.porcentaje = Math.floor((todos.length / total) * 100);
+
+    offset += limit;
+    pagina++;
+
+    if (offset >= total) break;
+
+    console.log('⏳ Esperando 5 segundos por rate-limit Dux...');
+    await esperar(5000);
   }
+
+  return todos;
 }
 
 export async function sincronizarProductosDesdeDux() {
-  try {
-    const productosDux = await fetchProductosConToken();
-    const idsDux = new Set();
+  estadoSync.porcentaje = 0;
 
-    for (const p of productosDux) {
-      const {
-        idProducto,
-        descripcion,
-        codigo,
-        detalle,
-        precio,
-        stock,
-        marca,
-        rubro,
-        precioPorBulto,
-        unidadPorBulto,
-        costo,
-        imagenes,
-      } = p;
+  // Paso 1: sincronizar categorías
+  const rubros = await obtenerCategoriasDesdeDux();
+  const categoriasCreadas = new Set();
 
-      idsDux.add(idProducto);
+  for (const rubro of rubros) {
+    const nombre = limpiarNombreCategoria(rubro.nombre);
 
-      // Marca
-      let marcaId = null;
-      if (marca) {
-        const [m] = await Marca.findOrCreate({ where: { nombre: marca } });
-        marcaId = m.id;
-      }
+    const existente = await Categoria.findOne({ where: { nombre } });
 
-      // Categoría
-      let categoriaId = null;
-      if (rubro) {
-        const [c] = await Categoria.findOrCreate({ where: { nombre: rubro } });
-        categoriaId = c.id;
-      }
+    if (!existente) {
+      const nueva = await Categoria.create({
+        nombre,
+        nombreWeb: nombre,
+        orden: 0,
+        estado: true
+      });
+      categoriasCreadas.add(nueva.id);
+    }
+  }
+  
+  // Cargar todas las categorías en memoria para lookup rápido
+  const todasCategorias = await Categoria.findAll();
+  const categoriasMap = {};
+  for (const cat of todasCategorias) {
+    categoriasMap[cat.nombre] = cat.id;
+  }
 
-      // Producto
-      await ProductoModel.upsert({
-        id: idProducto,
-        nombre: descripcion || '',
-        sku: codigo || '',
-        descripcion: detalle || '',
-        precioUnitario: precio || 0,
-        precioPorBulto: precioPorBulto || null,
-        unidadPorBulto: unidadPorBulto || null,
-        stock: stock || 0,
-        marcaId,
-        categoriaId,
-        costoDux: costo || 0,
-        activo: 1,
+  // Paso 2: sincronizar productos
+  const items = await obtenerTodosLosItemsDesdeDux();
+
+  let creados = 0;
+  let actualizados = 0;
+
+  for (const item of items) {
+    try {
+      const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre);
+      const categoriaId = categoriasMap[nombreCategoria] || null;
+
+      const productoExistente = await Producto.findOne({
+        where: { sku: item.cod_item }
       });
 
-      // Imágenes
-      await ImagenProducto.destroy({ where: { productoId: idProducto } });
+      const data = {
+        nombre: item.item,
+        sku: item.cod_item,
+        precioUnitario: obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL),
+        costoDux: parseFloat(item.costo || '0'),
+        stock: calcularStock(item),
+        categoriaId,
+        activo: true
+      };
 
-      if (Array.isArray(imagenes)) {
-        const imagenesInsertar = imagenes.map((url, i) => ({
-          productoId: idProducto,
-          url,
-          orden: i + 1,
-        }));
-        await ImagenProducto.bulkCreate(imagenesInsertar);
+      if (productoExistente) {
+        await productoExistente.update(data);
+        actualizados++;
+      } else {
+        await Producto.create(data);
+        creados++;
       }
+
+    } catch (error) {
+      console.error(`❌ Error procesando item ${item.cod_item}:`, error);
     }
-
-    // Eliminar productos que ya no están en Dux
-    const locales = await ProductoModel.findAll({ attributes: ['id'] });
-    const idsLocales = locales.map(p => p.id);
-    const idsAEliminar = idsLocales.filter(id => !idsDux.has(id));
-
-    if (idsAEliminar.length) {
-      await ProductoModel.destroy({ where: { id: { [Op.in]: idsAEliminar } } });
-    }
-
-    return { ok: true, mensaje: 'Sincronización completada con éxito' };
-  } catch (error) {
-    console.error('Error al sincronizar productos desde Dux:', error);
-    return { ok: false, mensaje: 'Error en la sincronización', error };
   }
+
+  console.log('\n🎉 Sincronización finalizada.');
+  setTimeout(() => {
+    estadoSync.porcentaje = 0;
+  }, 3000);
+
+  return {
+    mensaje: `Se sincronizaron ${items.length} productos desde Dux.`,
+    creados,
+    actualizados,
+    categoriasNuevas: categoriasCreadas.size
+  };
 }

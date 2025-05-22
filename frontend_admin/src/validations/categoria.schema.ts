@@ -9,6 +9,11 @@ export const categoriaSchema = z.object({
     .min(1, 'El nombre de la categoría es obligatorio')
     .transform(capitalizar),
 
+  nombreWeb: z
+    .string()
+    .nullable()
+    .transform((val) => (val ? capitalizar(val) : '')),
+
   orden: z
     .string()
     .refine((val) => val === '' || !isNaN(Number(val)), {

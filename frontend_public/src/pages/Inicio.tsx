@@ -98,7 +98,7 @@ export default function Inicio(props: InicioProps) {
     (async () => {
     await fetchProductos();
     const cats = await obtenerCategorias();
-    setCategorias(["Todas", ...cats.map((c: any) => c.nombre)]);
+    setCategorias(["Todas", ...cats.map((c: any) => c.nombreWeb)]);
     const categoriaInicial = params.categoria;
     if (categoriaInicial) {
       const categoriaDecodificada = Array.isArray(categoriaInicial)
@@ -177,7 +177,7 @@ export default function Inicio(props: InicioProps) {
               <For each={categorias()}>
                 {(cat) => (
                   <CategoriaButton
-                    nombre={cat}
+                    nombreWeb={cat}
                     activa={cat === categoriaActiva()}
                     onClick={() => {
                       setCategoriaActiva(cat);

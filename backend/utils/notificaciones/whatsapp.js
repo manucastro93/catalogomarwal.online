@@ -1,15 +1,8 @@
-import twilio from 'twilio';
-import { formatearNumeroWhatsapp } from "../formato.js";
-
-const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
-
-// 🔁 Función auxiliar para validar número antes de enviar
-function esNumeroValidoParaWhatsapp(numero) {
-  return typeof numero === 'string' && numero.startsWith('whatsapp:+');
-}
+import { enviarMensajeWhatsapp } from '../../helpers/enviarMensajeWhatsapp.js';
+import { formatearNumeroWhatsapp } from '../formato.js';
 
 // ✅ Enviar mensaje de confirmación de pedido
-export async function enviarWhatsappPedido({ cliente, pedido, carrito, vendedor }) {
+export async function enviarWhatsappPedido({ cliente, pedido, carrito, vendedor, extraMensaje = '' }) {
   if (!cliente || !pedido || !Array.isArray(carrito)) {
     throw new Error('Faltan datos obligatorios o el carrito no es válido para WhatsApp');
   }
@@ -27,57 +20,62 @@ export async function enviarWhatsappPedido({ cliente, pedido, carrito, vendedor 
 ${carrito.map((p) => `• ${p.nombre} x ${p.cantidad} bultos`).join('\n')}
 
 📲 Te mantendremos al tanto por este medio.
-`;
 
-  const numeros = [cliente.telefono, vendedor?.telefono]
-    .map((tel) => `whatsapp:${formatearNumeroWhatsapp(tel)}`)
-    .filter(esNumeroValidoParaWhatsapp);
+${extraMensaje}
+  `.trim();
 
-  for (const numero of numeros) {
-    await client.messages.create({
-      body: mensaje,
-      from: process.env.TWILIO_FROM,
-      to: numero,
-    });
+  const destinatarios = [cliente.telefono, vendedor?.telefono]
+    .map(formatearNumeroWhatsapp)
+    .filter((n) => n?.length > 9);
+
+  for (const tel of destinatarios) {
+    try {
+      await enviarMensajeWhatsapp(tel, mensaje);
+    } catch (e) {
+      console.warn(`❌ Error al enviar WhatsApp a ${tel}:`, e.message);
+    }
   }
 }
 
 // ✅ Enviar aviso de modo edición
 export async function enviarWhatsappEstadoEditando({ pedido }) {
-  const telefonoCliente = pedido?.cliente?.telefono;
-  if (!telefonoCliente) return;
+  const cliente = await pedido.getCliente();
+  const tel = formatearNumeroWhatsapp(cliente?.telefono);
+  if (!tel) return;
 
-  const numeroDestino = `whatsapp:${formatearNumeroWhatsapp(telefonoCliente)}`;
-
-  if (!esNumeroValidoParaWhatsapp(numeroDestino)) {
-    console.warn('❗ Número no válido para WhatsApp (modo edición):', numeroDestino);
-    return;
-  }
-
-  await client.messages.create({
-    from: process.env.TWILIO_FROM,
-    to: numeroDestino,
-    body: `🛠️ Tu pedido #${pedido.id} está en modo edición. ¡Podés modificarlo desde la web!`,
-  });
+  const mensaje = `🛠️ Tu pedido #${pedido.id} está en modo edición. ¡Podés modificarlo desde la web!`;
+  await enviarMensajeWhatsapp(tel, mensaje);
 }
 
 // ✅ Enviar aviso de reversion de edición
 export async function enviarWhatsappReversionEditando({ pedido }) {
   const cliente = await pedido.getCliente();
-  const numero = `whatsapp:${formatearNumeroWhatsapp(cliente?.telefono)}`;
+  const tel = formatearNumeroWhatsapp(cliente?.telefono);
+  if (!tel) return;
 
-  if (!esNumeroValidoParaWhatsapp(numero)) {
-    console.warn('❗ Número no válido para WhatsApp (reversión):', numero);
-    return;
-  }
+  const mensaje = `⌛ *La edición de tu pedido #${pedido.id} expiró y fue revertida a pendiente.*`;
+  await enviarMensajeWhatsapp(tel, mensaje);
+}
+
+// ✅ Enviar aviso de cancelación
+export async function enviarWhatsappCancelacion({ cliente, pedido, vendedor }) {
+  const telCliente = formatearNumeroWhatsapp(cliente?.telefono);
+  const telVendedor = formatearNumeroWhatsapp(vendedor?.telefono);
 
   const mensaje = `
-⌛ *La edición de tu pedido #${pedido.id} expiró y fue revertida a pendiente.*
-`;
+🛑 *Se canceló el pedido #${pedido.id}.*
 
-  await client.messages.create({
-    body: mensaje,
-    from: process.env.TWILIO_FROM,
-    to: numero,
-  });
+❌ Este pedido fue descartado y no será procesado.
+📩 Contactalo si necesitás más info.
+  `.trim();
+
+  const destinatarios = [telCliente, telVendedor].filter((n) => n?.length > 9);
+
+  for (const tel of destinatarios) {
+    try {
+      await enviarMensajeWhatsapp(tel, mensaje);
+    } catch (e) {
+      console.warn(`❌ Error al enviar WhatsApp de cancelación a ${tel}:`, e.message);
+    }
+  }
 }

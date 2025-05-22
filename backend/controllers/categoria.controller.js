@@ -37,7 +37,7 @@ export const listarCategorias = async (req, res) => {
 
 export const crearCategoria = async (req, res) => {
   try {
-    const { nombre, orden, estado } = req.body;
+    const { nombre, nombreWeb, orden, estado } = req.body;
 
     const categoriaExistenteActiva = await Categoria.findOne({
       where: { nombre, deletedAt: null },
@@ -55,19 +55,20 @@ export const crearCategoria = async (req, res) => {
     if (categoriaExistenteEliminada) {
       categoriaExistenteEliminada.estado = estado;
       categoriaExistenteEliminada.orden = orden;
+      categoriaExistenteEliminada.nombreWeb = nombreWeb;
       await categoriaExistenteEliminada.restore();
       cache.del('categoriasPublicas');
       return res.status(201).json({ message: 'Categoría restaurada correctamente', categoria: categoriaExistenteEliminada });
     }
 
-    const nuevaCategoria = await Categoria.create({ nombre, orden, estado });
+    const nuevaCategoria = await Categoria.create({ nombre, nombreWeb, orden, estado });
 
     await crearAuditoria({
       tabla: 'categorias',
       accion: 'crea categoria',
-      registroId: categoria.id,
+      registroId: nuevaCategoria.id,
       usuarioId: req.usuario?.id || null,
-      descripcion: `Se creó la categoría ${categoria.nombre}`,
+      descripcion: `Se creó la categoría ${nuevaCategoria.nombre}`,
       ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
     });
 
@@ -82,7 +83,7 @@ export const crearCategoria = async (req, res) => {
 export const editarCategoria = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, orden, estado } = req.body;
+    const { nombre, nombreWeb, orden, estado } = req.body;
 
     const categoria = await Categoria.findByPk(id);
     if (!categoria) {
@@ -93,7 +94,7 @@ export const editarCategoria = async (req, res) => {
       where: { nombre, deletedAt: null },
     });
 
-    const datosAntes = categoriaExistente.toJSON();
+    const datosAntes = categoria.toJSON();
 
     if (categoriaExistente && categoriaExistente.id !== categoria.id) {
       return res.status(400).json({ message: `La categoría '${nombre}' ya existe y está activa` });
@@ -107,12 +108,14 @@ export const editarCategoria = async (req, res) => {
     if (categoriaEliminada && categoriaEliminada.id !== categoria.id) {
       categoriaEliminada.estado = estado;
       categoriaEliminada.orden = orden;
+      categoriaEliminada.nombreWeb = nombreWeb;
       await categoriaEliminada.restore();
       cache.del('categoriasPublicas');
       return res.status(201).json({ message: 'Categoría restaurada correctamente', categoria: categoriaEliminada });
     }
 
     categoria.nombre = nombre;
+    categoria.nombreWeb = nombreWeb;
     categoria.orden = orden;
     categoria.estado = estado;
     await categoria.save();
@@ -129,6 +132,7 @@ export const editarCategoria = async (req, res) => {
       datosDespues,
       ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
     });
+
     cache.del('categoriasPublicas');
     res.json({ message: 'Categoría actualizada correctamente', categoria });
   } catch (error) {
@@ -148,15 +152,15 @@ export const eliminarCategoria = async (req, res) => {
 
     await categoria.destroy();
 
-     await crearAuditoria({
+    await crearAuditoria({
       tabla: 'categorias',
       accion: 'elimina categoria',
       registroId: categoria.id,
       usuarioId: req.usuario?.id || null,
       descripcion: `Se eliminó la categoria "${categoria.nombre}"`,
-      ip,
+      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
     });
-    
+
     cache.del('categoriasPublicas');
 
     res.json({ message: 'Categoría eliminada correctamente' });
