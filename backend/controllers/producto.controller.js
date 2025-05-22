@@ -8,7 +8,7 @@ export const obtenerProductos = async (req, res, next) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit = 20,
       orden = 'sku',
       direccion = 'ASC',
       buscar = '',
@@ -49,11 +49,14 @@ export const obtenerProductos = async (req, res, next) => {
         required: false,
       });
     }
-    
 
     if (categoriaId) {
       where.categoriaId = categoriaId;
+    } else {
+      where.categoriaId = { [Op.notIn]: [11, 12] };
     }
+
+    where.precioUnitario = { [Op.gt]: 0 };
 
     const { count, rows } = await Producto.findAndCountAll({
       where,
@@ -199,7 +202,7 @@ export const actualizarProductoConImagenes = async (req, res, next) => {
 
     const producto = await Producto.findByPk(id);
     if (!producto) return res.status(404).json({ error: 'Producto no encontrado' });
-
+    const datosAntes = { ...producto.get() };
     await producto.update({
       sku,
       nombre,
@@ -226,7 +229,7 @@ export const actualizarProductoConImagenes = async (req, res, next) => {
       registroId: producto.id,
       usuarioId: req.usuario?.id || null,
       descripcion: `Se actualizó el producto ${producto.nombre}`,
-      datosAntes: producto,
+      datosAntes: datosAntes,
       datosDespues: req.body,
       ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
     });

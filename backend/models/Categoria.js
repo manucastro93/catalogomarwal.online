@@ -2,10 +2,18 @@ export default (sequelize, DataTypes) => {
   const Categoria = sequelize.define(
     'Categoria',
     {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
       nombre: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(255),
         allowNull: false,
-        unique: true,
+      },
+      nombreWeb: {
+        type: DataTypes.STRING(200),
+        allowNull: false,
       },
       orden: {
         type: DataTypes.INTEGER,
@@ -13,7 +21,20 @@ export default (sequelize, DataTypes) => {
       },
       estado: {
         type: DataTypes.BOOLEAN,
+        allowNull: true,
         defaultValue: true,
+      },
+      createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+      },
+      deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
       },
     },
     {
@@ -26,7 +47,10 @@ export default (sequelize, DataTypes) => {
   );
 
   Categoria.associate = (models) => {
-    Categoria.hasMany(models.Producto, { foreignKey: 'categoriaId', as: 'Productos' });
+    Categoria.hasMany(models.Producto, {
+      foreignKey: 'categoriaId',
+      as: 'Productos',
+    });
   };
 
   return Categoria;

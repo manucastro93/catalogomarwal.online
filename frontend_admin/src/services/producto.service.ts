@@ -13,7 +13,7 @@ export const obtenerProductoPorId = async (id: number): Promise<Producto> => {
 
 export const buscarProductosPorTexto = async (texto: string): Promise<Producto[]> => {
   const { data } = await api.get('/productos', {
-    params: { buscar: texto, limit: 10 },
+    params: { buscar: texto, limit: 20 },
   });
   return data.data || [];
 };
@@ -70,6 +70,11 @@ export const actualizarOrdenImagenes = async (imagenes: { id: number; orden: num
 };
 
 export const sincronizarProductosDesdeDux = async (): Promise<string> => {
-  const { data } = await api.post('/dux/sync-productos');
-  return data.mensaje;
+  const { data } = await api.post('/dux/sincronizar-dux');
+  return data.mensaje || 'Sincronización finalizada';
+};
+
+export const obtenerProgresoSync = async (): Promise<{ porcentaje: number }> => {
+  const { data } = await api.get('/dux/progreso-sync');
+  return data;
 };

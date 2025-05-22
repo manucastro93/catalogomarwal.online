@@ -1,39 +1,43 @@
 // 🔵 Librerías externas
 import { render } from 'solid-js/web';
 import { Router, Route } from '@solidjs/router';
+import { lazy } from 'solid-js';
 
 // 🎨 Estilos
 import "flatpickr/dist/flatpickr.min.css";
 import './index.css';
+import '@fontsource/inter';
 
-// 📄 Páginas
-import Administradores from './pages/Administradores';
-import Banners from './pages/Pagina/Banners';
-import Categorias from './pages/Categorias';
-import Clientes from './pages/Clientes';
-import Estadisticas from './pages/Estadisticas';
-import Inicio from './pages/Inicio';
-import LogsCliente from './pages/LogsCliente';
+// 📄 Páginas esenciales (login)
 import Login from './pages/Login';
-import Operarios from './pages/Operarios';
-import PedidoRapido from './pages/PedidoRapido';
-import Pedidos from './pages/Pedidos';
-import Productos from './pages/Productos';
-import ProduccionDiaria from './pages/ProduccionDiaria';
-import ResumenProduccion from './pages/Graficos/ResumenProduccion';
-import ResumenVentas from './pages/Graficos/ResumenVentas';
-import RolesUsuarios from './pages/Pagina/RolesUsuarios';
-import EstadosPedidos from './pages/Pagina/EstadosPedidos';
-import Logo from './pages/Pagina/Logo';
-import Vendedores from './pages/Vendedores';
+import DefinirContrasena from './components/Usuario/DefinirContrasena';
 
 // 🧩 Componentes
-import DefinirContrasena from './components/Usuario/DefinirContrasena';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // 🛠️ Funciones / Store
 import { checkLocalStorage } from './store/auth';
+
+// ⚡ Lazy load para páginas protegidas
+const Administradores = lazy(() => import('./pages/Administradores'));
+const Banners = lazy(() => import('./pages/Pagina/Banners'));
+const Categorias = lazy(() => import('./pages/Categorias'));
+const Clientes = lazy(() => import('./pages/Clientes'));
+const Estadisticas = lazy(() => import('./pages/Estadisticas'));
+const Inicio = lazy(() => import('./pages/Inicio'));
+const LogsCliente = lazy(() => import('./pages/LogsCliente'));
+const Operarios = lazy(() => import('./pages/Operarios'));
+const PedidoRapido = lazy(() => import('./pages/PedidoRapido'));
+const Pedidos = lazy(() => import('./pages/Pedidos'));
+const Productos = lazy(() => import('./pages/Productos'));
+const ProduccionDiaria = lazy(() => import('./pages/ProduccionDiaria'));
+const ResumenProduccion = lazy(() => import('./pages/Graficos/ResumenProduccion'));
+const ResumenVentas = lazy(() => import('./pages/Graficos/ResumenVentas'));
+const RolesUsuarios = lazy(() => import('./pages/Pagina/RolesUsuarios'));
+const EstadosPedidos = lazy(() => import('./pages/Pagina/EstadosPedidos'));
+const Logo = lazy(() => import('./pages/Pagina/Logo'));
+const Vendedores = lazy(() => import('./pages/Vendedores'));
 
 // ✅ Restaurar sesión si existe
 checkLocalStorage();
@@ -59,6 +63,7 @@ render(() => (
     <Route path="/Produccion/ProduccionDiaria" component={() => <ProtectedRoute><Layout><ProduccionDiaria /></Layout></ProtectedRoute>} />
     <Route path="/Graficos/ResumenProduccion" component={() => <ProtectedRoute><Layout><ResumenProduccion /></Layout></ProtectedRoute>} />
     <Route path="/Graficos/ResumenVentas" component={() => <ProtectedRoute><Layout><ResumenVentas /></Layout></ProtectedRoute>} />
+    
     {/* Rutas separadas para Página */}
     <Route path="/Pagina/logo" component={() => <ProtectedRoute><Layout><Logo /></Layout></ProtectedRoute>} />
     <Route path="/Pagina/banners" component={() => <ProtectedRoute><Layout><Banners /></Layout></ProtectedRoute>} />

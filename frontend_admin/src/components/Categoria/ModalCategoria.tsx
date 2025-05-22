@@ -11,12 +11,14 @@ interface Props {
 
 export default function ModalCategoria(props: Props) {
   const [nombre, setNombre] = createSignal('');
+  const [nombreWeb, setNombreWeb] = createSignal('');
   const [orden, setOrden] = createSignal('');
   const [estado, setEstado] = createSignal(true);
   const [errores, setErrores] = createSignal<{ [key: string]: string }>({});
 
   const limpiarFormulario = () => {
     setNombre('');
+    setNombreWeb('');
     setOrden('');
     setEstado(true);
     setErrores({});
@@ -26,6 +28,7 @@ export default function ModalCategoria(props: Props) {
     if (props.abierto) {
       if (props.categoria) {
         setNombre(props.categoria.nombre);
+        setNombreWeb(props.categoria.nombreWeb ?? '');
         setOrden(props.categoria.orden?.toString() ?? '');
         setEstado(props.categoria.estado);
       } else {
@@ -43,6 +46,7 @@ export default function ModalCategoria(props: Props) {
 
     const datos = {
       nombre: nombre().trim(),
+      nombreWeb: nombreWeb().trim() || null,
       orden: orden(),
       estado: estado(),
     };
@@ -63,6 +67,7 @@ export default function ModalCategoria(props: Props) {
 
     const nuevaCategoria: Partial<Categoria> = {
       nombre: result.data.nombre,
+      nombreWeb: result.data.nombreWeb,
       orden: result.data.orden === '' ? undefined : Number(result.data.orden),
       estado: result.data.estado,
     };
@@ -90,12 +95,24 @@ export default function ModalCategoria(props: Props) {
             <div class="col-span-2">
               <input
                 class="border p-2 rounded w-full"
-                placeholder="Nombre de la categoría"
+                placeholder="Nombre de la categoría (Dux)"
                 value={nombre()}
                 onInput={(e) => setNombre(e.currentTarget.value)}
               />
               <Show when={errores().nombre}>
                 <p class="text-red-600 text-sm">{errores().nombre}</p>
+              </Show>
+            </div>
+
+            <div class="col-span-2">
+              <input
+                class="border p-2 rounded w-full"
+                placeholder="Nombre visible en la web (opcional)"
+                value={nombreWeb()}
+                onInput={(e) => setNombreWeb(e.currentTarget.value)}
+              />
+              <Show when={errores().nombreWeb}>
+                <p class="text-red-600 text-sm">{errores().nombreWeb}</p>
               </Show>
             </div>
 

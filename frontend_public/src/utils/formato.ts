@@ -14,3 +14,10 @@ export const capitalizarTexto = (texto: string) =>
       .toLowerCase()
       .replace(/(^|\s)\S/g, (letra) => letra.toUpperCase());
   
+export function formatearCUIT(valor: string): string {
+  const soloNumeros = valor.replace(/\D/g, "").slice(0, 11);
+  const parte1 = soloNumeros.slice(0, 2);
+  const parte2 = soloNumeros.slice(2, 10);
+  const parte3 = soloNumeros.slice(10, 11);
+  return [parte1, parte2, parte3].filter(Boolean).join("-");
+}      

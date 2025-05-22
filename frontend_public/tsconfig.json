@@ -17,5 +17,5 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "../frontend_admin/src/icons"]
 }

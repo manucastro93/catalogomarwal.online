@@ -1,9 +1,9 @@
 import { Cliente, Provincia, Localidad, Usuario, Pedido, DetallePedido, Producto, LogCliente, IpCliente, HistorialCliente } from '../models/index.js';
 import { Op, fn, col, literal } from 'sequelize';
 import { validationResult } from 'express-validator';
-import { geocodificarDireccion } from '../utils/geocodificacion.js';
 import { registrarHistorialCliente } from '../utils/registrarHistorialCliente.js';
 import { crearAuditoria } from '../utils/auditoria.js';
+import { crearClienteConGeocodificacion, actualizarClienteExistenteConGeocodificacion } from '../helpers/clientes.js';
 
 export const listarClientes = async (req, res) => {
   try {
@@ -61,70 +61,41 @@ export const listarClientes = async (req, res) => {
 };
 
 export const crearCliente = async (req, res) => {
-  try { 
+  try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const {
-      nombre, telefono, email, razonSocial,
-      direccion, provinciaId, localidadId, cuit_cuil
-    } = req.body;
-    const provinciaNombre = provinciaId ? ((await Provincia.findByPk(provinciaId))?.nombre || '').replace('-GBA', '').trim(): '';
-    const localidadNombre = localidadId ? (await Localidad.findByPk(localidadId))?.nombre : '';
-    const direccionCompleta = `${direccion}, ${localidadNombre}, ${provinciaNombre}, Argentina`;
-    const { latitud, longitud } = await geocodificarDireccion(direccionCompleta);
-    const nuevoCliente = await Cliente.create({
-      nombre, telefono, email, razonSocial, direccion,
-      provinciaId: provinciaId || null,
-      localidadId: localidadId || null,
-      cuit_cuil,
-      latitud, longitud,
-    });
+
+    const nuevoCliente = await crearClienteConGeocodificacion(req.body);
     res.status(201).json(nuevoCliente);
   } catch (error) {
-    console.error('❌ Error al crear cliente:', error); 
+    console.error('❌ Error al crear cliente:', error);
     res.status(500).json({ message: 'Error al crear cliente' });
   }
-};  
+};
 
 export const actualizarCliente = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const anterior = await Cliente.findByPk(id);
+    const clienteExistente = await Cliente.findByPk(id);
+    if (!clienteExistente) return res.status(404).json({ message: 'Cliente no encontrado' });
 
-    const {
-      nombre, telefono, email, razonSocial,
-      direccion, provinciaId, localidadId, cuit_cuil
-    } = req.body;
+    const actualizado = await actualizarClienteExistenteConGeocodificacion(clienteExistente, req.body, req.usuario?.id);
 
-    const provinciaNombre = provinciaId ? (await Provincia.findByPk(provinciaId))?.nombre : '';
-    const localidadNombre = localidadId ? (await Localidad.findByPk(localidadId))?.nombre : '';
-    const direccionCompleta = `${direccion}, ${localidadNombre}, ${provinciaNombre}, Argentina`;
-    const { latitud, longitud } = await geocodificarDireccion(direccionCompleta);
+    await registrarHistorialCliente(clienteExistente, actualizado, req.usuario?.id);
 
-    await Cliente.update({
-      nombre, telefono, email, razonSocial, direccion,
-      provinciaId: provinciaId || null,
-      localidadId: localidadId || null,
-      cuit_cuil,
-      latitud, longitud,
-    }, { where: { id } });
-
-    const actualizado = await Cliente.findByPk(id);
-    await registrarHistorialCliente(anterior, actualizado, req.usuario?.id);
-   
     await crearAuditoria({
       tabla: 'clientes',
       accion: 'actualiza cliente',
       registroId: actualizado.id,
       usuarioId: req.usuario?.id || null,
       descripcion: `Cliente ${actualizado.nombre} actualizado.`,
-      datosAntes: anterior,
+      datosAntes: clienteExistente,
       datosDespues: actualizado,
       ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
     });
-    
+
     res.json(actualizado);
   } catch (error) {
     next(error);

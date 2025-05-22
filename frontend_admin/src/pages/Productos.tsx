@@ -10,6 +10,7 @@ import {
   obtenerProductoPorId,
   eliminarProducto,
   sincronizarProductosDesdeDux,
+  obtenerProgresoSync,
 } from '@/services/producto.service';
 import { obtenerCategorias } from '@/services/categoria.service';
 import { useAuth } from '@/store/auth';
@@ -21,6 +22,7 @@ import ModalMensaje from '@/components/Layout/ModalMensaje';
 import Loader from '@/components/Layout/Loader';
 import FiltrosProductos from '@/components/Producto/FiltrosProductos';
 import TablaProductos from '@/components/Producto/TablaProductos';
+import BotonSyncDux from '@/components/Producto/BotonSyncDux';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 import type { Producto } from '@/types/producto';
 
@@ -33,11 +35,10 @@ export default function Productos() {
   const [categoriaSeleccionada, setCategoriaSeleccionada] = createSignal('');
 
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [productoSeleccionado, setProductoSeleccionado] =
-    createSignal<Producto | null>(null);
+  const [productoSeleccionado, setProductoSeleccionado] = createSignal<Producto | null>(null);
   const [verProducto, setVerProducto] = createSignal<Producto | null>(null);
-  const [productoAEliminar, setProductoAEliminar] =
-    createSignal<Producto | null>(null);
+  const [productoAEliminar, setProductoAEliminar] = createSignal<Producto | null>(null);
+
   const [mensaje, setMensaje] = createSignal('');
   const [syncCargando, setSyncCargando] = createSignal(false);
   const [syncMensaje, setSyncMensaje] = createSignal('');
@@ -49,7 +50,7 @@ export default function Productos() {
 
   const fetchParams = createMemo(() => ({
     page: pagina(),
-    limit: 10,
+    limit: 20,
     orden: orden(),
     direccion: direccion(),
     buscar: busqueda(),
@@ -89,15 +90,37 @@ export default function Productos() {
 
   const sincronizarDesdeDux = async () => {
     setSyncCargando(true);
+    setSyncMensaje('Iniciando sincronización...');
+    let porcentaje = 0;
+
+    const intervalo = setInterval(async () => {
+      try {
+        const res = await obtenerProgresoSync();
+        if (res?.porcentaje !== undefined) {
+          setSyncMensaje(`Sincronizando... ${res.porcentaje}%`);
+          porcentaje = res.porcentaje;
+        }
+
+        if (res?.porcentaje >= 100) {
+          clearInterval(intervalo);
+          setSyncMensaje('✔️ Productos sincronizados correctamente');
+          setSyncCargando(false);
+          refetch();
+          setTimeout(() => setSyncMensaje(''), 4000);
+        }
+      } catch (e) {
+        clearInterval(intervalo);
+        setSyncMensaje('❌ Error al consultar progreso');
+        setSyncCargando(false);
+      }
+    }, 1500);
+
     try {
-      const msg = await sincronizarProductosDesdeDux();
-      setMensaje(msg);
-      refetch();
+      await sincronizarProductosDesdeDux();
     } catch (e) {
-      setMensaje("Error al sincronizar productos. Revisá la conexión o credenciales.");
-    } finally {
+      clearInterval(intervalo);
+      setSyncMensaje('❌ Error al iniciar sincronización');
       setSyncCargando(false);
-      setTimeout(() => setMensaje(''), 4000);
     }
   };
 
@@ -117,13 +140,12 @@ export default function Productos() {
               >
                 + Nuevo Producto
               </button>
-              <button
-                onClick={sincronizarDesdeDux}
-                class="bg-yellow-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
-                disabled={syncCargando()}
-              >
-                {syncCargando() ? 'Sincronizando...' : 'Sincronizar desde Dux'}
-              </button>
+
+              <BotonSyncDux onFinalizar={() => {
+                setMensaje('✔️ Productos sincronizados correctamente');
+                refetch();
+              }} />
+
               <Show when={syncMensaje()}>
                 <span class="text-sm text-gray-600 ml-2">{syncMensaje()}</span>
               </Show>
@@ -168,15 +190,10 @@ export default function Productos() {
           ◀
         </button>
         <span class="text-sm">
-          Página {respuesta()?.pagina ?? '-'} de{' '}
-          {respuesta()?.totalPaginas ?? '-'}
+          Página {respuesta()?.pagina ?? '-'} de {respuesta()?.totalPaginas ?? '-'}
         </span>
         <button
-          onClick={() =>
-            setPagina((p) =>
-              Math.min(respuesta()?.totalPaginas || p, p + 1)
-            )
-          }
+          onClick={() => setPagina((p) => Math.min(respuesta()?.totalPaginas || p, p + 1))}
           class="px-3 py-1 border rounded disabled:opacity-50"
           disabled={pagina() === (respuesta()?.totalPaginas ?? 1)}
         >
