@@ -33,6 +33,12 @@ import {
   listarCategorias,
 } from '../controllers/public/productoPublic.controller.js';
 
+// 📱 Validación WhatsApp
+import { 
+  enviarCodigoWhatsapp, 
+  validarCodigoWhatsapp 
+} from '../controllers/public/validacionWhatsapp.controller.js';
+
 import { validarPedidoBody } from '../validaciones/pedido.validation.js';
 
 const router = express.Router();
@@ -41,6 +47,9 @@ const router = express.Router();
 router.get('/cliente-por-ip', obtenerClientePorIp);
 router.get('/cliente/:id', obtenerClientePorId);
 router.post('/logs', registrarLogPublico);
+//Validar whatsap
+router.post('/validar-whatsapp/enviar', enviarCodigoWhatsapp);
+router.post('/validar-whatsapp/verificar', validarCodigoWhatsapp);
 
 // 📄 Página
 router.get('/pagina', obtenerPaginaPublica);
@@ -61,6 +70,9 @@ router.get('/productos', listarProductosPublicos);
 router.get('/productos/:id', obtenerProductoPorId);
 router.get('/categorias', listarCategorias);
 router.post('/logs', registrarLogPublico);
+
+// 🧑‍💼 Vendedor
+router.get('/usuarios/vendedores/vendedor-por-link/:link', buscarVendedorPorLink);
 
 // 📍 Autocomplete con Google
 router.get('/autocomplete', async (req, res) => {
@@ -126,8 +138,5 @@ router.get('/direccion-detalle', async (req, res) => {
     res.status(500).json({ message: 'Error al obtener detalles de la dirección' });
   }
 });
-
-// 🧑‍💼 Vendedor
-router.get('/usuarios/vendedores/vendedor-por-link/:link', buscarVendedorPorLink);
 
 export default router;

@@ -41,3 +41,14 @@ export const obtenerClientePorId = async (id: number) => {
   const res = await api.get(`/cliente/${id}`);
   return res.data;
 };
+
+
+export const enviarCodigoWhatsapp = async (telefono: string) => {
+  const res = await api.post('/validar-whatsapp/enviar', { telefono });
+  return res.data;
+};
+
+export const verificarCodigoWhatsapp = async (telefono: string, codigo: string) => {
+  const res = await api.post('/validar-whatsapp/verificar', { telefono, codigo });
+  return res.data;
+};
