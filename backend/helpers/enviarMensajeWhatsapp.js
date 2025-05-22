@@ -5,13 +5,26 @@ dotenv.config();
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
-export async function enviarMensajeWhatsapp(to, mensaje) {
-  const url = `https://graph.facebook.com/v22.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
+export async function enviarMensajeTemplateWhatsapp(to, templateName, parametros = []) {
+  const url = `https://graph.facebook.com/v19.0/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
 
   const body = {
     messaging_product: 'whatsapp',
     to,
-    text: { body: mensaje },
+    type: 'template',
+    template: {
+      name: templateName,
+      language: { code: 'es_AR' },
+      components: [
+        {
+          type: 'body',
+          parameters: parametros.map(texto => ({
+            type: 'text',
+            text: texto
+          }))
+        }
+      ]
+    }
   };
 
   const headers = {
@@ -32,3 +45,4 @@ export async function enviarMensajeWhatsapp(to, mensaje) {
     console.error('❌ Error al enviar mensaje:', error);
   }
 }
+
