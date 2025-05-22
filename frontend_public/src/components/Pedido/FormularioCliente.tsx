@@ -1,4 +1,4 @@
-import { createSignal, Show, onMount, onCleanup, For } from "solid-js";
+import { createSignal, Show, onMount, onCleanup, For, createMemo } from "solid-js";
 import { capitalizarTexto, formatearCUIT } from "@/utils/formato";
 import { formatearTelefonoArgentino, formatearTelefonoVisual } from "@/utils/formatearTelefono";
 import { useDireccionAutocomplete } from "@/hooks/useDireccionAutocomplete";
@@ -22,6 +22,9 @@ export default function FormularioCliente({ onConfirmar }: Props) {
   const [provincia, setProvincia] = createSignal(datosGuardados?.provincia || "");
   const [codigoPostal, setCodigoPostal] = createSignal(datosGuardados?.codigoPostal || "");
   const [errores, setErrores] = createSignal<Record<string, string>>({});
+
+  const telefonoLimpio = createMemo(() => telefono().replace(/\D/g, ''));
+  const telefonoValido = createMemo(() => telefono().replace(/\D/g, '').length === 11);
 
   const {
     inputDireccion,
@@ -112,67 +115,82 @@ return (
       <p class="text-red-600 text-xs">{errores().nombre}</p>
     </Show>
 
-    {/* Teléfono */}
-    <input
-      type="tel"
-      id="telefono"
-      inputmode="numeric"
-      autocomplete="new-password"
-      autocorrect="off"
-      spellcheck={false}
-      class={`w-full border px-3 py-2 rounded text-sm ${errores().telefono ? "border-red-500" : ""}`}
-      placeholder="Whatsapp. Ej: 011XXXXXXXX"
-      value={telefono()}
-      maxLength={13}
-      onBeforeInput={(e) => {
-        if (!/^[0-9]$/.test(e.data ?? "") && e.inputType !== "deleteContentBackward") {
-          e.preventDefault();
-        }
-      }}
-      onInput={(e) => {
-        let limpio = e.currentTarget.value.replace(/[^0-9]/g, "");
-        if (limpio.length > 11) limpio = limpio.slice(0, 11);
-        setTelefono(formatearTelefonoVisual(limpio));
-        persistirDatos();
-      }}
-    />
-    <Show when={errores().telefono}>
-      <p class="text-red-600 text-xs">{errores().telefono}</p>
-    </Show>
-      <Show when={formatearTelefonoArgentino(telefono()) && !verificado()}>
-  <div class="mt-1 flex gap-2 items-center">
-    <button
-      class="px-3 py-1 bg-blue-600 text-white rounded text-xs"
-      disabled={enviandoCodigo() || tiempoRestante() > 0}
-      onClick={enviarCodigo}
-    >
-      {enviandoCodigo() ? "Enviando..." : tiempoRestante() > 0 ? `Reintentar (${tiempoRestante()})` : "Validar"}
-    </button>
-    <Show when={codigoEnviado()}>
-      <input
-        type="text"
-        maxlength="6"
-        class="border rounded px-2 py-1 w-24 text-center text-sm"
-        placeholder="Código"
-        value={codigoVerificacion()}
-        onInput={(e) => setCodigoVerificacion(e.currentTarget.value)}
-      />
-      <button
-        class="px-2 py-1 bg-green-600 text-white rounded text-xs"
-        onClick={verificarCodigo}
-      >
-        Confirmar
-      </button>
-    </Show>
-  </div>
-  <Show when={errorCodigo()}>
-    <p class="text-red-600 text-xs mt-1">{errorCodigo()}</p>
-  </Show>
-</Show>
+<div class="relative w-full">
+        <input
+          type="tel"
+          id="telefono"
+          inputmode="numeric"
+          autocomplete="new-password"
+          autocorrect="off"
+          spellcheck={false}
+          class={`w-full border px-3 py-2 pr-10 rounded text-sm ${errores().telefono ? "border-red-500" : ""}`}
+          placeholder="Whatsapp. Ej: 011XXXXXXXX"
+          value={telefono()}
+          maxLength={13}
+          onBeforeInput={(e) => {
+            if (!/^[0-9]$/.test(e.data ?? "") && e.inputType !== "deleteContentBackward") {
+              e.preventDefault();
+            }
+          }}
+          onInput={(e) => {
+            let limpio = e.currentTarget.value.replace(/[^0-9]/g, "");
+            if (limpio.length > 11) limpio = limpio.slice(0, 11);
+            setTelefono(formatearTelefonoVisual(limpio));
+            persistirDatos();
+          }}
+        />
+        <Show when={telefonoValido() && !verificado()}>
+          <svg
+            class="w-4 h-4 text-green-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </Show>
+      </div>
 
-<Show when={verificado()}>
-  <p class="text-green-600 text-xs mt-1">✅ Número verificado</p>
-</Show>
+      <Show when={telefonoValido() && !verificado()}>
+        <div class="mt-1 flex gap-2 items-center">
+          <button
+            class="px-3 py-1 bg-blue-600 text-white rounded text-xs"
+            disabled={enviandoCodigo() || tiempoRestante() > 0}
+            onClick={enviarCodigo}
+          >
+            {enviandoCodigo()
+              ? "Enviando..."
+              : tiempoRestante() > 0
+              ? `Reintentar (${tiempoRestante()})`
+              : "Validar"}
+          </button>
+          <Show when={codigoEnviado()}>
+            <input
+              type="text"
+              maxlength="6"
+              class="border rounded px-2 py-1 w-24 text-center text-sm"
+              placeholder="Código"
+              value={codigoVerificacion()}
+              onInput={(e) => setCodigoVerificacion(e.currentTarget.value)}
+            />
+            <button
+              class="px-2 py-1 bg-green-600 text-white rounded text-xs"
+              onClick={verificarCodigo}
+            >
+              Confirmar
+            </button>
+          </Show>
+        </div>
+        <Show when={errorCodigo()}>
+          <p class="text-red-600 text-xs mt-1">{errorCodigo()}</p>
+        </Show>
+      </Show>
+
+      <Show when={verificado()}>
+        <p class="text-green-600 text-xs mt-1">✅ Número verificado</p>
+      </Show>
+
 
     {/* Email */}
     <input
