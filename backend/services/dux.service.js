@@ -128,7 +128,7 @@ export async function sincronizarProductosDesdeDux() {
   const todasCategorias = await Categoria.findAll();
   const categoriasMap = {};
   for (const cat of todasCategorias) {
-    categoriasMap[cat.nombre] = cat.id;
+    categoriasMap[limpiarNombreCategoria(cat.nombre)] = cat.id;
   }
 
   // Paso 2: sincronizar productos
@@ -136,10 +136,10 @@ export async function sincronizarProductosDesdeDux() {
 
   let creados = 0;
   let actualizados = 0;
-
+  
   for (const item of items) {
     try {
-      const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre);
+      const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
       const categoriaId = categoriasMap[nombreCategoria] || null;
 
       const productoExistente = await Producto.findOne({
