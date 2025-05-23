@@ -74,6 +74,7 @@ export async function sincronizarProductosDesdeDux() {
   estadoSync.porcentaje = 0;
 
   // Paso 1: sincronizar categorías
+  await esperar(5000);
   const rubros = await obtenerCategoriasDesdeDux();
   const categoriasCreadas = new Set();
 
