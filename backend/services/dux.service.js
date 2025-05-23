@@ -43,7 +43,7 @@ export async function obtenerTodosLosItemsDesdeDux() {
   while (true) {
     console.log(`📦 Pidiendo página ${pagina} (offset ${offset})`);
 
-    const res = await axios.get(API_URL, {
+    const res = await axios.get(`${API_URL}/items`, {
       headers: { Authorization: API_KEY, Accept: 'application/json' },
       params: { offset, limit }
     });
