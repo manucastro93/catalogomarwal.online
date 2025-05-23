@@ -54,7 +54,8 @@ export async function obtenerTodosLosItemsDesdeDux() {
     console.log(`📦 Pidiendo página ${pagina} (offset ${offset})`);
     const lote = await intentarObtenerPagina(offset, limit, pagina);
 
-    if (!lote?.length) break;
+    if (!lote?.items?.length) break;
+    console.log(`🔍 Página ${pagina} → items: ${lote.items.length}, total: ${lote.total}`);
 
     if (pagina === 1 && lote.total) {
       total = lote.total;
@@ -98,7 +99,6 @@ async function intentarObtenerPagina(offset, limit, pagina, reintento = 0) {
     throw error;
   }
 }
-
 
 export async function sincronizarProductosDesdeDux() {
   estadoSync.porcentaje = 0;
