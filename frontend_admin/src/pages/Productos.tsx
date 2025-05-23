@@ -94,7 +94,7 @@ export default function Productos() {
         <h1 class="text-2xl font-bold">Productos</h1>
         {!esVendedor && (
           <div class="flex gap-2">
-            <ConPermiso modulo="Productos" accion="crear">
+            {/*<ConPermiso modulo="Productos" accion="crear">
               <button
                 onClick={() => {
                   setProductoSeleccionado(null);
@@ -104,7 +104,7 @@ export default function Productos() {
               >
                 + Nuevo Producto
               </button>
-              {/*
+              
               <BotonSyncDux onFinalizar={() => {
                 setMensaje('✔️ Productos sincronizados correctamente');
                 refetch();
@@ -112,8 +112,8 @@ export default function Productos() {
               <Show when={syncMensaje()}>
                 <span class="text-sm text-gray-600 ml-2">{syncMensaje()}</span>
               </Show>
-              */}
-            </ConPermiso>
+              
+            </ConPermiso>*/}
           </div>
         )}
       </div>
