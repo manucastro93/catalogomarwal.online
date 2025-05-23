@@ -163,7 +163,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
       </div>
 
       <Show when={telefonoValido() && !verificado()}>
-        <p class="text-gray-700 text-xs mt-1">Te enviaremos un WhatsApp con un código de 6 dígitos para verificar este número. Ingresalo debajo para continuar.</p>
+        <p class="text-gray-700 text-xs mt-1">Ingresá tu número,luego tocá el botón "Validar". Te enviaremos un WhatsApp con un código de 6 dígitos para verificar este número. Ingresalo debajo y presioná "Confirmar".</p>
         <div class="mt-1 flex gap-2 items-center">
           <button
             class="px-3 py-1 bg-blue-600 text-white rounded text-xs"
