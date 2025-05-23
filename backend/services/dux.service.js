@@ -52,20 +52,15 @@ export async function obtenerTodosLosItemsDesdeDux() {
 
   while (true) {
     console.log(`📦 Pidiendo página ${pagina} (offset ${offset})`);
+    const lote = await intentarObtenerPagina(offset, limit, pagina);
 
-    const res = await axios.get(`${API_URL}/items`, {
-      headers: { Authorization: API_KEY, Accept: 'application/json' },
-      params: { offset, limit }
-    });
-
-    const lote = res.data.results;
     if (!lote?.length) break;
 
-    if (pagina === 1 && res.data.paging?.total) {
-      total = res.data.paging.total;
+    if (pagina === 1 && lote.total) {
+      total = lote.total;
     }
 
-    todos.push(...lote);
+    todos.push(...lote.items);
     estadoSync.porcentaje = Math.floor((todos.length / total) * 100);
 
     offset += limit;
@@ -79,6 +74,31 @@ export async function obtenerTodosLosItemsDesdeDux() {
 
   return todos;
 }
+
+async function intentarObtenerPagina(offset, limit, pagina, reintento = 0) {
+  try {
+    const res = await axios.get(`${API_URL}/items`, {
+      headers: { Authorization: API_KEY, Accept: 'application/json' },
+      params: { offset, limit }
+    });
+
+    return {
+      items: res.data.results,
+      total: res.data.paging?.total || 0
+    };
+  } catch (error) {
+    if (error.response?.status === 429 && reintento < 5) {
+      const espera = 5000 * (reintento + 1);
+      console.warn(`⚠️ 429 en página ${pagina}. Esperando ${espera / 1000}s... Reintento #${reintento + 1}`);
+      await esperar(espera);
+      return intentarObtenerPagina(offset, limit, pagina, reintento + 1);
+    }
+
+    console.error(`❌ Error al obtener página ${pagina}:`, error.message);
+    throw error;
+  }
+}
+
 
 export async function sincronizarProductosDesdeDux() {
   estadoSync.porcentaje = 0;
