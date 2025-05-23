@@ -25,18 +25,23 @@ function limpiarNombreCategoria(nombre) {
   return typeof nombre === 'string' && nombre.trim() ? nombre.trim() : 'Sin categoría';
 }
 
-export async function obtenerCategoriasDesdeDux() {
+export async function obtenerCategoriasDesdeDux(reintento = 0) {
   try {
     const res = await axios.get(`${API_URL}/rubros`, {
       headers: { Authorization: API_KEY, Accept: 'application/json' }
     });
     return res.data.results || [];
   } catch (error) {
+    if (error.response?.status === 429 && reintento < 5) {
+      const espera = 5000 * (reintento + 1);
+      console.warn(`⏳ Esperando ${espera / 1000}s por 429... Reintento #${reintento + 1}`);
+      await esperar(espera);
+      return obtenerCategoriasDesdeDux(reintento + 1);
+    }
     console.error('❌ Error al obtener rubros desde Dux:', error.response?.status, error.response?.data);
     throw error;
   }
 }
-
 
 export async function obtenerTodosLosItemsDesdeDux() {
   const todos = [];
