@@ -11,8 +11,10 @@ async function ejecutar() {
     await sequelize.authenticate();
     console.log('✅ Conexión a la base de datos establecida correctamente.');
 
+   console.log('⏳ Ejecutando sincronizarProductosDesdeDux...');
     const resultado = await sincronizarProductosDesdeDux();
-    console.log('✅ Resultado:', resultado);
+    console.log(`✅ Resultado: ${JSON.stringify(resultado, null, 2)}`);
+
   } catch (error) {
     console.error('❌ Error general en la sincronización:', error);
   } finally {
