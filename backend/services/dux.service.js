@@ -26,12 +26,17 @@ function limpiarNombreCategoria(nombre) {
 }
 
 export async function obtenerCategoriasDesdeDux() {
-  const res = await axios.get(`${API_URL}/rubros`, {
-    headers: { Authorization: API_KEY, Accept: 'application/json' }
-  });
-
-  return res.data.results || [];
+  try {
+    const res = await axios.get(`${API_URL}/rubros`, {
+      headers: { Authorization: API_KEY, Accept: 'application/json' }
+    });
+    return res.data.results || [];
+  } catch (error) {
+    console.error('❌ Error al obtener rubros desde Dux:', error.response?.status, error.response?.data);
+    throw error;
+  }
 }
+
 
 export async function obtenerTodosLosItemsDesdeDux() {
   const todos = [];
