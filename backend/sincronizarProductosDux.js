@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import sequelize from './config/database.js';
 import { sincronizarProductosDesdeDux } from './services/dux.service.js';
-import { sequelize } from './config/database.js';
 
 async function ejecutar() {
   console.log(`[${new Date().toISOString()}] 🚀 Iniciando sincronización...`);

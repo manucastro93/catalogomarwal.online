@@ -26,7 +26,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
   const [errores, setErrores] = createSignal<Record<string, string>>({});
 
   const telefonoLimpio = createMemo(() => telefono().replace(/\D/g, ''));
-  const telefonoValido = createMemo(() => telefono().replace(/\D/g, '').length === 11);
+  const telefonoValido = createMemo(() => telefonoLimpio().length === 11);
 
   const {
     inputDireccion,
@@ -104,9 +104,6 @@ export default function FormularioCliente({ onConfirmar }: Props) {
 
   return (
     <div class="text-sm space-y-2">
-      {/* Nombre */}
-      {/* ... (sin cambios) */}
-
       {/* Teléfono */}
       <div class="relative w-full">
         <input
@@ -116,10 +113,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
           autocomplete="new-password"
           autocorrect="off"
           spellcheck={false}
-          class={`w-full border px-3 py-2 pr-10 rounded text-sm ${
-  errores().telefono || errorTelefonoFormato() ? "border-red-500" : ""
-}`}
-
+          class={`w-full border px-3 py-2 pr-10 rounded text-sm ${errores().telefono || errorTelefonoFormato() ? "border-red-500" : ""}`}
           placeholder="Whatsapp. Ej: 011XXXXXXXX"
           value={telefono()}
           maxLength={13}
@@ -137,8 +131,8 @@ export default function FormularioCliente({ onConfirmar }: Props) {
           }}
           onBlur={() => {
             const limpio = telefono().replace(/\D/g, "");
-            if (limpio.length === 10 && limpio.startsWith("11")) {
-              setErrorTelefonoFormato("Ingresá el número con código de área: 011 delante.");
+            if (limpio.length !== 11) {
+              setErrorTelefonoFormato("Ingresá un número válido con código de área (11 dígitos). Ej: 01130544702");
             } else {
               setErrorTelefonoFormato("");
             }
@@ -159,6 +153,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
       <Show when={errorTelefonoFormato()}>
         <p class="text-red-600 text-xs mt-1">{errorTelefonoFormato()}</p>
       </Show>
+
 
     {/* Email */}
     <input

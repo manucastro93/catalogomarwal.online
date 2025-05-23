@@ -88,42 +88,6 @@ export default function Productos() {
     );
   };
 
-  const sincronizarDesdeDux = async () => {
-    setSyncCargando(true);
-    setSyncMensaje('Iniciando sincronización...');
-    let porcentaje = 0;
-
-    const intervalo = setInterval(async () => {
-      try {
-        const res = await obtenerProgresoSync();
-        if (res?.porcentaje !== undefined) {
-          setSyncMensaje(`Sincronizando... ${res.porcentaje}%`);
-          porcentaje = res.porcentaje;
-        }
-
-        if (res?.porcentaje >= 100) {
-          clearInterval(intervalo);
-          setSyncMensaje('✔️ Productos sincronizados correctamente');
-          setSyncCargando(false);
-          refetch();
-          setTimeout(() => setSyncMensaje(''), 4000);
-        }
-      } catch (e) {
-        clearInterval(intervalo);
-        setSyncMensaje('❌ Error al consultar progreso');
-        setSyncCargando(false);
-      }
-    }, 1500);
-
-    try {
-      await sincronizarProductosDesdeDux();
-    } catch (e) {
-      clearInterval(intervalo);
-      setSyncMensaje('❌ Error al iniciar sincronización');
-      setSyncCargando(false);
-    }
-  };
-
   return (
     <div class="p-6">
       <div class="flex justify-between items-center mb-4">
@@ -140,15 +104,15 @@ export default function Productos() {
               >
                 + Nuevo Producto
               </button>
-
+              {/*
               <BotonSyncDux onFinalizar={() => {
                 setMensaje('✔️ Productos sincronizados correctamente');
                 refetch();
               }} />
-
               <Show when={syncMensaje()}>
                 <span class="text-sm text-gray-600 ml-2">{syncMensaje()}</span>
               </Show>
+              */}
             </ConPermiso>
           </div>
         )}
