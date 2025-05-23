@@ -1,4 +1,4 @@
-import { enviarMensajeTemplateWhatsapp } from '../../helpers/enviarMensajeWhatsapp.js';
+import { enviarMensajeValidacionUsuario } from '../../helpers/enviarMensajeWhatsapp.js';
 
 const codigos = new Map(); // temporal, ideal usar Redis
 
@@ -8,9 +8,10 @@ export const enviarCodigoWhatsapp = async (req, res) => {
 
   const codigo = Math.floor(100000 + Math.random() * 900000).toString();
   codigos.set(telefono, { codigo, creado: Date.now() });
+  const telefonoSoporte = process.env.WHATSAPP_SOPORTE ;
 
   try {
-    await enviarMensajeTemplateWhatsapp(telefono, 'codigo_verificacion', [codigo]);
+    await enviarMensajeValidacionUsuario(telefono, codigo, telefonoSoporte);
     res.status(200).json({ message: 'Código enviado' });
   } catch (err) {
     console.error('❌ Error al enviar WhatsApp:', err);
@@ -24,8 +25,7 @@ export const validarCodigoWhatsapp = async (req, res) => {
   if (!registro || registro.codigo !== codigo) {
     return res.status(400).json({ message: 'Código inválido' });
   }
-
-  const expirado = Date.now() - registro.creado > 5 * 60 * 1000; // 5 minutos
+  const expirado = Date.now() - registro.creado > 10 * 60 * 1000; // 10 minutos
   if (expirado) {
     codigos.delete(telefono);
     return res.status(400).json({ message: 'Código expirado' });

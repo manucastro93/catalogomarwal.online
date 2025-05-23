@@ -1,4 +1,4 @@
-import { createSignal, Show, onMount, onCleanup, For, createMemo } from "solid-js";
+import { createSignal, Show, onMount, onCleanup, For, createMemo, createEffect } from "solid-js";
 import { capitalizarTexto, formatearCUIT } from "@/utils/formato";
 import { formatearTelefonoArgentino, formatearTelefonoVisual } from "@/utils/formatearTelefono";
 import { useDireccionAutocomplete } from "@/hooks/useDireccionAutocomplete";
@@ -14,6 +14,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
 
   const [nombre, setNombre] = createSignal(datosGuardados?.nombre || "");
   const [telefono, setTelefono] = createSignal(datosGuardados?.telefono || "");
+  const [telefonoValidado, setTelefonoValidado] = createSignal(datosGuardados?.telefonoValidado || false);
   const [email, setEmail] = createSignal(datosGuardados?.email || "");
   const [direccion, setDireccion] = createSignal(datosGuardados?.direccion || "");
   const [razonSocial, setRazonSocial] = createSignal(datosGuardados?.razonSocial || "");
@@ -54,6 +55,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
     localStorage.setItem("clienteDatos", JSON.stringify({
       nombre: nombre(),
       telefono: telefono(),
+      telefonoValidado: telefonoValidado(),
       email: email(),
       direccion: direccion(),
       razonSocial: razonSocial(),
@@ -70,6 +72,12 @@ export default function FormularioCliente({ onConfirmar }: Props) {
   });
 
   onCleanup(persistirDatos);
+
+  createEffect(() => {
+    if (telefono().replace(/\D/g, "") !== datosGuardados?.telefono?.replace(/\D/g, "")) {
+      setTelefonoValidado(false);
+    }
+  });
 
   const enviar = () => {
     const nuevosErrores = validarCamposCliente({ nombre, telefono, email, direccion, cuit, localidad, provincia, verificado });
@@ -93,29 +101,30 @@ export default function FormularioCliente({ onConfirmar }: Props) {
     });
   };
 
-return (
-  <div class="text-sm space-y-2">
-    {/* Nombre */}
-    <input
-      type="text"
-      id="nombre"
-      inputmode="text"
-      autocomplete="new-password"
-      autocorrect="off"
-      spellcheck={false}
-      class={`w-full border px-3 py-2 rounded text-sm ${errores().nombre ? "border-red-500" : ""}`}
-      placeholder="Nombre *"
-      value={nombre()}
-      onInput={(e) => {
-        setNombre(capitalizarTexto(e.currentTarget.value));
-        persistirDatos();
-      }}
-    />
-    <Show when={errores().nombre}>
-      <p class="text-red-600 text-xs">{errores().nombre}</p>
-    </Show>
+  return (
+    <div class="text-sm space-y-2">
+      {/* Nombre */}
+      <input
+        type="text"
+        id="nombre"
+        inputmode="text"
+        autocomplete="new-password"
+        autocorrect="off"
+        spellcheck={false}
+        class={`w-full border px-3 py-2 rounded text-sm ${errores().nombre ? "border-red-500" : ""}`}
+        placeholder="Nombre *"
+        value={nombre()}
+        onInput={(e) => {
+          setNombre(capitalizarTexto(e.currentTarget.value));
+          persistirDatos();
+        }}
+      />
+      <Show when={errores().nombre}>
+        <p class="text-red-600 text-xs">{errores().nombre}</p>
+      </Show>
 
-<div class="relative w-full">
+      {/* Teléfono */}
+      <div class="relative w-full">
         <input
           type="tel"
           id="telefono"
@@ -127,6 +136,7 @@ return (
           placeholder="Whatsapp. Ej: 011XXXXXXXX"
           value={telefono()}
           maxLength={13}
+          disabled={telefonoValidado()}
           onBeforeInput={(e) => {
             if (!/^[0-9]$/.test(e.data ?? "") && e.inputType !== "deleteContentBackward") {
               e.preventDefault();
@@ -153,6 +163,7 @@ return (
       </div>
 
       <Show when={telefonoValido() && !verificado()}>
+        <p class="text-gray-700 text-xs mt-1">Te enviaremos un WhatsApp con un código de 6 dígitos para verificar este número. Ingresalo debajo para continuar.</p>
         <div class="mt-1 flex gap-2 items-center">
           <button
             class="px-3 py-1 bg-blue-600 text-white rounded text-xs"
@@ -176,7 +187,11 @@ return (
             />
             <button
               class="px-2 py-1 bg-green-600 text-white rounded text-xs"
-              onClick={verificarCodigo}
+              onClick={() => {
+                verificarCodigo();
+                setTelefonoValidado(true);
+                persistirDatos();
+              }}
             >
               Confirmar
             </button>
@@ -190,8 +205,6 @@ return (
       <Show when={verificado()}>
         <p class="text-green-600 text-xs mt-1">✅ Número verificado</p>
       </Show>
-
-
     {/* Email */}
     <input
       type="email"
