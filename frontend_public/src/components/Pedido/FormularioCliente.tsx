@@ -154,7 +154,49 @@ export default function FormularioCliente({ onConfirmar }: Props) {
         <p class="text-red-600 text-xs mt-1">{errorTelefonoFormato()}</p>
       </Show>
 
+      <Show when={telefonoValido() && !verificado() && !errorTelefonoFormato()}>
+        <p class="text-gray-700 text-xs mt-1">Ingresá tu número, luego tocá el botón "Validar". Te enviaremos un WhatsApp con un código de 6 dígitos para verificar este número. Ingresalo debajo y presioná "Confirmar".</p>
+        <div class="mt-1 flex gap-2 items-center">
+          <button
+            class="px-3 py-1 bg-blue-600 text-white rounded text-xs"
+            disabled={enviandoCodigo() || tiempoRestante() > 0}
+            onClick={enviarCodigo}
+          >
+            {enviandoCodigo()
+              ? "Enviando..."
+              : tiempoRestante() > 0
+              ? `Reintentar (${tiempoRestante()})`
+              : "Validar"}
+          </button>
+          <Show when={codigoEnviado()}>
+            <input
+              type="text"
+              maxLength="6"
+              class="border rounded px-2 py-1 w-24 text-center text-sm"
+              placeholder="Código"
+              value={codigoVerificacion()}
+              onInput={(e) => setCodigoVerificacion(e.currentTarget.value)}
+            />
+            <button
+              class="px-2 py-1 bg-green-600 text-white rounded text-xs"
+              onClick={() => {
+                verificarCodigo();
+                setTelefonoValidado(true);
+                persistirDatos();
+              }}
+            >
+              Confirmar
+            </button>
+          </Show>
+        </div>
+        <Show when={errorCodigo()}>
+          <p class="text-red-600 text-xs mt-1">{errorCodigo()}</p>
+        </Show>
+      </Show>
 
+      <Show when={verificado()}>
+        <p class="text-green-600 text-xs mt-1">✅ Número verificado</p>
+      </Show>
     {/* Email */}
     <input
       type="email"
