@@ -9,7 +9,8 @@ import {
   actualizarProductoConImagenes,
   eliminarImagenProducto,
   importarProductosDesdeExcel,
-  actualizarOrdenImagenes
+  actualizarOrdenImagenes,
+  obtenerProductosProduccion
 } from '../controllers/producto.controller.js';
 
 import { validarProducto } from '../validaciones/producto.validation.js';
@@ -18,6 +19,7 @@ import { uploadImagenesProducto } from '../middlewares/upload.js';
 const router = express.Router();
 
 router.get('/', obtenerProductos);
+router.get('/produccion', obtenerProductosProduccion);
 router.get('/:id', obtenerProductoPorId);
 
 router.post('/', validarProducto, crearProducto);

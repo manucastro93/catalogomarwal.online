@@ -10,6 +10,7 @@ import {
   import { Eye, ArrowDownAZ, ArrowDownUp, ArrowUpDown } from "lucide-solid";
   import { useNavigate } from "@solidjs/router";
   import VerPedidoModal from "@/components/Pedido/VerPedidoModal";
+  import { obtenerPedidoPorId } from "@/services/pedido.service"
 
   export default function ListaPedidos(props: {
     titulo: string;
@@ -76,12 +77,16 @@ import {
                   </div>
                 </div>
                 <button
-                  onClick={() => setPedidoSeleccionado(pedido)}
-                  class="flex items-center gap-1 text-sm text-blue-600 hover:underline"
-                >
-                  <Eye size={16} />
-                  Ver
-                </button>
+  onClick={async () => {
+    const pedidoCompleto = await obtenerPedidoPorId(pedido.id);
+    setPedidoSeleccionado(pedidoCompleto);
+  }}
+  class="flex items-center gap-1 text-sm text-blue-600 hover:underline"
+>
+  <Eye size={16} />
+  Ver
+</button>
+
               </li>
             )}
           </For>
