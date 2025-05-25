@@ -124,6 +124,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
   const enviar = () => {
     const nuevosErrores = validarCamposCliente({
       nombre,
+      telefono,
       email,
       direccion,
       cuit,
