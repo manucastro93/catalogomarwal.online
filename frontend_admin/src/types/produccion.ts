@@ -16,6 +16,7 @@ export interface ReporteProduccion {
       sku: string;
       precioUnitario: number;
       costoMP?: number;
+      costoDux?: number;
     };
   
     usuario?: {

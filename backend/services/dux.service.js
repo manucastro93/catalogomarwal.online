@@ -146,10 +146,15 @@ export async function sincronizarProductosDesdeDux() {
         where: { sku: item.cod_item }
       });
 
+      let precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL);
+      if (!precio || precio === 0) {
+        precio = obtenerPrecioLista(item.precios, 'RETAIL');
+      }
+
       const data = {
         nombre: item.item,
         sku: item.cod_item,
-        precioUnitario: obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL),
+        precioUnitario: precio,
         costoDux: parseFloat(item.costo || '0'),
         stock: calcularStock(item),
         categoriaId,
