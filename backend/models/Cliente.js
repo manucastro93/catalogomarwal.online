@@ -5,7 +5,7 @@ export default (sequelize, DataTypes) => {
     telefono: DataTypes.STRING,
     direccion: DataTypes.STRING,
     razonSocial: DataTypes.STRING,
-    nro_doc: {
+    cuit_cuil: {
       type: DataTypes.STRING,
       allowNull: false,
     },
