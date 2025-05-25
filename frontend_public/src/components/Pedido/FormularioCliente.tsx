@@ -289,6 +289,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
         value={email()}
         onInput={(e) => {
           setEmail(e.currentTarget.value);
+          setErrores((prev) => ({ ...prev, email: "" }));
           persistirDatos();
         }}
       />
