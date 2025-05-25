@@ -21,7 +21,8 @@ export interface Cliente {
   telefono: string;
   direccion: string;
   razonSocial?: string;
-  cuit_cuil: string;
+  nro_doc: string;
+  transporte?: string;
   provinciaId?: number;
   localidadId?: number;
   vendedorId?: number;
@@ -34,6 +35,6 @@ export interface Cliente {
   provincia?: Provincia;
   localidad?: Localidad;
   vendedor?: Usuario;
-  
-  totalVentas?: number; 
+
+  totalVentas?: number;
 }

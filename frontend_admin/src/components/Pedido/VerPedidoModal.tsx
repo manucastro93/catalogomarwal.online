@@ -1,6 +1,8 @@
-import { Show, For } from "solid-js";
+import { Show, For, createSignal } from "solid-js";
 import type { Pedido } from "@/types/pedido";
 import { formatearPrecio } from "@/utils/formato";
+import { enviarPedidoADux } from '@/services/pedido.service';
+import ModalMensaje from '../Layout/ModalMensaje';
 
 export default function VerPedidoModal(props: {
   pedido: Pedido | null;
@@ -38,11 +40,32 @@ export default function VerPedidoModal(props: {
       ventana.close();
     };
   };
-
+  const [enviando, setEnviando] = createSignal(false);
+  const [mensajeExito, setMensajeExito] = createSignal('');
   const isEditing = props.pedido?.estadoEdicion === true;
+  
+  const handleEnviarADux = async () => {
+    if (!props.pedido) return;
+    setEnviando(true);
+    try {
+      await enviarPedidoADux(props.pedido.id);
+      setMensajeExito('📦 Pedido enviado correctamente a Dux.');
+      props.onClose();
+    } catch (err) {
+      console.error(err);
+      setMensajeExito('❌ Error al enviar el pedido.');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
 
   return (
     <Show when={props.pedido != null}>
+      <ModalMensaje
+        mensaje={mensajeExito()}
+        cerrar={() => setMensajeExito('')}
+      />
       <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center mb-4">
@@ -126,6 +149,14 @@ export default function VerPedidoModal(props: {
           </div>
 
           <div class="mt-6 flex justify-end gap-2">
+            <button
+              class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+              disabled={enviando()}
+              onClick={handleEnviarADux}
+            >
+              {enviando() ? "Enviando..." : "Enviar a Dux"}
+            </button>
+
             <button
               class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               onClick={imprimir}

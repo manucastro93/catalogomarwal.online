@@ -37,3 +37,8 @@ export const obtenerPedidosInicio = async (
   });
   return data;
 };
+
+export const enviarPedidoADux = async (id: number): Promise<{ message: string }> => {
+  const { data } = await api.post(`/pedidos/${id}/enviar-a-dux`);
+  return data;
+};

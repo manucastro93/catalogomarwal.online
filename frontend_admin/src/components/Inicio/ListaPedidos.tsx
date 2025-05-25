@@ -9,7 +9,8 @@ import {
   import type { Pedido } from "@/types/pedido";
   import { Eye, ArrowDownAZ, ArrowDownUp, ArrowUpDown } from "lucide-solid";
   import { useNavigate } from "@solidjs/router";
-  
+  import VerPedidoModal from "@/components/Pedido/VerPedidoModal";
+
   export default function ListaPedidos(props: {
     titulo: string;
     pedidos: Pedido[];
@@ -18,7 +19,7 @@ import {
     const navigate = useNavigate();
     const [busqueda, setBusqueda] = createSignal("");
     const [orden, setOrden] = createSignal<"fecha" | "total">("fecha");
-  
+    const [pedidoSeleccionado, setPedidoSeleccionado] = createSignal<Pedido | null>(null);
     const pedidosFiltrados = createMemo(() => {
       const b = busqueda().toLowerCase();
       return props.pedidos.filter((p) =>
@@ -75,7 +76,7 @@ import {
                   </div>
                 </div>
                 <button
-                  onClick={() => navigate(`/pedidos/${pedido.id}`)}
+                  onClick={() => setPedidoSeleccionado(pedido)}
                   class="flex items-center gap-1 text-sm text-blue-600 hover:underline"
                 >
                   <Eye size={16} />
@@ -89,6 +90,10 @@ import {
             <li class="text-sm text-gray-400 italic">No hay coincidencias.</li>
           </Show>
         </ul>
+        <VerPedidoModal
+          pedido={pedidoSeleccionado()}
+          onClose={() => setPedidoSeleccionado(null)}
+        />
       </div>
     );
   }
