@@ -31,11 +31,11 @@ export default function TablaProduccionDiaria({
             {th("Fecha", "fecha")}
             {th("SKU", "producto.sku")}
             {th("Producto", "producto.nombre")}
-            <th class="p-2">CostoMP</th>
+            <th class="p-2">Costo</th>
             <th class="p-2">Cantidad</th>
             <th class="p-2">Turno</th>
             <th class="p-2">Planta</th>
-            <th class="p-2">Total</th>
+            <th class="p-2">Costo Total</th>
             <th class="p-2">Cargado por</th>
             <th class="p-2">Acciones</th>
           </tr>
@@ -47,13 +47,13 @@ export default function TablaProduccionDiaria({
                 <td class="p-2">{new Date(r.fecha).toLocaleDateString()}</td>
                 <td class="p-2">{r.producto?.sku}</td>
                 <td class="p-2">{r.producto?.nombre}</td>
-                <td class="p-2">{formatearPrecio(r.producto?.costoMP)}</td>
+                <td class="p-2">{formatearPrecio(r.producto?.costoDux)}</td>
                 <td class="p-2">{r.cantidad}</td>
                 <td class="p-2 capitalize">{r.turno}</td>
                 <td class="p-2">{r.planta?.nombre ?? r.plantaId}</td>
                 <td class="p-2">
                   {formatearPrecio(
-                    (r.producto?.precioUnitario ?? 0) * (r.cantidad ?? 0)
+                    (r.producto?.costoDux ?? 0) * (r.cantidad ?? 0)
                   )}
                 </td>
                 <td class="p-2">{r.usuario?.nombre}</td>
@@ -86,7 +86,7 @@ export default function TablaProduccionDiaria({
                 <strong>Producto:</strong> {r.producto?.nombre}
               </div>
               <div>
-                <strong>CostoMP:</strong> {formatearPrecio(r.producto?.costoMP)}
+                <strong>CostoMP:</strong> {formatearPrecio(r.producto?.costoDux)}
               </div>
               <div>
                 <strong>Cantidad:</strong> {r.cantidad}
