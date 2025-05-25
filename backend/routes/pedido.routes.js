@@ -6,6 +6,7 @@ import {
   actualizarEstadoPedido,
   validarCarritoSolo,
   obtenerPedidosInicio,
+  enviarPedidoADux
 } from '../controllers/pedido.controller.js';
 
 import { validarPedidoBody } from '../validaciones/pedido.validation.js';
@@ -17,6 +18,7 @@ router.get('/inicio', obtenerPedidosInicio);
 router.get('/:id', obtenerPedidoPorId);
 
 router.post('/desde-panel', validarPedidoBody, crearPedidoDesdePanel);
+router.post('/:id/enviar-a-dux', enviarPedidoADux);
 
 router.put('/:id/estado', actualizarEstadoPedido);
 

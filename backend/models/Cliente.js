@@ -5,9 +5,13 @@ export default (sequelize, DataTypes) => {
     telefono: DataTypes.STRING,
     direccion: DataTypes.STRING,
     razonSocial: DataTypes.STRING,
-    cuit_cuil: {
+    nro_doc: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    transporte: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     provinciaId: {
       type: DataTypes.INTEGER,

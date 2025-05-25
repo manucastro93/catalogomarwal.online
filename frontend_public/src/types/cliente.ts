@@ -9,7 +9,8 @@ export interface Cliente {
   telefono: string;
   direccion: string;
   razonSocial?: string;
-  cuit_cuil: string;
+  nro_doc: string;
+  transporte?: string;
   provinciaId?: number;
   localidadId?: number;
   vendedorId?: number;
@@ -17,11 +18,11 @@ export interface Cliente {
   updatedAt: string;
   deletedAt?: string | null;
 
-  // Relaciones
   provincia?: Provincia;
   localidad?: Localidad;
   vendedor?: Vendedor;
 }
+
 
 export type LogClienteInput = {
   categoriaId?: number;

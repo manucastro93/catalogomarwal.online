@@ -1,10 +1,10 @@
 import { Pedido, DetallePedido, Producto, Cliente, Usuario, Notificacion, EstadoPedido } from '../models/index.js';
 import { ESTADOS_PEDIDO } from '../constants/estadosPedidos.js';
 import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
-import { crearLeadKommo } from '../services/kommo.service.js';
+import { DATOS_EMPRESA_DUX } from '../constants/datosEmpresaDux.js';
 import { Op } from 'sequelize';
 import { enviarEmailPedido } from "../utils/notificaciones/email.js";
-import { enviarWhatsappPedido, enviarWhatsappEstadoEditando, enviarWhatsappReversionEditando } from "../utils/notificaciones/whatsapp.js";
+import { enviarWhatsappPedido } from "../utils/notificaciones/whatsapp.js";
 import { crearClienteConGeocodificacion } from '../helpers/clientes.js';
 import { crearAuditoria } from '../utils/auditoria.js';
 
@@ -283,17 +283,8 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
 
     // Envío por email y WhatsApp
     await enviarEmailPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
-
-    try {
-      await crearLeadKommo({
-        nombre: clienteFinal.nombre,
-        telefono: clienteFinal.telefono,
-        total: total,
-      });
-      console.log('📤 Lead enviado a Kommo');
-    } catch (kommoError) {
-      console.error('❌ Error al crear lead en Kommo:', kommoError.message);
-    }
+    await enviarWhatsappPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
+    
     
     await crearAuditoria({
       tabla: 'pedidos',
@@ -425,6 +416,82 @@ export const obtenerPedidosInicio = async (req, res, next) => {
     res.json({ pendientes, confirmados });
   } catch (error) {
     console.error("❌ Error al obtener pedidos de inicio:", error);
+    next(error);
+  }
+};
+
+export const enviarPedidoADux = async (req, res, next) => {
+  const API_KEY = process.env.DUX_API_KEY;
+  try {
+    const { id } = req.params;
+
+    const pedido = await Pedido.findByPk(id, {
+      include: [
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [{ model: Producto, as: 'producto' }],
+        },
+        { model: Cliente, as: 'cliente' },
+        { model: Usuario, as: 'usuario' },
+      ],
+    });
+
+    if (!pedido) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
+
+    if (!pedido.detalles || pedido.detalles.length === 0) {
+      return res.status(400).json({ message: 'El pedido no tiene detalles cargados.' });
+    }
+
+    const payload = {
+      fecha: new Date(pedido.createdAt)
+        .toLocaleDateString('es-AR')
+        .replaceAll('/', ''),
+      id_empresa: DATOS_EMPRESA_DUX.id_empresa,
+      id_sucursal_empresa: DATOS_EMPRESA_DUX.id_sucursal_empresa,
+      apellido_razon_social: pedido.cliente?.razonSocial || 'Sin nombre',
+      categoria_fiscal: 'CONSUMIDOR_FINAL',
+      productos: pedido.detalles.map((d) => {
+        if (!d.producto?.sku) {
+          throw new Error(`El producto "${d.producto?.nombre}" no tiene SKU`);
+        }
+        return {
+          cod_item: d.producto.sku,
+          ctd: d.cantidad,
+          precio: d.precioUnitario,
+        };
+      }),
+    };
+
+    await axios.post(
+      'https://erp.duxsoftware.com.ar/WSERP/rest/services/pedido/nuevopedido',
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    await pedido.update({ estadoPedidoId: ESTADOS_PEDIDO.PREPARANDO });
+
+    await crearAuditoria({
+      tabla: 'pedidos',
+      accion: 'envia a Dux',
+      registroId: pedido.id,
+      usuarioId: req.usuario?.id || null,
+      descripcion: `Pedido ${pedido.id} enviado a Dux y actualizado a estado PREPARANDO`,
+      datosAntes: { estadoPedidoId: pedido.estadoPedidoId },
+      datosDespues: { estadoPedidoId: ESTADOS_PEDIDO.PREPARANDO },
+      ip: req.ip,
+    });
+
+    res.json({ message: 'Pedido enviado a Dux correctamente.' });
+  } catch (error) {
+    console.error('❌ Error al enviar pedido a Dux:', error);
     next(error);
   }
 };

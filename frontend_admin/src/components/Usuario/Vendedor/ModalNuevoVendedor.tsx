@@ -33,10 +33,11 @@ export default function ModalNuevoVendedor(props: ModalNuevoVendedorProps) {
       nombre: nombre().trim(),
       email: email().trim(),
       telefono: telefono().trim(),
+      rolUsuarioId: 3,
     };
 
     const result = usuarioSchema.safeParse(datos);
-
+    console.log(result)
     if (!result.success) {
       const erroresZod = result.error.flatten().fieldErrors;
       const erroresFormateados: { [key: string]: string } = {};
@@ -54,6 +55,7 @@ export default function ModalNuevoVendedor(props: ModalNuevoVendedorProps) {
   };
 
   const handleSubmit = async () => {
+    setNombre((prev) => prev.trim().replace(/\b\w/g, (c) => c.toUpperCase()));
     const datosValidados = validar();
     if (!datosValidados) return;
 
