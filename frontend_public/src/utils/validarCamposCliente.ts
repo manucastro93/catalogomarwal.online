@@ -11,7 +11,7 @@ export function validarCamposCliente({ nombre, telefono, email, direccion, cuit,
     errores.telefono = "El teléfono es obligatorio";
   } else if (!formatearTelefonoArgentino(telefono())) {
     errores.telefono = "Número inválido. Usá formato 11XXXXXXXX o +54911XXXXXXXX.";
-  } else if (!verificado()) {
+  } else if (!verificado) {
     errores.telefono = "Primero validá tu número de WhatsApp";
   }
 
