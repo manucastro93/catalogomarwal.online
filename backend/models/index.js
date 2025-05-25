@@ -78,7 +78,9 @@ export const {
   PermisosUsuario,
   Modulo,
   InformeSemanal,
-  Marca
+  Marca,
+  ListaPrecio,
+  ListaPrecioProducto
 } = db;
 
 export { sequelize, Sequelize };

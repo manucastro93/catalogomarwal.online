@@ -1,4 +1,4 @@
-import { Producto, Categoria, ImagenProducto } from '../models/index.js';
+import { Producto, Categoria, ImagenProducto, ListaPrecioProducto } from '../models/index.js';
 import { Op } from 'sequelize';
 import { leerExcelProductos } from '../utils/leerExcel.js';
 import cache from '../utils/cache.js';
@@ -13,6 +13,7 @@ export const obtenerProductos = async (req, res, next) => {
       direccion = 'ASC',
       buscar = '',
       categoriaId,
+      listaPrecioId,
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -48,6 +49,14 @@ export const obtenerProductos = async (req, res, next) => {
         as: 'Categoria',
         required: false,
       });
+      if (listaPrecioId) {
+        include.push({
+          model: ListaPrecioProducto,
+          as: 'listasPrecio',
+          required: true,
+          where: { listaPrecioId },
+        });
+      }
     }
 
     if (categoriaId) {
@@ -57,6 +66,91 @@ export const obtenerProductos = async (req, res, next) => {
     }
 
     where.precioUnitario = { [Op.gt]: 0 };
+
+    const { count, rows } = await Producto.findAndCountAll({
+      where,
+      include,
+      offset,
+      limit: Number(limit),
+      order: [[orden, direccion]],
+    });
+
+    const totalPaginas = Math.ceil(count / limit);
+
+    res.json({
+      data: rows,
+      pagina: Number(page),
+      totalPaginas,
+      totalItems: count,
+      hasNextPage: Number(page) < totalPaginas,
+      hasPrevPage: Number(page) > 1,
+    });
+  } catch (error) {
+    console.error('❌ Error al obtener productos:', error);
+    next(error);
+  }
+};
+
+export const obtenerProductosProduccion = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      orden = 'sku',
+      direccion = 'ASC',
+      buscar = '',
+      categoriaId,
+      listaPrecioId,
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+    const where = {};
+    const include = [
+      {
+        model: ImagenProducto,
+        as: 'Imagenes',
+        required: false,
+        attributes: ['id', 'url', 'orden'],
+        separate: true,
+        order: [['orden', 'ASC']],
+      }
+    ];
+    
+    if (buscar) {
+      include.push({
+        model: Categoria,
+        as: 'Categoria',
+        required: false,
+        where: {
+          nombre: { [Op.like]: `%${buscar}%` },
+        },
+      });
+    
+      where[Op.or] = [
+        { nombre: { [Op.like]: `%${buscar}%` } },
+        { sku: { [Op.like]: `%${buscar}%` } },
+      ];
+    } else {
+      include.push({
+        model: Categoria,
+        as: 'Categoria',
+        required: false,
+      });
+      if (listaPrecioId) {
+        include.push({
+          model: ListaPrecioProducto,
+          as: 'listasPrecio',
+          required: true,
+          where: { listaPrecioId },
+        });
+      }
+    }
+
+    if (categoriaId) {
+      where.categoriaId = categoriaId;
+    } else {
+      where.categoriaId = { [Op.notIn]: [11, 12] };
+    }
 
     const { count, rows } = await Producto.findAndCountAll({
       where,

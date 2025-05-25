@@ -12,11 +12,19 @@ export const obtenerProductoPorId = async (id: number): Promise<Producto> => {
 };
 
 export const buscarProductosPorTexto = async (texto: string): Promise<Producto[]> => {
-  const { data } = await api.get('/productos', {
+  const { data } = await api.get('/productos/produccion', {
     params: { buscar: texto, limit: 20 },
   });
   return data.data || [];
 };
+
+/*export async function buscarProductosPorTexto(texto: string, listaPrecioId?: string) {
+  const params: any = { texto };
+  if (listaPrecioId) params.listaPrecioId = listaPrecioId;
+  const res = await api.get('/productos', { params });
+  return res.data;
+}*/
+
 
 export const crearProducto = async (producto: Partial<Producto>) => {
   const { data } = await api.post('/productos', producto);
