@@ -28,7 +28,7 @@ export const crearOEditarPedido = async (req, res, next) => {
     }
 
     let clienteFinal;
-    const clienteExistente = await Cliente.findOne({ where: { email: cliente.email }, paranoid: false });
+    const clienteExistente = await Cliente.findOne({ where: { cuit_cuil: cliente.cuit_cuil }, paranoid: false });
 
     if (clienteExistente) {
       clienteFinal = await actualizarClienteExistenteConGeocodificacion(clienteExistente, cliente, usuarioId);

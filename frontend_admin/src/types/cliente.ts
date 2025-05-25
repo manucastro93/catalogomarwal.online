@@ -21,7 +21,7 @@ export interface Cliente {
   telefono: string;
   direccion: string;
   razonSocial?: string;
-  nro_doc: string;
+  cuit_cuil: string;
   transporte?: string;
   provinciaId?: number;
   localidadId?: number;
