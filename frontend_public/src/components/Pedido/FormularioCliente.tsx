@@ -448,6 +448,11 @@ export default function FormularioCliente({ onConfirmar }: Props) {
       />
 
       {/* Confirmar */}
+      <Show when={Object.keys(errores()).length > 0}>
+  <p class="text-red-600 text-sm font-semibold text-center">
+    ⚠️ Revisá los campos obligatorios del formulario
+  </p>
+</Show>
       <button
         class="w-full bg-black text-white py-2 rounded mt-2 text-sm"
         onClick={enviar}
