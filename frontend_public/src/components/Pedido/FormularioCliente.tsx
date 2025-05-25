@@ -124,13 +124,12 @@ export default function FormularioCliente({ onConfirmar }: Props) {
   const enviar = () => {
     const nuevosErrores = validarCamposCliente({
       nombre,
-      telefono,
       email,
       direccion,
       cuit,
       localidad,
       provincia,
-      verificado,
+      verificado: telefonoValidado(),
     });
     setErrores(nuevosErrores);
     if (Object.keys(nuevosErrores).length > 0) return;
@@ -450,17 +449,16 @@ export default function FormularioCliente({ onConfirmar }: Props) {
 
       {/* Confirmar */}
       <Show when={Object.keys(errores()).some((k) => errores()[k])}>
-  <p class="text-red-600 text-sm font-semibold text-center">
-    ⚠️ Revisá los campos obligatorios del formulario
-  </p>
-</Show>
-<button
-  class="w-full bg-black text-white py-2 rounded mt-2 text-sm"
-  onClick={enviar}
->
-  Confirmar pedido
-</button>
-
+        <p class="text-red-600 text-sm font-semibold text-center">
+          ⚠️ Revisá los campos obligatorios del formulario
+        </p>
+      </Show>
+      <button
+        class="w-full bg-black text-white py-2 rounded mt-2 text-sm"
+        onClick={enviar}
+      >
+        Confirmar pedido
+      </button>
     </div>
   );
 }
