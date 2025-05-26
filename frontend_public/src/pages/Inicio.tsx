@@ -178,6 +178,7 @@ export default function Inicio(props: InicioProps) {
                 {(cat) => (
                   <CategoriaButton
                     nombreWeb={cat}
+                    nombre={cat}
                     activa={cat === categoriaActiva()}
                     onClick={() => {
                       setCategoriaActiva(cat);
