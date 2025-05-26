@@ -1,4 +1,5 @@
 import { splitProps } from 'solid-js';
+import { capitalizarTexto } from '@/utils/formato';
 
 interface Props {
   nombreWeb?: string;
@@ -23,7 +24,7 @@ export default function CategoriaButton(props: Props) {
       }
       {...others}
     >
-      {texto()}
+      {capitalizarTexto(texto())}
     </button>
   );
 }
