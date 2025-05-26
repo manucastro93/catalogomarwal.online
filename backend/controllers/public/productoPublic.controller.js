@@ -108,6 +108,7 @@ export const listarCategorias = async (req, res, next) => {
       attributes: [
         'id',
         'nombre',
+        'nombreWeb',
         [Sequelize.fn('COUNT', Sequelize.col('Productos.id')), 'cantidadProductos']
       ],
       where: { estado: true },

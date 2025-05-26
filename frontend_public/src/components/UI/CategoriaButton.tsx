@@ -11,7 +11,7 @@ interface Props {
 export default function CategoriaButton(props: Props) {
   const [local, others] = splitProps(props, ['nombreWeb', 'nombre', 'activa', 'onClick']);
 
-  const texto = () => local.nombreWeb || local.nombre || 'Sin nombre';
+  const texto = () => local.nombreWeb || local.nombre || '';
 
   return (
     <button
