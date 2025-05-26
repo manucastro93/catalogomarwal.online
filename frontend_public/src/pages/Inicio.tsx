@@ -40,7 +40,7 @@ interface InicioProps {
 export default function Inicio(props: InicioProps) {
   const [params] = useSearchParams();
   const [productos, setProductos] = createSignal<any[]>([]);
-  const [categorias, setCategorias] = createSignal<string[]>([]);
+  const [categorias, setCategorias] = createSignal<{ nombre?: string; nombreWeb?: string }[]>([]);
   const [categoriaActiva, setCategoriaActiva] = createSignal("Todas");
   const [busqueda, setBusqueda] = createSignal("");
   const [ordenSeleccionado, setOrdenSeleccionado] = createSignal("default");
@@ -98,7 +98,7 @@ export default function Inicio(props: InicioProps) {
     (async () => {
     await fetchProductos();
     const cats = await obtenerCategorias();
-    setCategorias(["Todas", ...cats.map((c: any) => c.nombreWeb)]);
+    setCategorias([{ nombre: "Todas" }, ...cats]);
     const categoriaInicial = params.categoria;
     if (categoriaInicial) {
       const categoriaDecodificada = Array.isArray(categoriaInicial)
@@ -177,11 +177,11 @@ export default function Inicio(props: InicioProps) {
               <For each={categorias()}>
                 {(cat) => (
                   <CategoriaButton
-                    nombreWeb={cat}
-                    nombre={cat}
-                    activa={cat === categoriaActiva()}
+                    nombreWeb={cat.nombreWeb}
+                    nombre={cat.nombre}
+                    activa={(cat.nombreWeb || cat.nombre) === categoriaActiva()}
                     onClick={() => {
-                      setCategoriaActiva(cat);
+                      setCategoriaActiva(cat.nombreWeb || cat.nombre || "");
                       setPagina(1);
                     }}
                   />
