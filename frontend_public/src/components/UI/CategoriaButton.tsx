@@ -1,14 +1,16 @@
 import { splitProps } from 'solid-js';
 
 interface Props {
-  nombreWeb: string;
+  nombreWeb?: string;
   nombre?: string;
   activa: boolean;
   onClick: () => void;
 }
 
 export default function CategoriaButton(props: Props) {
-  const [local, others] = splitProps(props, ['nombre', 'nombreWeb', 'activa', 'onClick']);
+  const [local, others] = splitProps(props, ['nombreWeb', 'nombre', 'activa', 'onClick']);
+
+  const texto = () => local.nombreWeb || local.nombre || 'Sin nombre';
 
   return (
     <button
@@ -21,7 +23,7 @@ export default function CategoriaButton(props: Props) {
       }
       {...others}
     >
-      {local.nombreWeb || local.nombre}
+      {texto()}
     </button>
   );
 }
