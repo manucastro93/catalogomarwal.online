@@ -29,7 +29,15 @@ export const listarProductosPublicos = async (req, res, next) => {
         as: 'Categoria',
         attributes: ['id', 'nombre'],
         ...(categoria && categoria !== 'Todas'
-          ? { where: { nombre: categoria, estado: true } }
+          ? {
+            where: {
+              estado: true,
+              [Op.or]: [
+                { nombre: categoria },
+                { nombreWeb: categoria }
+              ]
+            }
+          }
           : {}),
       },
       {
@@ -39,6 +47,7 @@ export const listarProductosPublicos = async (req, res, next) => {
         required: true,
       },
     ];
+
 
     const { count, rows } = await Producto.findAndCountAll({
       where,
