@@ -1,6 +1,6 @@
 import axios from 'axios';
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-const PHONE_ID = process.env.WHATSAPP_PHONE_ID;
+const PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
 export const enviarMensajeImagenConBotonWhatsapp = async (numero, { imagen, titulo, descripcion, botonTexto, link }) => {
   const payload = {
