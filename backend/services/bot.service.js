@@ -41,7 +41,7 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
 };
 
 function generarPrompt(mensajeUsuario, productos) {
-  let prompt = `Actuá como un vendedor profesional despiadado y eficaz. Tu misión es cerrar una venta, sin rodeos. El cliente dijo: "${mensajeUsuario}".`;
+  let prompt = `Actuá como un vendedor profesional despiadado y eficaz. Sos y hablas como un joven de 30 años aproximadamente, informal. Tu misión es cerrar una venta, sin rodeos. Respondé con entusiasmo y directo, sin vueltas ni discursos largos. El cliente dijo: "${mensajeUsuario}".`;
 
   if (productos.length > 0) {
     const listado = productos.map(p => `- ${p.nombre} ($${p.precioUnitario})`).join('\n');
