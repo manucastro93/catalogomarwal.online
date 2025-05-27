@@ -456,14 +456,21 @@ export const eliminarImagenProducto = async (req, res, next) => {
 };
 
 export const obtenerProductosRelacionadosPorTexto = async (texto = '', limite = 5) => {
+  const palabrasClave = texto
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(p => p.length > 2 && !['tienen', 'hola', 'como', 'estas', 'quiero'].includes(p));
+
   const whereProducto = {
     activo: true,
     precioUnitario: { [Op.gt]: 0 },
-    [Op.or]: [
-      { nombre: { [Op.like]: `%${texto}%` } },
-      { descripcion: { [Op.like]: `%${texto}%` } },
-      { sku: { [Op.like]: `%${texto}%` } },
-    ],
+    [Op.or]: palabrasClave.map(palabra => ({
+      [Op.or]: [
+        { nombre: { [Op.like]: `%${palabra}%` } },
+        { descripcion: { [Op.like]: `%${palabra}%` } },
+        { sku: { [Op.like]: `%${palabra}%` } },
+      ],
+    })),
   };
 
   const include = [
@@ -481,7 +488,9 @@ export const obtenerProductosRelacionadosPorTexto = async (texto = '', limite = 
       required: false,
       attributes: ['id', 'nombre'],
       where: {
-        nombre: { [Op.like]: `%${texto}%` },
+        [Op.or]: palabrasClave.map(p => ({
+          nombre: { [Op.like]: `%${p}%` },
+        })),
       },
     },
   ];

@@ -61,18 +61,31 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
   return respuesta;
 };
 
-function generarPromptConversacional(mensajeUsuario, productos, historialTexto) {
-  let prompt = `Sos un vendedor real, cordial pero directo. Usá un tono similar al cliente. Tenés este historial:\n${historialTexto}\n\nEl cliente ahora dijo: "${mensajeUsuario}".`;
+function generarPromptConversacional(mensajeUsuario, productos, historial = []) {
+  const contexto = historial
+    .slice(-5)
+    .reverse()
+    .map(m => `Cliente: ${m.mensajeCliente}\nBot: ${m.respuestaBot}`)
+    .join('\n');
+
+  let prompt = `Sos un vendedor real de una tienda online. Contestás como una persona, de forma amable y concreta. No hablás como robot ni hacés respuestas genéricas. No usas ¡ ni ¿. Entendes el tono del cliente y respondes con su forma de hablar.`;
+
+  if (contexto) {
+    prompt += `\n\nHistorial reciente:\n${contexto}`;
+  }
+
+  prompt += `\n\nEl cliente dijo: "${mensajeUsuario}".`;
 
   if (productos.length > 0) {
     const lista = productos.map(p => `- ${p.nombre} ($${p.precioUnitario})`).join('\n');
-    prompt += `\n\nEstos productos coinciden con lo que busca:\n${lista}\nRespondé de manera amigable, sin repetir la lista literal.`;
+    prompt += `\n\nEstos son productos que podrías sugerir:\n${lista}\nMostralos de forma natural y útil, sin repetirlos igual.`;
   } else {
-    prompt += `\n\nNo se encontraron productos exactos. Ofrecé ayuda real sin parecer robot.`;
+    prompt += `\n\nNo se encontraron coincidencias exactas, pero ofrecé ayuda real sin parecer robot.`;
   }
 
   return prompt;
 }
+
 
 async function obtenerPalabraClaveDesdeOpenAI(texto) {
   const prompt = `Del siguiente mensaje: "${texto}", extraé una sola palabra clave o frase corta que describa lo que busca. Nada más.`;
