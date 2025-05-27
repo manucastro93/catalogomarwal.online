@@ -123,7 +123,7 @@ export async function sincronizarProductosDesdeDux() {
       categoriasCreadas.add(nueva.id);
     }
   }
-  
+
   // Cargar todas las categorías en memoria para lookup rápido
   const todasCategorias = await Categoria.findAll();
   const categoriasMap = {};
@@ -136,20 +136,27 @@ export async function sincronizarProductosDesdeDux() {
 
   let creados = 0;
   let actualizados = 0;
-  
+
   for (const item of items) {
     try {
-      const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
-      const categoriaId = categoriasMap[nombreCategoria] || null;
-
+      let categoriaId = null;
       const productoExistente = await Producto.findOne({
         where: { sku: item.cod_item }
       });
+
+      if (productoExistente?.categoriaId) {
+        categoriaId = productoExistente.categoriaId;
+      } else {
+        const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
+        categoriaId = categoriasMap[nombreCategoria] || null;
+      }
+
 
       let precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL);
       if (!precio || precio === 0) {
         precio = obtenerPrecioLista(item.precios, 'RETAIL');
       }
+      precio = Math.round(precio / 1.21);
 
       const data = {
         nombre: item.item,
