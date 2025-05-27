@@ -80,7 +80,8 @@ export const {
   InformeSemanal,
   Marca,
   ListaPrecio,
-  ListaPrecioProducto
+  ListaPrecioProducto,
+  ConversacionBot
 } = db;
 
 export { sequelize, Sequelize };
