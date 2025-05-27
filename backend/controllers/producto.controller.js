@@ -455,3 +455,44 @@ export const eliminarImagenProducto = async (req, res, next) => {
   }
 };
 
+export async function obtenerProductosRelacionadosPorTexto(texto = '', limite = 5) {
+  const where = {
+    precioUnitario: { [Op.gt]: 0 },
+  };
+
+  const include = [
+    {
+      model: ImagenProducto,
+      as: 'Imagenes',
+      required: false,
+      attributes: ['id', 'url', 'orden'],
+      separate: true,
+      order: [['orden', 'ASC']],
+    },
+    {
+      model: Categoria,
+      as: 'Categoria',
+      required: false,
+    }
+  ];
+
+  if (texto) {
+    include[1].where = { nombre: { [Op.like]: `%${texto}%` } };
+
+    where[Op.or] = [
+      { nombre: { [Op.like]: `%${texto}%` } },
+      { sku: { [Op.like]: `%${texto}%` } },
+    ];
+  } else {
+    where.categoriaId = { [Op.notIn]: [11, 12] };
+  }
+
+  const productos = await Producto.findAll({
+    where,
+    include,
+    limit,
+    order: [['precioUnitario', 'ASC']],
+  });
+
+  return productos;
+}
