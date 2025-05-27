@@ -1,24 +1,35 @@
 import axios from 'axios';
 import { obtenerProductosRelacionadosPorTexto } from '../controllers/producto.controller.js';
 import { enviarMensajeTextoLibreWhatsapp } from '../helpers/enviarMensajeWhatsapp.js';
+import { enviarMensajeImagenWhatsapp } from '../helpers/enviarMensajeImagenWhatsapp.js';
 import { ConversacionBot } from '../models/index.js';
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
 
 export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
-  const productosRelacionados = await obtenerProductosRelacionadosPorTexto(mensajeTexto);
+  const productosRelacionados = await obtenerProductosRelacionadosPorTexto(mensajeTexto, 3);
 
+  // 1️⃣ Enviar productos con imagen
+  for (const p of productosRelacionados.slice(0, 3)) {
+    const imagen = p.Imagenes?.[0]?.url || null;
+    const link = `https://www.catalogomarwal.online/producto/${p.slug || p.id}`;
+    if (imagen) {
+      await enviarMensajeImagenWhatsapp(numeroCliente, {
+        imagen,
+        texto: `${p.nombre}\n$${p.precioUnitario}\n\n🔥 Ver más: ${link}`,
+      });
+    }
+  }
+
+  // 2️⃣ Generar respuesta con OpenAI
   const prompt = generarPrompt(mensajeTexto, productosRelacionados);
   const respuesta = await consultarOpenAI(prompt);
 
+  // 3️⃣ Enviar mensaje final del bot (siempre)
   await enviarMensajeTextoLibreWhatsapp(numeroCliente, respuesta);
 
-  if (productosRelacionados.length === 0) {
-    const mensajeExtra = '📩 Si querés, te contacto con alguien del equipo para ayudarte mejor 😊.';
-    await enviarMensajeTextoLibreWhatsapp(numeroCliente, mensajeExtra);
-  }
-
+  // 4️⃣ Registrar conversación
   await ConversacionBot.create({
     telefono: numeroCliente,
     mensajeCliente: mensajeTexto,
@@ -30,13 +41,13 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
 };
 
 function generarPrompt(mensajeUsuario, productos) {
-  let prompt = `Actuá como un vendedor profesional. Respondé de forma clara, cordial y persuasiva. El cliente dijo: "${mensajeUsuario}".`;
+  let prompt = `Actuá como un vendedor profesional despiadado y eficaz. Tu misión es cerrar una venta, sin rodeos. El cliente dijo: "${mensajeUsuario}".`;
 
   if (productos.length > 0) {
     const listado = productos.map(p => `- ${p.nombre} ($${p.precioUnitario})`).join('\n');
-    prompt += `\n\nSugerí alguno de estos productos:\n${listado}\nRespondé en tono natural y cercano.`;
+    prompt += `\n\nRespondé con actitud entusiasta y dominante. Empujá al cliente a comprar alguno de estos productos:\n${listado}\nUsá emojis, urgencia, y frases de cierre.`;
   } else {
-    prompt += `\n\nNo se encontraron coincidencias en el catálogo. Respondé con cordialidad y ofrecé ayuda humana.`;
+    prompt += `\n\nNo se encontraron coincidencias. Respondé con intensidad y ofrecé asistencia humana para cerrar la venta.`;
   }
 
   return prompt;
@@ -48,7 +59,7 @@ async function consultarOpenAI(prompt) {
     {
       model: OPENAI_MODEL,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
+      temperature: 0.8,
     },
     {
       headers: {
@@ -58,5 +69,5 @@ async function consultarOpenAI(prompt) {
     }
   );
 
-  return res.data.choices?.[0]?.message?.content?.trim() || 'Disculpá, no pude procesar tu consulta.';
+  return res.data.choices?.[0]?.message?.content?.trim() || 'Estoy para ayudarte, ¿qué estás buscando?';
 }
