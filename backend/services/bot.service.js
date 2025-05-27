@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { obtenerProductosRelacionadosPorTexto } from '../controllers/producto.controller.js';
+import obtenerProductosRelacionadosPorTexto from '../controllers/producto.controller.js';
 import { enviarMensajeTextoLibreWhatsapp } from '../helpers/enviarMensajeWhatsapp.js';
 import { models } from '../config/database.js';
 
