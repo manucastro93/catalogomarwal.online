@@ -1,3 +1,5 @@
+import fs from 'fs/promises';
+import path from 'path';
 import axios from 'axios';
 import { Op } from 'sequelize';
 import { Producto, ImagenProducto, ConversacionBot } from '../models/index.js';
@@ -7,6 +9,17 @@ import { enviarMensajeImagenWhatsapp } from '../helpers/enviarMensajeImagenWhats
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
+
+let systemMessageCache;
+
+async function getSystemMessage() {
+  if (!systemMessageCache) {
+    const ruta = path.join(process.cwd(), 'src', 'prompts', 'systemMessage.txt');
+    const contenido = await fs.readFile(ruta, 'utf-8');
+    systemMessageCache = { role: 'system', content: contenido.trim() };
+  }
+  return systemMessageCache;
+}
 
 export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
   console.log(`📩 Mensaje de ${numeroCliente}: ${mensajeTexto}`);
@@ -21,7 +34,9 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
       ? `https://www.catalogomarwal.online${p.Imagenes[0].url}`
       : null;
 
-    const link = `https://www.catalogomarwal.online/?buscar=${encodeURIComponent(p.nombre)}`;
+    const link = p.slug
+      ? `https://www.catalogomarwal.online/producto/${p.slug}`
+      : `https://www.catalogomarwal.online/?buscar=${encodeURIComponent(p.nombre)}`;
 
     if (imagen) {
       try {
@@ -59,10 +74,9 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
 };
 
 function generarPromptConversacional(mensajeUsuario, productos, historial) {
-  let prompt = `Sos un vendedor de una tienda online. Respondé como una persona real, con empatía, interés, sin parecer un bot.`;
-  prompt += `\nEste es el nuevo mensaje del cliente: "${mensajeUsuario}".`;
+  let prompt = `Este es el nuevo mensaje del cliente: "${mensajeUsuario}".`;
 
-  if (historial?.length) {
+  if (Array.isArray(historial) && historial.length > 0) {
     const ultimos = historial.reverse().map(h =>
       `🧍 Cliente: ${h.mensajeCliente}\n🤖 Bot: ${h.respuestaBot}`
     ).join('\n');
@@ -76,17 +90,20 @@ function generarPromptConversacional(mensajeUsuario, productos, historial) {
     prompt += `\n\nNo hay coincidencias exactas, pero podés ofrecer otras categorías, preguntar más info o derivar con humano.`;
   }
 
+  prompt += `\nRespondé con empatía, como humano.`;
+
   return prompt;
 }
 
 async function obtenerPalabraClaveDesdeOpenAI(texto) {
-  const prompt = `Del siguiente mensaje: "${texto}", extraé una palabra o frase corta que describa lo que busca el cliente (ej: mates, cuchillos, latas). Respondé solo con la palabra.`;
+  const system = await getSystemMessage();
+  const prompt = `Del siguiente mensaje: "${texto}", extraé una palabra o frase corta que describa lo que busca el cliente (ej: mates, cuchillos, latas, bolsas de tela). Respondé solo con la palabra o frase.`;
 
   const res = await axios.post(
     'https://api.openai.com/v1/chat/completions',
     {
       model: OPENAI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [system, { role: 'user', content: prompt }],
       temperature: 0.2,
     },
     {
@@ -101,11 +118,13 @@ async function obtenerPalabraClaveDesdeOpenAI(texto) {
 }
 
 async function consultarOpenAI(prompt) {
+  const system = await getSystemMessage();
+
   const res = await axios.post(
     'https://api.openai.com/v1/chat/completions',
     {
       model: OPENAI_MODEL,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [system, { role: 'user', content: prompt }],
       temperature: 0.6,
     },
     {
