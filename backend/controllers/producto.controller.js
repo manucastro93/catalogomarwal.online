@@ -455,47 +455,35 @@ export const eliminarImagenProducto = async (req, res, next) => {
   }
 };
 
-export async function obtenerProductosRelacionadosPorTexto(texto = '', limite = 5) {
-  const where = {
-    precioUnitario: { [Op.gt]: 0 },
-  };
+export async function obtenerProductosRelacionadosPorTexto(texto = '', limite = 3) {
+  const where = { activo: true };
+  if (texto) {
+    where.nombre = { [Op.like]: `%${texto}%` };
+  }
 
   const include = [
     {
-      model: ImagenProducto,
-      as: 'Imagenes',
-      required: false,
-      attributes: ['id', 'url', 'orden'],
-      separate: true,
-      order: [['orden', 'ASC']],
-    },
-    {
       model: Categoria,
       as: 'Categoria',
-      required: false,
-    }
+      attributes: ['id', 'nombre'],
+    },
+    {
+      model: ImagenProducto,
+      as: 'Imagenes',
+      attributes: ['id', 'url', 'orden'],
+      required: true,
+    },
   ];
-
-  if (texto) {
-    
-    where[Op.or] = [
-      Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Producto.nombre')), {
-        [Op.like]: `%${texto.toLowerCase()}%`,
-      }),
-      Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Producto.sku')), {
-        [Op.like]: `%${texto.toLowerCase()}%`,
-      }),
-    ];
-
-  } else {
-    where.categoriaId = { [Op.notIn]: [11, 12] };
-  }
 
   const productos = await Producto.findAll({
     where,
     include,
-    limit: Number(limite), // 💥 acá fallaba
-    order: [['precioUnitario', 'ASC']],
+    limit: Number(limite),
+    order: [
+      ['createdAt', 'DESC'],
+      [{ model: ImagenProducto, as: 'Imagenes' }, 'orden', 'ASC'],
+    ],
+    distinct: true,
   });
 
   return productos;
