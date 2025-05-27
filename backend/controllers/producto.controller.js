@@ -455,36 +455,45 @@ export const eliminarImagenProducto = async (req, res, next) => {
   }
 };
 
-export async function obtenerProductosRelacionadosPorTexto(texto = '', limite = 3) {
-  const where = { activo: true };
-  if (texto) {
-    where.nombre = { [Op.like]: `%${texto}%` };
-  }
+export const obtenerProductosRelacionadosPorTexto = async (texto = '', limite = 5) => {
+  const whereProducto = {
+    activo: true,
+    precioUnitario: { [Op.gt]: 0 },
+    [Op.or]: [
+      { nombre: { [Op.like]: `%${texto}%` } },
+      { descripcion: { [Op.like]: `%${texto}%` } },
+      { sku: { [Op.like]: `%${texto}%` } },
+    ],
+  };
 
   const include = [
     {
-      model: Categoria,
-      as: 'Categoria',
-      attributes: ['id', 'nombre'],
-    },
-    {
       model: ImagenProducto,
       as: 'Imagenes',
+      required: false,
       attributes: ['id', 'url', 'orden'],
-      required: true,
+      separate: true,
+      order: [['orden', 'ASC']],
+    },
+    {
+      model: Categoria,
+      as: 'Categoria',
+      required: false,
+      attributes: ['id', 'nombre'],
+      where: {
+        nombre: { [Op.like]: `%${texto}%` },
+      },
     },
   ];
 
   const productos = await Producto.findAll({
-    where,
+    where: whereProducto,
     include,
     limit: Number(limite),
-    order: [
-      ['createdAt', 'DESC'],
-      [{ model: ImagenProducto, as: 'Imagenes' }, 'orden', 'ASC'],
-    ],
+    order: [['precioUnitario', 'ASC']],
     distinct: true,
   });
 
   return productos;
-}
+};
+
