@@ -1,5 +1,5 @@
 import { Producto, Categoria, ImagenProducto, ListaPrecioProducto } from '../models/index.js';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import { leerExcelProductos } from '../utils/leerExcel.js';
 import cache from '../utils/cache.js';
 import { crearAuditoria } from '../utils/auditoria.js';
@@ -479,9 +479,14 @@ export async function obtenerProductosRelacionadosPorTexto(texto = '', limite = 
   if (texto) {
     
     where[Op.or] = [
-      { nombre: { [Op.like]: `%${texto}%` } },
-      { sku: { [Op.like]: `%${texto}%` } },
+      Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Producto.nombre')), {
+        [Op.like]: `%${texto.toLowerCase()}%`,
+      }),
+      Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('Producto.sku')), {
+        [Op.like]: `%${texto.toLowerCase()}%`,
+      }),
     ];
+
   } else {
     where.categoriaId = { [Op.notIn]: [11, 12] };
   }
