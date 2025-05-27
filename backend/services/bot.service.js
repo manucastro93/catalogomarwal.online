@@ -8,24 +8,30 @@ const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
 
 export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
-  // 1️⃣ Obtener palabra clave con IA
+  // 1️⃣ Obtener historial completo del cliente
+  const historial = await ConversacionBot.findAll({
+    where: { telefono: numeroCliente },
+    order: [['createdAt', 'ASC']],
+  });
+
+  const historialTexto = historial
+    .map(c => `Cliente: ${c.mensajeCliente}\nBot: ${c.respuestaBot}`)
+    .join('\n');
+
+  // 2️⃣ Obtener palabra clave con IA
   const keyword = await obtenerPalabraClaveDesdeOpenAI(mensajeTexto);
 
-  // 2️⃣ Buscar productos relacionados con esa keyword
+  // 3️⃣ Buscar productos relacionados con esa keyword
   const productosRelacionados = await obtenerProductosRelacionadosPorTexto(keyword, 3);
-
-  // 🔍 Debug
   console.log('🧪 Productos encontrados por keyword:', productosRelacionados.map(p => p.nombre));
 
-  // 3️⃣ Enviar productos con imagen y link
+  // 4️⃣ Enviar productos con imagen
   for (const p of productosRelacionados.slice(0, 3)) {
     const imagen = p.Imagenes?.[0]?.url
       ? `https://www.catalogomarwal.online${p.Imagenes[0].url}`
       : null;
 
-    const link = p.slug && typeof p.slug === 'string'
-      ? `https://www.catalogomarwal.online/producto/${p.slug}`
-      : `https://www.catalogomarwal.online/producto/${p.id}`;
+    const link = `https://www.catalogomarwal.online/producto/${p.id}`;
 
     if (imagen) {
       await enviarMensajeImagenWhatsapp(numeroCliente, {
@@ -35,16 +41,16 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
     }
   }
 
-  // 4️⃣ Generar mensaje final con OpenAI
-  const prompt = generarPromptConversacional(mensajeTexto, productosRelacionados);
+  // 5️⃣ Generar respuesta con OpenAI
+  const prompt = generarPromptConversacional(mensajeTexto, productosRelacionados, historialTexto);
   console.log('📤 Prompt enviado a OpenAI:', prompt);
 
   const respuesta = await consultarOpenAI(prompt);
 
-  // 5️⃣ Enviar mensaje del bot
+  // 6️⃣ Enviar mensaje del bot
   await enviarMensajeTextoLibreWhatsapp(numeroCliente, respuesta);
 
-  // 6️⃣ Guardar conversación
+  // 7️⃣ Guardar conversación
   await ConversacionBot.create({
     telefono: numeroCliente,
     mensajeCliente: mensajeTexto,
@@ -55,22 +61,21 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
   return respuesta;
 };
 
-function generarPromptConversacional(mensajeUsuario, productos) {
-  let prompt = `Sos un vendedor real de una tienda online. Hablás de forma natural, directa y amable, sin parecer un bot. Tu misión es ayudar al cliente y sugerirle productos si tenés.`;
-  prompt += ` El cliente dijo: "${mensajeUsuario}".`;
+function generarPromptConversacional(mensajeUsuario, productos, historialTexto) {
+  let prompt = `Sos un vendedor real, cordial pero directo. Usá un tono similar al cliente. Tenés este historial:\n${historialTexto}\n\nEl cliente ahora dijo: "${mensajeUsuario}".`;
 
   if (productos.length > 0) {
     const lista = productos.map(p => `- ${p.nombre} ($${p.precioUnitario})`).join('\n');
-    prompt += `\n\nEstos son productos del catálogo relacionados:\n${lista}\nRespondé de manera amigable, sin repetir la lista literal.`;
+    prompt += `\n\nEstos productos coinciden con lo que busca:\n${lista}\nRespondé de manera amigable, sin repetir la lista literal.`;
   } else {
-    prompt += `\n\nNo se encontraron coincidencias exactas. Ofrecé ayuda humana o sugerencias generales, sin inventar productos.`;
+    prompt += `\n\nNo se encontraron productos exactos. Ofrecé ayuda real sin parecer robot.`;
   }
 
   return prompt;
 }
 
 async function obtenerPalabraClaveDesdeOpenAI(texto) {
-  const prompt = `Del siguiente mensaje de cliente: "${texto}", extraé una sola palabra clave o frase corta que describa lo que busca (por ejemplo: mates, termos, cuchillos, etc). No des contexto ni explicación.`;
+  const prompt = `Del siguiente mensaje: "${texto}", extraé una sola palabra clave o frase corta que describa lo que busca. Nada más.`;
 
   const res = await axios.post(
     'https://api.openai.com/v1/chat/completions',
