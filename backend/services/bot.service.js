@@ -1,7 +1,7 @@
 import axios from 'axios';
-import obtenerProductosRelacionadosPorTexto from '../controllers/producto.controller.js';
+import { obtenerProductosRelacionadosPorTexto } from '../controllers/producto.controller.js';
 import { enviarMensajeTextoLibreWhatsapp } from '../helpers/enviarMensajeWhatsapp.js';
-import { models } from '../config/database.js';
+import { ConversacionBot } from '../models/index.js';
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
@@ -19,7 +19,7 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
     await enviarMensajeTextoLibreWhatsapp(numeroCliente, mensajeExtra);
   }
 
-  await models.ConversacionBot.create({
+  await ConversacionBot.create({
     telefono: numeroCliente,
     mensajeCliente: mensajeTexto,
     respuestaBot: respuesta,
