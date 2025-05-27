@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { buscarProductosDesdeBot } from '../controllers/producto.controller.js';
+import { obtenerProductosRelacionadosPorTexto } from '../controllers/producto.controller.js';
 import { enviarMensajeTextoLibreWhatsapp } from '../helpers/enviarMensajeWhatsapp.js';
 import { models } from '../config/database.js';
 
@@ -7,7 +7,7 @@ const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
 
 export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
-  const productosRelacionados = await buscarProductosDesdeBot(mensajeTexto);
+  const productosRelacionados = await obtenerProductosRelacionadosPorTexto(mensajeTexto);
 
   const prompt = generarPrompt(mensajeTexto, productosRelacionados);
   const respuesta = await consultarOpenAI(prompt);
