@@ -477,8 +477,7 @@ export async function obtenerProductosRelacionadosPorTexto(texto = '', limite = 
   ];
 
   if (texto) {
-    include[1].where = { nombre: { [Op.like]: `%${texto}%` } };
-
+    
     where[Op.or] = [
       { nombre: { [Op.like]: `%${texto}%` } },
       { sku: { [Op.like]: `%${texto}%` } },
