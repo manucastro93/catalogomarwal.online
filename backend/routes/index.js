@@ -19,6 +19,7 @@ import graficosRoutes from './graficos.routes.js';
 import informeSemanal from './informeSemanal.routes.js';
 import duxRoutes from './dux.routes.js'
 //import chatRoutes from './chat.route.js';
+import conversacionBotRoutes from './conversacionBot.routes.js';
 
 const router = express.Router();
 
@@ -41,5 +42,6 @@ router.use('/graficos', graficosRoutes);
 router.use('/informes-semanales', informeSemanal);
 router.use('/dux', duxRoutes); 
 //router.use('/chat', chatRoutes); 
+router.use('/conversaciones-bot', conversacionBotRoutes);
 
 export default router;
