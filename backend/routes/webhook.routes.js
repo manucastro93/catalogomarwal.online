@@ -23,21 +23,19 @@ router.get('/webhook-whatsapp', (req, res) => {
 router.post('/webhook-whatsapp', async (req, res) => {
   const body = req.body;
 
-  if (body.object) {
-    const entry = body.entry?.[0];
-    const changes = entry?.changes?.[0];
-    const message = changes?.value?.messages?.[0];
+  console.log('📦 Evento recibido desde WhatsApp:', JSON.stringify(body, null, 2));
 
-    if (message) {
-      const from = message.from;
-      const text = message.text?.body;
+  const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+  const from = message?.from;
+  const text = message?.text?.body;
 
-      console.log(`📩 Mensaje de ${from}: ${text}`);
-      await procesarMensaje(text, from);
-    }
+  if (text && from) {
+    console.log(`📩 Mensaje de ${from}: ${text}`);
+    await procesarMensaje(text, from);
   }
 
   res.sendStatus(200);
 });
+
 
 export default router;
