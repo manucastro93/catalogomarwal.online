@@ -171,7 +171,7 @@ export default function Inicio(props: InicioProps) {
 
       <div class="flex flex-col sm:flex-row">
         <Show when={!mostrarDetalle()}>
-          <aside class="w-full sm:w-48 bg-white border-r p-4">
+          <aside class="w-full sm:w-48 bg-white p-4">
             <h2 class="text-sm font-bold mb-2">CATEGORÍAS</h2>
             <div class="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-visible">
               <For each={categorias()}>
