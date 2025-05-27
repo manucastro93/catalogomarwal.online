@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { buscarProductosDesdeBot } from '../controllers/producto.controller.js';
 import { enviarMensajeTextoLibreWhatsapp } from '../helpers/enviarMensajeWhatsapp.js';
-import { models } from '../config/db.js';
+import { models } from '../config/database.js';
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
