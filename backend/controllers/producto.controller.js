@@ -490,7 +490,7 @@ export async function obtenerProductosRelacionadosPorTexto(texto = '', limite = 
   const productos = await Producto.findAll({
     where,
     include,
-    limit,
+    limit: Number(limite), // 💥 acá fallaba
     order: [['precioUnitario', 'ASC']],
   });
 
