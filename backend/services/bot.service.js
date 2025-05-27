@@ -41,13 +41,15 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
 };
 
 function generarPrompt(mensajeUsuario, productos) {
-  let prompt = `Actuá como un vendedor profesional despiadado y eficaz. Sos y hablas como un joven de 30 años aproximadamente, informal. Tu misión es cerrar una venta, sin rodeos. Respondé con entusiasmo y directo, sin vueltas ni discursos largos. El cliente dijo: "${mensajeUsuario}".`;
+  let prompt = `Sos un vendedor real de una tienda online. Respondés con naturalidad, como alguien que atiende por WhatsApp todos los días. No hablás como bot ni usás frases de manual. Tu tono es cordial, relajado y profesional. Siempre intentás ayudar, seguís el interés del cliente y le ofrecés opciones si hay. Si no hay, lo decís sin vueltas pero con buena onda. No exageres, no uses tantos emojis ni signos. Si el cliente usa cierto vocabulario o tono, tratá de seguirle la onda.`;
+
+  prompt += `\n\nEl cliente escribió: "${mensajeUsuario}".`;
 
   if (productos.length > 0) {
     const listado = productos.map(p => `- ${p.nombre} ($${p.precioUnitario})`).join('\n');
-    prompt += `\n\nRespondé con actitud entusiasta y dominante. Empujá al cliente a comprar alguno de estos productos:\n${listado}\nUsá emojis, urgencia, y frases de cierre.`;
+    prompt += `\n\nEstos son productos que podrían interesarle:\n${listado}\nPodés mencionar alguno si encaja. Respondé como si fuera una charla normal con un cliente por WhatsApp.`;
   } else {
-    prompt += `\n\nNo se encontraron coincidencias. Respondé con intensidad y ofrecé asistencia humana para cerrar la venta.`;
+    prompt += `\n\nNo hay coincidencias exactas, pero podés ofrecer ayuda o decir que alguien del equipo se puede contactar.`;
   }
 
   return prompt;
