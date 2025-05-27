@@ -39,7 +39,7 @@ router.put(
 
 router.delete('/:id', eliminarProducto);
 
-router.delete('/imagen/:id', eliminarImagenProducto);
+router.delete('/imagenes/:id', eliminarImagenProducto);
 
 router.post('/importar', importarProductosDesdeExcel);
 router.put('/imagenes/ordenar', actualizarOrdenImagenes); 
