@@ -41,7 +41,7 @@ export default function ProductoCard({
     hover() && segundaImagen ? segundaImagen : imagen;
 
   return (
-    <div class="bg-white border p-2 md:p-4 flex flex-col relative shadow-sm">
+    <div class="bg-white border border-gray-200 p-2 md:p-4 flex flex-col relative shadow-sm">
       {/* Imagen (clickeable para ver detalle) */}
       <div
         class="cursor-pointer"
