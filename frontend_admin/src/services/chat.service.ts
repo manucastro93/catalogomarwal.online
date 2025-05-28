@@ -6,4 +6,3 @@ export async function preguntarAlAsistente(
     const { data } = await api.post("/chat", { pregunta });
     return data;
   }
-  
