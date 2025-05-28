@@ -1,4 +1,4 @@
-import { Cliente, Provincia, Localidad, Usuario, Pedido, DetallePedido, Producto, LogCliente, IpCliente, HistorialCliente } from '../models/index.js';
+import { Cliente, Provincia, Localidad, Usuario, Pedido, DetallePedido, Producto, LogCliente, IpCliente, HistorialCliente, MensajeAutomatico } from '../models/index.js';
 import { Op, fn, col, literal } from 'sequelize';
 import { validationResult } from 'express-validator';
 import { registrarHistorialCliente } from '../utils/registrarHistorialCliente.js';
@@ -173,5 +173,50 @@ export const obtenerHistorialCliente = async (req, res) => {
   } catch (error) {
     console.error('❌ Error al obtener historial del cliente:', error);
     res.status(500).json({ message: 'Error al obtener historial del cliente' });
+  }
+};
+
+export const listarClientesInactivos = async (req, res) => {
+  try {
+    const tresMesesAtras = new Date();
+    tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
+
+    const clientes = await Cliente.findAll({
+      where: {
+        id: {
+          [Op.notIn]: literal(`(
+            SELECT DISTINCT clienteId FROM pedidos
+            WHERE createdAt >= '${tresMesesAtras.toISOString().slice(0, 19).replace('T', ' ')}'
+          )`)
+        }
+      },
+      include: [
+        { model: Provincia, as: 'provincia' },
+        { model: Localidad, as: 'localidad' },
+        { model: Usuario, as: 'vendedor' },
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json({ data: clientes, total: clientes.length });
+  } catch (error) {
+    console.error('❌ Error al listar clientes inactivos:', error);
+    res.status(500).json({ message: 'Error al listar clientes inactivos' });
+  }
+};
+
+export const obtenerSeguimientoCliente = async (req, res) => {
+  try {
+    const clienteId = req.params.id;
+
+    const mensajes = await MensajeAutomatico.findAll({
+      where: { clienteId },
+      order: [['fechaEnvio', 'ASC']]
+    });
+
+    res.json({ data: mensajes });
+  } catch (error) {
+    console.error('Error al obtener seguimiento del cliente:', error);
+    res.status(500).json({ mensaje: 'Error al obtener seguimiento del cliente' });
   }
 };

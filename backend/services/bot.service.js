@@ -1,4 +1,4 @@
-import { ConversacionBot } from '../models/index.js';
+import { ConversacionBot, Cliente, MensajeAutomatico, Pedido } from '../models/index.js';
 import { obtenerProductosRelacionadosPorTexto } from '../controllers/producto.controller.js';
 import { enviarMensajeTextoLibreWhatsapp } from '../helpers/enviarMensajeWhatsapp.js';
 import { enviarMensajeImagenWhatsapp } from '../helpers/enviarMensajeImagenWhatsapp.js';
@@ -6,9 +6,43 @@ import { getSystemMessage } from '../helpers/getSystemMessage.js';
 import { obtenerPalabraClaveDesdeOpenAI } from '../helpers/openai/obtenerPalabraClave.js';
 import { consultarOpenAI } from '../helpers/openai/consultarOpenAI.js';
 import { generarPromptConversacional } from '../helpers/openai/generarPromptConversacional.js';
+import { formatearNumeroWhatsapp } from '../utils/formato.js';
 
 export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
   console.log(`📩 Mensaje de ${numeroCliente}: ${mensajeTexto}`);
+
+  const telefonoNormalizado = formatearNumeroWhatsapp(numeroCliente);
+  const cliente = await Cliente.findOne({ where: { telefono: telefonoNormalizado } });
+
+  // ✅ Detectar si es respuesta a seguimiento
+  if (cliente) {
+    const mensajePendiente = await MensajeAutomatico.findOne({
+      where: {
+        clienteId: cliente.id,
+        tipo: 'inactivo_recordatorio',
+        estado: 'pendiente'
+      }
+    });
+
+    if (mensajePendiente) {
+      const texto = mensajeTexto.toLowerCase();
+
+      const esInteresado = ['ver', 'después', 'reviso', 'voy a mirar', 'más tarde', 'pasame'].some(p =>
+        texto.includes(p)
+      );
+      const esCancelado = ['no me interesa', 'por ahora no', 'gracias', 'no quiero'].some(p =>
+        texto.includes(p)
+      );
+
+      if (esInteresado) {
+        await mensajePendiente.update({ estado: 'interesado', respuestaCliente: mensajeTexto });
+        console.log(`📌 Cliente ${numeroCliente} marcado como interesado.`);
+      } else if (esCancelado) {
+        await mensajePendiente.update({ estado: 'cancelado', respuestaCliente: mensajeTexto });
+        console.log(`📌 Cliente ${numeroCliente} marcado como cancelado.`);
+      }
+    }
+  }
 
   const ultima = await ConversacionBot.findOne({
     where: { telefono: numeroCliente },
@@ -65,4 +99,3 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
 
   return respuesta;
 };
-

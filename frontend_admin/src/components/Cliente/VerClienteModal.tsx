@@ -8,6 +8,7 @@ import type { Cliente } from '@/types/cliente';
 import TabEstadisticasCliente from './Tabs/TabEstadisticas';
 import TabDatosCliente from './Tabs/TabDetalles';
 import TabHistorialCliente from './Tabs/Historial';
+import TabSeguimientoCliente from './Tabs/TabSeguimientoCliente';
 
 interface Props {
   cliente: Cliente | null;
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export default function VerClienteModal(props: Props) {
-  const [tab, setTab] = createSignal<'datos' | 'actividad' | 'historial'>('datos');
+  const [tab, setTab] = createSignal<'datos' | 'actividad' | 'historial' | 'seguimiento'>('datos');
 
   createEffect(() => {
     if (props.cliente) {
@@ -59,7 +60,7 @@ export default function VerClienteModal(props: Props) {
           </div>
 
           <div class="mb-6 border-b pb-2 flex gap-6 text-base font-medium">
-            {(['datos', 'actividad', 'historial'] as const).map((t) => (
+            {(['datos', 'actividad', 'historial', 'seguimiento'] as const).map((t) => (
               <button
                 class={tab() === t ? 'font-semibold border-b-2 border-blue-600 pb-1 text-blue-600' : 'text-gray-500 hover:text-blue-600'}
                 onClick={() => setTab(t)}
@@ -67,7 +68,8 @@ export default function VerClienteModal(props: Props) {
                 {{
                   datos: 'Datos del cliente',
                   actividad: 'Actividad y estadísticas',
-                  historial: 'Historial de datos'
+                  historial: 'Historial de datos',
+                  seguimiento: 'Seguimiento automático'
                 }[t]}
               </button>
             ))}
@@ -81,6 +83,9 @@ export default function VerClienteModal(props: Props) {
           </Show>
           <Show when={tab() === 'historial'}>
             <TabHistorialCliente clienteId={props.cliente!.id} />
+          </Show>
+          <Show when={tab() === 'seguimiento'}>
+            <TabSeguimientoCliente cliente={props.cliente!} />
           </Show>
         </div>
       </div>

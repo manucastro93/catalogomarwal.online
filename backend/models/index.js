@@ -81,7 +81,8 @@ export const {
   Marca,
   ListaPrecio,
   ListaPrecioProducto,
-  ConversacionBot
+  ConversacionBot,
+  MensajeAutomatico
 } = db;
 
 export { sequelize, Sequelize };
