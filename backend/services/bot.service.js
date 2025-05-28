@@ -5,7 +5,7 @@ import { enviarMensajeImagenWhatsapp } from '../helpers/enviarMensajeImagenWhats
 import { getSystemMessage } from '../helpers/getSystemMessage.js';
 import { obtenerPalabraClaveDesdeOpenAI } from '../helpers/openai/obtenerPalabraClave.js';
 import { consultarOpenAI } from '../helpers/openai/consultarOpenAI.js';
-import { generarPromptConversacional } from '../helpers/openai/generarPromptConversacion.js';
+import { generarPromptConversacional } from '../helpers/openai/generarPromptConversacional.js';
 
 export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
   console.log(`📩 Mensaje de ${numeroCliente}: ${mensajeTexto}`);
