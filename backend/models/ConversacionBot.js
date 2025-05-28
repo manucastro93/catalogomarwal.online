@@ -15,12 +15,20 @@ export default (sequelize, DataTypes) => {
     derivar: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
-    }
+    },
+    clienteId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   }, {
     tableName: 'ConversacionesBot',
     timestamps: true,
     paranoid: true,
   });
+
+  ConversacionBot.associate = (models) => {
+    ConversacionBot.belongsTo(models.Cliente, { foreignKey: 'clienteId', as: 'cliente' });
+  };
 
   return ConversacionBot;
 };
