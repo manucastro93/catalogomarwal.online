@@ -158,7 +158,7 @@ export const responderManual = async (req, res, next) => {
       mensajeCliente: '',
       respuestaBot: mensaje,
       derivar: false,
-      manual: true,
+      intervencionManual: true,
       clienteId: cliente?.id || null,
     });
 
