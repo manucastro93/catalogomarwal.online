@@ -1,21 +1,22 @@
 export const generarPromptConversacional = (mensajeUsuario, productos, historial) => {
-  let prompt = `Este es el nuevo mensaje del cliente: "${mensajeUsuario}".`;
+  let prompt = `🆕 Nuevo mensaje del cliente:\n"${mensajeUsuario}"`;
 
-  if (Array.isArray(historial) && historial.length > 0) {
+  if (historial?.length > 0) {
     const ultimos = historial.reverse().map(h =>
       `🧍 Cliente: ${h.mensajeCliente}\n🤖 Bot: ${h.respuestaBot}`
     ).join('\n');
-    prompt += `\nHistorial de conversación:\n${ultimos}`;
+
+    prompt += `\n\n📜 Historial reciente:\n${ultimos}`;
   }
 
   if (productos.length > 0) {
     const lista = productos.map(p => `- ${p.nombre} ($${p.precioUnitario})`).join('\n');
-    prompt += `\n\nSugerí alguno de estos productos sin listar todo directamente:\n${lista}`;
+    prompt += `\n\n📦 Productos relacionados (no los listés todos literal, usalos como referencia):\n${lista}`;
   } else {
-    prompt += `\n\nNo hay coincidencias exactas, pero podés ofrecer otras categorías, preguntar más info o derivar con humano.`;
+    prompt += `\n\n⚠️ No se encontraron productos exactos. Podés sugerir algo parecido, pedir más info o derivar si hace falta.`;
   }
 
-  prompt += `\nRespondé con empatía, como humano.`;
+prompt += `\n\n🧠 Respondé como vendedor mayorista de Marwal. Sé claro, empático, directo y resolutivo. Usá 'vos', 'mirá', 'acá te paso', etc. Nunca respondas como robot. Frases cortas. Si vas a pasar el link del catálogo, ponelo así: "Acá te paso el catálogo: https://catalogomarwal.online/ZAGB". No uses corchetes ni paréntesis.`;
 
   return prompt;
 };
