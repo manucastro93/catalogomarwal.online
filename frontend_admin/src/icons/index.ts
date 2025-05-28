@@ -8,3 +8,4 @@ export { default as Users } from 'lucide-solid/icons/users';
 export { default as Home } from 'lucide-solid/icons/home';
 export { default as ChevronLeft } from 'lucide-solid/icons/chevron-left';
 export { default as ChevronRight } from 'lucide-solid/icons/chevron-right';
+export { default as MessageCircle } from 'lucide-solid/icons/message-circle';

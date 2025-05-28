@@ -38,6 +38,7 @@ const RolesUsuarios = lazy(() => import('./pages/Pagina/RolesUsuarios'));
 const EstadosPedidos = lazy(() => import('./pages/Pagina/EstadosPedidos'));
 const Logo = lazy(() => import('./pages/Pagina/Logo'));
 const Vendedores = lazy(() => import('./pages/Vendedores'));
+const ConversacionesBot = lazy(() => import('./pages/ConversacionesBot'));
 
 // ✅ Restaurar sesión si existe
 checkLocalStorage();
@@ -63,7 +64,7 @@ render(() => (
     <Route path="/Produccion/ProduccionDiaria" component={() => <ProtectedRoute><Layout><ProduccionDiaria /></Layout></ProtectedRoute>} />
     <Route path="/Graficos/ResumenProduccion" component={() => <ProtectedRoute><Layout><ResumenProduccion /></Layout></ProtectedRoute>} />
     <Route path="/Graficos/ResumenVentas" component={() => <ProtectedRoute><Layout><ResumenVentas /></Layout></ProtectedRoute>} />
-    
+    <Route path="/ConversacionesBot" component={() => <ProtectedRoute><Layout><ConversacionesBot /></Layout></ProtectedRoute>} />
     {/* Rutas separadas para Página */}
     <Route path="/Pagina/logo" component={() => <ProtectedRoute><Layout><Logo /></Layout></ProtectedRoute>} />
     <Route path="/Pagina/banners" component={() => <ProtectedRoute><Layout><Banners /></Layout></ProtectedRoute>} />

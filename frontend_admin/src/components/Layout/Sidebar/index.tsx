@@ -7,6 +7,7 @@ import Produccion from "./Produccion";
 import Administradores from "./Administradores";
 import Pagina from "./Pagina";
 import Graficos from "./Graficos";
+import ConversacionesBot from "./ConversacionesBot";
 import { Home } from "@/icons";
 import theme from "@/styles/sidebarTheme";
 
@@ -53,6 +54,7 @@ export default function Sidebar(props: {
         />
         <Ventas usuario={usuario()} expandido={props.expandido} />
         <Produccion usuario={usuario()} expandido={props.expandido} />
+        <ConversacionesBot usuario={usuario()} expandido={props.expandido} />
         <Graficos expandido={props.expandido} />
 
         <SeccionTitulo
