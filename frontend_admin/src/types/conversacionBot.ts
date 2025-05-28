@@ -5,8 +5,12 @@ export interface ConversacionBot {
   respuestaBot: string;
   derivar: boolean;
   createdAt: string;
+  cliente?: {
+    nombre?: string;
+    razonSocial?: string;
+    email?: string;
+  };
 }
-
 export interface FiltrosConversacionBot {
   page?: number;
   limit?: number;
@@ -25,6 +29,11 @@ export interface RespuestaConversaciones {
 
 export type ConversacionAgrupada = {
   telefono: string;
+  cliente?: {
+    nombre?: string;
+    razonSocial?: string;
+    email?: string;
+  };
   historial: {
     mensajeCliente: string;
     respuestaBot: string;
