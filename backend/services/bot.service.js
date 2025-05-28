@@ -14,7 +14,7 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
   const keyword = await obtenerPalabraClaveDesdeOpenAI(mensajeTexto, systemMessage);
   const productosRelacionados = await obtenerProductosRelacionadosPorTexto(keyword, 3);
 
-  console.log('🧪 Productos encontrados por keyword:', productosRelacionados.map(p => p.nombre));
+  console.log('🧪 Productos encontrados por keyword: ', productosRelacionados.map(p => p.nombre));
 
   for (const p of productosRelacionados.slice(0, 3)) {
     const imagen = p.Imagenes?.[0]?.url
