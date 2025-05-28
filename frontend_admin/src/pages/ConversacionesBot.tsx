@@ -102,7 +102,7 @@ function Historial(props: {
   return (
     <div class="flex flex-col h-full max-w-3xl mx-auto">
       <div class="p-4 font-semibold text-lg border-b">
-        📱 {props.conversacion.telefono}
+        📱 {props.conversacion.cliente?.nombre} - {props.conversacion.cliente?.razonSocial}
       </div>
 
       <div
