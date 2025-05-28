@@ -9,6 +9,7 @@ export const generarPromptConversacional = (mensajeUsuario, productos, historial
     prompt += `\n\n📜 Historial reciente:\n${ultimos}`;
     prompt += `\n❗ Importante: evitá repetir el saludo o el link del catálogo si ya se enviaron antes en el historial, salvo que el cliente lo pida de nuevo.`;
   }
+    prompt += `\n⚠️ Si ya saludaste antes, no lo repitas. Solo saludá si es el primer mensaje del día.`;
 
   if (productos.length > 0) {
     const lista = productos.map(p => `- ${p.nombre} ($${p.precioUnitario})`).join('\n');
