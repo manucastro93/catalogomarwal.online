@@ -37,4 +37,7 @@ export interface Cliente {
   vendedor?: Usuario;
 
   totalVentas?: number;
+  seguimiento: boolean;
+  observacionesSeguimiento?: string;
+  ultimoMensajeAutomatico?: string;
 }

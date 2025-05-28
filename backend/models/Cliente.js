@@ -24,6 +24,11 @@ export default (sequelize, DataTypes) => {
     vendedorId: DataTypes.INTEGER,
     latitud: DataTypes.DOUBLE,
     longitud: DataTypes.DOUBLE,
+    seguimiento: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true
+    }
   }, {
     tableName: 'Clientes',
     timestamps: true,
