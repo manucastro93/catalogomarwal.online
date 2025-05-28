@@ -20,6 +20,10 @@ export default (sequelize, DataTypes) => {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
+    intervencionManual: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  }
   }, {
     tableName: 'ConversacionesBot',
     timestamps: true,

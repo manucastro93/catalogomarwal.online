@@ -10,6 +10,16 @@ import { generarPromptConversacional } from '../helpers/openai/generarPromptConv
 export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
   console.log(`📩 Mensaje de ${numeroCliente}: ${mensajeTexto}`);
 
+  const ultima = await ConversacionBot.findOne({
+    where: { telefono: numeroCliente },
+    order: [['createdAt', 'DESC']],
+  });
+
+  if (ultima?.intervencionManual) {
+    console.log(`⛔ Chat con ${numeroCliente} intervenido manualmente. No responde el bot.`);
+    return;
+  }
+
   const systemMessage = await getSystemMessage();
   const keyword = await obtenerPalabraClaveDesdeOpenAI(mensajeTexto, systemMessage);
   const productosRelacionados = await obtenerProductosRelacionadosPorTexto(keyword, 3);
@@ -21,14 +31,11 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
       ? `https://www.catalogomarwal.online${p.Imagenes[0].url}`
       : null;
 
-    const link = `https://www.catalogomarwal.online/?buscar=${encodeURIComponent(p.nombre)}`;
+    const texto = `${p.nombre}\n$${p.precioUnitario}\n\nBuscalo por nombre en la web.`;
 
     if (imagen) {
       try {
-        await enviarMensajeImagenWhatsapp(numeroCliente, {
-          imagen,
-          texto: `${p.nombre}\n$${p.precioUnitario}\n\nVer más: ${link}`,
-        });
+        await enviarMensajeImagenWhatsapp(numeroCliente, { imagen, texto });
       } catch (error) {
         console.error('❌ ERROR al enviar imagen:', error);
       }
@@ -53,7 +60,9 @@ export const procesarMensaje = async (mensajeTexto, numeroCliente) => {
     mensajeCliente: mensajeTexto,
     respuestaBot: respuesta,
     derivar: productosRelacionados.length === 0,
+    intervencionManual: false,
   });
 
   return respuesta;
 };
+
