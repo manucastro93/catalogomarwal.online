@@ -60,7 +60,10 @@ export default function Pedidos() {
     fetchParams,
     async (params) => {
       if (params.dux) {
-  const res = await obtenerPedidosDux();
+  const res = await obtenerPedidosDux({
+    pagina: params.pagina,
+    limit: 50, // o el valor que uses
+  });
   return {
     data: res.data.map((p: Pedido) => ({ ...p, tipo: "dux" })),
     pagina: res.pagina,

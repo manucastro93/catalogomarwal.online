@@ -16,7 +16,6 @@ export default function FiltrosPedidos(props: {
   onVendedorSeleccionado: (id: number | undefined) => void;
   onEstadoSeleccionado: (estado: number | undefined) => void;
 }) {
-
   return (
     <div class="flex flex-wrap items-center gap-2 mb-4">
       <input
@@ -43,29 +42,28 @@ export default function FiltrosPedidos(props: {
           </For>
         </select>
       </Show>
-          <input
-  type="checkbox"
-  checked={props.mostrarPedidosDux || false}
-  onChange={(e) => props.onTogglePedidosDux?.(e.currentTarget.checked)}
-  class="ml-2"
-/>
-<label>Pedidos de Dux</label>
 
       <select
         class="border p-2 rounded"
         value={props.estado || ""}
-        onChange={(e) => props.onEstadoSeleccionado(e.currentTarget.value ? Number(e.currentTarget.value) : undefined)}
+        onChange={(e) =>
+          props.onEstadoSeleccionado(
+            e.currentTarget.value ? Number(e.currentTarget.value) : undefined
+          )
+        }
       >
         <option value="">Todos los estados</option>
         <For each={props.estados}>
-          {(estado) => (
-            <option value={estado.id}>
-              {estado.nombre}
-            </option>
-          )}
+          {(estado) => <option value={estado.id}>{estado.nombre}</option>}
         </For>
       </select>
-      
+      <input
+        type="checkbox"
+        checked={props.mostrarPedidosDux || false}
+        onChange={(e) => props.onTogglePedidosDux?.(e.currentTarget.checked)}
+        class="ml-2"
+      />
+      <label>Pedidos de Dux</label>
     </div>
   );
 }
