@@ -1,10 +1,17 @@
 import { Pie } from "solid-chartjs";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-import { Chart as ChartJS } from "chart.js";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from "chart.js";
 import type { ResumenProduccionCategoria } from "@/types/grafico";
 import { formatearPrecio, formatearMiles } from "@/utils/formato";
-// Registramos el plugin
-ChartJS.register(ChartDataLabels);
+
+// ✅ Registrar elementos necesarios para gráficos tipo Pie
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
+
 
 interface Props {
   datos: ResumenProduccionCategoria[];
