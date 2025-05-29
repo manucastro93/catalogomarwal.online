@@ -34,7 +34,7 @@ export function construirIncludeProducto(query) {
   const includeProducto = {
     model: Producto,
     as: "producto",
-    attributes: ["id", "nombre", "sku", "costoMP", "precioUnitario"],
+    attributes: ["id", "nombre", "sku", "costoDux", "precioUnitario"],
     include: {
       model: Categoria,
       as: "Categoria",
