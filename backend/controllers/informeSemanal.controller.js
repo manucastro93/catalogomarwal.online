@@ -4,8 +4,7 @@ dayjs.locale('es');
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-import { ReporteProduccion, Producto, Categoria, InformeSemanal } from '../models/index.js';
+import { ReporteProduccion, Producto, Categoria } from '../models/index.js';
 import { contarFeriadosEnRango } from '../helpers/feriados.js';
 import { Op } from 'sequelize';
 
@@ -23,12 +22,12 @@ export async function obtenerInformeSemanalEnVivo(req, res, next) {
       include: [
         {
           model: Producto,
-          as: "producto",
-          attributes: ["id", "nombre", "sku"],
+          as: 'producto',
+          attributes: ['id', 'nombre', 'sku', 'precioUnitario', 'costoDux'],
           include: {
             model: Categoria,
-            as: "Categoria",
-            attributes: ["nombre"],
+            as: 'Categoria',
+            attributes: ['nombre'],
           },
         },
       ],
@@ -38,90 +37,122 @@ export async function obtenerInformeSemanalEnVivo(req, res, next) {
 
     const produccionSemanaPasada = await ReporteProduccion.findAll({
       where: { fecha: { [Op.between]: [inicioSemanaPasada.toDate(), finHastaHoySemanaPasada.toDate()] } },
-      include: [
-        {
-          model: Producto,
-          as: "producto",
-          attributes: ["id", "nombre", "sku"],
-          include: {
-            model: Categoria,
-            as: "Categoria",
-            attributes: ["nombre"],
-          },
-        },
-      ],
       raw: true,
-      nest: true,
     });
 
     const totalSemana = produccionSemana.reduce((acc, r) => acc + (r.cantidad || 0), 0);
     const totalSemanaPasada = produccionSemanaPasada.reduce((acc, r) => acc + (r.cantidad || 0), 0);
-    const variacionGeneral = totalSemanaPasada > 0
-      ? ((totalSemana - totalSemanaPasada) / totalSemanaPasada) * 100
-      : 0;
+    const variacionGeneral = totalSemanaPasada > 0 ? ((totalSemana - totalSemanaPasada) / totalSemanaPasada) * 100 : 0;
 
-    const produccionPorDia = produccionSemana.reduce((acc, r) => {
-      const dia = format(new Date(r.fecha), "EEEE", { locale: es });
-      acc[dia] = (acc[dia] || 0) + (r.cantidad || 0);
-      return acc;
-    }, {});
+    const produccionPorDia = {};
+    for (const r of produccionSemana) {
+      const dia = format(new Date(r.fecha), 'EEEE', { locale: es });
+      produccionPorDia[dia] = (produccionPorDia[dia] || 0) + (r.cantidad || 0);
+    }
     const diaTop = Object.entries(produccionPorDia).sort((a, b) => b[1] - a[1])[0];
 
-    const produccionPorProducto = produccionSemana.reduce((acc, r) => {
-      const clave = r.producto?.nombre || "Sin nombre";
-      acc[clave] = (acc[clave] || 0) + (r.cantidad || 0);
-      return acc;
-    }, {});
-    const productoTop = Object.entries(produccionPorProducto).sort((a, b) => b[1] - a[1])[0];
+    const produccionPorProducto = {};
+    const resumenPorCategoria = {};
+    for (const r of produccionSemana) {
+      const prod = r.producto?.nombre || 'Sin nombre';
+      const cat = r.producto?.Categoria?.nombre || 'Sin categoría';
+      const cant = r.cantidad || 0;
+      const venta = cant * (r.producto?.precioUnitario || 0);
+      const costo = cant * (r.producto?.costoDux || 0);
 
-    const diasConProduccion = [...new Set(produccionSemana.map(p =>
-      format(new Date(p.fecha), "EEEE", { locale: es })
-    ))];
+      if (!produccionPorProducto[prod]) produccionPorProducto[prod] = { unidades: 0, venta: 0, costo: 0 };
+      produccionPorProducto[prod].unidades += cant;
+      produccionPorProducto[prod].venta += venta;
+      produccionPorProducto[prod].costo += costo;
 
-    let emojiVariacion = "⚖️";
-    if (variacionGeneral > 10) emojiVariacion = "📈";
-    else if (variacionGeneral < -10) emojiVariacion = "📉";
+      if (!resumenPorCategoria[cat]) resumenPorCategoria[cat] = { unidades: 0, venta: 0, costo: 0 };
+      resumenPorCategoria[cat].unidades += cant;
+      resumenPorCategoria[cat].venta += venta;
+      resumenPorCategoria[cat].costo += costo;
+    }
 
+    const topProductos = Object.entries(produccionPorProducto)
+      .sort((a, b) => b[1].unidades - a[1].unidades)
+      .slice(0, 10);
+
+    const diasConProduccion = [...new Set(produccionSemana.map(p => format(new Date(p.fecha), 'EEEE', { locale: es })))];
     const feriados = await contarFeriadosEnRango(inicioSemana.toISOString(), hoyFecha.toISOString());
     const feriadoTexto = feriados.length > 0
-      ? `⚠️ Esta semana tuvo ${feriados.length} día(s) no laborable(s): ${feriados.map(f => `${f.dia}/${f.mes} - ${f.motivo}`).join(", ")}.<br><strong>Aclaración:</strong> El análisis considera los días no laborables.`
-      : "";
+      ? `📅 Durante el período analizado se identificaron ${feriados.length} día(s) no laborables: ${feriados.map(f => `${f.dia}/${f.mes} (${f.motivo})`).join(', ')}.`
+      : null;
 
-    const hoyFormateado = format(new Date(), "EEEE dd/MM", { locale: es });
+    const inicioMes = hoy.startOf('month');
+    const diasDelMes = hoy.daysInMonth();
+    const diasTranscurridosMes = hoy.diff(inicioMes, 'day') + 1;
 
-    const html = `
-      <div style="font-family: sans-serif; line-height: 1.6; font-size: 15px;">
-        <h2 style="color: #3b82f6;">📊 Informe Semanal de Producción</h2>
-        
-        <p>Durante esta semana se registró una producción total de <strong>${totalSemana.toLocaleString()}</strong> unidades, 
-        mientras que en el mismo período de la semana pasada se habían producido 
-        <strong>${totalSemanaPasada.toLocaleString()}</strong> unidades. 
-        Esto representa una <strong>variación ${emojiVariacion} del ${variacionGeneral.toFixed(2)}%</strong> en relación con la semana anterior.</p>
-        
-        <p>El día más productivo hasta el momento fue <strong>${diaTop?.[0] || "-"}</strong>, 
-        con <strong>${diaTop?.[1]?.toLocaleString() || 0}</strong> unidades generadas en total. 
-        Por otro lado, el producto con mayor volumen de producción ha sido 
-        <strong>${productoTop?.[0] || "-"}</strong>, acumulando 
-        <strong>${productoTop?.[1]?.toLocaleString() || 0}</strong> unidades.</p>
+    const produccionMesActual = await ReporteProduccion.sum('cantidad', {
+      where: { fecha: { [Op.between]: [inicioMes.toDate(), hoy.toDate()] } },
+    }) || 0;
 
-        <p>Se registró actividad en <strong>${diasConProduccion.length}</strong> día(s) distintos a lo largo de esta semana.</p>
+    const promedioDiario = produccionMesActual / diasTranscurridosMes;
+    const proyeccionFinMes = Math.round(promedioDiario * diasDelMes);
 
-        ${feriadoTexto ? `
-          <div style="background: #fff8db; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #facc15;">
-            ${feriadoTexto}
-          </div>` : ""}
+    const inicioMesAnterior = hoy.subtract(1, 'month').startOf('month');
+    const finMesAnterior = inicioMesAnterior.endOf('month');
+    const produccionMesAnterior = await ReporteProduccion.sum('cantidad', {
+      where: { fecha: { [Op.between]: [inicioMesAnterior.toDate(), finMesAnterior.toDate()] } },
+    }) || 0;
 
-        <p style="margin-top: 16px; color: #6b7280;">🕒 Informe actualizado al <strong>${hoyFormateado}</strong>.</p>
-      </div>
-    `;
+    const variacionMes = produccionMesAnterior > 0 ? ((produccionMesActual - produccionMesAnterior) / produccionMesAnterior) * 100 : 0;
 
-    res.json({ html });
+    const ultimosTresMeses = await Promise.all([...Array(3)].map(async (_, i) => {
+      const inicio = hoy.subtract(i + 1, 'month').startOf('month');
+      const fin = inicio.endOf('month');
+      const total = await ReporteProduccion.sum('cantidad', {
+        where: { fecha: { [Op.between]: [inicio.toDate(), fin.toDate()] } },
+      }) || 0;
+      return { nombre: format(inicio.toDate(), 'MMMM', { locale: es }), total };
+    }));
+
+    const promedioTrimestre = ultimosTresMeses.reduce((acc, m) => acc + m.total, 0) / 3;
+    const tendenciaGeneral = promedioTrimestre > 0 ? ((produccionMesActual - promedioTrimestre) / promedioTrimestre) * 100 : 0;
+
+    const mesActualNombre = format(hoy.toDate(), 'MMMM', { locale: es });
+    const fechaHoyFormateada = format(new Date(), 'dd/MM/yyyy');
+
+    // ✅ REDACCIÓN FINAL FORMAL Y CLARA
+    const resumen = `
+Durante los últimos 7 días, la producción total fue de ${totalSemana.toLocaleString()} unidades. 
+Este resultado representa una ${variacionGeneral >= 0 ? 'suba' : 'baja'} del ${Math.abs(variacionGeneral).toFixed(2)}% 
+respecto a la semana previa (${totalSemanaPasada.toLocaleString()} unidades).
+
+El día con mayor actividad fue el ${diaTop?.[0] || '-'}, con ${diaTop?.[1]?.toLocaleString() || 0} unidades fabricadas.
+
+📦 Categorías más destacadas:
+${Object.entries(resumenPorCategoria).map(([cat, val]) =>
+  `• ${cat}: ${val.unidades.toLocaleString()} unidades, $${val.venta.toLocaleString()} venta, $${val.costo.toLocaleString()} costo.`).join('\n')}
+
+🏷️ Top 10 productos fabricados:
+${topProductos.map(([nombre, val], i) =>
+  `${i + 1}. ${nombre}: ${val.unidades.toLocaleString()} unidades, $${val.venta.toLocaleString()} venta, $${val.costo.toLocaleString()} costo.`).join('\n')}
+
+📈 Producción mensual acumulada (${mesActualNombre}): ${produccionMesActual.toLocaleString()} unidades 
+(${variacionMes >= 0 ? '+' : '-'}${Math.abs(variacionMes).toFixed(2)}% vs mes anterior). 
+Proyección de cierre: ${proyeccionFinMes.toLocaleString()} unidades.
+
+📊 Tendencia trimestral: ${tendenciaGeneral >= 0 ? 'positiva' : 'negativa'} del ${Math.abs(tendenciaGeneral).toFixed(2)}%.
+
+🕒 Informe actualizado al ${fechaHoyFormateada}.
+${feriadoTexto ? '\n\n' + feriadoTexto : ''}
+`.trim();
+
+    res.json({
+      resumen,
+      variacion: variacionGeneral,
+      feriados: feriados.length > 0
+    });
 
   } catch (error) {
     console.error(error);
     next(error);
   }
 }
+
 
 export async function generarInformeSemanalFinalizado(req, res, next) {
   try {
