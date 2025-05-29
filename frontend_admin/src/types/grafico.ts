@@ -7,33 +7,33 @@ export interface ResumenProduccion {
     turno: string;
     producto: Pick<Producto, "id" | "nombre" | "sku">;
     cantidad: number; 
-    totalCostoMP: number;
+    totalCostoDux: number;
     totalValor: number;
 }
   
 export interface ResumenProduccionPlanta {
     planta: string;
     totalCantidad: number;
-    totalCostoMP: number;
+    totalCostoDux: number;
     totalValor: number;
 }
   
 export interface ResumenProduccionCategoria {
     categoria: string;
     totalCantidad: number;
-    totalCostoMP: number;
+    totalCostoDux: number;
     totalValor: number;
 }
   
 export interface ResumenProduccionTurno {
     turno: string;
     totalCantidad: number;
-    totalCostoMP: number;
+    totalCostoDux: number;
     totalValor: number;
 }
 
 export interface ResumenProduccionGeneral {
-    totalCostoMP: number;
+    totalCostoDux: number;
     totalValor: number;
     totalCantidad?: number;
 }

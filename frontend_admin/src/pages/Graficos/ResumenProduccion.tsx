@@ -83,7 +83,7 @@ export default function ResumenProduccion() {
         { label: "Producto", key: "producto.nombre" },
         { label: "Turno", key: "turno" },
         { label: "Cantidad", key: "cantidad" },
-        { label: "Costo MP", key: "totalCostoMP" },
+        { label: "Costo Dux", key: "totalCostoDux" },
         { label: "Valor Total", key: "totalValor" },
       ],
       "Reporte Producción"
@@ -123,7 +123,7 @@ export default function ResumenProduccion() {
 
       <div class="bg-gray-100 p-4 rounded shadow-md text-sm md:text-base space-y-2">
         <p><b>Total Cantidad:</b> {formatearMiles(resumenGeneral()?.totalCantidad || 0)}</p>
-        <p><b>Total Costo MP:</b> {formatearPrecio(resumenGeneral()?.totalCostoMP || 0)}</p>
+        <p><b>Total Costo Dux:</b> {formatearPrecio(resumenGeneral()?.totalCostoDux || 0)}</p>
         <p><b>Total Precio de Venta:</b> {formatearPrecio(resumenGeneral()?.totalValor || 0)}</p>
       </div>
 
