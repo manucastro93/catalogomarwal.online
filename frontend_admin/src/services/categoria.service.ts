@@ -2,9 +2,12 @@ import api from './api';
 import type { Categoria } from '@/types/categoria';
 
 export const obtenerCategorias = async () => {
-  const { data } = await api.get('/categorias');
-  return data.data; 
+  const { data } = await api.get('/categorias', {
+    params: { limit: 100 } 
+  });
+  return data.data;
 };
+
 
 export const crearCategoria = async (categoria: Partial<Categoria>) => {
   const { data } = await api.post('/categorias', categoria);
