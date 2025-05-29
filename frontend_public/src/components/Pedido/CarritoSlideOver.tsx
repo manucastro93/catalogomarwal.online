@@ -33,7 +33,7 @@ import { formatearPrecio } from "@/utils/formato";
 export default function CarritoSlideOver() {
   const total = () =>
     carrito.reduce(
-      (sum, p) => sum + (Number(p.precio) || 0) * (Number(p.cantidad) || 0),
+      (sum, p) => sum + (Number(p.precioPorBulto) || 0) * (Number(p.cantidad) || 0),
       0
     );
   const navigate = useNavigate();
@@ -134,7 +134,7 @@ export default function CarritoSlideOver() {
       nombre: item.nombre,
       cantidad: item.cantidad,
       precio: item.precio,
-      precioPorBulto: item.precioPorBulto,
+      precioPorBulto: item.unidadPorBulto ? item.precio * item.unidadPorBulto : undefined,
       unidadPorBulto: item.unidadPorBulto,
       usuarioId: vendedor?.id,
     }));
@@ -176,7 +176,7 @@ export default function CarritoSlideOver() {
             id: p.id,
             nombre: p.nombre,
             precio: p.precio,
-            precioPorBulto: p.precio,
+            precioPorBulto: p.unidadPorBulto ? p.precio * p.unidadPorBulto : undefined,
             unidadPorBulto: p.unidadPorBulto,
             cantidad: 1,
             imagen: p.imagen || "",
@@ -305,9 +305,6 @@ function ContenidoCarrito(props: {
       <For each={carrito}>
         {(item) => {
           const unidades = item.cantidad * (item.unidadPorBulto || 1);
-          const precioUnitario = item.unidadPorBulto
-            ? item.precio / item.unidadPorBulto
-            : undefined;
           return (
             <div class="flex items-start gap-3 text-sm border-b pb-2">
               <img
@@ -321,11 +318,11 @@ function ContenidoCarrito(props: {
                   x{item.cantidad} bultos ({unidades} unidades)
                 </p>
                 <p class="text-xs text-gray-500">
-                  {formatearPrecio(item.precio)} x bulto
+                  {formatearPrecio(item.precioPorBulto)} x bulto
                 </p>
-                {precioUnitario && (
+                {item.precio && (
                   <p class="text-[11px] text-gray-400">
-                    ({formatearPrecio(precioUnitario)} c/u)
+                    ({formatearPrecio(item.precio)} c/u)
                   </p>
                 )}
               </div>

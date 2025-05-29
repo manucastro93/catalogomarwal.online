@@ -41,11 +41,11 @@ export default function DetalleProductoInline({ producto, onVolver, onSelecciona
     agregarAlCarrito({
       id: producto.id,
       nombre: producto.nombre,
-      precio: Number(producto.precioPorBulto) || 0,
+      precio: Number(producto.precio) || 0,
       imagen: producto.Imagenes?.[0]?.url || '/placeholder.png',
-      precioPorBulto: Number(producto.precioPorBulto) || 0,
       unidadPorBulto: producto.unidadPorBulto || 1,
-    }, false); // no abrir el carrito en mobile
+      precioPorBulto: (Number(producto.precio) || 0) * (producto.unidadPorBulto || 1),
+    }, false);
   
     if (window.innerWidth >= 768) {
       setCarritoAbierto(true); // solo en desktop
@@ -82,7 +82,7 @@ export default function DetalleProductoInline({ producto, onVolver, onSelecciona
             {formatearPrecio(Number(producto.precioPorBulto || 0))} x bulto
           </p>
           <p class="text-sm text-gray-500 mb-2">
-            (Equivale a {(Number(producto.precioPorBulto || 0) / (producto.unidadPorBulto || 1))} por unidad)
+            (Equivale a {formatearPrecio(producto.precio)} por unidad)
           </p>
 
           {producto.descripcion && (

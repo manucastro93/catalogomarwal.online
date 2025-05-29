@@ -81,7 +81,8 @@ export default function ModalPedido({
         id: item.productoId,
         nombre: item.producto?.nombre,
         cantidad: item.cantidad,
-        precio: item.precioXBulto,
+        precio: item.precio,
+        precioPorBulto: item.producto?.unidadPorBulto ? item.precio * item.producto?.unidadPorBulto : undefined,
         unidadPorBulto: item.producto?.unidadPorBulto || 1,
         imagen: item.producto?.Imagenes?.[0]?.url || "",
       }));

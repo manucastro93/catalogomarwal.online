@@ -30,10 +30,8 @@ export default function ProductoCard({
   unidadPorBulto,
   onVerDetalle,
 }: Props) {
-  const precioBulto = precioPorBulto || precio;
-  const precioUnitario = unidadPorBulto
-    ? precioBulto / unidadPorBulto
-    : undefined;
+  const precioBulto = precio * unidadPorBulto!;
+  const precioUnitario = precio;
 
   const [hover, setHover] = createSignal(false);
 
@@ -73,7 +71,7 @@ export default function ProductoCard({
               {
                 id,
                 nombre,
-                precio: precioBulto,
+                precio: precio,
                 imagen,
                 unidadPorBulto,
                 precioPorBulto: precioBulto,
@@ -114,7 +112,7 @@ export default function ProductoCard({
           agregarAlCarrito({
             id,
             nombre,
-            precio: precioBulto,
+            precio: precio,
             imagen,
             unidadPorBulto,
             precioPorBulto: precioBulto,
