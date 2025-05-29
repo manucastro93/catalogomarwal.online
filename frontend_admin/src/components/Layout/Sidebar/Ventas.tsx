@@ -57,6 +57,9 @@ export default function Ventas(props: { usuario: any; expandido: boolean }) {
           <ConPermiso modulo="Clientes" accion="ver">
             <SidebarLink href="/Clientes" texto="Clientes" activo={esActivo('/Clientes')} />
           </ConPermiso>
+          <ConPermiso modulo="Facturas" accion="ver">
+            <SidebarLink href="/Facturas" texto="Facturas" activo={esActivo('/Facturas')} />
+          </ConPermiso>
           <Show when={[ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(props.usuario?.rolUsuarioId)}>
             <ConPermiso modulo="Vendedores" accion="ver">
               <SidebarLink href="/Vendedores" texto="Vendedores" activo={esActivo('/Vendedores')} />
@@ -70,6 +73,7 @@ export default function Ventas(props: { usuario: any; expandido: boolean }) {
           </ConPermiso>
         </div>
       </Show>
+
     </div>
   );
 }

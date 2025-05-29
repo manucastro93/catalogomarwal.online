@@ -1,19 +1,20 @@
-import { createSignal, createResource, createMemo, Show } from 'solid-js';
-import { useNavigate } from '@solidjs/router';
-import { useAuth } from '@/store/auth';
-import { obtenerPedidos } from '@/services/pedido.service';
-import { obtenerUsuariosPorRolPorId } from '@/services/usuario.service';
-import { obtenerEstadosPedido } from '@/services/estadoPedido.service';
-import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
-import { Download } from 'lucide-solid';
-import { exportarDatosAExcel } from '@/utils/exportarDatosAExcel';
-import ModalActualizarEstadoPedido from '@/components/Pedido/ModalActualizarEstadoPedido';
-import ModalMensaje from '@/components/Layout/ModalMensaje';
-import VerPedidoModal from '@/components/Pedido/VerPedidoModal';
-import TablaPedidos from '@/components/Pedido/TablaPedidos';
-import FiltrosPedidos from '@/components/Pedido/FiltrosPedidos';
-import Loader from '@/components/Layout/Loader';
-import type { Pedido } from '@/types/pedido';
+import { createSignal, createResource, createMemo, Show } from "solid-js";
+import { useNavigate } from "@solidjs/router";
+import { useAuth } from "@/store/auth";
+import { obtenerPedidos, obtenerPedidosDux } from "@/services/pedido.service";
+import { obtenerUsuariosPorRolPorId } from "@/services/usuario.service";
+import { obtenerEstadosPedido } from "@/services/estadoPedido.service";
+import { ROLES_USUARIOS } from "@/constants/rolesUsuarios";
+import { Download } from "lucide-solid";
+import { exportarDatosAExcel } from "@/utils/exportarDatosAExcel";
+import ModalActualizarEstadoPedido from "@/components/Pedido/ModalActualizarEstadoPedido";
+import ModalMensaje from "@/components/Layout/ModalMensaje";
+import VerPedidoModal from "@/components/Pedido/VerPedidoModal";
+import TablaPedidosLocal from "@/components/Pedido/TablaPedidosLocal";
+import TablaPedidosDux from "@/components/Pedido/TablaPedidosDux";
+import FiltrosPedidos from "@/components/Pedido/FiltrosPedidos";
+import Loader from "@/components/Layout/Loader";
+import type { Pedido, PedidoLocal, PedidoDux } from '@/types/pedido';
 
 export default function Pedidos() {
   const { usuario } = useAuth();
@@ -22,12 +23,18 @@ export default function Pedidos() {
   const [pagina, setPagina] = createSignal(1);
   const [orden, setOrden] = createSignal("createdAt");
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
-  const [pedidoParaActualizar, setPedidoParaActualizar] = createSignal<Pedido | null>(null);
+  const [pedidoParaActualizar, setPedidoParaActualizar] =
+    createSignal<Pedido | null>(null);
   const [mensaje, setMensaje] = createSignal("");
   const [busqueda, setBusqueda] = createSignal("");
-  const [vendedorSeleccionado, setVendedorSeleccionado] = createSignal<number | undefined>(undefined);
-  const [estadoSeleccionado, setEstadoSeleccionado] = createSignal<number | undefined>(undefined);
+  const [vendedorSeleccionado, setVendedorSeleccionado] = createSignal<
+    number | undefined
+  >(undefined);
+  const [estadoSeleccionado, setEstadoSeleccionado] = createSignal<
+    number | undefined
+  >(undefined);
   const [verPedido, setVerPedido] = createSignal<Pedido | null>(null);
+  const [mostrarPedidosDux, setMostrarPedidosDux] = createSignal(false);
 
   const [vendedores] = createResource(async () => {
     const rol = usuario()?.rolUsuarioId as 1 | 2;
@@ -46,9 +53,24 @@ export default function Pedidos() {
     busqueda: busqueda(),
     vendedorId: vendedorSeleccionado(),
     estado: estadoSeleccionado(),
+    dux: mostrarPedidosDux(),
   }));
 
-  const [respuesta, { refetch }] = createResource(fetchParams, obtenerPedidos);
+  const [respuesta, { refetch }] = createResource(
+    fetchParams,
+    async (params) => {
+      if (params.dux) {
+        const pedidosDux = await obtenerPedidosDux();
+        return {
+          data: pedidosDux.map((p: Pedido) => ({ ...p, tipo: "dux" })),
+          pagina: 1,
+          totalPaginas: 1,
+        };
+      } else {
+        return await obtenerPedidos(params);
+      }
+    }
+  );
 
   const cambiarOrden = (col: string) => {
     if (orden() === col) {
@@ -63,20 +85,26 @@ export default function Pedidos() {
   const totalPaginas = () => Number(respuesta()?.totalPaginas || 1);
 
   async function exportarTodosLosPedidosFiltrados() {
-    const res = await obtenerPedidos({ ...(fetchParams() as any), pagina: 1, limit: 9999 });
+    const res = mostrarPedidosDux()
+      ? { data: await obtenerPedidosDux() }
+      : await obtenerPedidos({
+          ...(fetchParams() as any),
+          pagina: 1,
+          limit: 9999,
+        });
 
     exportarDatosAExcel(
       res.data,
       [
-        { label: 'ID', key: 'id' },
-        { label: 'Cliente', key: 'cliente.nombre' },
-        { label: 'Vendedor', key: 'usuario.nombre' },
-        { label: 'Estado', key: 'estado' },
-        { label: 'Total', key: 'total' },
-        { label: 'Fecha', key: 'createdAt' },
-        { label: 'Observaciones', key: 'observaciones' },
+        { label: "ID", key: "id" },
+        { label: "Cliente", key: "cliente.nombre" },
+        { label: "Vendedor", key: "usuario.nombre" },
+        { label: "Estado", key: "estado" },
+        { label: "Total", key: "total" },
+        { label: "Fecha", key: "createdAt" },
+        { label: "Observaciones", key: "observaciones" },
       ],
-      'Reporte Pedidos'
+      "Reporte Pedidos"
     );
   }
 
@@ -112,6 +140,7 @@ export default function Pedidos() {
         vendedores={vendedores() ?? []}
         estados={estadosPedido() ?? []}
         esVendedor={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}
+        mostrarPedidosDux={mostrarPedidosDux()}
         onBuscar={(v) => {
           setBusqueda(v);
           setPagina(1);
@@ -124,18 +153,35 @@ export default function Pedidos() {
           setEstadoSeleccionado(estadoId || undefined);
           setPagina(1);
         }}
+        onTogglePedidosDux={(valor) => {
+          setMostrarPedidosDux(valor);
+          setPagina(1);
+        }}
       />
 
       <Show when={!respuesta.loading} fallback={<Loader />}>
-        <TablaPedidos
-          pedidos={respuesta()?.data ?? []}
-          orden={orden()}
-          direccion={direccion()}
-          onOrdenar={cambiarOrden}
-          onVer={setVerPedido}
-          onCambiarEstado={setPedidoParaActualizar}
-          esVendedor={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}
-        />
+        <Show
+          when={mostrarPedidosDux()}
+          fallback={
+            <TablaPedidosLocal
+              pedidos={(respuesta()?.data ?? []).filter((p: Pedido): p is PedidoLocal => p.tipo !== 'dux')}
+              orden={orden()}
+              direccion={direccion()}
+              onOrdenar={cambiarOrden}
+              onVer={setVerPedido}
+              onCambiarEstado={setPedidoParaActualizar}
+              esVendedor={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}
+            />
+          }
+        >
+          <TablaPedidosDux
+            pedidos={(respuesta()?.data ?? []).filter((p: Pedido): p is PedidoDux => p.tipo === 'dux')}
+            orden={orden()}
+            direccion={direccion()}
+            onOrdenar={cambiarOrden}
+            onVer={setVerPedido}
+          />
+        </Show>
       </Show>
 
       <div class="flex justify-center items-center gap-2 mt-6">
@@ -162,7 +208,12 @@ export default function Pedidos() {
 
       <VerPedidoModal pedido={verPedido()} onClose={() => setVerPedido(null)} />
 
-      <Show when={usuario()?.rolUsuarioId !== ROLES_USUARIOS.VENDEDOR}>
+      <Show
+        when={
+          usuario()?.rolUsuarioId !== ROLES_USUARIOS.VENDEDOR &&
+          !mostrarPedidosDux()
+        }
+      >
         <ModalActualizarEstadoPedido
           pedido={pedidoParaActualizar()}
           onCerrar={() => setPedidoParaActualizar(null)}

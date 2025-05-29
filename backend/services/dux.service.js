@@ -1,10 +1,14 @@
 import axios from 'axios';
-import { Categoria, Producto } from '../models/index.js';
+import { Categoria, Producto, Factura, PedidoDux } from '../models/index.js';
 import { estadoSync } from '../state/estadoSync.js';
 
 const API_URL = process.env.DUX_API_URL_PRODUCTOS;
+const API_URL_FACTURAS = process.env.DUX_API_URL_FACTURAS;
+const EMPRESA = process.env.DUX_API_EMPRESA;
+const SUCURSAL = process.env.DUX_API_SUCURSAL_CASA_CENTRAL;
 const API_KEY = process.env.DUX_API_KEY;
 const NOMBRE_LISTA_GENERAL = process.env.DUX_LISTA_GENERAL;
+
 
 function esperar(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -186,10 +190,131 @@ export async function sincronizarProductosDesdeDux() {
     estadoSync.porcentaje = 0;
   }, 3000);
 
+  estadoSync.ultimaActualizacionProductos = Date.now();
+
   return {
     mensaje: `Se sincronizaron ${items.length} productos desde Dux.`,
     creados,
     actualizados,
     categoriasNuevas: categoriasCreadas.size
   };
+}
+
+export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new Date()) {
+  const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const fechaDesde = '2015-01-01';
+  const hasta = fechaHasta.toISOString().slice(0, 10);
+  try {
+    const res = await axios.get('https://erp.duxsoftware.com.ar/WSERP/rest/services/pedidos', {
+      headers: {
+        Authorization: process.env.DUX_API_KEY,
+        Accept: 'application/json',
+      },
+      params: {
+        idEmpresa: EMPRESA,
+        idSucursal: SUCURSAL,
+        fechaDesde: fechaDesde,
+        fechaHasta: hasta
+      },
+    });
+
+    const pedidos = res.data.results || [];
+    let creados = 0, actualizados = 0;
+
+    for (const p of pedidos) {
+      const existente = await PedidoDux.findOne({ where: { nro_pedido: p.nro_pedido } });
+
+      const data = {
+        nro_pedido: p.nro_pedido,
+        cliente: p.cliente,
+        personal: p.personal,
+        fecha: new Date(p.fecha),
+        total: parseFloat(p.total),
+        estado_facturacion: p.estado_facturacion,
+        observaciones: p.observaciones,
+        detalles: p.detalles || [],
+      };
+
+      if (existente) {
+        await existente.update(data);
+        actualizados++;
+      } else {
+        await PedidoDux.create(data);
+        creados++;
+      }
+
+      await esperar(500); // leve delay entre inserts
+    }
+
+    return { mensaje: 'Sincronización de pedidos Dux finalizada.', creados, actualizados };
+  } catch (error) {
+    if (error.response?.status === 429 && reintento < 3) {
+      const espera = 5000 * (reintento + 1);
+      console.warn(`⚠️ 429 recibido. Esperando ${espera / 1000}s... Reintento #${reintento + 1}`);
+      await esperar(espera);
+      return sincronizarPedidosDesdeDux(reintento + 1);
+    }
+
+    console.error('❌ Error al sincronizar pedidos Dux:', error.message);
+    throw error;
+  }
+}
+
+export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
+  const fechaDesde = '2015-01-01';
+  const hasta = fechaHasta.toISOString().slice(0, 10);
+
+  const url = `${API_URL_FACTURAS}?fechaDesde=${fechaDesde}&fechaHasta=${hasta}&idEmpresa=${EMPRESA}&idSucursal=${SUCURSAL}`;
+
+  const res = await axios.get(url, {
+    headers: {
+      accept: 'application/json',
+      authorization: API_KEY
+    }
+  });
+
+  const facturas = res.data.results;
+
+  let creadas = 0;
+  let actualizadas = 0;
+
+  for (const f of facturas) {
+    const existente = await Factura.findByPk(f.id);
+
+    // calcular estadoFacturaId
+    let estadoFacturaId = 1; // Pendiente
+
+    if (f.anulada_boolean) {
+      estadoFacturaId = 3; // Anulada
+    } else if (f.detalles_cobro?.[0]?.detalles_mov_cobro?.length > 0) {
+      const totalCobrado = f.detalles_cobro
+        .flatMap(dc => dc.detalles_mov_cobro)
+        .reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
+
+      if (totalCobrado >= f.total) {
+        estadoFacturaId = 2; // Cobrada
+      } else if (totalCobrado > 0) {
+        estadoFacturaId = 4; // Cobrada parcialmente
+      }
+    }
+
+    const data = {
+      ...f,
+      estadoFacturaId,
+      fecha_comp: new Date(f.fecha_comp),
+      fecha_vencimiento_cae_cai: f.fecha_vencimiento_cae_cai ? new Date(f.fecha_vencimiento_cae_cai) : null,
+      fecha_registro: f.fecha_registro ? new Date(f.fecha_registro) : null,
+      sincronizadoEl: new Date(),
+    };
+
+    if (existente) {
+      await existente.update(data);
+      actualizadas++;
+    } else {
+      await Factura.create(data);
+      creadas++;
+    }
+  }
+
+  return { creadas, actualizadas, total: facturas.length };
 }

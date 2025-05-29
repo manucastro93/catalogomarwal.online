@@ -1,4 +1,4 @@
-import { Pedido, DetallePedido, Producto, Cliente, Usuario, Notificacion, EstadoPedido } from '../models/index.js';
+import { Pedido, DetallePedido, Producto, Cliente, Usuario, Notificacion, EstadoPedido, PedidoDux } from '../models/index.js';
 import { ESTADOS_PEDIDO } from '../constants/estadosPedidos.js';
 import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
 import { DATOS_EMPRESA_DUX } from '../constants/datosEmpresaDux.js';
@@ -492,6 +492,31 @@ export const enviarPedidoADux = async (req, res, next) => {
     res.json({ message: 'Pedido enviado a Dux correctamente.' });
   } catch (error) {
     console.error('❌ Error al enviar pedido a Dux:', error);
+    next(error);
+  }
+};
+
+export const listarPedidosDux = async (req, res, next) => {
+  try {
+    const { pagina = 1, limit = 50 } = req.query;
+    const offset = (parseInt(pagina) - 1) * parseInt(limit);
+
+    const { count, rows } = await PedidoDux.findAndCountAll({
+      limit: parseInt(limit),
+      offset,
+      order: [['fecha', 'DESC']],
+    });
+
+    res.json({
+      data: rows,
+      pagina: parseInt(pagina),
+      totalPaginas: Math.ceil(count / parseInt(limit)),
+      totalItems: count,
+      hasNextPage: offset + rows.length < count,
+      hasPrevPage: offset > 0,
+    });
+  } catch (error) {
+    console.error('❌ Error al listar pedidos Dux:', error);
     next(error);
   }
 };
