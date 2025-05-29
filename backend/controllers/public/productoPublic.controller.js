@@ -1,4 +1,5 @@
 import { Producto, Categoria, ImagenProducto } from '../../models/index.js';
+import { estadoSync } from '../../state/estadoSync.js';
 import { Op, Sequelize } from 'sequelize';
 import cache from '../../utils/cache.js';
 
