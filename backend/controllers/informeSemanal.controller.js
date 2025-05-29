@@ -4,88 +4,115 @@ import { contarFeriadosEnRango } from "../helpers/feriados.js";
 import { Op } from "sequelize";
 import dayjs from "dayjs";
 
-export async function obtenerInformeSemanalEnVivo(req, res, next) {
-    try {
-      const hoy = dayjs();
-      const inicioSemana = hoy.startOf('week').add(1, 'day'); // lunes
-      const hoyFecha = hoy.endOf('day'); // hoy
-  
-      const inicioSemanaPasada = inicioSemana.subtract(7, 'days');
-      const finSemanaPasada = inicioSemana.subtract(1, 'day').endOf('day');
-  
-      // Traer producción de esta semana hasta hoy
-      const produccionSemana = await ReporteProduccion.findAll({
-        where: {
-          fecha: { [Op.between]: [inicioSemana.toDate(), hoyFecha.toDate()] },
-        },
-        include: [
-          {
-            model: Producto,
-            as: "producto",
-            attributes: ["id", "nombre", "sku"],
-            include: {
-              model: Categoria,
-              as: "Categoria",
-              attributes: ["nombre"],
-            },
-          },
-        ],
-        raw: true,
-        nest: true,
-      });
-  
-      // Traer producción de la semana pasada (misma cantidad de días)
-      const diasTranscurridos = hoy.diff(inicioSemana, 'day') + 1;
-      const produccionSemanaPasada = await ReporteProduccion.findAll({
-        where: {
-          fecha: { [Op.between]: [inicioSemanaPasada.toDate(), inicioSemanaPasada.add(diasTranscurridos - 1, 'day').endOf('day').toDate()] },
-        },
-        include: [
-          {
-            model: Producto,
-            as: "producto",
-            attributes: ["id", "nombre", "sku"],
-            include: {
-              model: Categoria,
-              as: "Categoria",
-              attributes: ["nombre"],
-            },
-          },
-        ],
-        raw: true,
-        nest: true,
-      });
-  
-      // Totales generales
-      const totalSemana = produccionSemana.reduce((acc, r) => acc + (r.cantidad || 0), 0);
-      const totalSemanaPasada = produccionSemanaPasada.reduce((acc, r) => acc + (r.cantidad || 0), 0);
-  
-      const variacionGeneral = totalSemanaPasada > 0
-        ? ((totalSemana - totalSemanaPasada) / totalSemanaPasada) * 100
-        : 0;
-  
-      // Feriados de la semana
-      const feriados = await contarFeriadosEnRango(inicioSemana.toISOString(), hoyFecha.toISOString());
-      const feriadoTexto = feriados.length > 0
-        ? `⚠️ Esta semana tuvo ${feriados.length} día(s) no laborable(s): ${feriados.map(f => `${f.dia}/${f.mes} - ${f.motivo}`).join(", ")}.\n**Aclaración:** El análisis considera los días no laborables.`
-        : "";
-  
-      // Armado del Informe dinámico
-      let texto = `📅 \n\n`;
-      texto += `En lo que va de esta semana se produjeron **${totalSemana.toLocaleString()} unidades**.\n`;
-      texto += `Comparado con el mismo período de la semana pasada (**${totalSemanaPasada.toLocaleString()} unidades**), representa una variación del **${variacionGeneral.toFixed(2)}%**.\n\n`;
-  
-      if (feriadoTexto) {
-        texto += `${feriadoTexto}\n`;
-      }
+export async function obtenerInformeSemanalEnVivo(req, res, next){
+  try {
+    const hoy = dayjs();
+    const inicioSemana = hoy.startOf('week').add(1, 'day'); // lunes
+    const hoyFecha = hoy.endOf('day');
+    const diasTranscurridos = hoy.diff(inicioSemana, 'day') + 1;
+    const inicioSemanaPasada = inicioSemana.subtract(7, 'days');
+    const finHastaHoySemanaPasada = inicioSemanaPasada.add(diasTranscurridos - 1, 'day').endOf('day');
 
-      res.json({ informe: texto });
-  
-    } catch (error) {
-      console.error(error);
-      next(error);
-    }
+    const produccionSemana = await ReporteProduccion.findAll({
+      where: { fecha: { [Op.between]: [inicioSemana.toDate(), hoyFecha.toDate()] } },
+      include: [
+        {
+          model: Producto,
+          as: "producto",
+          attributes: ["id", "nombre", "sku"],
+          include: {
+            model: Categoria,
+            as: "Categoria",
+            attributes: ["nombre"],
+          },
+        },
+      ],
+      raw: true,
+      nest: true,
+    });
+
+    const produccionSemanaPasada = await ReporteProduccion.findAll({
+      where: { fecha: { [Op.between]: [inicioSemanaPasada.toDate(), finHastaHoySemanaPasada.toDate()] } },
+      include: [
+        {
+          model: Producto,
+          as: "producto",
+          attributes: ["id", "nombre", "sku"],
+          include: {
+            model: Categoria,
+            as: "Categoria",
+            attributes: ["nombre"],
+          },
+        },
+      ],
+      raw: true,
+      nest: true,
+    });
+
+    const totalSemana = produccionSemana.reduce((acc, r) => acc + (r.cantidad || 0), 0);
+    const totalSemanaPasada = produccionSemanaPasada.reduce((acc, r) => acc + (r.cantidad || 0), 0);
+    const variacionGeneral = totalSemanaPasada > 0
+      ? ((totalSemana - totalSemanaPasada) / totalSemanaPasada) * 100
+      : 0;
+
+    const produccionPorDia = produccionSemana.reduce((acc, r) => {
+      const dia = dayjs(r.fecha).format("dddd");
+      acc[dia] = (acc[dia] || 0) + (r.cantidad || 0);
+      return acc;
+    }, {});
+    const diaTop = Object.entries(produccionPorDia).sort((a, b) => b[1] - a[1])[0];
+
+    const produccionPorProducto = produccionSemana.reduce((acc, r) => {
+      const clave = r.producto?.nombre || "Sin nombre";
+      acc[clave] = (acc[clave] || 0) + (r.cantidad || 0);
+      return acc;
+    }, {});
+    const productoTop = Object.entries(produccionPorProducto).sort((a, b) => b[1] - a[1])[0];
+
+    const diasConProduccion = [...new Set(produccionSemana.map(p => dayjs(p.fecha).format("dddd")))];
+
+    let emojiVariacion = "⚖️";
+    if (variacionGeneral > 10) emojiVariacion = "📈";
+    else if (variacionGeneral < -10) emojiVariacion = "📉";
+
+    const feriados = await contarFeriadosEnRango(inicioSemana.toISOString(), hoyFecha.toISOString());
+    const feriadoTexto = feriados.length > 0
+      ? `⚠️ Esta semana tuvo ${feriados.length} día(s) no laborable(s): ${feriados.map(f => `${f.dia}/${f.mes} - ${f.motivo}`).join(", ")}.<br><strong>Aclaración:</strong> El análisis considera los días no laborables.`
+      : "";
+const html = `
+  <div style="font-family: sans-serif; line-height: 1.6; font-size: 15px;">
+    <h2 style="color: #3b82f6;">📊 Informe Semanal de Producción</h2>
+    
+    <p>Durante esta semana se registró una producción total de <strong>${totalSemana.toLocaleString()} unidades</strong>, 
+    mientras que en el mismo período de la semana pasada se habían producido 
+    <strong>${totalSemanaPasada.toLocaleString()} unidades</strong>. 
+    Esto representa una <strong>variación ${emojiVariacion} del ${variacionGeneral.toFixed(2)}%</strong> en relación con la semana anterior.</p>
+    
+    <p>El día más productivo hasta el momento fue <strong>${diaTop?.[0] || "-"}</strong>, 
+    con <strong>${diaTop?.[1]?.toLocaleString() || 0} unidades</strong> generadas en total. 
+    Por otro lado, el producto con mayor volumen de producción ha sido 
+    <strong>${productoTop?.[0] || "-"}</strong>, acumulando 
+    <strong>${productoTop?.[1]?.toLocaleString() || 0} unidades</strong>.</p>
+
+    <p>Se registró actividad en <strong>${diasConProduccion.length}</strong> día(s) distintos a lo largo de esta semana.</p>
+
+    ${feriadoTexto ? `
+      <div style="background: #fff8db; padding: 10px; margin-top: 10px; border-radius: 6px; border: 1px solid #facc15;">
+        ${feriadoTexto}
+      </div>` : ""}
+
+    <p style="margin-top: 16px; color: #6b7280;">Informe actualizado al <strong>${dayjs().format("dddd DD/MM")}</strong>.</p>
+  </div>
+`;
+
+res.json({ html });
+
+
+  } catch (error) {
+    console.error(error);
+    next(error);
   }
+};
 
 export async function generarInformeSemanalFinalizado(req, res, next) {
   try {

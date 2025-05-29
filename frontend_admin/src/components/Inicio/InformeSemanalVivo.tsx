@@ -20,7 +20,7 @@ export default function InformeSemanalVivo() {
 
       <Show when={!informe.loading} fallback={<p class="text-center text-gray-400">Cargando informe...</p>}>
   <div class="bg-white border border-gray-200 rounded-md p-4 leading-relaxed text-gray-700 whitespace-pre-line text-sm md:text-base">
-    {informe()?.resumen}
+    <div innerHTML={informe()?.html} />
   </div>
 </Show>
 
