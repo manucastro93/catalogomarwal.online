@@ -1,9 +1,10 @@
 import type { Cliente } from './cliente.js';
 import type { Usuario } from './usuario.js';
-import type { DetallePedido } from './detallePedido.js';
 import type { EstadoPedido } from './estadoPedido.js';
+import type { Producto } from './producto';
 
-export interface Pedido {
+export interface PedidoLocal {
+  tipo?: 'local';
   id: number;
   estadoPedidoId: number;
   estadoPedido?: EstadoPedido;
@@ -26,6 +27,29 @@ export interface Pedido {
   vendedorNombre?: string;
 }
 
+export interface PedidoDuxItem {
+  cod_item: string;
+  item: string;
+  ctd: string;
+  precio_uni: string;
+  [key: string]: any;
+}
+
+export interface PedidoDux {
+  tipo: 'dux';
+  id: number;
+  nro_pedido: number;
+  cliente: string;
+  personal: string;
+  fecha: string;
+  total: string;
+  estado_facturacion: string;
+  observaciones: string;
+  detalles: PedidoDuxItem[];
+}
+
+export type Pedido = PedidoLocal | PedidoDux;
+
 export interface PedidoPayload {
   cliente: Cliente;
   carrito: {
@@ -44,4 +68,22 @@ export interface RespuestaPaginadaPedidos {
   totalItems: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+}
+
+export interface DetallePedido {
+  id: number;
+  pedidoId: number;
+  productoId: number;
+  clienteId?: number;
+  usuarioId?: number;
+  cantidad: number;
+  precioUnitario: number;
+  precioXBulto?: number;
+  subtotal?: number;
+  descuento?: number;
+  observaciones?: string;
+  dispositivo?: string;
+  createdAt: string;
+  updatedAt: string;
+  producto?: Producto; 
 }

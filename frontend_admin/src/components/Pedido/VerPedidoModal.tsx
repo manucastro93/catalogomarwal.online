@@ -1,7 +1,6 @@
 import { Show, For, createSignal } from "solid-js";
-import type { Pedido } from "@/types/pedido";
+import type { Pedido, PedidoLocal, PedidoDux, PedidoDuxItem, DetallePedido } from "@/types/pedido";
 import { formatearPrecio } from "@/utils/formato";
-import { enviarPedidoADux } from '@/services/pedido.service';
 import ModalMensaje from '../Layout/ModalMensaje';
 
 export default function VerPedidoModal(props: {
@@ -19,7 +18,7 @@ export default function VerPedidoModal(props: {
     ventana.document.write(`
       <html>
         <head>
-          <title>Pedido #${props.pedido!.id}</title>
+          <title>Pedido</title>
           <style>
             body { font-family: sans-serif; padding: 20px; }
             h2 { margin-bottom: 10px; }
@@ -40,35 +39,24 @@ export default function VerPedidoModal(props: {
       ventana.close();
     };
   };
-  const [enviando, setEnviando] = createSignal(false);
+
   const [mensajeExito, setMensajeExito] = createSignal('');
-  const isEditing = props.pedido?.estadoEdicion === true;
-  
-  const handleEnviarADux = async () => {
-    if (!props.pedido) return;
-    setEnviando(true);
-    try {
-      await enviarPedidoADux(props.pedido.id);
-      setMensajeExito('📦 Pedido enviado correctamente a Dux.');
-      props.onClose();
-    } catch (err) {
-      console.error(err);
-      setMensajeExito('❌ Error al enviar el pedido.');
-    } finally {
-      setEnviando(false);
-    }
-  };
+  const esDux = props.pedido?.tipo === 'dux';
 
   return (
     <Show when={props.pedido != null}>
-      <ModalMensaje
-        mensaje={mensajeExito()}
-        cerrar={() => setMensajeExito('')}
-      />
+      <ModalMensaje mensaje={mensajeExito()} cerrar={() => setMensajeExito('')} />
       <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative max-h-[90vh] overflow-y-auto">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Pedido #{props.pedido!.id}</h2>
+            <h2 class="text-xl font-bold">
+              Pedido #{esDux ? (props.pedido as PedidoDux).nro_pedido : (props.pedido as PedidoLocal).id}
+              {esDux && (
+                <span class="ml-2 text-sm bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
+                  DUX
+                </span>
+              )}
+            </h2>
             <button
               class="text-gray-600 hover:text-black text-2xl leading-none"
               onClick={props.onClose}
@@ -77,22 +65,18 @@ export default function VerPedidoModal(props: {
             </button>
           </div>
 
-          <Show when={isEditing}>
-            <div class="bg-yellow-100 text-yellow-800 px-4 py-2 mb-4 rounded">
-              ⚠️ <strong>Pedido en edición por el cliente.</strong> No se puede modificar el estado hasta que finalice o expire (30 minutos).
-            </div>
-          </Show>
-
           <div id="contenido-a-imprimir" class="space-y-4">
             <div>
-              <strong>Cliente:</strong> {props.pedido!.cliente?.nombre} (
-              {props.pedido!.cliente?.email})
+              <strong>Cliente:</strong>{" "}
+              {esDux ? (props.pedido as PedidoDux).cliente : (props.pedido as PedidoLocal).cliente?.nombre || '—'}
             </div>
             <div>
-              <strong>Vendedor:</strong> {props.pedido!.usuario?.nombre || "—"}
+              <strong>Vendedor:</strong>{" "}
+              {esDux ? (props.pedido as PedidoDux).personal : (props.pedido as PedidoLocal).usuario?.nombre || '—'}
             </div>
             <div>
-              <strong>Estado:</strong> {props.pedido!.estadoPedido?.nombre || "—"}
+              <strong>Estado:</strong>{" "}
+              {esDux ? (props.pedido as PedidoDux).estado_facturacion : (props.pedido as PedidoLocal).estadoPedido?.nombre || '—'}
             </div>
             <div>
               <strong>Observaciones:</strong>{" "}
@@ -100,72 +84,59 @@ export default function VerPedidoModal(props: {
             </div>
             <div>
               <strong>Fecha:</strong>{" "}
-              {new Date(props.pedido!.createdAt).toLocaleString()}
+              {new Date(esDux ? (props.pedido as PedidoDux).fecha : (props.pedido as PedidoLocal).createdAt).toLocaleString()}
             </div>
 
             <div>
               <table class="table-auto w-full mt-2 border">
                 <thead class="bg-gray-100">
                   <tr>
-                    <th class="border px-2 py-1">SKU</th>
+                    <th class="border px-2 py-1">Producto</th>
                     <th class="border px-2 py-1">Cantidad</th>
-                    <th class="border px-2 py-1">Precio xUn</th>
-                    <th class="border px-2 py-1">Precio xBulto</th>
+                    <th class="border px-2 py-1">Precio unitario</th>
                     <th class="border px-2 py-1">Subtotal</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={props.pedido!.detalles}>
-                    {(detalle) => (
-                      <tr>
-                        <td class="border px-2 py-1">
-                          <div class="font-semibold">
-                            {detalle.producto?.nombre || "—"}
-                          </div>
-                          <div class="text-xs text-gray-500">
-                            SKU: {detalle.producto?.sku || "—"}
-                          </div>
-                        </td>
-                        <td class="border px-2 py-1">{detalle.cantidad}</td>
-                        <td class="border px-2 py-1">
-                          {formatearPrecio(detalle.precioUnitario)}
-                        </td>
-                        <td class="border px-2 py-1">
-                          {formatearPrecio(detalle.precioXBulto)}
-                        </td>
-                        <td class="border px-2 py-1">
-                          {formatearPrecio((detalle.precioXBulto ?? 0) * detalle.cantidad)}
-                        </td>
-                      </tr>
-                    )}
+                  <For each={props.pedido!.detalles || []}>
+                    {(d) =>
+                      esDux ? (
+                        <tr>
+                          <td class="border px-2 py-1">
+                            <div class="font-semibold">{(d as PedidoDuxItem).item}</div>
+                            <div class="text-xs text-gray-500">Código: {(d as PedidoDuxItem).cod_item}</div>
+                          </td>
+                          <td class="border px-2 py-1">{(d as PedidoDuxItem).ctd}</td>
+                          <td class="border px-2 py-1">{formatearPrecio(Number((d as PedidoDuxItem).precio_uni))}</td>
+                          <td class="border px-2 py-1">{formatearPrecio(Number((d as PedidoDuxItem).precio_uni) * Number((d as PedidoDuxItem).ctd))}</td>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <td class="border px-2 py-1">
+                            <div class="font-semibold">{(d as DetallePedido).producto?.nombre || "—"}</div>
+                            <div class="text-xs text-gray-500">SKU: {(d as DetallePedido).producto?.sku || "—"}</div>
+                          </td>
+                          <td class="border px-2 py-1">{(d as DetallePedido).cantidad}</td>
+                          <td class="border px-2 py-1">{formatearPrecio((d as DetallePedido).precioUnitario)}</td>
+                          <td class="border px-2 py-1">{formatearPrecio(((d as DetallePedido).precioXBulto ?? 0) * (d as DetallePedido).cantidad)}</td>
+                        </tr>
+                      )
+                    }
                   </For>
                 </tbody>
               </table>
             </div>
           </div>
+
           <div class="mt-4 font-bold text-lg">
-            <strong>Total:</strong> {formatearPrecio(props.pedido!.total)}
+            <strong>Total:</strong> {formatearPrecio(Number(props.pedido!.total))}
           </div>
 
           <div class="mt-6 flex justify-end gap-2">
-            {/*<button
-              class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-              disabled={enviando()}
-              onClick={handleEnviarADux}
-            >
-              {enviando() ? "Enviando..." : "Enviar a Dux"}
-            </button>*/}
-
-            <button
-              class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              onClick={imprimir}
-            >
-              Imprimir
+            <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" onClick={imprimir}>
+              {esDux ? "Imprimir resumen Dux" : "Imprimir"}
             </button>
-            <button
-              class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-              onClick={props.onClose}
-            >
+            <button class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300" onClick={props.onClose}>
               Cerrar
             </button>
           </div>

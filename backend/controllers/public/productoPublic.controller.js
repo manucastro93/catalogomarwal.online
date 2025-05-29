@@ -13,7 +13,9 @@ export const listarProductosPublicos = async (req, res, next) => {
       categoria,
     } = req.query;
 
-    const cacheKey = `productos_${page}_${limit}_${orden}_${direccion}_${buscar}_${categoria}`;
+    const ultimaActualizacion = estadoSync.ultimaActualizacionProductos || 'v1';
+    const cacheKey = `productos_${ultimaActualizacion}_${page}_${limit}_${orden}_${direccion}_${buscar}_${categoria}`;
+
     const cached = cache.get(cacheKey);
     if (cached) return res.json(cached);
 
@@ -109,7 +111,8 @@ export const obtenerProductoPorId = async (req, res, next) => {
 
 export const listarCategorias = async (req, res, next) => {
   try {
-    const cacheKey = 'categoriasPublicas';
+    const version = estadoSync.ultimaActualizacionProductos || 'v1';
+    const cacheKey = `categoriasPublicas_${version}`;
     const cached = cache.get(cacheKey);
     if (cached) return res.json(cached);
 

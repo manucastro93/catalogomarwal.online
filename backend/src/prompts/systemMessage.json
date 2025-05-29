@@ -7,7 +7,8 @@
     "nombre": "Marwal",
     "pedido_minimo": "$50.000",
     "pedidos": "Se hacen desde la web y se confirman por WhatsApp",
-    "horario": "Lunes a viernes de 8 a 17 hs"
+    "horario": "Lunes a viernes de 8 a 17 hs",
+    "forma_venta": "Se vende por bulto cerrado. Hay productos que se venden por unidad. En el catálogo está descripto"
   },
   "logica_respuesta": "Si el cliente pregunta por algo sin stock, ofrecé ayuda. Podés sugerir productos similares, alternativas o avisarle cuando haya. Nunca respondas con 'no encontré resultados' ni 'no tengo datos'.",
   "acciones_sugeridas": [

@@ -1,14 +1,14 @@
 import { For, Show } from "solid-js";
 import { formatearPrecio } from "@/utils/formato";
-import type { Pedido } from "@/types/pedido";
+import type { PedidoLocal } from "@/types/pedido";
 
-export default function TablaPedidos(props: {
-  pedidos: Pedido[];
+export default function TablaPedidosLocal(props: {
+  pedidos: PedidoLocal[];
   orden: string;
   direccion: "asc" | "desc";
   onOrdenar: (col: string) => void;
-  onVer: (p: Pedido) => void;
-  onCambiarEstado: (p: Pedido) => void;
+  onVer: (p: PedidoLocal) => void;
+  onCambiarEstado: (p: PedidoLocal) => void;
   esVendedor: boolean;
 }) {
   return (
@@ -33,7 +33,7 @@ export default function TablaPedidos(props: {
             when={props.pedidos.length > 0}
             fallback={
               <tr>
-                <td colspan="8" class="text-center p-4 text-gray-500">
+                <td colspan="7" class="text-center p-4 text-gray-500">
                   No se encontraron pedidos
                 </td>
               </tr>
@@ -55,13 +55,13 @@ export default function TablaPedidos(props: {
                     <Show
                       when={!props.esVendedor}
                       fallback={
-                        <Show when={p.estadoEdicion === true}>
+                        <Show when={p.estadoEdicion}>
                           <span class="text-sm text-yellow-600 font-semibold">🛠 En edición</span>
                         </Show>
                       }
                     >
                       <Show
-                        when={p.estadoEdicion === false}
+                        when={!p.estadoEdicion}
                         fallback={
                           <span class="text-sm text-yellow-600 font-semibold">🛠 En edición</span>
                         }

@@ -82,7 +82,10 @@ export const {
   ListaPrecio,
   ListaPrecioProducto,
   ConversacionBot,
-  MensajeAutomatico
+  MensajeAutomatico,
+  PedidoDux,
+  Factura,
+  EstadoFactura
 } = db;
 
 export { sequelize, Sequelize };
