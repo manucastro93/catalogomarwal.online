@@ -143,9 +143,11 @@ export async function sincronizarProductosDesdeDux() {
 
   for (const item of items) {
     try {
+      const sku = String(item.cod_item).trim();
       let categoriaId = null;
+
       const productoExistente = await Producto.findOne({
-        where: { sku: item.cod_item }
+        where: { sku }
       });
 
       if (productoExistente?.categoriaId) {
@@ -155,7 +157,6 @@ export async function sincronizarProductosDesdeDux() {
         categoriaId = categoriasMap[nombreCategoria] || 11;
       }
 
-
       let precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL);
       if (!precio || precio === 0) {
         precio = obtenerPrecioLista(item.precios, 'RETAIL');
@@ -164,7 +165,7 @@ export async function sincronizarProductosDesdeDux() {
 
       const data = {
         nombre: item.item,
-        sku: item.cod_item,
+        sku,
         precioUnitario: precio,
         costoDux: parseFloat(item.costo || '0'),
         stock: calcularStock(item),
@@ -181,7 +182,11 @@ export async function sincronizarProductosDesdeDux() {
       }
 
     } catch (error) {
-      console.error(`❌ Error procesando item ${item.cod_item}:`, error);
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        console.warn(`⚠️ SKU duplicado: ${item.cod_item}, se omite creación`);
+      } else {
+        console.error(`❌ Error procesando item ${item.cod_item}:`, error);
+      }
     }
   }
 
@@ -202,7 +207,7 @@ export async function sincronizarProductosDesdeDux() {
 
 export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new Date()) {
   const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-  const fechaDesde = '2015-01-01';
+  const fechaDesde = '2025-01-01';
   const hasta = fechaHasta.toISOString().slice(0, 10);
 
   let offset = 0;
