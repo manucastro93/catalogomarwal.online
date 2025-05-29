@@ -16,7 +16,7 @@ export default function TablaPedidosLocal(props: {
       <table class="w-full text-sm border-collapse">
         <thead class="bg-gray-100 sticky top-0">
           <tr>
-            {["id", "cliente", "vendedor", "estado", "total", "createdAt"].map((col) => (
+            {["id", "cliente", "vendedor", "estado", "total", "fecha"].map((col) => (
               <th
                 class="text-left p-3 border-b cursor-pointer"
                 onClick={() => props.onOrdenar(col)}

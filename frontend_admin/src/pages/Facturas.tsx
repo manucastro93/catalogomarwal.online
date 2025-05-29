@@ -5,8 +5,7 @@ import { ROLES_USUARIOS } from "@/constants/rolesUsuarios";
 import { useAuth } from "@/store/auth";
 import TablaFacturasDux from "@/components/Factura/TablaFacturas";
 import FiltrosFacturas from "@/components/Factura/FiltrosFacturas";
-import type { FacturaDux } from "@/types/factura";
-import type { Usuario } from "@/types/usuario";
+import Loader from "@/components/Layout/Loader";
 
 export default function Facturas() {
   const { usuario } = useAuth();
@@ -21,13 +20,12 @@ export default function Facturas() {
   const [fechaHasta, setFechaHasta] = createSignal("");
 
   const [vendedores] = createResource(async () => {
-  const rol = usuario()?.rolUsuarioId;
-  if (rol === 1 || rol === 2) {
-    return await obtenerUsuariosPorRolPorId(ROLES_USUARIOS.VENDEDOR);
-  }
-  return [];
-});
-
+    const rol = usuario()?.rolUsuarioId;
+    if (rol === 1 || rol === 2) {
+      return await obtenerUsuariosPorRolPorId(ROLES_USUARIOS.VENDEDOR);
+    }
+    return [];
+  });
 
   const [estadosFactura] = createResource(obtenerEstadosFactura);
 
@@ -52,6 +50,9 @@ export default function Facturas() {
       setDireccion("asc");
     }
   };
+
+  const paginaActual = () => Number(respuesta()?.pagina || 1);
+  const totalPaginas = () => Number(respuesta()?.totalPaginas || 1);
 
   return (
     <div class="p-6">
@@ -88,7 +89,7 @@ export default function Facturas() {
         }}
       />
 
-      <Show when={!respuesta.loading}>
+      <Show when={!respuesta.loading} fallback={<Loader />}>
         <TablaFacturasDux
           facturas={respuesta()?.data ?? []}
           orden={orden()}
@@ -96,6 +97,28 @@ export default function Facturas() {
           onOrdenar={cambiarOrden}
         />
       </Show>
+
+      <div class="flex justify-center items-center gap-2 mt-6">
+        <button
+          onClick={() => setPagina((p) => Math.max(1, p - 1))}
+          class="px-3 py-1 border rounded disabled:opacity-50"
+          disabled={pagina() === 1}
+        >
+          ◀
+        </button>
+
+        <span class="text-sm">
+          Página {paginaActual()} de {totalPaginas()}
+        </span>
+
+        <button
+          onClick={() => setPagina((p) => Math.min(totalPaginas(), p + 1))}
+          class="px-3 py-1 border rounded disabled:opacity-50"
+          disabled={pagina() >= totalPaginas()}
+        >
+          ▶
+        </button>
+      </div>
     </div>
   );
 }
