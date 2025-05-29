@@ -283,6 +283,8 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
 }
 
 export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
+  const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   const fechaDesde = '2015-01-01';
   const hasta = fechaHasta.toISOString().slice(0, 10);
   const limit = 50;
@@ -295,55 +297,67 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
   while (true) {
     const url = `${API_URL_FACTURAS}?fechaDesde=${fechaDesde}&fechaHasta=${hasta}&idEmpresa=${EMPRESA}&idSucursal=${SUCURSAL}&limit=${limit}&offset=${offset}`;
 
-    const res = await axios.get(url, {
-      headers: {
-        accept: 'application/json',
-        authorization: API_KEY
-      }
-    });
+    try {
+      const res = await axios.get(url, {
+        headers: {
+          accept: 'application/json',
+          authorization: API_KEY
+        }
+      });
 
-    const facturas = res.data.results || [];
-    if (facturas.length === 0) break;
+      const facturas = res.data.results || [];
+      if (facturas.length === 0) break;
 
-    for (const f of facturas) {
-      const existente = await Factura.findByPk(f.id);
+      for (const f of facturas) {
+        const existente = await Factura.findByPk(f.id);
 
-      // calcular estadoFacturaId
-      let estadoFacturaId = 1;
-      if (f.anulada_boolean) {
-        estadoFacturaId = 3;
-      } else if (f.detalles_cobro?.[0]?.detalles_mov_cobro?.length > 0) {
-        const totalCobrado = f.detalles_cobro
-          .flatMap(dc => dc.detalles_mov_cobro)
-          .reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
+        let estadoFacturaId = 1;
+        if (f.anulada_boolean) {
+          estadoFacturaId = 3;
+        } else if (f.detalles_cobro?.[0]?.detalles_mov_cobro?.length > 0) {
+          const totalCobrado = f.detalles_cobro
+            .flatMap(dc => dc.detalles_mov_cobro)
+            .reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
 
-        if (totalCobrado >= f.total) {
-          estadoFacturaId = 2;
-        } else if (totalCobrado > 0) {
-          estadoFacturaId = 4;
+          if (totalCobrado >= f.total) {
+            estadoFacturaId = 2;
+          } else if (totalCobrado > 0) {
+            estadoFacturaId = 4;
+          }
+        }
+
+        const data = {
+          ...f,
+          estadoFacturaId,
+          fecha_comp: new Date(f.fecha_comp),
+          fecha_vencimiento_cae_cai: f.fecha_vencimiento_cae_cai ? new Date(f.fecha_vencimiento_cae_cai) : null,
+          fecha_registro: f.fecha_registro ? new Date(f.fecha_registro) : null,
+          sincronizadoEl: new Date(),
+        };
+
+        if (existente) {
+          await existente.update(data);
+          actualizadas++;
+        } else {
+          await Factura.create(data);
+          creadas++;
         }
       }
 
-      const data = {
-        ...f,
-        estadoFacturaId,
-        fecha_comp: new Date(f.fecha_comp),
-        fecha_vencimiento_cae_cai: f.fecha_vencimiento_cae_cai ? new Date(f.fecha_vencimiento_cae_cai) : null,
-        fecha_registro: f.fecha_registro ? new Date(f.fecha_registro) : null,
-        sincronizadoEl: new Date(),
-      };
+      totalProcesadas += facturas.length;
+      offset += limit;
 
-      if (existente) {
-        await existente.update(data);
-        actualizadas++;
-      } else {
-        await Factura.create(data);
-        creadas++;
+      await esperar(5000); // espera obligatoria para evitar 429
+
+    } catch (error) {
+      if (error.response?.status === 429) {
+        console.warn('⚠️ 429 Too Many Requests: esperando 10s para reintentar...');
+        await esperar(10000);
+        continue;
       }
+      console.error('❌ Error al sincronizar facturas:', error.message);
+      throw error;
     }
-
-    totalProcesadas += facturas.length;
-    offset += limit;
   }
 
   return { creadas, actualizadas, total: totalProcesadas };
