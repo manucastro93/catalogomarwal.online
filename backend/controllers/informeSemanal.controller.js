@@ -3,6 +3,9 @@ import { ReporteProduccion, Producto, Categoria } from "../models/index.js";
 import { contarFeriadosEnRango } from "../helpers/feriados.js";
 import { Op } from "sequelize";
 import dayjs from "dayjs";
+import 'dayjs/locale/es.js';
+dayjs.locale('es');
+
 
 export async function obtenerInformeSemanalEnVivo(req, res, next){
   try {
