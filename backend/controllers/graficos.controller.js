@@ -26,7 +26,7 @@ export const obtenerResumenProduccion = async (req, res, next) => {
       producto:{ id:r.producto?.id||null, nombre:r.producto?.nombre||"Sin Producto", sku:r.producto?.sku||"Sin SKU" },
       turno: r.turno||"Sin Turno",
       cantidad: r.cantidad||0,
-      totalCostoMP: (Number(r.producto?.costoMP)||0)*(r.cantidad||0),
+      totalCostoDux: (Number(r.producto?.costoDux)||0)*(r.cantidad||0),
       totalValor:    (Number(r.producto?.precioUnitario)||0)*(r.cantidad||0)
     }));
     res.json({ items, totalItems:count, totalPages:Math.ceil(count/limit), currentPage:page });
@@ -49,9 +49,9 @@ export const obtenerResumenProduccionPorPlanta = async (req,res,next)=>{
     const resumen = {};
     rows.forEach(r=>{
       const key = r.planta?.nombre||"Sin Planta";
-      if(!resumen[key]) resumen[key]={ planta:key, totalCantidad:0, totalCostoMP:0, totalValor:0 };
+      if(!resumen[key]) resumen[key]={ planta:key, totalCantidad:0, totalCostoDux:0, totalValor:0 };
       resumen[key].totalCantidad += r.cantidad||0;
-      resumen[key].totalCostoMP += (Number(r.producto?.costoMP)||0)*(r.cantidad||0);
+      resumen[key].totalCostoDux += (Number(r.producto?.costoDux)||0)*(r.cantidad||0);
       resumen[key].totalValor    += (Number(r.producto?.precioUnitario)||0)*(r.cantidad||0);
     });
     res.json(Object.values(resumen));
@@ -67,9 +67,9 @@ export const obtenerResumenProduccionPorCategoria = async (req,res,next)=>{
     const resumen = {};
     rows.forEach(r=>{
       const key = r.producto?.Categoria?.nombre||"Sin Categoría";
-      if(!resumen[key]) resumen[key]={ categoria:key, totalCantidad:0, totalCostoMP:0, totalValor:0 };
+      if(!resumen[key]) resumen[key]={ categoria:key, totalCantidad:0, totalCostoDux:0, totalValor:0 };
       resumen[key].totalCantidad += r.cantidad||0;
-      resumen[key].totalCostoMP += (Number(r.producto?.costoMP)||0)*(r.cantidad||0);
+      resumen[key].totalCostoDux += (Number(r.producto?.costoDux)||0)*(r.cantidad||0);
       resumen[key].totalValor    += (Number(r.producto?.precioUnitario)||0)*(r.cantidad||0);
     });
     res.json(Object.values(resumen));
@@ -85,9 +85,9 @@ export const obtenerResumenProduccionPorTurno = async (req,res,next)=>{
     const resumen = {};
     rows.forEach(r=>{
       const key = r.turno||"Sin Turno";
-      if(!resumen[key]) resumen[key]={ turno:key, totalCantidad:0, totalCostoMP:0, totalValor:0 };
+      if(!resumen[key]) resumen[key]={ turno:key, totalCantidad:0, totalCostoDux:0, totalValor:0 };
       resumen[key].totalCantidad += r.cantidad||0;
-      resumen[key].totalCostoMP += (Number(r.producto?.costoMP)||0)*(r.cantidad||0);
+      resumen[key].totalCostoDux += (Number(r.producto?.costoDux)||0)*(r.cantidad||0);
       resumen[key].totalValor    += (Number(r.producto?.precioUnitario)||0)*(r.cantidad||0);
     });
     res.json(Object.values(resumen));
@@ -100,13 +100,13 @@ export const obtenerResumenProduccionGeneral = async (req,res,next)=>{
     const where = construirWhere(req.query);
     const includeProducto = construirIncludeProducto(req.query);
     const rows = await ReporteProduccion.findAll({ where, include:[includeProducto], raw:true, nest:true });
-    let totalCantidad=0, totalCostoMP=0, totalValor=0;
+    let totalCantidad=0, totalCostoDux=0, totalValor=0;
     rows.forEach(r=>{
       totalCantidad += r.cantidad||0;
-      totalCostoMP   += (Number(r.producto?.costoMP)||0)*(r.cantidad||0);
+      totalCostoDux   += (Number(r.producto?.costoDux)||0)*(r.cantidad||0);
       totalValor     += (Number(r.producto?.precioUnitario)||0)*(r.cantidad||0);
     });
-    res.json({ totalCantidad, totalCostoMP, totalValor });
+    res.json({ totalCantidad, totalCostoDux, totalValor });
   }catch(e){ next(e) }
 };
 
