@@ -8,12 +8,12 @@ async function ejecutar() {
   console.log(`[${new Date().toISOString()}] 🚀 Iniciando sincronización...`);
 
   try {
-    //const resultado = await sincronizarProductosDesdeDux();
-    //console.log(`✅ Resultado: ${JSON.stringify(resultado, null, 2)}`);
+    const resultado = await sincronizarProductosDesdeDux();
+    console.log(`✅ Resultado: ${JSON.stringify(resultado, null, 2)}`);
 
-    //console.log('⏳ Ejecutando sincronizarPedidosDesdeDux...');
-    //const resultadoPedidos = await sincronizarPedidosDesdeDux();
-    //console.log(`✅ Pedidos sincronizados: ${resultadoPedidos.length}`);
+    console.log('⏳ Ejecutando sincronizarPedidosDesdeDux...');
+    const resultadoPedidos = await sincronizarPedidosDesdeDux();
+    console.log(`✅ Pedidos sincronizados: ${resultadoPedidos.length}`);
 
     console.log('⏳ Ejecutando sincronizarFacturasDesdeDux...');
     const resFacturas = await sincronizarFacturasDesdeDux();

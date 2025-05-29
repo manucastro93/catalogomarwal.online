@@ -75,7 +75,7 @@ export async function obtenerInformeSemanalEnVivo(req, res, next) {
       .sort((a, b) => b[1].unidades - a[1].unidades)
       .slice(0, 10);
 
-    const diasConProduccion = [...new Set(produccionSemana.map(p => format(new Date(p.fecha), 'EEEE', { locale: es })))];
+    const diasConProduccion = [...new Set(produccionSemana.map(p => format(new Date(p.fecha), 'EEEE', { locale: es })))]
     const feriados = await contarFeriadosEnRango(inicioSemana.toISOString(), hoyFecha.toISOString());
     const feriadoTexto = feriados.length > 0
       ? `📅 Durante el período analizado se identificaron ${feriados.length} día(s) no laborables: ${feriados.map(f => `${f.dia}/${f.mes} (${f.motivo})`).join(', ')}.`
@@ -112,16 +112,45 @@ export async function obtenerInformeSemanalEnVivo(req, res, next) {
     const promedioTrimestre = ultimosTresMeses.reduce((acc, m) => acc + m.total, 0) / 3;
     const tendenciaGeneral = promedioTrimestre > 0 ? ((produccionMesActual - promedioTrimestre) / promedioTrimestre) * 100 : 0;
 
+    const diaActualSemana = hoy.format('dddd');
+
+    const parcialSemanaActual = await ReporteProduccion.sum('cantidad', {
+      where: {
+        fecha: {
+          [Op.between]: [inicioSemana.toDate(), hoy.toDate()],
+        },
+      },
+    }) || 0;
+
+    const finDiaSemanaPasada = inicioSemanaPasada.add(diasTranscurridos - 1, 'day').endOf('day').toDate();
+    const parcialSemanaAnterior = await ReporteProduccion.sum('cantidad', {
+      where: {
+        fecha: {
+          [Op.between]: [inicioSemanaPasada.toDate(), finDiaSemanaPasada],
+        },
+      },
+    }) || 0;
+
+    const produccionUltimas4Semanas = await Promise.all(
+      [...Array(4)].map(async (_, i) => {
+        const inicio = inicioSemana.subtract((i + 1) * 7, 'day').toDate();
+        const fin = dayjs(inicio).add(6, 'day').endOf('day').toDate();
+        const total = await ReporteProduccion.sum('cantidad', {
+          where: { fecha: { [Op.between]: [inicio, fin] } },
+        }) || 0;
+        return total;
+      })
+    );
+
     const mesActualNombre = format(hoy.toDate(), 'MMMM', { locale: es });
     const fechaHoyFormateada = format(new Date(), 'dd/MM/yyyy');
 
-    // ✅ REDACCIÓN FINAL FORMAL Y CLARA
     const resumen = `
-Durante los últimos 7 días, la producción total fue de ${totalSemana.toLocaleString()} unidades. 
-Este resultado representa una ${variacionGeneral >= 0 ? 'suba' : 'baja'} del ${Math.abs(variacionGeneral).toFixed(2)}% 
-respecto a la semana previa (${totalSemanaPasada.toLocaleString()} unidades).
+Desde el lunes hasta hoy, la producción total alcanzó las ${totalSemana.toLocaleString()} unidades, 
+lo que representa una ${variacionGeneral >= 0 ? 'suba' : 'baja'} del ${Math.abs(variacionGeneral).toFixed(2)}% 
+en comparación con el mismo período de la semana anterior (${totalSemanaPasada.toLocaleString()} unidades).
 
-El día con mayor actividad fue el ${diaTop?.[0] || '-'}, con ${diaTop?.[1]?.toLocaleString() || 0} unidades fabricadas.
+El día de mayor actividad fue el ${diaTop?.[0] || '-'}, con ${diaTop?.[1]?.toLocaleString() || 0} unidades fabricadas.
 
 📦 Categorías más destacadas:
 ${Object.entries(resumenPorCategoria).map(([cat, val]) =>
@@ -137,9 +166,19 @@ Proyección de cierre: ${proyeccionFinMes.toLocaleString()} unidades.
 
 📊 Tendencia trimestral: ${tendenciaGeneral >= 0 ? 'positiva' : 'negativa'} del ${Math.abs(tendenciaGeneral).toFixed(2)}%.
 
+📆 Comparativa intersemanal:
+Entre el lunes y el ${diaActualSemana}, se registraron ${parcialSemanaActual.toLocaleString()} unidades,
+frente a las ${parcialSemanaAnterior.toLocaleString()} que se habían fabricado en el mismo período de la semana anterior.
+
+📅 Producción de las últimas semanas:
+- Semana -4: ${produccionUltimas4Semanas[3].toLocaleString()} unidades
+- Semana -3: ${produccionUltimas4Semanas[2].toLocaleString()} unidades
+- Semana -2: ${produccionUltimas4Semanas[1].toLocaleString()} unidades
+- Semana pasada: ${produccionUltimas4Semanas[0].toLocaleString()} unidades
+- Semana actual (hasta hoy): ${parcialSemanaActual.toLocaleString()} unidades
+
 🕒 Informe actualizado al ${fechaHoyFormateada}.
-${feriadoTexto ? '\n\n' + feriadoTexto : ''}
-`.trim();
+${feriadoTexto ? '\n\n' + feriadoTexto : ''}`.trim();
 
     res.json({
       resumen,
@@ -152,6 +191,7 @@ ${feriadoTexto ? '\n\n' + feriadoTexto : ''}
     next(error);
   }
 }
+
 
 
 export async function generarInformeSemanalFinalizado(req, res, next) {
