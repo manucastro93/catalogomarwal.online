@@ -60,13 +60,14 @@ export default function Pedidos() {
     fetchParams,
     async (params) => {
       if (params.dux) {
-        const pedidosDux = await obtenerPedidosDux();
-        return {
-          data: pedidosDux.map((p: Pedido) => ({ ...p, tipo: "dux" })),
-          pagina: 1,
-          totalPaginas: 1,
-        };
-      } else {
+  const res = await obtenerPedidosDux();
+  return {
+    data: res.data.map((p: Pedido) => ({ ...p, tipo: "dux" })),
+    pagina: res.pagina,
+    totalPaginas: res.totalPaginas,
+  };
+}
+ else {
         return await obtenerPedidos(params);
       }
     }

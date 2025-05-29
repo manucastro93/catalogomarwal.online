@@ -16,14 +16,16 @@ const router = express.Router();
 
 router.get('/', obtenerPedidos);
 router.get('/inicio', obtenerPedidosInicio);
-router.get('/:id', obtenerPedidoPorId);
 router.get('/dux', listarPedidosDux);
+router.get('/:id', obtenerPedidoPorId);
+
 
 router.post('/desde-panel', validarPedidoBody, crearPedidoDesdePanel);
+router.post('/validar', validarCarritoSolo);
 router.post('/:id/enviar-a-dux', enviarPedidoADux);
 
 router.put('/:id/estado', actualizarEstadoPedido);
 
-router.post('/validar', validarCarritoSolo);
+
 
 export default router;

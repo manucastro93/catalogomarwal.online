@@ -294,70 +294,81 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
   let actualizadas = 0;
   let totalProcesadas = 0;
 
+  async function obtenerConReintentos(url, reintentos = 3) {
+    for (let i = 0; i < reintentos; i++) {
+      try {
+        const res = await axios.get(url, {
+          headers: {
+            accept: 'application/json',
+            authorization: API_KEY
+          }
+        });
+        return res.data.results || [];
+      } catch (error) {
+        if (error.response?.status === 429) {
+          console.warn('⚠️ 429 Too Many Requests: esperando 10s para reintentar...');
+          await esperar(10000);
+        } else if (error.code === 'ECONNRESET') {
+          console.warn(`🔁 ECONNRESET en offset ${offset}, intento ${i + 1}...`);
+          await esperar(3000 + i * 2000);
+        } else {
+          throw error;
+        }
+      }
+    }
+    throw new Error(`❌ Fallaron todos los intentos para offset ${offset}`);
+  }
+
   while (true) {
     const url = `${API_URL_FACTURAS}?fechaDesde=${fechaDesde}&fechaHasta=${hasta}&idEmpresa=${EMPRESA}&idSucursal=${SUCURSAL}&limit=${limit}&offset=${offset}`;
+    console.log(`➡️ Offset actual: ${offset}`);
 
+    let facturas;
     try {
-      const res = await axios.get(url, {
-        headers: {
-          accept: 'application/json',
-          authorization: API_KEY
-        }
-      });
-
-      const facturas = res.data.results || [];
-      if (facturas.length === 0) break;
-
-      for (const f of facturas) {
-        const existente = await Factura.findByPk(f.id);
-
-        let estadoFacturaId = 1;
-        if (f.anulada_boolean) {
-          estadoFacturaId = 3;
-        } else if (f.detalles_cobro?.[0]?.detalles_mov_cobro?.length > 0) {
-          const totalCobrado = f.detalles_cobro
-            .flatMap(dc => dc.detalles_mov_cobro)
-            .reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
-
-          if (totalCobrado >= f.total) {
-            estadoFacturaId = 2;
-          } else if (totalCobrado > 0) {
-            estadoFacturaId = 4;
-          }
-        }
-
-        const data = {
-          ...f,
-          estadoFacturaId,
-          fecha_comp: new Date(f.fecha_comp),
-          fecha_vencimiento_cae_cai: f.fecha_vencimiento_cae_cai ? new Date(f.fecha_vencimiento_cae_cai) : null,
-          fecha_registro: f.fecha_registro ? new Date(f.fecha_registro) : null,
-          sincronizadoEl: new Date(),
-        };
-
-        if (existente) {
-          await existente.update(data);
-          actualizadas++;
-        } else {
-          await Factura.create(data);
-          creadas++;
-        }
-      }
-
-      totalProcesadas += facturas.length;
-      offset += limit;
-
-      await esperar(5000); // espera obligatoria para evitar 429
-
+      facturas = await obtenerConReintentos(url);
     } catch (error) {
-      if (error.response?.status === 429) {
-        console.warn('⚠️ 429 Too Many Requests: esperando 10s para reintentar...');
-        await esperar(10000);
-        continue;
-      }
       console.error('❌ Error al sincronizar facturas:', error.message);
-      throw error;
+      break;
     }
+
+    if (facturas.length === 0) break;
+
+    for (const f of facturas) {
+      const existente = await Factura.findByPk(f.id);
+
+      let estadoFacturaId = 1;
+      if (f.anulada_boolean) {
+        estadoFacturaId = 3;
+      } else if (f.detalles_cobro?.[0]?.detalles_mov_cobro?.length > 0) {
+        const totalCobrado = f.detalles_cobro
+          .flatMap(dc => dc.detalles_mov_cobro)
+          .reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
+
+        if (totalCobrado >= f.total) estadoFacturaId = 2;
+        else if (totalCobrado > 0) estadoFacturaId = 4;
+      }
+
+      const data = {
+        ...f,
+        estadoFacturaId,
+        fecha_comp: new Date(f.fecha_comp),
+        fecha_vencimiento_cae_cai: f.fecha_vencimiento_cae_cai ? new Date(f.fecha_vencimiento_cae_cai) : null,
+        fecha_registro: f.fecha_registro ? new Date(f.fecha_registro) : null,
+        sincronizadoEl: new Date(),
+      };
+
+      if (existente) {
+        await existente.update(data);
+        actualizadas++;
+      } else {
+        await Factura.create(data);
+        creadas++;
+      }
+    }
+
+    totalProcesadas += facturas.length;
+    offset += limit;
+    await esperar(3000);
   }
 
   return { creadas, actualizadas, total: totalProcesadas };
