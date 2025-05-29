@@ -43,8 +43,7 @@ export const obtenerPedidosInicio = async (
   return data;
 };*/
 
-export async function obtenerPedidosDux() {
-  const res = await api.get('/pedidos/dux');
+export async function obtenerPedidosDux(params?: any) {
+  const res = await api.get('/pedidos/dux', { params });
   return res.data;
 }
-
