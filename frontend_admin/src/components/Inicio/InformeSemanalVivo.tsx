@@ -19,10 +19,11 @@ export default function InformeSemanalVivo() {
       </div>
 
       <Show when={!informe.loading} fallback={<p class="text-center text-gray-400">Cargando informe...</p>}>
-        <div class="bg-white border border-gray-200 rounded-md p-4 leading-relaxed text-gray-700 whitespace-pre-line text-sm md:text-base">
-          {informe()?.resumen}
-        </div>
-      </Show>
+  <div class="bg-white border border-gray-200 rounded-md p-4 leading-relaxed text-gray-700 whitespace-pre-line text-sm md:text-base">
+    {informe()?.resumen}
+  </div>
+</Show>
+
 
       <div class="flex flex-wrap gap-2 text-xs md:text-sm text-gray-500 justify-center">
         <span class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full">

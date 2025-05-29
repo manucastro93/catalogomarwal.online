@@ -71,14 +71,14 @@ export async function obtenerInformeSemanalEnVivo(req, res, next) {
         : "";
   
       // Armado del Informe dinámico
-      let texto = `📅 Informe en Vivo\n\n`;
+      let texto = `📅 \n\n`;
       texto += `En lo que va de esta semana se produjeron **${totalSemana.toLocaleString()} unidades**.\n`;
       texto += `Comparado con el mismo período de la semana pasada (**${totalSemanaPasada.toLocaleString()} unidades**), representa una variación del **${variacionGeneral.toFixed(2)}%**.\n\n`;
   
       if (feriadoTexto) {
         texto += `${feriadoTexto}\n`;
       }
-  
+
       res.json({ informe: texto });
   
     } catch (error) {
