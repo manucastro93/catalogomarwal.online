@@ -5,7 +5,7 @@ export const [carrito, setCarrito] = createStore<
   {
     id: number;
     nombre: string;
-    precio: number; // precio por bulto
+    precioUnitario: number;
     cantidad: number; // cantidad de bultos
     imagen: string;
     precioPorBulto?: number;
@@ -23,7 +23,7 @@ export function agregarAlCarrito(
   item: {
     id: number;
     nombre: string;
-    precio: number;
+    precioUnitario: number;
     imagen: string;
     precioPorBulto?: number;
     unidadPorBulto?: number;

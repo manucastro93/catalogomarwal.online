@@ -89,16 +89,17 @@ export const crearOEditarPedido = async (req, res, next) => {
       const productoDb = await Producto.findByPk(item.id);
       if (!productoDb) continue;
 
-      const pu = productoDb.precioPorBulto || productoDb.precioUnitario;
-      const subtotal = item.cantidad * pu;
+      const pxb = productoDb.precioUnitario * productoDb.unidadPorBulto;
+      const subtotal = item.cantidad * pxb;
 
       await DetallePedido.create({
         pedidoId: pedido.id,
         clienteId: clienteFinal.id,
         productoId: item.id,
         cantidad: item.cantidad,
+        unidadPorBulto: productoDb.unidadPorBulto,
         precioUnitario: productoDb.precioUnitario,
-        precioXBulto: pu,
+        precioPorBulto: pxb,
         subtotal,
       });
 
@@ -271,13 +272,14 @@ export const validarCarritoSolo = async (req, res, next) => {
       if (!productoDb) continue;
 
       const precioUnitario = productoDb.precioUnitario;
-      const precioPorBulto = productoDb.precioPorBulto || precioUnitario;
+      const precioPorBulto =  precioUnitario * productoDb.unidadPorBulto;
       const subtotal = item.cantidad * precioPorBulto;
 
       detalles.push({
         productoId: item.id,
         nombre: productoDb.nombre,
         cantidad: item.cantidad,
+        unidadPorBulto: productoDb.unidadPorBulto,
         precioUnitario,
         precioPorBulto,
         subtotal,
@@ -323,7 +325,7 @@ export const duplicarPedido = async (req, res, next) => {
       if (!productoDb) continue;
 
       const precioUnitario = productoDb.precioUnitario;
-      const precioPorBulto = productoDb.precioPorBulto || precioUnitario;
+      const precioPorBulto =  precioUnitario * productoDb.unidadPorBulto;
       const subtotal = item.cantidad * precioPorBulto;
 
       await DetallePedido.create({
@@ -331,8 +333,9 @@ export const duplicarPedido = async (req, res, next) => {
         clienteId: pedidoOriginal.clienteId,
         productoId: item.productoId,
         cantidad: item.cantidad,
+        unidadPorBulto: productoDb.unidadPorBulto,
         precioUnitario,
-        precioXBulto: precioPorBulto,
+        precioPorBulto: precioPorBulto,
         subtotal,
       });
 

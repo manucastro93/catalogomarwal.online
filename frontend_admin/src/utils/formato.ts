@@ -3,6 +3,9 @@ import 'dayjs/locale/es';
 
 dayjs.locale('es');
 
+export const formatearFechaCorta = (fecha: string): string =>
+  dayjs(fecha).format('DD-MM-YYYY');
+
 export const formatearFechaHora = (fecha: string) =>
   dayjs(fecha).format('D [de] MMMM [de] YYYY - HH:mm');
 

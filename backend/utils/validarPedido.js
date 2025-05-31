@@ -35,14 +35,14 @@ export const verificarProductosDelCarrito = async (carritoCliente) => {
     }
 
     const mismoPrecio =
-      Number(productoBD.precioPorBulto) === Number(item.precio);
+      Number(productoBD.precioUnitario) === Number(item.precioUnitario);
     if (!mismoPrecio) {
       errores.push({
         id: item.id,
         nombre: productoBD.nombre,
         motivo: ` fue modificado.`,
-        precioActual: productoBD.precioPorBulto,
-        precioCliente: item.precio,
+        precioActual: productoBD.precioUnitario,
+        precioCliente: item.precioUnitario,
       });
     }
 
@@ -52,7 +52,7 @@ export const verificarProductosDelCarrito = async (carritoCliente) => {
     productosActualizados.push({
       id: productoBD.id,
       nombre: productoBD.nombre,
-      precio: productoBD.precioPorBulto,
+      precioUnitario: productoBD.precioUnitario,
       unidadPorBulto: productoBD.unidadPorBulto,
       imagen: imagenUrl,
     });

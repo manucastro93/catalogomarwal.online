@@ -133,8 +133,8 @@ export default function CarritoSlideOver() {
       id: item.id,
       nombre: item.nombre,
       cantidad: item.cantidad,
-      precio: item.precio,
-      precioPorBulto: item.unidadPorBulto ? item.precio * item.unidadPorBulto : undefined,
+      precioUnitario: item.precioUnitario,
+      precioPorBulto: item.unidadPorBulto ? item.precioUnitario * item.unidadPorBulto : undefined,
       unidadPorBulto: item.unidadPorBulto,
       usuarioId: vendedor?.id,
     }));
@@ -175,8 +175,8 @@ export default function CarritoSlideOver() {
           const nuevo = error.carritoActualizado.map((p: any) => ({
             id: p.id,
             nombre: p.nombre,
-            precio: p.precio,
-            precioPorBulto: p.unidadPorBulto ? p.precio * p.unidadPorBulto : undefined,
+            precioUnitario: p.precioUnitario,
+            precioPorBulto: p.unidadPorBulto ? p.precioUnitario * p.unidadPorBulto : undefined,
             unidadPorBulto: p.unidadPorBulto,
             cantidad: 1,
             imagen: p.imagen || "",
@@ -320,9 +320,9 @@ function ContenidoCarrito(props: {
                 <p class="text-xs text-gray-500">
                   {formatearPrecio(item.precioPorBulto)} x bulto
                 </p>
-                {item.precio && (
+                {item.precioUnitario && (
                   <p class="text-[11px] text-gray-400">
-                    ({formatearPrecio(item.precio)} c/u)
+                    ({formatearPrecio(item.precioUnitario)} c/u)
                   </p>
                 )}
               </div>

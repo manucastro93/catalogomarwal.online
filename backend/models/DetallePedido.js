@@ -8,7 +8,11 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.FLOAT,
       allowNull: false,
     },
-    precioXBulto: {
+    unidadPorBulto: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    precioPorBulto: {
       type: DataTypes.FLOAT,
       allowNull: true,
     },

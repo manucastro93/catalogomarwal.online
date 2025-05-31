@@ -31,6 +31,15 @@ export default (sequelize, DataTypes) => {
       foreignKey: 'estadoFacturaId',
       as: 'estado'
     });
+    Factura.belongsTo(models.PedidoDux, {
+      as: "pedidoDux",
+      foreignKey: "nro_pedido",
+      targetKey: "nro_pedido",
+    });
+    Factura.hasMany(models.DetalleFactura, {
+      foreignKey: 'facturaId',
+      as: 'detalles'
+    });
   };
 
   return Factura;

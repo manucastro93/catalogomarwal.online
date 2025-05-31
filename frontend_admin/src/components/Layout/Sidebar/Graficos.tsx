@@ -1,7 +1,7 @@
 import { Show, createSignal } from 'solid-js';
 import { A, useLocation } from '@solidjs/router';
 import ConPermiso from '@/components/Layout/ConPermiso';
-import { ChartLine, ChevronDown } from '@/icons';
+import { ChartLine, ChevronDown, TrendingUp } from '@/icons';
 import theme from '@/styles/sidebarTheme';
 
 export default function Graficos(props: { expandido: boolean }) {
@@ -34,6 +34,7 @@ export default function Graficos(props: { expandido: boolean }) {
         <Show when={open() && props.expandido}>
           <div class="mt-1 flex flex-col">
             <SidebarLink href="/Graficos/ResumenProduccion" texto="Producción" activo={esActivo('/Graficos/ResumenProduccion')} />
+            <SidebarLink href="/Graficos/Eficiencia" texto="Eficiencia" activo={esActivo('/Graficos/Eficiencia')} />
             <SidebarLink href="/Graficos/ResumenVentas" texto="Ventas" activo={esActivo('/Graficos/ResumenVentas')} />
           </div>
         </Show>

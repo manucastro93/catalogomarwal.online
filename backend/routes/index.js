@@ -21,6 +21,7 @@ import duxRoutes from './dux.routes.js'
 //import chatRoutes from './chat.route.js';
 import conversacionBotRoutes from './conversacionBot.routes.js';
 import facturaRoutes from './factura.routes.js';
+import eficienciaRoutes from "./eficiencia.routes.js";
 
 const router = express.Router();
 
@@ -45,5 +46,6 @@ router.use('/dux', duxRoutes);
 //router.use('/chat', chatRoutes); 
 router.use('/conversaciones-bot', conversacionBotRoutes);
 router.use('/facturas', facturaRoutes);
+router.use("/eficiencia", eficienciaRoutes);
 
 export default router;

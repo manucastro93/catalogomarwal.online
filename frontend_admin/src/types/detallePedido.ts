@@ -8,7 +8,8 @@ export interface DetallePedido {
   usuarioId?: number;
   cantidad: number;
   precioUnitario: number;
-  precioXBulto?: number;
+  unidadPorBulto?: number;
+  precioPorBulto?: number;
   subtotal?: number;
   descuento?: number;
   observaciones?: string;
