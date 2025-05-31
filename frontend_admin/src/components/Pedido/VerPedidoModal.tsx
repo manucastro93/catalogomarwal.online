@@ -118,7 +118,7 @@ export default function VerPedidoModal(props: {
                           </td>
                           <td class="border px-2 py-1">{(d as DetallePedido).cantidad}</td>
                           <td class="border px-2 py-1">{formatearPrecio((d as DetallePedido).precioUnitario)}</td>
-                          <td class="border px-2 py-1">{formatearPrecio(((d as DetallePedido).precioXBulto ?? 0) * (d as DetallePedido).cantidad)}</td>
+                          <td class="border px-2 py-1">{formatearPrecio(((d as DetallePedido).precioPorBulto ?? 0) * (d as DetallePedido).cantidad)}</td>
                         </tr>
                       )
                     }

@@ -85,7 +85,9 @@ export const {
   MensajeAutomatico,
   PedidoDux,
   Factura,
-  EstadoFactura
+  EstadoFactura,
+  DetallePedidoDux,
+  DetalleFactura
 } = db;
 
 export { sequelize, Sequelize };

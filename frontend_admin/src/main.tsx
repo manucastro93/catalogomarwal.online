@@ -34,6 +34,7 @@ const Productos = lazy(() => import('./pages/Productos'));
 const ProduccionDiaria = lazy(() => import('./pages/ProduccionDiaria'));
 const ResumenProduccion = lazy(() => import('./pages/Graficos/ResumenProduccion'));
 const ResumenVentas = lazy(() => import('./pages/Graficos/ResumenVentas'));
+const Eficiencia = lazy(() => import('./pages/Graficos/Eficiencia'));
 const RolesUsuarios = lazy(() => import('./pages/Pagina/RolesUsuarios'));
 const EstadosPedidos = lazy(() => import('./pages/Pagina/EstadosPedidos'));
 const Logo = lazy(() => import('./pages/Pagina/Logo'));
@@ -65,6 +66,7 @@ render(() => (
     <Route path="/Produccion/ProduccionDiaria" component={() => <ProtectedRoute><Layout><ProduccionDiaria /></Layout></ProtectedRoute>} />
     <Route path="/Graficos/ResumenProduccion" component={() => <ProtectedRoute><Layout><ResumenProduccion /></Layout></ProtectedRoute>} />
     <Route path="/Graficos/ResumenVentas" component={() => <ProtectedRoute><Layout><ResumenVentas /></Layout></ProtectedRoute>} />
+    <Route path="/Graficos/Eficiencia" component={() => <ProtectedRoute><Layout><Eficiencia /></Layout></ProtectedRoute>} />
     <Route path="/ConversacionesBot" component={() => <ProtectedRoute><Layout><ConversacionesBot /></Layout></ProtectedRoute>} />
     <Route path="/Facturas" component={() => <ProtectedRoute><Layout><Facturas /></Layout></ProtectedRoute>} />
 

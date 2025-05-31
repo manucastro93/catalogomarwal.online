@@ -18,7 +18,7 @@ export interface ItemCarritoInput {
   id: number;
   nombre: string;
   cantidad: number;
-  precio: number;
+  precioUnitario: number;
   precioPorBulto?: number;
   unidadPorBulto?: number;
   usuarioId: number | null;

@@ -13,7 +13,6 @@ export interface Producto {
   nombre?: string;
   descripcion?: string;
   activo?: boolean;
-  precio: number;
   precioUnitario: number;
   precioPorBulto?: number;
   unidadPorBulto?: number;
