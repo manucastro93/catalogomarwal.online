@@ -1,5 +1,5 @@
 import { Show, createSignal, createMemo, For } from "solid-js";
-import { formatearFechaHora, formatearMiles } from "@/utils/formato";
+import { formatearFechaCorta, formatearMiles } from "@/utils/formato";
 import type {
   EficienciaPedido,
   EficienciaCategoria,
@@ -45,7 +45,7 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
   };
 
   const getFecha = (item: Item) => {
-    if ("fecha" in item) return formatearFechaHora(item.fecha);
+    if ("fecha" in item) return formatearFechaCorta(item.fecha);
     return "—";
   };
 

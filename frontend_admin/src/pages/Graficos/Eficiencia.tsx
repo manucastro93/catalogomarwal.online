@@ -13,6 +13,7 @@ import FiltrosEficiencia from "@/components/Grafico/Eficiencia/FiltrosEficiencia
 import TablaEficiencia from "@/components/Grafico/Eficiencia/TablaEficiencia";
 import GraficosEficiencia from "@/components/Grafico/Eficiencia/GraficosEficiencia";
 import ModalDetalleEficiencia from "@/components/Grafico/Eficiencia/ModalDetalleEficiencia";
+import ModalDetallePedido from "@/components/Grafico/Eficiencia/ModalDetallePedido";
 import { formatearMiles } from "@/utils/formato";
 import { exportarDatosAExcel } from "@/utils/exportarDatosAExcel";
 
@@ -31,28 +32,17 @@ export default function Eficiencia() {
   const [page, setPage] = createSignal(1);
 
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [detalleModal, setDetalleModal] = createSignal<{ modo: ModoEficiencia; filtro: string }>({
-    modo: "producto",
-    filtro: "",
-  });
+  const [detalleModal, setDetalleModal] = createSignal<{ modo: ModoEficiencia; filtro: string }>({ modo: "producto", filtro: "" });
+
+  const [modalPedidoAbierto, setModalPedidoAbierto] = createSignal(false);
+  const [pedidoSeleccionado, setPedidoSeleccionado] = createSignal<number | null>(null);
 
   const limit = 10;
   const [categorias] = createResource(obtenerCategorias);
 
-  const [resumen] = createResource(
-    () => ({ desde: desde(), hasta: hasta() }),
-    fetchResumenEficiencia
-  );
-
-  const [evolucionEficiencia] = createResource(
-    () => ({ desde: desde(), hasta: hasta() }),
-    fetchEvolucionEficiencia
-  );
-
-  const [evolucionFillRate] = createResource(
-    () => ({ desde: desde(), hasta: hasta() }),
-    fetchEvolucionFillRate
-  );
+  const [resumen] = createResource(() => ({ desde: desde(), hasta: hasta() }), fetchResumenEficiencia);
+  const [evolucionEficiencia] = createResource(() => ({ desde: desde(), hasta: hasta() }), fetchEvolucionEficiencia);
+  const [evolucionFillRate] = createResource(() => ({ desde: desde(), hasta: hasta() }), fetchEvolucionFillRate);
 
   function fetchDetalleActual() {
     const filtros = {
@@ -62,7 +52,6 @@ export default function Eficiencia() {
       producto: producto(),
       cliente: cliente(),
     };
-
     if (modo() === "categoria") return fetchEficienciaPorCategoria(filtros);
     if (modo() === "producto") return fetchEficienciaPorProducto(filtros);
     if (modo() === "cliente") return fetchEficienciaPorCliente(filtros);
@@ -89,12 +78,8 @@ export default function Eficiencia() {
   }
 
   async function exportarResumenEficiencia() {
-    const dataCompleta = await fetchEficienciaPorPedido({
-      desde: desde(),
-      hasta: hasta(),
-    });
-
-    const columnas: { label: string; key: string }[] = [
+    const dataCompleta = await fetchEficienciaPorPedido({ desde: desde(), hasta: hasta() });
+    const columnas = [
       { label: "Pedido", key: "nroPedido" },
       { label: "Fecha", key: "fecha" },
       { label: "Lead Time (días)", key: "leadTimeDias" },
@@ -102,22 +87,24 @@ export default function Eficiencia() {
       { label: "Pedidas", key: "cantidadPedida" },
       { label: "Facturadas", key: "cantidadFacturada" },
     ];
-
     exportarDatosAExcel(dataCompleta, columnas, "Reporte Eficiencia");
   }
 
   function abrirModalDetalle(modoDetalle: ModoEficiencia, filtro: string) {
-    setDetalleModal({ modo: modoDetalle, filtro });
-    setModalAbierto(true);
+    if (modoDetalle === "pedido") {
+      setPedidoSeleccionado(Number(filtro));
+      setModalPedidoAbierto(true);
+    } else {
+      setDetalleModal({ modo: modoDetalle, filtro });
+      setModalAbierto(true);
+    }
   }
 
   onMount(actualizarFiltros);
 
   return (
     <div class="w-full max-w-screen-xl mx-auto px-3 py-4 md:p-6 space-y-6 md:space-y-8">
-      <h1 class="text-lg md:text-2xl font-bold mb-4 text-center">
-        Eficiencia Comercial 📦
-      </h1>
+      <h1 class="text-lg md:text-2xl font-bold mb-4 text-center">Eficiencia Comercial 📦</h1>
 
       <FiltrosEficiencia
         desde={desde()}
@@ -144,57 +131,43 @@ export default function Eficiencia() {
         <p><b>Facturas encontradas:</b> {formatearMiles(resumen()?.totalFacturas || 0)}</p>
       </div>
 
-      <Show when={!evolucionEficiencia.loading && !evolucionFillRate.loading && !detalleEficiencia.loading}
-        fallback={<div class="p-6 text-center text-gray-500 text-sm">Cargando datos de gráficos...</div>}
-      >
+      <Show when={!evolucionEficiencia.loading && !evolucionFillRate.loading && !detalleEficiencia.loading} fallback={<div class="p-6 text-center text-gray-500 text-sm">Cargando datos de gráficos...</div>}>
         <GraficosEficiencia
           evolucionEficiencia={evolucionEficiencia()!}
           evolucionFillRate={evolucionFillRate()!}
           datosPedidos={modo() === "pedido" ? detalleEficiencia()! : []}
-          datosCategorias={
-            modo() === "categoria"
-              ? detalleEficiencia()!.map((d: any) => ({
-                  ...d,
-                  categoria:
-                    categorias()?.find((c: any) => c.id == d.categoria)?.nombre || "Sin nombre",
-                }))
-              : []
-          }
+          datosCategorias={modo() === "categoria" ? detalleEficiencia()!.map((d: any) => ({ ...d, categoria: categorias()?.find((c: any) => c.id == d.categoria)?.nombre || "Sin nombre" })) : []}
           datosProductos={modo() === "producto" ? detalleEficiencia()! : []}
           datosClientes={modo() === "cliente" ? detalleEficiencia()! : []}
-          filtros={{
-            categoriaId: categoriaId(),
-            producto: producto(),
-            nroPedido: "",
-            cliente: cliente(),
-          }}
+          filtros={{ categoriaId: categoriaId(), producto: producto(), nroPedido: "", cliente: cliente() }}
           modo={modo()}
         />
       </Show>
 
-      <Show when={!detalleEficiencia.loading && detalleEficiencia()}
-        fallback={<div class="p-6 text-center text-gray-500 text-sm">Cargando datos de tabla...</div>}
-      >
+      <Show when={!detalleEficiencia.loading && detalleEficiencia()} fallback={<div class="p-6 text-center text-gray-500 text-sm">Cargando datos de tabla...</div>}>
         <TablaEficiencia
-          datos={
-            modo() === "pedido"
-              ? detalleEficiencia()!
-              : modo() === "categoria"
-              ? detalleEficiencia()!.map((d: any) => ({ ...d, categoria: d.categoria || "Sin categoría" }))
-              : modo() === "cliente"
-              ? detalleEficiencia()!
-              : detalleEficiencia()!.map((d: any) => ({ ...d, producto: d.descripcion ?? d.codItem ?? "Sin nombre" }))
-          }
+          datos={(() => {
+            const datos = detalleEficiencia()!;
+            switch (modo()) {
+              case "pedido":
+              case "cliente":
+                return datos;
+              case "categoria":
+                return datos.map((d: any) => ({ ...d, categoria: d.categoria || "Sin categoría" }));
+              case "producto":
+                return datos.map((d: any) => ({ ...d, producto: d.descripcion ?? d.codItem ?? "Sin nombre" }));
+              default:
+                return [];
+            }
+          })()}
           modo={modo()}
           onSeleccionar={(item: any) => {
-            const filtro = modo() === "categoria"
-              ? item.categoria
-              : modo() === "producto"
-              ? item.producto
-              : modo() === "cliente"
-              ? item.cliente
-              : item.nroPedido;
-
+            const filtro =
+              modo() === "categoria" ? item.categoria :
+              modo() === "producto" ? item.producto :
+              modo() === "cliente" ? item.cliente :
+              modo() === "pedido" ? item.nroPedido :
+              "";
             abrirModalDetalle(modo(), filtro);
           }}
         />
@@ -206,8 +179,16 @@ export default function Eficiencia() {
           onCerrar={() => setModalAbierto(false)}
           desde={desde()}
           hasta={hasta()}
-          modo={detalleModal().modo as "categoria" | "producto" | "cliente"}
+          modo={detalleModal().modo}
           filtro={detalleModal().filtro}
+        />
+      </Show>
+
+      <Show when={modalPedidoAbierto() && pedidoSeleccionado() !== null}>
+        <ModalDetallePedido
+          pedidoId={pedidoSeleccionado()!}
+          abierto={modalPedidoAbierto()}
+          onCerrar={() => setModalPedidoAbierto(false)}
         />
       </Show>
     </div>
