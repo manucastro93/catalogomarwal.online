@@ -35,7 +35,7 @@ interface Props {
 
 export default function GraficosEficiencia(props: Props) {
   return (
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="w-full grid grid-cols-1 gap-6">
       {/* Pedido */}
       {props.modo === "pedido" && props.datosPedidos?.length > 0 && (
         <>

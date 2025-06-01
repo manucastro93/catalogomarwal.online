@@ -4,9 +4,17 @@ import type { EficienciaCliente } from "@/types/eficiencia";
 export default function ClienteLeadTime({ datos }: { datos: EficienciaCliente[] }) {
   if (!datos.length) return null;
 
-  const labels = datos.map((r) => r.cliente);
-  const valores = datos.map((r) =>
-    typeof r.leadTimePromedio === "number" && !isNaN(r.leadTimePromedio) ? r.leadTimePromedio : 0
+  const datosOrdenados = [...datos].sort((a, b) => {
+    const aVal = isNaN(a.leadTimePromedio ?? 0) ? Infinity : a.leadTimePromedio!;
+    const bVal = isNaN(b.leadTimePromedio ?? 0) ? Infinity : b.leadTimePromedio!;
+    return aVal - bVal;
+  });
+
+  const labels = datosOrdenados.map((r) => r.cliente);
+  const valores = datosOrdenados.map((r) =>
+    typeof r.leadTimePromedio === "number" && !isNaN(r.leadTimePromedio)
+      ? r.leadTimePromedio
+      : 0
   );
 
   const key = "leadtime_cliente_" + labels.join("|");
@@ -42,9 +50,11 @@ export default function ClienteLeadTime({ datos }: { datos: EficienciaCliente[] 
                 tooltip: {
                   callbacks: {
                     label: (context: any) => {
-                      const original = datos[context.dataIndex].leadTimePromedio;
+                      const original = datosOrdenados[context.dataIndex].leadTimePromedio;
                       return `${context.label}: ${
-                        original == null || isNaN(original) ? "Sin datos" : `${original.toFixed(2)} días`
+                        original == null || isNaN(original)
+                          ? "Sin datos"
+                          : `${original.toFixed(2)} días`
                       }`;
                     },
                   },

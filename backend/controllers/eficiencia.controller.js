@@ -345,7 +345,7 @@ export const obtenerEficienciaPorPedido = async (req, res) => {
     const facturasMap = new Map(facturas.map(f => [f.nro_pedido, f]));
 
     const resultado = pedidos.map(pedido => {
-      const factura = facturasMap.get(pedido.nro_pedido);
+      const facturasDelPedido = facturas.filter(f => f.nro_pedido === pedido.nro_pedido);
 
       const detallesP = detallesPedidos.filter(d => d.pedidoDuxId === pedido.id);
       const cantidadPedida = detallesP.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
@@ -355,9 +355,9 @@ export const obtenerEficienciaPorPedido = async (req, res) => {
 
       const fillRate = cantidadPedida > 0 ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100) : null;
 
-      const leadTime = factura
-        ? Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
-        : null;
+     const leadTime = facturasDelPedido.length
+  ? Math.max(0, Math.round((new Date(facturasDelPedido[0].fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
+  : null;
 
       return {
         pedidoId: pedido.id,
@@ -380,15 +380,10 @@ export const obtenerEficienciaPorPedido = async (req, res) => {
 export const obtenerDetallePorPedido = async (req, res) => {
   try {
     const { pedidoId } = req.query;
-
-    if (!pedidoId) {
-      return res.status(400).json({ error: "Falta el parámetro 'pedidoId'" });
-    }
+    if (!pedidoId) return res.status(400).json({ error: "Falta el parámetro 'pedidoId'" });
 
     const pedido = await PedidoDux.findByPk(pedidoId);
-    if (!pedido) {
-      return res.status(404).json({ error: "Pedido no encontrado" });
-    }
+    if (!pedido) return res.status(404).json({ error: "Pedido no encontrado" });
 
     const detallesPedido = await DetallePedidoDux.findAll({
       where: { pedidoDuxId: pedidoId },
@@ -418,22 +413,17 @@ export const obtenerDetallePorPedido = async (req, res) => {
     }
 
     const leadTime = facturas.length
-      ? Math.max(
-        0,
-        Math.round(
-          (new Date(facturas[0].fecha_comp) - new Date(pedido.fecha)) /
-          (1000 * 60 * 60 * 24)
-        )
-      )
+      ? Math.max(0, Math.round(
+          (new Date(facturas[0].fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)
+        ))
       : null;
 
-    const resultado = detallesPedido.map((p) => {
+    const resultado = detallesPedido.map(p => {
       const cantidadPedida = parseFloat(p.cantidad || 0);
       const cantidadFacturada = mapFacturadas[p.codItem] || 0;
-      const fillRate =
-        cantidadPedida > 0
-          ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100)
-          : 0;
+      const fillRate = cantidadPedida > 0
+        ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100)
+        : 0;
 
       return {
         codItem: p.codItem,
@@ -441,7 +431,7 @@ export const obtenerDetallePorPedido = async (req, res) => {
         pedida: cantidadPedida,
         facturada: cantidadFacturada,
         fillRate: +fillRate.toFixed(2),
-        leadTimeDias: leadTime,
+        leadTime,
       };
     });
 
@@ -613,7 +603,6 @@ export const obtenerDetallePorProducto = async (req, res) => {
     res.status(500).json({ error: "Error al generar detalle por producto" });
   }
 };
-
 
 export const obtenerEficienciaPorCategoria = async (req, res) => {
   try {
@@ -847,9 +836,7 @@ export const obtenerDetallePorCategoria = async (req, res) => {
 export const obtenerEficienciaPorCliente = async (req, res) => {
   try {
     const { desde, hasta, cliente } = req.query;
-    if (!desde || !hasta) {
-      return res.status(400).json({ error: "Faltan fechas" });
-    }
+    if (!desde || !hasta) return res.status(400).json({ error: "Faltan fechas" });
 
     const fechaDesde = new Date(desde);
     const fechaHasta = new Date(hasta);
@@ -858,9 +845,7 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
     const pedidos = await PedidoDux.findAll({
       where: {
         fecha: { [Op.between]: [fechaDesde, fechaHasta] },
-        ...(filtroCliente && {
-          cliente: { [Op.like]: `%${filtroCliente}%` },
-        }),
+        ...(filtroCliente && { cliente: { [Op.like]: `%${filtroCliente}%` } }),
       },
       attributes: ["id", "nro_pedido", "fecha", "cliente"],
     });
@@ -895,7 +880,7 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
       const cantidadPedida = detallesP.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
       const cantidadFacturada = detallesF.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
 
-      if (cantidadFacturada === 0) continue; // 🚫 Excluir pedidos sin facturación
+      if (cantidadFacturada === 0) continue;
 
       const fillRate = cantidadPedida > 0
         ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100)
@@ -923,20 +908,16 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
     }
 
     const resultado = Array.from(clientesMap.values()).map(entry => {
-      const fillRatePromedio = entry.pedidos.length
-        ? +(entry.pedidos.reduce((a, b) => a + b, 0) / entry.pedidos.length).toFixed(2)
-        : null;
-
-      const leadTimePromedio = entry.leadTimes.length
-        ? +(entry.leadTimes.reduce((a, b) => a + b, 0) / entry.leadTimes.length).toFixed(2)
-        : null;
-
       return {
         cliente: entry.cliente,
         cantidadPedida: entry.totalPedida,
         cantidadFacturada: entry.totalFacturada,
-        fillRate: fillRatePromedio,
-        leadTimePromedio,
+        fillRate: entry.pedidos.length
+          ? +(entry.pedidos.reduce((a, b) => a + b, 0) / entry.pedidos.length).toFixed(2)
+          : null,
+        leadTimePromedio: entry.leadTimes.length
+          ? +(entry.leadTimes.reduce((a, b) => a + b, 0) / entry.leadTimes.length).toFixed(2)
+          : null,
       };
     });
 
@@ -1005,7 +986,7 @@ export const obtenerDetallePorCliente = async (req, res) => {
         : null;
 
       return {
-        pedidoId: pedido.id, // ✅ agregado para poder abrir el modal
+        pedidoId: pedido.id,
         nroPedido: pedido.nro_pedido,
         fecha: pedido.fecha,
         cantidadPedida,

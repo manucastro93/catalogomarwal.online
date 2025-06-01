@@ -28,7 +28,7 @@ export default function Eficiencia() {
   const [categoriaId, setCategoriaId] = createSignal("");
   const [producto, setProducto] = createSignal("");
   const [cliente, setCliente] = createSignal("");
-  const [modo, setModo] = createSignal<ModoEficiencia>("pedido");
+  const [modo, setModo] = createSignal<ModoEficiencia>("cliente");
   const [page, setPage] = createSignal(1);
 
   const [modalAbierto, setModalAbierto] = createSignal(false);
@@ -133,8 +133,8 @@ export default function Eficiencia() {
 
       <Show when={!evolucionEficiencia.loading && !evolucionFillRate.loading && !detalleEficiencia.loading} fallback={<div class="p-6 text-center text-gray-500 text-sm">Cargando datos de gráficos...</div>}>
         <GraficosEficiencia
-          evolucionEficiencia={evolucionEficiencia()!}
-          evolucionFillRate={evolucionFillRate()!}
+          evolucionEficiencia={[...evolucionEficiencia()!].sort((a, b) => a.leadTime - b.leadTime)}
+          evolucionFillRate={[...evolucionFillRate()!].sort((a, b) => a.fillRate - b.fillRate)}
           datosPedidos={modo() === "pedido" ? detalleEficiencia()! : []}
           datosCategorias={modo() === "categoria" ? detalleEficiencia()!.map((d: any) => ({ ...d, categoria: categorias()?.find((c: any) => c.id == d.categoria)?.nombre || "Sin nombre" })) : []}
           datosProductos={modo() === "producto" ? detalleEficiencia()! : []}
@@ -146,20 +146,30 @@ export default function Eficiencia() {
 
       <Show when={!detalleEficiencia.loading && detalleEficiencia()} fallback={<div class="p-6 text-center text-gray-500 text-sm">Cargando datos de tabla...</div>}>
         <TablaEficiencia
-          datos={(() => {
-            const datos = detalleEficiencia()!;
-            switch (modo()) {
-              case "pedido":
-              case "cliente":
-                return datos;
-              case "categoria":
-                return datos.map((d: any) => ({ ...d, categoria: d.categoria || "Sin categoría" }));
-              case "producto":
-                return datos.map((d: any) => ({ ...d, producto: d.descripcion ?? d.codItem ?? "Sin nombre" }));
-              default:
-                return [];
-            }
-          })()}
+          datos={
+  (() => {
+    const datos = detalleEficiencia()!;
+    switch (modo()) {
+      case "cliente":
+        return [...datos].sort((a, b) => a.cliente.localeCompare(b.cliente));
+      case "pedido":
+        return datos;
+      case "categoria":
+        return datos.map((d: any) => ({
+          ...d,
+          categoria: d.categoria || "Sin categoría",
+        }));
+      case "producto":
+        return datos.map((d: any) => ({
+          ...d,
+          producto: d.descripcion ?? d.codItem ?? "Sin nombre",
+        }));
+      default:
+        return [];
+    }
+  })()
+}
+
           modo={modo()}
           onSeleccionar={(item: any) => {
             const filtro =

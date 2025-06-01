@@ -4,7 +4,10 @@ import type { EficienciaCliente } from "@/types/eficiencia";
 export default function ClienteFillRate({ datos }: { datos: EficienciaCliente[] }) {
   if (!datos.length) return null;
 
-  const datosValidos = datos.filter(d => typeof d.fillRate === "number" && !isNaN(d.fillRate));
+  const datosValidos = datos
+  .filter(d => typeof d.fillRate === "number" && !isNaN(d.fillRate))
+  .sort((a, b) => (a.fillRate ?? Infinity) - (b.fillRate ?? Infinity));
+
   if (!datosValidos.length) return null;
 
   const labels = datosValidos.map((r) => r.cliente);
@@ -41,7 +44,8 @@ export default function ClienteFillRate({ datos }: { datos: EficienciaCliente[] 
                 legend: { display: false },
                 tooltip: {
                   callbacks: {
-                    label: (context: any) => `${context.label}: ${context.raw.toFixed(2)}%`,
+                    label: (context: any) =>
+                      `${context.label}: ${context.raw.toFixed(2)}%`,
                   },
                 },
               },
