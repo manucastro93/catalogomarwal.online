@@ -18,15 +18,58 @@ interface Props {
 
 export default function TablaEficiencia({ datos, modo, loading = false, onSeleccionar }: Props) {
   const [paginaActual, setPaginaActual] = createSignal(1);
-  const elementosPorPagina = 10;
+  const elementosPorPagina = 20;
+
+  const [columnaOrden, setColumnaOrden] = createSignal<null | string>(null);
+  const [direccionOrden, setDireccionOrden] = createSignal<"asc" | "desc">("asc");
+
+  const ordenar = (col: string) => {
+    if (columnaOrden() === col) {
+      setDireccionOrden(direccionOrden() === "asc" ? "desc" : "asc");
+    } else {
+      setColumnaOrden(col);
+      setDireccionOrden("asc");
+    }
+  };
+
+  const getKeyForModo = (modo: string) => {
+    switch (modo) {
+      case "pedido":
+        return "nroPedido";
+      case "categoria":
+        return "categoriaNombre";
+      case "producto":
+        return "producto";
+      case "cliente":
+        return "cliente";
+      default:
+        return "";
+    }
+  };
+
+  const datosOrdenados = createMemo(() => {
+    if (!columnaOrden()) return datos;
+    return [...datos].sort((a, b) => {
+      const valA = (a as any)[columnaOrden()!];
+      const valB = (b as any)[columnaOrden()!];
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+      if (typeof valA === "number") {
+        return direccionOrden() === "asc" ? valA - valB : valB - valA;
+      }
+      return direccionOrden() === "asc"
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+  });
 
   const totalPaginas = createMemo(() =>
-    Math.ceil(datos.length / elementosPorPagina)
+    Math.ceil(datosOrdenados().length / elementosPorPagina)
   );
 
   const datosPaginados = createMemo(() => {
     const inicio = (paginaActual() - 1) * elementosPorPagina;
-    return datos.slice(inicio, inicio + elementosPorPagina);
+    return datosOrdenados().slice(inicio, inicio + elementosPorPagina);
   });
 
   const getLabel = (item: Item) => {
@@ -62,6 +105,11 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
   const getCantidad = (valor: number | null | undefined) =>
     valor !== null && valor !== undefined ? formatearMiles(valor) : "—";
 
+  const iconoOrden = (col: string) => {
+    if (columnaOrden() !== col) return "";
+    return direccionOrden() === "asc" ? " ▲" : " ▼";
+  };
+
   if (loading) {
     return (
       <div class="p-6 text-center text-gray-500 text-sm">
@@ -75,28 +123,34 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
       <table class="min-w-full bg-white shadow-md rounded-md">
         <thead class="bg-gray-100 text-xs md:text-sm text-gray-600 text-left">
           <tr>
-            <th class="px-4 py-2 capitalize">
-  {(() => {
-    switch (modo) {
-      case "pedido":
-        return "Pedido";
-      case "categoria":
-        return "Categoría";
-      case "producto":
-        return "Producto";
-      case "cliente":
-        return "Cliente";
-      default:
-        return "";
-    }
-  })()}
-</th>
+            <th
+              class="px-4 py-2 capitalize cursor-pointer"
+              onClick={() => ordenar(getKeyForModo(modo))}
+            >
+              {(() => {
+                switch (modo) {
+                  case "pedido":
+                    return "Pedido";
+                  case "categoria":
+                    return "Categoría";
+                  case "producto":
+                    return "Producto";
+                  case "cliente":
+                    return "Cliente";
+                  default:
+                    return "";
+                }
+              })()}
+              {iconoOrden(getKeyForModo(modo))}
+            </th>
 
-            {modo === "pedido" && <th class="px-4 py-2">Fecha</th>}
-            <th class="px-4 py-2">Cant. Pedida</th>
-            <th class="px-4 py-2">Cant. Facturada</th>
-            <th class="px-4 py-2">Fill Rate</th>
-            <th class="px-4 py-2">Lead Time (días)</th>
+            {modo === "pedido" && (
+              <th class="px-4 py-2">Fecha</th>
+            )}
+            <th class="px-4 py-2 cursor-pointer" onClick={() => ordenar("cantidadPedida")}>Cant. Pedida{iconoOrden("cantidadPedida")}</th>
+            <th class="px-4 py-2 cursor-pointer" onClick={() => ordenar("cantidadFacturada")}>Cant. Facturada{iconoOrden("cantidadFacturada")}</th>
+            <th class="px-4 py-2 cursor-pointer" onClick={() => ordenar("fillRate")}>Fill Rate{iconoOrden("fillRate")}</th>
+            <th class="px-4 py-2 cursor-pointer" onClick={() => ordenar("leadTimeDias")}>Lead Time (días){iconoOrden("leadTimeDias")}</th>
           </tr>
         </thead>
         <tbody class="text-sm">
@@ -122,12 +176,8 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
                   {modo === "pedido" && (
                     <td class="px-4 py-2">{getFecha(item)}</td>
                   )}
-                  <td class="px-4 py-2">
-                    {getCantidad(item.cantidadPedida)}
-                  </td>
-                  <td class="px-4 py-2">
-                    {getCantidad(item.cantidadFacturada)}
-                  </td>
+                  <td class="px-4 py-2">{getCantidad(item.cantidadPedida)}</td>
+                  <td class="px-4 py-2">{getCantidad(item.cantidadFacturada)}</td>
                   <td class="px-4 py-2">{getFillRate(item)}</td>
                   <td class="px-4 py-2">{getLeadTime(item)}</td>
                 </tr>
@@ -150,9 +200,7 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
           </span>
           <button
             class="px-2 py-1 rounded border"
-            onClick={() =>
-              setPaginaActual((p) => Math.min(p + 1, totalPaginas()))
-            }
+            onClick={() => setPaginaActual((p) => Math.min(p + 1, totalPaginas()))}
           >
             Siguiente ▶
           </button>

@@ -25,16 +25,20 @@ export default function ModalDetalleEficiencia({
   desde,
   hasta,
 }: Props) {
-  const [pedidoSeleccionado, setPedidoSeleccionado] = createSignal<number | null>(null);
+  const [pedidoSeleccionado, setPedidoSeleccionado] = createSignal<
+    number | null
+  >(null);
   const [verModalPedido, setVerModalPedido] = createSignal(false);
 
   const fetch = () => {
-  const filtros = { desde, hasta };
-  if (modo === "pedido") return fetchDetallePorPedido(filtro);
-  if (modo === "cliente") return fetchDetalleCliente({ ...filtros, cliente: filtro });
-  if (modo === "categoria") return fetchDetalleCategoria({ ...filtros, categoriaId: filtro });
-  return fetchEficienciaPorProducto({ ...filtros, producto: filtro });
-};
+    const filtros = { desde, hasta };
+    if (modo === "pedido") return fetchDetallePorPedido(filtro);
+    if (modo === "cliente")
+      return fetchDetalleCliente({ ...filtros, cliente: filtro });
+    if (modo === "categoria")
+      return fetchDetalleCategoria({ ...filtros, categoriaId: filtro });
+    return fetchEficienciaPorProducto({ ...filtros, producto: filtro });
+  };
 
   const [datos] = createResource([modo, filtro, desde, hasta], fetch);
 
@@ -53,7 +57,10 @@ export default function ModalDetalleEficiencia({
             <h2 class="text-lg font-semibold">
               Detalle por {modo} – {filtro}
             </h2>
-            <button class="text-gray-600 hover:text-gray-900 text-xl" onClick={onCerrar}>
+            <button
+              class="text-gray-600 hover:text-gray-900 text-xl"
+              onClick={onCerrar}
+            >
               &times;
             </button>
           </div>
@@ -64,7 +71,8 @@ export default function ModalDetalleEficiencia({
                 <thead class="bg-gray-100 text-xs uppercase text-gray-600 sticky top-0">
                   <tr>
                     <th class="px-4 py-2">Pedido</th>
-                    <th class="px-4 py-2">Fecha</th>
+                    <th class="px-4 py-2">Fecha Pedido</th>
+                    <th class="px-4 py-2">Fecha Factura</th>
                     <th class="px-4 py-2">Cant. Pedida</th>
                     <th class="px-4 py-2">Cant. Facturada</th>
                     <th class="px-4 py-2">Fill Rate</th>
@@ -72,18 +80,39 @@ export default function ModalDetalleEficiencia({
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={datos()}>
+                  <For
+                    each={datos()
+                      .slice()
+                      .sort(
+                        (a: any, b: any) =>
+                          Number(a.nroPedido ?? 0) - Number(b.nroPedido ?? 0)
+                      )}
+                  >
                     {(item: any) => (
                       <tr
                         class="border-t hover:bg-gray-50 cursor-pointer"
                         onClick={() => abrirDetallePedido(item)}
                       >
                         <td class="px-4 py-2">{item.nroPedido || "—"}</td>
-                        <td class="px-4 py-2">{formatearFechaCorta(item.fecha?.split("T")[0])}</td>
-                        <td class="px-4 py-2">{formatearMiles(item.cantidadPedida)}</td>
-                        <td class="px-4 py-2">{formatearMiles(item.cantidadFacturada)}</td>
+                        <td class="px-4 py-2">
+                          {formatearFechaCorta(item.fecha?.split("T")[0])}
+                        </td>
+                        <td class="px-4 py-2 whitespace-nowrap">
+  {Array.isArray(item.fechasFacturas)
+    ? item.fechasFacturas.map(formatearFechaCorta).join(", ")
+    : "—"}
+</td>
+
+                        <td class="px-4 py-2">
+                          {formatearMiles(item.cantidadPedida)}
+                        </td>
+                        <td class="px-4 py-2">
+                          {formatearMiles(item.cantidadFacturada)}
+                        </td>
                         <td class="px-4 py-2">{item.fillRate?.toFixed(2)}%</td>
-                        <td class="px-4 py-2">{item.leadTimeDias?.toFixed(2) ?? "—"}</td>
+                        <td class="px-4 py-2">
+                          {item.leadTimeDias?.toFixed(2) ?? "—"}
+                        </td>
                       </tr>
                     )}
                   </For>
@@ -92,12 +121,17 @@ export default function ModalDetalleEficiencia({
             </Show>
 
             <Show when={datos.loading}>
-              <div class="p-6 text-center text-gray-500">Cargando detalle...</div>
+              <div class="p-6 text-center text-gray-500">
+                Cargando detalle...
+              </div>
             </Show>
           </div>
 
           <div class="p-4 text-right">
-            <button onClick={onCerrar} class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm">
+            <button
+              onClick={onCerrar}
+              class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded text-sm"
+            >
               Cerrar
             </button>
           </div>

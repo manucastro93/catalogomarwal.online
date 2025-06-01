@@ -395,6 +395,7 @@ export const obtenerDetallePorPedido = async (req, res) => {
         nro_pedido: pedido.nro_pedido,
         anulada_boolean: false,
       },
+      attributes: ['fecha_comp'],
       include: [{
         model: DetalleFactura,
         as: "detalles",
@@ -412,11 +413,18 @@ export const obtenerDetallePorPedido = async (req, res) => {
       }
     }
 
-    const leadTime = facturas.length
-      ? Math.max(0, Math.round(
-          (new Date(facturas[0].fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)
-        ))
-      : null;
+    // ✅ calcular lead time del pedido (usar la factura más temprana)
+    let leadTimePedido = null;
+    if (facturas.length) {
+      const fechaFacturaMasTemprana = facturas
+        .map(f => new Date(f.fecha_comp))
+        .sort((a, b) => a.getTime() - b.getTime())[0];
+
+      leadTimePedido = Math.max(
+        0,
+        Math.round((fechaFacturaMasTemprana - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24))
+      );
+    }
 
     const resultado = detallesPedido.map(p => {
       const cantidadPedida = parseFloat(p.cantidad || 0);
@@ -431,11 +439,15 @@ export const obtenerDetallePorPedido = async (req, res) => {
         pedida: cantidadPedida,
         facturada: cantidadFacturada,
         fillRate: +fillRate.toFixed(2),
-        leadTime,
+        leadTimeDias: leadTimePedido // ✅ usar el mismo para todos
       };
     });
 
-    res.json(resultado);
+    res.json({
+      leadTimePedido,
+      fechasFacturas: facturas.map(f => f.fecha_comp),
+      productos: resultado
+    });
   } catch (error) {
     console.error("Error en obtenerDetallePorPedido:", error);
     res.status(500).json({ error: "Error al obtener detalle del pedido" });
@@ -981,9 +993,10 @@ export const obtenerDetallePorCliente = async (req, res) => {
         : null;
 
       const factura = facturasMap.get(pedido.nro_pedido);
-      const leadTimeDias = factura
-        ? Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
-        : null;
+      const leadTimeDias =
+        factura && cantidadFacturada > 0
+          ? Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
+          : null;
 
       return {
         pedidoId: pedido.id,

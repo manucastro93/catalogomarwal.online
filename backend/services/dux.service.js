@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Categoria, Producto, Factura, PedidoDux } from '../models/index.js';
+import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux } from '../models/index.js';
 import { estadoSync } from '../state/estadoSync.js';
 
 const API_URL = process.env.DUX_API_URL_PRODUCTOS;
@@ -204,7 +204,7 @@ export async function sincronizarProductosDesdeDux() {
     categoriasNuevas: categoriasCreadas.size
   };
 }
-
+/*
 export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new Date()) {
   const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   const fechaDesde = '2025-01-01';
@@ -363,6 +363,215 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
       } else {
         await Factura.create(data);
         creadas++;
+      }
+    }
+
+    totalProcesadas += facturas.length;
+    offset += limit;
+    await esperar(3000);
+  }
+
+  return { creadas, actualizadas, total: totalProcesadas };
+}*/
+
+export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new Date()) {
+  const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const fechaDesde = '2025-01-01';
+  const hasta = fechaHasta.toISOString().slice(0, 10);
+
+  let offset = 0;
+  const limit = 50;
+  let totalProcesados = 0, creados = 0, actualizados = 0;
+
+  try {
+    while (true) {
+      const res = await axios.get('https://erp.duxsoftware.com.ar/WSERP/rest/services/pedidos', {
+        headers: {
+          Authorization: process.env.DUX_API_KEY,
+          Accept: 'application/json',
+        },
+        params: {
+          idEmpresa: EMPRESA,
+          idSucursal: SUCURSAL,
+          fechaDesde,
+          fechaHasta: hasta,
+          limit,
+          offset
+        },
+      });
+
+      const pedidos = res.data.results || [];
+      if (pedidos.length === 0) break;
+
+      for (const p of pedidos) {
+        const existente = await PedidoDux.findOne({ where: { nro_pedido: p.nro_pedido } });
+
+        const data = {
+          nro_pedido: p.nro_pedido,
+          cliente: p.cliente,
+          personal: p.personal,
+          fecha: new Date(p.fecha),
+          total: parseFloat(p.total),
+          estado_facturacion: p.estado_facturacion,
+          observaciones: p.observaciones,
+        };
+
+        let pedido;
+
+        if (existente) {
+          await existente.update(data);
+          pedido = existente;
+          actualizados++;
+        } else {
+          pedido = await PedidoDux.create(data);
+          creados++;
+        }
+
+        // Detalles → tabla DetallePedidosDux
+        if (Array.isArray(p.detalles)) {
+          await DetallePedidoDux.destroy({ where: { pedidoDuxId: pedido.id } }); // limpia anteriores
+
+          for (const d of p.detalles) {
+            await DetallePedidoDux.create({
+              pedidoDuxId: pedido.id,
+              cantidad: parseFloat(d.cantidad),
+              precioUnitario: parseFloat(d.precio_unitario),
+              subtotal: parseFloat(d.subtotal),
+              descuento: parseFloat(d.descuento || 0),
+              codItem: d.cod_item,
+              descripcion: d.descripcion,
+            });
+          }
+        }
+
+        await esperar(500);
+      }
+
+      totalProcesados += pedidos.length;
+      offset += limit;
+    }
+
+    return {
+      mensaje: `Sincronización de pedidos Dux finalizada. Total: ${totalProcesados}`,
+      creados,
+      actualizados
+    };
+
+  } catch (error) {
+    if (error.response?.status === 429 && reintento < 3) {
+      const espera = 5000 * (reintento + 1);
+      console.warn(`⚠️ 429 recibido. Esperando ${espera / 1000}s... Reintento #${reintento + 1}`);
+      await esperar(espera);
+      return sincronizarPedidosDesdeDux(reintento + 1);
+    }
+
+    console.error('❌ Error al sincronizar pedidos Dux:', error.message);
+    throw error;
+  }
+}
+
+export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
+  const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const fechaDesde = '2025-01-01';
+  const hasta = fechaHasta.toISOString().slice(0, 10);
+  const limit = 50;
+  let offset = 0;
+
+  let creadas = 0;
+  let actualizadas = 0;
+  let totalProcesadas = 0;
+
+  async function obtenerConReintentos(url, reintentos = 3) {
+    for (let i = 0; i < reintentos; i++) {
+      try {
+        const res = await axios.get(url, {
+          headers: {
+            accept: 'application/json',
+            authorization: API_KEY
+          }
+        });
+        return res.data.results || [];
+      } catch (error) {
+        if (error.response?.status === 429) {
+          console.warn('⚠️ 429 Too Many Requests: esperando 10s para reintentar...');
+          await esperar(10000);
+        } else if (error.code === 'ECONNRESET') {
+          console.warn(`🔁 ECONNRESET en offset ${offset}, intento ${i + 1}...`);
+          await esperar(3000 + i * 2000);
+        } else {
+          throw error;
+        }
+      }
+    }
+    throw new Error(`❌ Fallaron todos los intentos para offset ${offset}`);
+  }
+
+  while (true) {
+    const url = `${API_URL_FACTURAS}?fechaDesde=${fechaDesde}&fechaHasta=${hasta}&idEmpresa=${EMPRESA}&idSucursal=${SUCURSAL}&limit=${limit}&offset=${offset}`;
+    console.log(`➡️ Offset actual: ${offset}`);
+
+    let facturas;
+    try {
+      facturas = await obtenerConReintentos(url);
+    } catch (error) {
+      console.error('❌ Error al sincronizar facturas:', error.message);
+      break;
+    }
+
+    if (facturas.length === 0) break;
+
+    for (const f of facturas) {
+      const existente = await Factura.findByPk(f.id);
+
+      let estadoFacturaId = 1;
+      if (f.anulada_boolean) {
+        estadoFacturaId = 3;
+      } else if (f.detalles_cobro?.[0]?.detalles_mov_cobro?.length > 0) {
+        const totalCobrado = f.detalles_cobro
+          .flatMap(dc => dc.detalles_mov_cobro)
+          .reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
+
+        if (totalCobrado >= f.total) estadoFacturaId = 2;
+        else if (totalCobrado > 0) estadoFacturaId = 4;
+      }
+
+      const data = {
+        ...f,
+        estadoFacturaId,
+        fecha_comp: new Date(f.fecha_comp),
+        fecha_vencimiento_cae_cai: f.fecha_vencimiento_cae_cai ? new Date(f.fecha_vencimiento_cae_cai) : null,
+        fecha_registro: f.fecha_registro ? new Date(f.fecha_registro) : null,
+        sincronizadoEl: new Date(),
+      };
+
+      let factura;
+
+      if (existente) {
+        await existente.update(data);
+        factura = existente;
+        actualizadas++;
+      } else {
+        factura = await Factura.create(data);
+        creadas++;
+      }
+
+      // Detalles → tabla DetalleFacturas
+      if (Array.isArray(f.detalles)) {
+        await DetalleFactura.destroy({ where: { facturaId: factura.id } });
+
+        for (const d of f.detalles) {
+          await DetalleFactura.create({
+            facturaId: factura.id,
+            cantidad: parseFloat(d.cantidad),
+            precioUnitario: parseFloat(d.precio_unitario),
+            subtotal: parseFloat(d.subtotal),
+            descuento: parseFloat(d.descuento || 0),
+            costo: parseFloat(d.costo || 0),
+            codItem: d.cod_item,
+            descripcion: d.descripcion,
+          });
+        }
       }
     }
 
