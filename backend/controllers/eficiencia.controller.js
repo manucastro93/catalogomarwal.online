@@ -413,17 +413,19 @@ export const obtenerDetallePorPedido = async (req, res) => {
       }
     }
 
-    // ✅ calcular lead time del pedido (usar la factura más temprana)
     let leadTimePedido = null;
+    let fechasFacturas = [];
+
     if (facturas.length) {
-      const fechaFacturaMasTemprana = facturas
-        .map(f => new Date(f.fecha_comp))
-        .sort((a, b) => a.getTime() - b.getTime())[0];
+      const fechas = facturas.map(f => new Date(f.fecha_comp)).sort((a, b) => a - b);
+      const fechaFacturaMasTemprana = fechas[0];
 
       leadTimePedido = Math.max(
         0,
         Math.round((fechaFacturaMasTemprana - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24))
       );
+
+      fechasFacturas = fechas.map(f => f.toISOString().split("T")[0]);
     }
 
     const resultado = detallesPedido.map(p => {
@@ -439,13 +441,13 @@ export const obtenerDetallePorPedido = async (req, res) => {
         pedida: cantidadPedida,
         facturada: cantidadFacturada,
         fillRate: +fillRate.toFixed(2),
-        leadTimeDias: leadTimePedido // ✅ usar el mismo para todos
+        leadTimeDias: leadTimePedido
       };
     });
 
     res.json({
       leadTimePedido,
-      fechasFacturas: facturas.map(f => f.fecha_comp),
+      fechasFacturas,
       productos: resultado
     });
   } catch (error) {
