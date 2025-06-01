@@ -1,18 +1,34 @@
 import { Bar } from "solid-chartjs";
+import {
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import type { EficienciaCliente } from "@/types/eficiencia";
+
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export default function ClienteFillRate({ datos }: { datos: EficienciaCliente[] }) {
   if (!datos.length) return null;
 
-  const datosValidos = datos
-  .filter(d => typeof d.fillRate === "number" && !isNaN(d.fillRate))
-  .sort((a, b) => (a.fillRate ?? Infinity) - (b.fillRate ?? Infinity));
+  const agrupado: Record<string, string[]> = {};
+  for (const r of datos) {
+    const key =
+      typeof r.fillRate === "number" && !isNaN(r.fillRate)
+        ? r.fillRate.toFixed(2)
+        : "Sin datos";
+    if (!agrupado[key]) agrupado[key] = [];
+    agrupado[key].push(r.cliente);
+  }
 
-  if (!datosValidos.length) return null;
+  const labels = Object.keys(agrupado)
+    .filter((k) => k !== "Sin datos")
+    .sort((a, b) => parseFloat(a) - parseFloat(b));
 
-  const labels = datosValidos.map((r) => r.cliente);
-  const valores = datosValidos.map((r) => r.fillRate);
-  const key = "fillrate_cliente_" + labels.join("|");
+  const valores = labels.map((k) => parseFloat(k));
 
   return (
     <div class="w-full min-h-[320px] md:min-h-[400px] p-2 md:p-4 shadow rounded bg-white flex flex-col">
@@ -22,30 +38,42 @@ export default function ClienteFillRate({ datos }: { datos: EficienciaCliente[] 
       <div class="flex-1">
         <div class="relative w-full h-[280px] md:h-[380px]">
           <Bar
-            key={key}
             data={{
               labels,
               datasets: [
                 {
-                  label: "% de Fill Rate",
+                  label: "Fill Rate (%)",
                   data: valores,
                   backgroundColor: "rgba(75, 192, 192, 0.5)",
+                  borderColor: "rgba(75, 192, 192, 1)",
+                  borderWidth: 1,
                 },
               ],
             }}
             options={{
               responsive: true,
               maintainAspectRatio: false,
-              layout: { padding: 15 },
               scales: {
-                y: { beginAtZero: true, max: 100 },
+                x: {
+                  title: { display: true, text: "Fill Rate (%) agrupado" },
+                },
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  title: { display: true, text: "Fill Rate (%)" },
+                  ticks: { precision: 0 },
+                },
               },
               plugins: {
                 legend: { display: false },
                 tooltip: {
                   callbacks: {
-                    label: (context: any) =>
-                      `${context.label}: ${context.raw.toFixed(2)}%`,
+                    title: (ctx: any) => `Fill Rate: ${ctx[0].label}%`,
+                    afterLabel: (ctx: any) => {
+                      const valor = ctx.label;
+                      const clientes = agrupado[valor] || [];
+                      return clientes;
+                    },
                   },
                 },
               },

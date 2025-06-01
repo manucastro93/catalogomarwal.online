@@ -1,23 +1,34 @@
 import { Bar } from "solid-chartjs";
+import {
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import type { EficienciaCliente } from "@/types/eficiencia";
+
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export default function ClienteLeadTime({ datos }: { datos: EficienciaCliente[] }) {
   if (!datos.length) return null;
 
-  const datosOrdenados = [...datos].sort((a, b) => {
-    const aVal = isNaN(a.leadTimePromedio ?? 0) ? Infinity : a.leadTimePromedio!;
-    const bVal = isNaN(b.leadTimePromedio ?? 0) ? Infinity : b.leadTimePromedio!;
-    return aVal - bVal;
-  });
+  const agrupado: Record<string, string[]> = {};
+  for (const r of datos) {
+    const key =
+      typeof r.leadTimePromedio === "number" && !isNaN(r.leadTimePromedio)
+        ? r.leadTimePromedio.toFixed(2)
+        : "Sin datos";
+    if (!agrupado[key]) agrupado[key] = [];
+    agrupado[key].push(r.cliente);
+  }
 
-  const labels = datosOrdenados.map((r) => r.cliente);
-  const valores = datosOrdenados.map((r) =>
-    typeof r.leadTimePromedio === "number" && !isNaN(r.leadTimePromedio)
-      ? r.leadTimePromedio
-      : 0
-  );
+  const labels = Object.keys(agrupado)
+    .filter((k) => k !== "Sin datos")
+    .sort((a, b) => parseFloat(a) - parseFloat(b));
 
-  const key = "leadtime_cliente_" + labels.join("|");
+  const valores = labels.map((k) => parseFloat(k));
 
   return (
     <div class="w-full min-h-[320px] md:min-h-[400px] p-2 md:p-4 shadow rounded bg-white flex flex-col">
@@ -27,7 +38,6 @@ export default function ClienteLeadTime({ datos }: { datos: EficienciaCliente[] 
       <div class="flex-1">
         <div class="relative w-full h-[280px] md:h-[380px]">
           <Bar
-            key={key}
             data={{
               labels,
               datasets: [
@@ -35,27 +45,33 @@ export default function ClienteLeadTime({ datos }: { datos: EficienciaCliente[] 
                   label: "Lead Time (días)",
                   data: valores,
                   backgroundColor: "rgba(153, 102, 255, 0.5)",
+                  borderColor: "rgba(153, 102, 255, 1)",
+                  borderWidth: 1,
                 },
               ],
             }}
             options={{
               responsive: true,
               maintainAspectRatio: false,
-              layout: { padding: 15 },
               scales: {
-                y: { beginAtZero: true },
+                x: {
+                  title: { display: true, text: "Lead Time (días) agrupado" },
+                },
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: "Lead Time (días)" },
+                  ticks: { precision: 0 },
+                },
               },
               plugins: {
                 legend: { display: false },
                 tooltip: {
                   callbacks: {
-                    label: (context: any) => {
-                      const original = datosOrdenados[context.dataIndex].leadTimePromedio;
-                      return `${context.label}: ${
-                        original == null || isNaN(original)
-                          ? "Sin datos"
-                          : `${original.toFixed(2)} días`
-                      }`;
+                    title: (ctx:any) => `Lead Time: ${ctx[0].label} días`,
+                    afterLabel: (ctx:any) => {
+                      const valor = ctx.label;
+                      const clientes = agrupado[valor] || [];
+                      return clientes;
                     },
                   },
                 },
