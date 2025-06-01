@@ -11,6 +11,7 @@ export interface EficienciaPedido extends EficienciaBase {
   tipo: "pedido";
   nroPedido: string;
   fecha: string;
+  fechasFacturas?: string[];
 }
 
 export interface EficienciaCategoria extends EficienciaBase {

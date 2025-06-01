@@ -8,14 +8,15 @@ interface Props {
   onCerrar: () => void;
 }
 
-
 export default function ModalDetallePedido({ pedidoId, abierto, onCerrar }: Props) {
   const [detalle] = createResource(pedidoId, fetchDetallePorPedido);
-createEffect(() => {
-  if (detalle.state === "ready") {
-    console.log("🔎 Detalle pedido:", detalle());
-  }
-});
+
+  createEffect(() => {
+    if (detalle.state === "ready") {
+      console.log("🔎 Detalle pedido:", detalle());
+    }
+  });
+
   return (
     <Show when={abierto}>
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -30,16 +31,12 @@ createEffect(() => {
           <div class="overflow-x-auto max-h-[70vh] overflow-y-auto">
             <Show when={!detalle.loading && detalle()}>
               <div class="px-6 py-4 border-b text-sm text-gray-700">
-  <p><strong>Lead time del pedido:</strong> {
-    (() => {
-      const items = detalle();
-      const leadTimes = items?.map((i: any) => i.leadTimeDias).filter((l: number) => typeof l === "number");
-      if (!leadTimes?.length) return "—";
-      const promedio = leadTimes.reduce((acc: number, v: number) => acc + v, 0) / leadTimes.length;
-      return `${promedio.toFixed(2)} días`;
-    })()
-  }</p>
-</div>
+                <p><strong>Lead time del pedido:</strong> {
+                  detalle()?.leadTimePedido !== null && detalle()?.leadTimePedido !== undefined
+                    ? `${detalle()?.leadTimePedido} días`
+                    : "—"
+                }</p>
+              </div>
 
               <table class="min-w-full text-sm text-left">
                 <thead class="bg-gray-100 text-xs uppercase text-gray-600 sticky top-0">
@@ -53,7 +50,7 @@ createEffect(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={detalle()}>
+                  <For each={detalle()?.productos || []}>
                     {(item) => (
                       <tr class="border-t hover:bg-gray-50">
                         <td class="px-4 py-2">{item.codItem ?? "—"}</td>
@@ -76,6 +73,7 @@ createEffect(() => {
                 </tbody>
               </table>
             </Show>
+
             <Show when={detalle.loading}>
               <div class="p-6 text-center text-gray-500">
                 Cargando productos del pedido...
