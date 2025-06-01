@@ -7,7 +7,11 @@ import type {
   EficienciaCliente,
 } from "@/types/eficiencia";
 
-type Item = EficienciaPedido | EficienciaCategoria | EficienciaProducto | EficienciaCliente;
+type Item =
+  | EficienciaPedido
+  | EficienciaCategoria
+  | EficienciaProducto
+  | EficienciaCliente;
 
 interface Props {
   datos: Item[];
@@ -16,12 +20,19 @@ interface Props {
   onSeleccionar?: (item: Item) => void;
 }
 
-export default function TablaEficiencia({ datos, modo, loading = false, onSeleccionar }: Props) {
+export default function TablaEficiencia({
+  datos,
+  modo,
+  loading = false,
+  onSeleccionar,
+}: Props) {
   const [paginaActual, setPaginaActual] = createSignal(1);
   const elementosPorPagina = 20;
 
   const [columnaOrden, setColumnaOrden] = createSignal<null | string>(null);
-  const [direccionOrden, setDireccionOrden] = createSignal<"asc" | "desc">("asc");
+  const [direccionOrden, setDireccionOrden] = createSignal<"asc" | "desc">(
+    "asc"
+  );
 
   const ordenar = (col: string) => {
     if (columnaOrden() === col) {
@@ -50,13 +61,25 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
   const datosOrdenados = createMemo(() => {
     if (!columnaOrden()) return datos;
     return [...datos].sort((a, b) => {
-      const valA = (a as any)[columnaOrden()!];
-      const valB = (b as any)[columnaOrden()!];
+      const col = columnaOrden()!;
+
+      const valA =
+        col === "leadTimeDias"
+          ? (a as any).leadTimeDias ?? (a as any).leadTimePromedio
+          : (a as any)[col];
+
+      const valB =
+        col === "leadTimeDias"
+          ? (b as any).leadTimeDias ?? (b as any).leadTimePromedio
+          : (b as any)[col];
+
       if (valA == null) return 1;
       if (valB == null) return -1;
-      if (typeof valA === "number") {
+
+      if (typeof valA === "number" && typeof valB === "number") {
         return direccionOrden() === "asc" ? valA - valB : valB - valA;
       }
+
       return direccionOrden() === "asc"
         ? String(valA).localeCompare(String(valB))
         : String(valB).localeCompare(String(valA));
@@ -144,13 +167,31 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
               {iconoOrden(getKeyForModo(modo))}
             </th>
 
-            {modo === "pedido" && (
-              <th class="px-4 py-2">Fecha</th>
-            )}
-            <th class="px-4 py-2 cursor-pointer" onClick={() => ordenar("cantidadPedida")}>Cant. Pedida{iconoOrden("cantidadPedida")}</th>
-            <th class="px-4 py-2 cursor-pointer" onClick={() => ordenar("cantidadFacturada")}>Cant. Facturada{iconoOrden("cantidadFacturada")}</th>
-            <th class="px-4 py-2 cursor-pointer" onClick={() => ordenar("fillRate")}>Fill Rate{iconoOrden("fillRate")}</th>
-            <th class="px-4 py-2 cursor-pointer" onClick={() => ordenar("leadTimeDias")}>Lead Time (días){iconoOrden("leadTimeDias")}</th>
+            {modo === "pedido" && <th class="px-4 py-2">Fecha</th>}
+            <th
+              class="px-4 py-2 cursor-pointer"
+              onClick={() => ordenar("cantidadPedida")}
+            >
+              Cant. Pedida{iconoOrden("cantidadPedida")}
+            </th>
+            <th
+              class="px-4 py-2 cursor-pointer"
+              onClick={() => ordenar("cantidadFacturada")}
+            >
+              Cant. Facturada{iconoOrden("cantidadFacturada")}
+            </th>
+            <th
+              class="px-4 py-2 cursor-pointer"
+              onClick={() => ordenar("fillRate")}
+            >
+              Fill Rate{iconoOrden("fillRate")}
+            </th>
+            <th
+              class="px-4 py-2 cursor-pointer"
+              onClick={() => ordenar("leadTimeDias")}
+            >
+              Lead Time (días){iconoOrden("leadTimeDias")}
+            </th>
           </tr>
         </thead>
         <tbody class="text-sm">
@@ -177,7 +218,9 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
                     <td class="px-4 py-2">{getFecha(item)}</td>
                   )}
                   <td class="px-4 py-2">{getCantidad(item.cantidadPedida)}</td>
-                  <td class="px-4 py-2">{getCantidad(item.cantidadFacturada)}</td>
+                  <td class="px-4 py-2">
+                    {getCantidad(item.cantidadFacturada)}
+                  </td>
                   <td class="px-4 py-2">{getFillRate(item)}</td>
                   <td class="px-4 py-2">{getLeadTime(item)}</td>
                 </tr>
@@ -200,7 +243,9 @@ export default function TablaEficiencia({ datos, modo, loading = false, onSelecc
           </span>
           <button
             class="px-2 py-1 rounded border"
-            onClick={() => setPaginaActual((p) => Math.min(p + 1, totalPaginas()))}
+            onClick={() =>
+              setPaginaActual((p) => Math.min(p + 1, totalPaginas()))
+            }
           >
             Siguiente ▶
           </button>
