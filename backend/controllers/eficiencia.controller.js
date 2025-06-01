@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { Op, fn, col, where } from 'sequelize';
 import dayjs from 'dayjs';
 import { Factura, PedidoDux, DetalleFactura, DetallePedidoDux, Producto, Categoria } from "../models/index.js";
 
@@ -323,8 +323,24 @@ export const obtenerEficienciaPorPedido = async (req, res) => {
       attributes: ['nro_pedido', 'fecha_comp']
     });
 
-    const detallesPedidos = await DetallePedidoDux.findAll();
-    const detallesFacturas = await DetalleFactura.findAll();
+    const detallesPedidos = await DetallePedidoDux.findAll({
+  where: {
+    pedidoDuxId: { [Op.in]: pedidos.map(p => p.id) }
+  }
+});
+
+
+    const detallesFacturas = await DetalleFactura.findAll({
+      include: [{
+        model: Factura,
+        as: 'factura',
+        where: {
+          nro_pedido: { [Op.in]: nroPedidos },
+          anulada_boolean: false
+        },
+        attributes: ['nro_pedido']
+      }]
+    });
 
     const facturasMap = new Map(facturas.map(f => [f.nro_pedido, f]));
 
@@ -339,9 +355,9 @@ export const obtenerEficienciaPorPedido = async (req, res) => {
 
       const fillRate = cantidadPedida > 0 ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100) : null;
 
-      const leadTime = factura ?
-        Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24))) :
-        null;
+      const leadTime = factura
+        ? Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
+        : null;
 
       return {
         pedidoId: pedido.id,
@@ -375,37 +391,57 @@ export const obtenerDetallePorPedido = async (req, res) => {
     }
 
     const detallesPedido = await DetallePedidoDux.findAll({
-      where: { pedidoDuxId: pedidoId }
+      where: { pedidoDuxId: pedidoId },
+      attributes: ['codItem', 'descripcion', 'cantidad']
     });
 
     const facturas = await Factura.findAll({
-      where: { nro_pedido: pedido.nro_pedido, anulada_boolean: false },
-      include: [{ model: DetalleFactura, as: "detalles" }]
+      where: {
+        nro_pedido: pedido.nro_pedido,
+        anulada_boolean: false,
+      },
+      include: [{
+        model: DetalleFactura,
+        as: "detalles",
+        attributes: ['codItem', 'cantidad']
+      }],
     });
 
-    const detallesFacturados = facturas.flatMap(f => f.detalles || []);
+    const mapFacturadas = {};
+    for (const factura of facturas) {
+      for (const det of factura.detalles || []) {
+        const cod = det.codItem;
+        const cant = parseFloat(det.cantidad || 0);
+        if (!mapFacturadas[cod]) mapFacturadas[cod] = 0;
+        mapFacturadas[cod] += cant;
+      }
+    }
 
-    const resultado = detallesPedido.map(p => {
-      const cantidadFacturada = detallesFacturados
-        .filter(f => f.cod_item === p.cod_item)
-        .reduce((acc, f) => acc + parseFloat(f.cantidad || 0), 0);
+    const leadTime = facturas.length
+      ? Math.max(
+        0,
+        Math.round(
+          (new Date(facturas[0].fecha_comp) - new Date(pedido.fecha)) /
+          (1000 * 60 * 60 * 24)
+        )
+      )
+      : null;
 
+    const resultado = detallesPedido.map((p) => {
       const cantidadPedida = parseFloat(p.cantidad || 0);
-      const fillRate = cantidadPedida > 0
-        ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100)
-        : null;
-
-      const leadTimeDias = facturas.length
-        ? Math.max(0, Math.round((new Date(facturas[0].fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
-        : null;
+      const cantidadFacturada = mapFacturadas[p.codItem] || 0;
+      const fillRate =
+        cantidadPedida > 0
+          ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100)
+          : 0;
 
       return {
-        codItem: p.cod_item,
+        codItem: p.codItem,
         descripcion: p.descripcion || "Sin descripción",
         pedida: cantidadPedida,
         facturada: cantidadFacturada,
-        fillRate: fillRate !== null ? +fillRate.toFixed(2) : null,
-        leadTimeDias
+        fillRate: +fillRate.toFixed(2),
+        leadTimeDias: leadTime,
       };
     });
 
@@ -578,6 +614,7 @@ export const obtenerDetallePorProducto = async (req, res) => {
   }
 };
 
+
 export const obtenerEficienciaPorCategoria = async (req, res) => {
   try {
     const desde = req.query.desde ? new Date(req.query.desde) : null;
@@ -588,113 +625,123 @@ export const obtenerEficienciaPorCategoria = async (req, res) => {
       return res.status(400).json({ error: "Parámetros 'desde' y 'hasta' son requeridos" });
     }
 
-    const productoCache = new Map();
+    // ✅ Categorías válidas (excluye las que contienen "producción")
+    const categorias = await Categoria.findAll({
+      where: where(fn('LOWER', col('nombre')), {
+        [Op.notLike]: '%producción%'
+      }),
+      attributes: ['id', 'nombre']
+    });
+    const categoriasValidas = new Set(categorias.map(c => c.id));
+    const categoriaNombreMap = new Map(categorias.map(c => [c.id, c.nombre]));
 
-    const obtenerCategoriaDesdeCodItem = async (codItem) => {
-      if (!codItem) return { id: "sin_categoria", nombre: "Sin categoría" };
+    // ✅ Productos que pertenecen solo a categorías válidas
+    const productos = await Producto.findAll({
+      where: { categoriaId: { [Op.in]: Array.from(categoriasValidas) } },
+      attributes: ['sku', 'categoriaId']
+    });
+    const productoCategoriaMap = new Map(productos.map(p => [p.sku, p.categoriaId]));
 
-      if (productoCache.has(codItem)) return productoCache.get(codItem);
+    // ✅ Pedidos válidos
+    const pedidos = await PedidoDux.findAll({
+      attributes: ['nro_pedido', 'fecha']
+    });
+    const pedidoFechaMap = new Map(pedidos.map(p => [p.nro_pedido, p.fecha]));
 
-      const prod = await Producto.findOne({ where: { sku: codItem } });
-      const catId = prod?.categoriaId;
+    const resumenPorCategoria = {};
+    const codItemsPedidos = new Set();
 
-      if (!catId) {
-        const sinCat = { id: "sin_categoria", nombre: "Sin categoría" };
-        productoCache.set(codItem, sinCat);
-        return sinCat;
-      }
-
-      const categoria = await Categoria.findByPk(catId);
-      const resultado = {
-        id: catId,
-        nombre: categoria?.nombre || "Sin nombre"
-      };
-
-      productoCache.set(codItem, resultado);
-      return resultado;
-    };
-
+    // 🧾 Detalles de pedidos (filtrados por fecha)
     const detallesPedidos = await DetallePedidoDux.findAll({
       include: {
         model: PedidoDux,
         as: "pedidoDux",
-        where: {
-          fecha: { [Op.between]: [desde, hasta] },
-        },
+        where: { fecha: { [Op.between]: [desde, hasta] } },
         attributes: ['id', 'fecha'],
       }
     });
 
+    for (const d of detallesPedidos) {
+      const codItem = d.codItem;
+      const catId = productoCategoriaMap.get(codItem);
+      if (!catId || (categoriaId && catId != categoriaId)) continue;
+
+      codItemsPedidos.add(codItem); // ✅ registrar que este item fue pedido
+
+      if (!resumenPorCategoria[catId]) {
+        resumenPorCategoria[catId] = {
+          nombre: categoriaNombreMap.get(catId) || 'Sin categoría',
+          cantidadPedida: 0,
+          cantidadFacturada: 0,
+          leadTimes: [],
+        };
+      }
+
+      resumenPorCategoria[catId].cantidadPedida += parseFloat(d.cantidad || 0);
+    }
+
+    // 🧾 Detalles de facturas (no anuladas y con pedido válido)
     const detallesFacturas = await DetalleFactura.findAll({
       include: {
         model: Factura,
         as: "factura",
         where: {
           fecha_comp: { [Op.between]: [desde, hasta] },
-          anulada_boolean: false
+          anulada_boolean: false,
         },
-        attributes: ['id', 'fecha_comp', 'nro_pedido'],
+        attributes: ['fecha_comp', 'nro_pedido'],
       }
     });
-
-    const mapPedidos = {};
-    const mapFacturas = {};
-
-    for (const d of detallesPedidos) {
-      const cat = await obtenerCategoriaDesdeCodItem(d.codItem);
-      if (!categoriaId || cat.id == categoriaId) {
-        if (!mapPedidos[cat.id]) {
-          mapPedidos[cat.id] = { nombre: cat.nombre, cantidad: 0 };
-        }
-        mapPedidos[cat.id].cantidad += parseFloat(d.cantidad || 0);
-      }
-    }
 
     for (const d of detallesFacturas) {
-      const cat = await obtenerCategoriaDesdeCodItem(d.codItem);
-      if (!categoriaId || cat.id == categoriaId) {
-        if (!mapFacturas[cat.id]) {
-          mapFacturas[cat.id] = { nombre: cat.nombre, total: 0, leadTimes: [] };
-        }
-        mapFacturas[cat.id].total += parseFloat(d.cantidad || 0);
+      const codItem = d.codItem;
+      const catId = productoCategoriaMap.get(codItem);
+      if (!catId || (categoriaId && catId != categoriaId)) continue;
 
-        const nroPedido = d.factura?.nro_pedido;
-        if (nroPedido && d.factura?.fecha_comp) {
-          const pedido = await PedidoDux.findOne({
-            where: { nro_pedido: nroPedido },
-            attributes: ['fecha']
-          });
-          if (!pedido) continue;
-          if (pedido) {
-            const dias = Math.round(
-              (new Date(d.factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)
-            );
-            if (dias >= 0) mapFacturas[cat.id].leadTimes.push(dias);
-          }
-        }
+      if (!codItemsPedidos.has(codItem)) continue; // ❌ ignorar si no fue pedido
+
+      const cantidadFacturada = parseFloat(d.cantidad || 0);
+      if (cantidadFacturada === 0) continue;
+
+      const fechaPedido = pedidoFechaMap.get(d.factura?.nro_pedido);
+      if (!fechaPedido) continue; // ❌ ignorar si no tiene pedido asociado
+
+      if (!resumenPorCategoria[catId]) {
+        resumenPorCategoria[catId] = {
+          nombre: categoriaNombreMap.get(catId) || 'Sin categoría',
+          cantidadPedida: 0,
+          cantidadFacturada: 0,
+          leadTimes: [],
+        };
       }
+
+      resumenPorCategoria[catId].cantidadFacturada += cantidadFacturada;
+
+      const dias = Math.round((new Date(d.factura.fecha_comp) - new Date(fechaPedido)) / (1000 * 60 * 60 * 24));
+      if (dias >= 0) resumenPorCategoria[catId].leadTimes.push(dias);
     }
 
-    const resultado = Object.keys(mapPedidos).map(catId => {
-      const pedida = mapPedidos[catId]?.cantidad || 0;
-      const facturada = mapFacturas[catId]?.total || 0;
-      const leadTimes = mapFacturas[catId]?.leadTimes || [];
-      const nombre = mapPedidos[catId]?.nombre || mapFacturas[catId]?.nombre || "—";
+    // 📊 Resultado final
+    const resultado = Object.entries(resumenPorCategoria)
+      .filter(([_, data]) => data.cantidadFacturada > 0)
+      .map(([catId, data]) => {
+        const fillRate = data.cantidadPedida > 0
+          ? Math.min((data.cantidadFacturada / data.cantidadPedida) * 100, 100)
+          : null;
 
-      const fillRate = pedida > 0 ? Math.min((facturada / pedida) * 100, 100) : null;
-      const leadTimePromedio = leadTimes.length > 0
-        ? +(leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length).toFixed(2)
-        : null;
+        const leadTimePromedio = data.leadTimes.length > 0
+          ? +(data.leadTimes.reduce((a, b) => a + b, 0) / data.leadTimes.length).toFixed(2)
+          : null;
 
-      return {
-        categoria: catId,
-        categoriaNombre: nombre,
-        cantidadPedida: pedida,
-        cantidadFacturada: facturada,
-        fillRate: fillRate !== null ? +fillRate.toFixed(2) : null,
-        leadTimePromedio
-      };
-    });
+        return {
+          categoria: catId,
+          categoriaNombre: data.nombre,
+          cantidadPedida: data.cantidadPedida,
+          cantidadFacturada: data.cantidadFacturada,
+          fillRate: fillRate !== null ? +fillRate.toFixed(2) : null,
+          leadTimePromedio
+        };
+      });
 
     res.json(resultado);
   } catch (err) {
@@ -800,9 +847,8 @@ export const obtenerDetallePorCategoria = async (req, res) => {
 export const obtenerEficienciaPorCliente = async (req, res) => {
   try {
     const { desde, hasta, cliente } = req.query;
-
     if (!desde || !hasta) {
-      return res.status(400).json({ error: "Parámetros 'desde' y 'hasta' son requeridos" });
+      return res.status(400).json({ error: "Faltan fechas" });
     }
 
     const fechaDesde = new Date(desde);
@@ -816,11 +862,10 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
           cliente: { [Op.like]: `%${filtroCliente}%` },
         }),
       },
-      attributes: ['id', 'nro_pedido', 'fecha', 'cliente']
+      attributes: ["id", "nro_pedido", "fecha", "cliente"],
     });
 
     const nroPedidos = pedidos.map(p => p.nro_pedido);
-    const pedidosMap = new Map(pedidos.map(p => [p.nro_pedido, p]));
 
     const facturas = await Factura.findAll({
       where: {
@@ -830,22 +875,14 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
       },
     });
 
-    const detallesPedidos = await DetallePedidoDux.findAll({
-      include: {
-        model: PedidoDux,
-        as: "pedidoDux",
-        attributes: ["id", "nro_pedido", "fecha", "cliente"]
-      }
-    });
-
+    const detallesPedidos = await DetallePedidoDux.findAll();
     const detallesFacturas = await DetalleFactura.findAll({
       include: {
         model: Factura,
         as: "factura",
-        attributes: ["nro_pedido"]
-      }
+        attributes: ["nro_pedido"],
+      },
     });
-
 
     const clientesMap = new Map();
 
@@ -858,6 +895,12 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
       const cantidadPedida = detallesP.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
       const cantidadFacturada = detallesF.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
 
+      if (cantidadFacturada === 0) continue; // 🚫 Excluir pedidos sin facturación
+
+      const fillRate = cantidadPedida > 0
+        ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100)
+        : null;
+
       const leadTime = factura
         ? Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
         : null;
@@ -865,33 +908,35 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
       if (!clientesMap.has(cliente)) {
         clientesMap.set(cliente, {
           cliente,
-          cantidadPedida: 0,
-          cantidadFacturada: 0,
-          leadTimes: []
+          pedidos: [],
+          leadTimes: [],
+          totalPedida: 0,
+          totalFacturada: 0,
         });
       }
 
       const entry = clientesMap.get(cliente);
-      entry.cantidadPedida += cantidadPedida;
-      entry.cantidadFacturada += cantidadFacturada;
+      if (fillRate !== null) entry.pedidos.push(fillRate);
       if (leadTime !== null) entry.leadTimes.push(leadTime);
+      entry.totalPedida += cantidadPedida;
+      entry.totalFacturada += cantidadFacturada;
     }
 
     const resultado = Array.from(clientesMap.values()).map(entry => {
-      const fillRate = entry.cantidadPedida > 0
-        ? Math.min((entry.cantidadFacturada / entry.cantidadPedida) * 100, 100)
+      const fillRatePromedio = entry.pedidos.length
+        ? +(entry.pedidos.reduce((a, b) => a + b, 0) / entry.pedidos.length).toFixed(2)
         : null;
 
-      const leadTimePromedio = entry.leadTimes.length > 0
+      const leadTimePromedio = entry.leadTimes.length
         ? +(entry.leadTimes.reduce((a, b) => a + b, 0) / entry.leadTimes.length).toFixed(2)
         : null;
 
       return {
         cliente: entry.cliente,
-        cantidadPedida: entry.cantidadPedida,
-        cantidadFacturada: entry.cantidadFacturada,
-        fillRate: fillRate !== null ? +fillRate.toFixed(2) : null,
-        leadTimePromedio
+        cantidadPedida: entry.totalPedida,
+        cantidadFacturada: entry.totalFacturada,
+        fillRate: fillRatePromedio,
+        leadTimePromedio,
       };
     });
 
