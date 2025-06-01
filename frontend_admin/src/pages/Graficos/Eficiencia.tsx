@@ -1,4 +1,3 @@
-// src/pages/Graficos/Eficiencia.tsx
 import { createSignal, createResource, onMount, Show } from "solid-js";
 import { obtenerCategorias } from "@/services/categoria.service";
 import {
@@ -30,8 +29,9 @@ export default function Eficiencia() {
   const [cliente, setCliente] = createSignal("");
   const [modo, setModo] = createSignal<ModoEficiencia>("pedido");
   const [page, setPage] = createSignal(1);
+
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [detalleModal, setDetalleModal] = createSignal<{ modo: Exclude<ModoEficiencia, "pedido">; filtro: string }>({
+  const [detalleModal, setDetalleModal] = createSignal<{ modo: ModoEficiencia; filtro: string }>({
     modo: "producto",
     filtro: "",
   });
@@ -106,7 +106,7 @@ export default function Eficiencia() {
     exportarDatosAExcel(dataCompleta, columnas, "Reporte Eficiencia");
   }
 
-  function abrirModalDetalle(modoDetalle: Exclude<ModoEficiencia, "pedido">, filtro: string) {
+  function abrirModalDetalle(modoDetalle: ModoEficiencia, filtro: string) {
     setDetalleModal({ modo: modoDetalle, filtro });
     setModalAbierto(true);
   }
@@ -187,14 +187,15 @@ export default function Eficiencia() {
           }
           modo={modo()}
           onSeleccionar={(item: any) => {
-            if (modo() !== "pedido") {
-              const filtro = modo() === "categoria"
-                ? item.categoria
-                : modo() === "producto"
-                ? item.producto
-                : item.cliente;
-              abrirModalDetalle(modo() as Exclude<ModoEficiencia, "pedido">, filtro);
-            }
+            const filtro = modo() === "categoria"
+              ? item.categoria
+              : modo() === "producto"
+              ? item.producto
+              : modo() === "cliente"
+              ? item.cliente
+              : item.nroPedido;
+
+            abrirModalDetalle(modo(), filtro);
           }}
         />
       </Show>
@@ -205,7 +206,7 @@ export default function Eficiencia() {
           onCerrar={() => setModalAbierto(false)}
           desde={desde()}
           hasta={hasta()}
-          modo={detalleModal().modo}
+          modo={detalleModal().modo as "categoria" | "producto" | "cliente"}
           filtro={detalleModal().filtro}
         />
       </Show>

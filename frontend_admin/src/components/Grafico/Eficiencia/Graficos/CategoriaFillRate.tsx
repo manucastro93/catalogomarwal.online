@@ -4,11 +4,15 @@ import { formatearMiles } from "@/utils/formato";
 
 export default function CategoriaFillRate({ datos }: { datos: EficienciaCategoria[] }) {
   if (!datos.length) return null;
-const datosValidos = datos.filter(d => typeof d.fillRate === "number" && !isNaN(d.fillRate));
-if (!datosValidos.length) return null;
 
-const labels = datosValidos.map((r) => r.categoria);
-const valores = datosValidos.map((r) => r.fillRate);
+  const datosValidos = datos
+    .filter(d => typeof d.fillRate === "number" && !isNaN(d.fillRate))
+    .sort((a, b) => (a.fillRate ?? 0) - (b.fillRate ?? 0)); // orden ascendente
+
+  if (!datosValidos.length) return null;
+
+  const labels = datosValidos.map((r) => r.categoria);
+  const valores = datosValidos.map((r) => r.fillRate);
   const key = "fillrate_" + labels.join("|");
 
   return (
@@ -52,3 +56,4 @@ const valores = datosValidos.map((r) => r.fillRate);
     </div>
   );
 }
+

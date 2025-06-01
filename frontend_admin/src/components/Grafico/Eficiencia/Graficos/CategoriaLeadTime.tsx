@@ -4,9 +4,14 @@ import type { EficienciaCategoria } from "@/types/eficiencia";
 export default function CategoriaLeadTime({ datos }: { datos: EficienciaCategoria[] }) {
   if (!datos.length) return null;
 
-  // Mostrar todos, pero con fallback a 0 si leadTimePromedio es null o inválido
-  const labels = datos.map((r) => r.categoria);
-  const valores = datos.map((r) =>
+  const datosOrdenados = [...datos].sort((a, b) => {
+    const aVal = typeof a.leadTimePromedio === "number" ? a.leadTimePromedio : Infinity;
+    const bVal = typeof b.leadTimePromedio === "number" ? b.leadTimePromedio : Infinity;
+    return aVal - bVal;
+  });
+
+  const labels = datosOrdenados.map((r) => r.categoria);
+  const valores = datosOrdenados.map((r) =>
     typeof r.leadTimePromedio === "number" && !isNaN(r.leadTimePromedio) ? r.leadTimePromedio : 0
   );
 
@@ -43,7 +48,7 @@ export default function CategoriaLeadTime({ datos }: { datos: EficienciaCategori
                 tooltip: {
                   callbacks: {
                     label: (context: any) => {
-                      const original = datos[context.dataIndex].leadTimePromedio;
+                      const original = datosOrdenados[context.dataIndex].leadTimePromedio;
                       return `${context.label}: ${
                         original == null || isNaN(original) ? "Sin datos" : `${original.toFixed(2)} días`
                       }`;
@@ -58,3 +63,4 @@ export default function CategoriaLeadTime({ datos }: { datos: EficienciaCategori
     </div>
   );
 }
+
