@@ -4,13 +4,14 @@ import {
   fetchEficienciaPorProducto,
   fetchDetalleCliente,
   fetchDetalleCategoria,
+  fetchDetallePorPedido,
 } from "@/services/eficiencia.service";
-import ModalDetallePedido from "./ModalDetallePedido"; // importar el modal
+import ModalDetallePedido from "./ModalDetallePedido";
 
 interface Props {
   abierto: boolean;
   onCerrar: () => void;
-  modo: "categoria" | "cliente" | "producto";
+  modo: "categoria" | "cliente" | "producto" | "pedido";
   filtro: string;
   desde: string;
   hasta: string;
@@ -28,11 +29,12 @@ export default function ModalDetalleEficiencia({
   const [verModalPedido, setVerModalPedido] = createSignal(false);
 
   const fetch = () => {
-    const filtros = { desde, hasta };
-    if (modo === "cliente") return fetchDetalleCliente({ ...filtros, cliente: filtro });
-    if (modo === "categoria") return fetchDetalleCategoria({ ...filtros, categoriaId: filtro });
-    return fetchEficienciaPorProducto({ ...filtros, producto: filtro });
-  };
+  const filtros = { desde, hasta };
+  if (modo === "pedido") return fetchDetallePorPedido(filtro);
+  if (modo === "cliente") return fetchDetalleCliente({ ...filtros, cliente: filtro });
+  if (modo === "categoria") return fetchDetalleCategoria({ ...filtros, categoriaId: filtro });
+  return fetchEficienciaPorProducto({ ...filtros, producto: filtro });
+};
 
   const [datos] = createResource([modo, filtro, desde, hasta], fetch);
 
@@ -76,7 +78,7 @@ export default function ModalDetalleEficiencia({
                         class="border-t hover:bg-gray-50 cursor-pointer"
                         onClick={() => abrirDetallePedido(item)}
                       >
-                        <td class="px-4 py-2 text-blue-600 underline">{item.nroPedido || "—"}</td>
+                        <td class="px-4 py-2">{item.nroPedido || "—"}</td>
                         <td class="px-4 py-2">{formatearFechaCorta(item.fecha?.split("T")[0])}</td>
                         <td class="px-4 py-2">{formatearMiles(item.cantidadPedida)}</td>
                         <td class="px-4 py-2">{formatearMiles(item.cantidadFacturada)}</td>
