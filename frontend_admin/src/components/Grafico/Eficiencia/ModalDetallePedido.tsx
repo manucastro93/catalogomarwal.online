@@ -29,6 +29,18 @@ createEffect(() => {
 
           <div class="overflow-x-auto max-h-[70vh] overflow-y-auto">
             <Show when={!detalle.loading && detalle()}>
+              <div class="px-6 py-4 border-b text-sm text-gray-700">
+  <p><strong>Lead time del pedido:</strong> {
+    (() => {
+      const items = detalle();
+      const leadTimes = items?.map((i: any) => i.leadTimeDias).filter((l: number) => typeof l === "number");
+      if (!leadTimes?.length) return "—";
+      const promedio = leadTimes.reduce((acc: number, v: number) => acc + v, 0) / leadTimes.length;
+      return `${promedio.toFixed(2)} días`;
+    })()
+  }</p>
+</div>
+
               <table class="min-w-full text-sm text-left">
                 <thead class="bg-gray-100 text-xs uppercase text-gray-600 sticky top-0">
                   <tr>
