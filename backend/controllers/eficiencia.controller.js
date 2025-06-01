@@ -427,7 +427,6 @@ export const obtenerDetallePorPedido = async (req, res) => {
 
       fechasFacturas = fechas.map(f => f.toISOString().split("T")[0]);
     }
-
     const resultado = detallesPedido.map(p => {
       const cantidadPedida = parseFloat(p.cantidad || 0);
       const cantidadFacturada = mapFacturadas[p.codItem] || 0;
@@ -441,10 +440,11 @@ export const obtenerDetallePorPedido = async (req, res) => {
         pedida: cantidadPedida,
         facturada: cantidadFacturada,
         fillRate: +fillRate.toFixed(2),
+        fechasFacturas,
         leadTimeDias: leadTimePedido
       };
     });
-
+    
     res.json({
       leadTimePedido,
       fechasFacturas,
@@ -999,11 +999,14 @@ export const obtenerDetallePorCliente = async (req, res) => {
         factura && cantidadFacturada > 0
           ? Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
           : null;
-
+      const fechasFacturas = facturas
+        .filter(f => f.nro_pedido === pedido.nro_pedido)
+        .map(f => f.fecha_comp);
       return {
         pedidoId: pedido.id,
         nroPedido: pedido.nro_pedido,
         fecha: pedido.fecha,
+        fechasFacturas,
         cantidadPedida,
         cantidadFacturada,
         fillRate: fillRate !== null ? +fillRate.toFixed(2) : null,
