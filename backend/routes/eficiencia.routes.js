@@ -10,7 +10,9 @@ import { obtenerResumenEficiencia,
     obtenerEficienciaPorCliente,
     obtenerDetallePorCliente,
     obtenerDetallePorCategoria,
-    obtenerDetallePorPedido
+    obtenerDetallePorPedido,
+    obtenerEvolucionEficienciaMensual,
+    obtenerEvolucionEficienciaMensualPorCliente
 } from "../controllers/eficiencia.controller.js";
 
 const router = express.Router();
@@ -27,4 +29,7 @@ router.get("/por-categoria", obtenerEficienciaPorCategoria);
 router.get("/por-categoria/detalle", obtenerDetallePorCategoria);
 router.get('/por-cliente', obtenerEficienciaPorCliente);
 router.get("/por-cliente/detalle", obtenerDetallePorCliente);
+router.get("/evolucion-fillrate-mensual", obtenerEvolucionEficienciaMensual);
+router.get("/evolucion-fillrate-mensual-cliente", obtenerEvolucionEficienciaMensualPorCliente);
+
 export default router;

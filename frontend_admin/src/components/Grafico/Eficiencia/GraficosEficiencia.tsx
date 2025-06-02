@@ -13,6 +13,7 @@ import type {
   EficienciaCategoria,
   EficienciaProducto,
   EficienciaCliente,
+  EficienciaMensual,
 } from "@/types/eficiencia";
 
 type ModoEficiencia = "pedido" | "categoria" | "producto" | "cliente";
@@ -22,6 +23,7 @@ interface Props {
   datosCategorias: EficienciaCategoria[];
   datosProductos: EficienciaProducto[];
   datosClientes: EficienciaCliente[];
+  datosMensual: EficienciaMensual[];
   filtros: {
     categoriaId: string;
     producto: string;
@@ -73,13 +75,13 @@ export default function GraficosEficiencia(props: Props) {
       )}
 
       {/* Cliente */}
-      {props.modo === "cliente" && props.datosClientes?.length > 0 && (
+      {props.modo === "cliente" && props.datosMensual?.length > 0 && (
         <>
           <div class="min-h-[320px]">
-            <ClienteFillRate datos={props.datosClientes} />
+            <ClienteFillRate datos={props.datosMensual} />
           </div>
           <div class="min-h-[320px]">
-            <ClienteLeadTime datos={props.datosClientes} />
+            <ClienteLeadTime datos={props.datosMensual} />
           </div>
         </>
       )}

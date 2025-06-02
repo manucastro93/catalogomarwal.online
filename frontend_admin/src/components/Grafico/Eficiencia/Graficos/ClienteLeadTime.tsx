@@ -7,33 +7,31 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import type { EficienciaCliente } from "@/types/eficiencia";
+import type { EficienciaMensual } from "@/types/eficiencia";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-export default function ClienteLeadTime({ datos }: { datos: EficienciaCliente[] }) {
-  if (!datos.length) return null;
+interface Props {
+  datos: EficienciaMensual[];
+}
 
-  const agrupado: Record<string, string[]> = {};
-  for (const r of datos) {
-    const key =
-      typeof r.leadTimePromedio === "number" && !isNaN(r.leadTimePromedio)
-        ? r.leadTimePromedio.toFixed(2)
-        : "Sin datos";
-    if (!agrupado[key]) agrupado[key] = [];
-    agrupado[key].push(r.cliente);
-  }
+export default function ClienteLeadTimeMensual({ datos }: Props) {
+  if (!datos?.length) return null;
 
-  const labels = Object.keys(agrupado)
-    .filter((k) => k !== "Sin datos")
-    .sort((a, b) => parseFloat(a) - parseFloat(b));
+  const labels = datos.map((d) => d.mes);
+  const valores = datos.map((d) => d.leadTime || 0);
+  const maxValor = Math.max(...valores, 1);
 
-  const valores = labels.map((k) => parseFloat(k));
+  // Más diferencia visual: color HSL donde lightness varía con el valor
+  const colores = valores.map((v) => {
+    const lightness = 110 - (v / maxValor) * 80; // de 90% (claro) a 30% (oscuro)
+    return `hsl(260, 50%, ${lightness}%)`; // violeta con saturación fija
+  });
 
   return (
     <div class="w-full min-h-[320px] md:min-h-[400px] p-2 md:p-4 shadow rounded bg-white flex flex-col">
       <h2 class="text-base md:text-xl font-semibold mb-2 md:mb-4 text-center">
-        Lead Time por Cliente
+        Evolución Mensual del Lead Time
       </h2>
       <div class="flex-1">
         <div class="relative w-full h-[280px] md:h-[380px]">
@@ -44,8 +42,8 @@ export default function ClienteLeadTime({ datos }: { datos: EficienciaCliente[] 
                 {
                   label: "Lead Time (días)",
                   data: valores,
-                  backgroundColor: "rgba(153, 102, 255, 0.5)",
-                  borderColor: "rgba(153, 102, 255, 1)",
+                  backgroundColor: colores,
+                  borderColor: "#4b0082", // índigo oscuro para contraste
                   borderWidth: 1,
                 },
               ],
@@ -54,25 +52,20 @@ export default function ClienteLeadTime({ datos }: { datos: EficienciaCliente[] 
               responsive: true,
               maintainAspectRatio: false,
               scales: {
-                x: {
-                  title: { display: true, text: "Lead Time (días) agrupado" },
-                },
                 y: {
                   beginAtZero: true,
-                  title: { display: true, text: "Lead Time (días)" },
+                  title: { display: true, text: "Días" },
                   ticks: { precision: 0 },
+                },
+                x: {
+                  title: { display: true, text: "Mes" },
                 },
               },
               plugins: {
                 legend: { display: false },
                 tooltip: {
                   callbacks: {
-                    title: (ctx:any) => `Lead Time: ${ctx[0].label} días`,
-                    afterLabel: (ctx:any) => {
-                      const valor = ctx.label;
-                      const clientes = agrupado[valor] || [];
-                      return clientes;
-                    },
+                    label: (context: any) => `${context.parsed.y} días`,
                   },
                 },
               },

@@ -7,33 +7,31 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import type { EficienciaCliente } from "@/types/eficiencia";
+import type { EficienciaMensual } from "@/types/eficiencia";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-export default function ClienteFillRate({ datos }: { datos: EficienciaCliente[] }) {
-  if (!datos.length) return null;
+interface Props {
+  datos: EficienciaMensual[];
+}
 
-  const agrupado: Record<string, string[]> = {};
-  for (const r of datos) {
-    const key =
-      typeof r.fillRate === "number" && !isNaN(r.fillRate)
-        ? r.fillRate.toFixed(2)
-        : "Sin datos";
-    if (!agrupado[key]) agrupado[key] = [];
-    agrupado[key].push(r.cliente);
-  }
+export default function ClienteFillRateMensual({ datos }: Props) {
+  if (!datos?.length) return null;
 
-  const labels = Object.keys(agrupado)
-    .filter((k) => k !== "Sin datos")
-    .sort((a, b) => parseFloat(a) - parseFloat(b));
+  const labels = datos.map((d) => d.mes);
+  const valores = datos.map((d) => d.fillRate || 0);
+  const maxValor = Math.max(...valores, 1);
 
-  const valores = labels.map((k) => parseFloat(k));
+  // Fill rate más alto = color más fuerte
+  const colores = valores.map((v) => {
+    const lightness = 0 + (v / maxValor) * 40;
+    return `hsl(170, 70%, ${lightness}%)`; // verde azulado
+  });
 
   return (
     <div class="w-full min-h-[320px] md:min-h-[400px] p-2 md:p-4 shadow rounded bg-white flex flex-col">
       <h2 class="text-base md:text-xl font-semibold mb-2 md:mb-4 text-center">
-        Fill Rate por Cliente
+        Evolución Mensual del Fill Rate
       </h2>
       <div class="flex-1">
         <div class="relative w-full h-[280px] md:h-[380px]">
@@ -44,8 +42,8 @@ export default function ClienteFillRate({ datos }: { datos: EficienciaCliente[] 
                 {
                   label: "Fill Rate (%)",
                   data: valores,
-                  backgroundColor: "rgba(75, 192, 192, 0.5)",
-                  borderColor: "rgba(75, 192, 192, 1)",
+                  backgroundColor: colores,
+                  borderColor: "#008080", // verde oscuro fijo
                   borderWidth: 1,
                 },
               ],
@@ -54,26 +52,21 @@ export default function ClienteFillRate({ datos }: { datos: EficienciaCliente[] 
               responsive: true,
               maintainAspectRatio: false,
               scales: {
-                x: {
-                  title: { display: true, text: "Fill Rate (%) agrupado" },
-                },
                 y: {
                   beginAtZero: true,
                   max: 100,
                   title: { display: true, text: "Fill Rate (%)" },
                   ticks: { precision: 0 },
                 },
+                x: {
+                  title: { display: true, text: "Mes" },
+                },
               },
               plugins: {
                 legend: { display: false },
                 tooltip: {
                   callbacks: {
-                    title: (ctx: any) => `Fill Rate: ${ctx[0].label}%`,
-                    afterLabel: (ctx: any) => {
-                      const valor = ctx.label;
-                      const clientes = agrupado[valor] || [];
-                      return clientes;
-                    },
+                    label: (context: any) => `${context.parsed.y}%`,
                   },
                 },
               },
