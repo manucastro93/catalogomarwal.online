@@ -12,12 +12,6 @@ export default function InformeSemanalVivo() {
         <h2 class="text-xl md:text-2xl font-semibold text-indigo-700 tracking-tight">
           📊 Informe Semanal de Producción
         </h2>
-
-        <Show when={!informe.loading}>
-          <div class="flex items-center gap-2 bg-green-100 text-green-700 text-xs md:text-sm font-semibold px-3 py-1 rounded-full animate-pop-in">
-            ✅ Actualizado
-          </div>
-        </Show>
       </div>
 
       {/* Contenido */}
