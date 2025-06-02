@@ -42,3 +42,25 @@ export type EficienciaItem =
   | EficienciaCategoria
   | EficienciaProducto
   | EficienciaCliente;
+
+  export interface EficienciaMensual {
+    mes: string; // ej: "2023-09"
+    fillRate: number;
+    leadTime: number;
+  }
+
+export interface ResumenEficiencia {
+  totalPedidos: number;
+  totalFacturas: number;
+  fillRateGeneral: number;
+  variacionFillRate: number;
+  leadTimePromedioDias: number;
+  variacionLeadTime: number;
+  cantidadRetrasos: number;
+  porcentajePedidosAltosFillRate: number;
+  porcentajePedidosBajoFillRate: number;
+  topClientesEficientes: { cliente: string; fillRate: number }[];
+  topClientesIneficientes: { cliente: string; fillRate: number }[];
+  topProductosProblema: { producto: string; sinFacturar: number }[];
+  categoriasCriticas: string[];
+}

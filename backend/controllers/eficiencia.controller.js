@@ -1,112 +1,20 @@
 import { Op, fn, col, where } from 'sequelize';
 import dayjs from 'dayjs';
 import { Factura, PedidoDux, DetalleFactura, DetallePedidoDux, Producto, Categoria } from "../models/index.js";
+import { generarResumenEjecutivo } from '../services/eficiencia.service.js';
 
 export const obtenerResumenEficiencia = async (req, res) => {
   try {
-    const desde = req.query.desde ? new Date(req.query.desde) : null;
-    const hasta = req.query.hasta ? new Date(req.query.hasta) : null;
-
+    const { desde, hasta } = req.query;
     if (!desde || !hasta) {
-      return res.status(400).json({ error: "Parámetros 'desde' y 'hasta' son requeridos" });
+      return res.status(400).json({ error: "Faltan parámetros 'desde' y 'hasta'" });
     }
 
-    // 1. Buscar pedidos y facturas dentro del rango
-    const pedidos = await PedidoDux.findAll({
-      where: {
-        fecha: { [Op.between]: [desde, hasta] },
-      }
-    });
-
-    const nroPedidos = pedidos.map(p => p.nro_pedido);
-    const pedidosMap = new Map(pedidos.map(p => [p.nro_pedido, p]));
-
-    const facturas = await Factura.findAll({
-      where: {
-        fecha_comp: { [Op.between]: [desde, hasta] },
-        anulada_boolean: false,
-        nro_pedido: { [Op.in]: nroPedidos }
-      }
-    });
-
-    // 2. Calcular Lead Time promedio
-    let totalLeadTime = 0;
-    let conteoLeadTime = 0;
-
-    for (const factura of facturas) {
-      const pedido = pedidosMap.get(factura.nro_pedido);
-      if (pedido) {
-        const dias = Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24));
-        if (dias >= 0) {
-          totalLeadTime += dias;
-          conteoLeadTime++;
-        }
-      }
-    }
-
-    const leadTimePromedioDias = conteoLeadTime > 0 ? +(totalLeadTime / conteoLeadTime).toFixed(2) : null;
-
-    // 3. Calcular Fill Rate
-    const detallesPedidos = await DetallePedidoDux.findAll({
-      include: {
-        model: PedidoDux,
-        as: "pedidoDux",
-        where: {
-          fecha: { [Op.between]: [desde, hasta] },
-        },
-        attributes: [] // solo se usa para filtro
-      }
-    });
-
-    const detallesFacturas = await DetalleFactura.findAll({
-      include: {
-        model: Factura,
-        as: "factura",
-        where: {
-          fecha_comp: { [Op.between]: [desde, hasta] },
-          anulada_boolean: false
-        },
-        attributes: []
-      }
-    });
-
-    let totalPedidas = 0;
-    let totalFacturadas = 0;
-
-    const pedidosPorItem = {};
-    const facturasPorItem = {};
-
-    for (const d of detallesPedidos) {
-      const key = d.codItem;
-      pedidosPorItem[key] = (pedidosPorItem[key] || 0) + parseFloat(d.cantidad || 0);
-    }
-
-    for (const d of detallesFacturas) {
-      const key = d.codItem;
-      facturasPorItem[key] = (facturasPorItem[key] || 0) + parseFloat(d.cantidad || 0);
-    }
-
-    for (const key in pedidosPorItem) {
-      const pedida = pedidosPorItem[key];
-      const facturada = facturasPorItem[key] || 0;
-
-      totalPedidas += pedida;
-      totalFacturadas += Math.min(facturada, pedida); // evitar sobrefacturación
-    }
-
-    const fillRateGeneral = totalPedidas > 0
-      ? +((totalFacturadas / totalPedidas) * 100).toFixed(2)
-      : null;
-
-    return res.json({
-      leadTimePromedioDias,
-      fillRateGeneral,
-      totalPedidos: pedidos.length,
-      totalFacturas: facturas.length
-    });
-  } catch (error) {
-    console.error("Error en obtenerResumenEficiencia:", error);
-    res.status(500).json({ error: "Error al calcular métricas de eficiencia" });
+    const resumen = await generarResumenEjecutivo(new Date(desde), new Date(hasta));
+    res.json(resumen);
+  } catch (err) {
+    console.error("❌ Error en obtenerResumenEficiencia:", err);
+    res.status(500).json({ error: "Error al calcular resumen ejecutivo" });
   }
 };
 
@@ -128,7 +36,10 @@ export const obtenerEvolucionEficiencia = async (req, res) => {
     const facturas = await Factura.findAll({
       where: {
         fecha_comp: { [Op.between]: [desde, hasta] },
-        anulada_boolean: false
+        anulada_boolean: false,
+        tipo_comp: {
+          [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+        }
       }
     });
 
@@ -297,6 +208,110 @@ export const obtenerOutliersFillRate = async (req, res) => {
   }
 };
 
+export const obtenerEvolucionEficienciaMensual = async (req, res) => {
+  try {
+    const desde = "2015-01-01";
+    const hasta = req.query.hasta ? new Date(req.query.hasta) : null;
+    const cliente = req.query.cliente?.toLowerCase();
+
+    if (!hasta) return res.status(400).json({ error: "Parámetro 'hasta' requerido" });
+
+    // 1. Pedidos (filtrados por cliente si aplica)
+    const wherePedidos = {
+      fecha: { [Op.between]: [desde, hasta] },
+      ...(cliente ? { cliente: { [Op.like]: `%${cliente}%` } } : {})
+    };
+
+    const pedidos = await PedidoDux.findAll({
+      where: wherePedidos,
+      attributes: ["id", "fecha", "nro_pedido"],
+    });
+
+    const idPedidos = pedidos.map(p => p.id);
+    const nroPedidos = pedidos.map(p => p.nro_pedido);
+    const pedidosPorNro = new Map(pedidos.map(p => [p.nro_pedido, p]));
+
+    // 2. Detalles de pedidos
+    const detallesPedidos = await DetallePedidoDux.findAll({
+      where: { pedidoDuxId: { [Op.in]: idPedidos } },
+      include: {
+        model: PedidoDux,
+        as: "pedidoDux",
+        attributes: ["fecha"]
+      }
+    });
+
+    // 3. Facturas válidas relacionadas a los pedidos
+    const facturas = await Factura.findAll({
+      where: {
+        fecha_comp: { [Op.between]: [desde, hasta] },
+        anulada_boolean: false,
+        tipo_comp: {
+          [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+        },
+        nro_pedido: { [Op.in]: nroPedidos },
+      },
+      attributes: ["nro_pedido", "fecha_comp"],
+    });
+
+    const facturasPorNro = new Map(facturas.map(f => [f.nro_pedido, f]));
+
+    const detallesFacturas = await DetalleFactura.findAll({
+      include: {
+        model: Factura,
+        as: "factura",
+        where: {
+          fecha_comp: { [Op.between]: [desde, hasta] },
+          anulada_boolean: false,
+          tipo_comp: {
+            [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+          },
+          nro_pedido: { [Op.in]: nroPedidos }
+        },
+        attributes: ["fecha_comp", "nro_pedido"]
+      }
+    });
+
+    // 4. Acumuladores
+    const dataPorMes = {};
+
+    for (const d of detallesPedidos) {
+      const mes = dayjs(d.pedidoDux.fecha).format("YYYY-MM");
+      dataPorMes[mes] = dataPorMes[mes] || { pedida: 0, facturada: 0, totalLeadTime: 0, countLeadTime: 0 };
+      dataPorMes[mes].pedida += parseFloat(d.cantidad || "0");
+    }
+
+    for (const d of detallesFacturas) {
+      const nro = d.factura.nro_pedido;
+      const factura = d.factura;
+      const pedido = pedidosPorNro.get(nro);
+      if (!pedido) continue;
+
+      const mes = dayjs(factura.fecha_comp).format("YYYY-MM");
+
+      dataPorMes[mes] = dataPorMes[mes] || { pedida: 0, facturada: 0, totalLeadTime: 0, countLeadTime: 0 };
+      dataPorMes[mes].facturada += parseFloat(d.cantidad || "0");
+
+      const dias = Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)));
+      dataPorMes[mes].totalLeadTime += dias;
+      dataPorMes[mes].countLeadTime += 1;
+    }
+    
+    const resultado = Object.entries(dataPorMes)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([mes, v]) => ({
+        mes,
+        fillRate: v.pedida > 0 ? +(Math.min(v.facturada / v.pedida, 1) * 100).toFixed(2) : 0,
+        leadTime: v.countLeadTime > 0 ? +(v.totalLeadTime / v.countLeadTime).toFixed(2) : null
+      }));
+
+    res.json(resultado);
+  } catch (error) {
+    console.error("Error en obtenerEvolucionEficienciaMensual:", error);
+    res.status(500).json({ error: "Error al calcular eficiencia mensual" });
+  }
+};
+
 export const obtenerEficienciaPorPedido = async (req, res) => {
   try {
     const desde = req.query.desde ? new Date(req.query.desde) : null;
@@ -318,7 +333,10 @@ export const obtenerEficienciaPorPedido = async (req, res) => {
     const facturas = await Factura.findAll({
       where: {
         nro_pedido: { [Op.in]: nroPedidos },
-        anulada_boolean: false
+        anulada_boolean: false,
+        tipo_comp: {
+          [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+        }
       },
       attributes: ['nro_pedido', 'fecha_comp']
     });
@@ -394,6 +412,9 @@ export const obtenerDetallePorPedido = async (req, res) => {
       where: {
         nro_pedido: pedido.nro_pedido,
         anulada_boolean: false,
+        tipo_comp: {
+          [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+        }
       },
       attributes: ['fecha_comp'],
       include: [{
@@ -871,6 +892,9 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
         fecha_comp: { [Op.between]: [fechaDesde, fechaHasta] },
         anulada_boolean: false,
         nro_pedido: { [Op.in]: nroPedidos },
+        tipo_comp: {
+          [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+        }
       },
     });
 
@@ -982,7 +1006,10 @@ export const obtenerDetallePorCliente = async (req, res) => {
     const facturas = await Factura.findAll({
       where: {
         nro_pedido: { [Op.in]: nroPedidos },
-        anulada_boolean: false
+        anulada_boolean: false,
+        tipo_comp: {
+          [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+        }
       },
       attributes: ['nro_pedido', 'fecha_comp']
     });
@@ -1048,4 +1075,108 @@ export const obtenerDetallePorCliente = async (req, res) => {
     res.status(500).json({ error: "Error al obtener detalle del cliente" });
   }
 };
+
+export const obtenerEvolucionEficienciaMensualPorCliente = async (req, res) => {
+  try {
+    const desde = "2015-01-01";
+    const hasta = req.query.hasta ? new Date(req.query.hasta) : null;
+    const cliente = req.query.cliente?.toLowerCase();
+
+    if (!hasta || !cliente) {
+      return res.status(400).json({ error: "Parámetros 'hasta' y 'cliente' son requeridos" });
+    }
+
+    const wherePedidos = {
+      fecha: { [Op.between]: [desde, hasta] },
+      cliente: { [Op.like]: `%${cliente}%` }
+    };
+
+    const pedidos = await PedidoDux.findAll({
+      where: wherePedidos,
+      attributes: ["id", "fecha", "nro_pedido"],
+    });
+
+    const idPedidos = pedidos.map(p => p.id);
+    const nroPedidos = pedidos.map(p => p.nro_pedido);
+    const pedidosPorNro = new Map(pedidos.map(p => [p.nro_pedido, p]));
+
+    const detallesPedidos = await DetallePedidoDux.findAll({
+      where: { pedidoDuxId: { [Op.in]: idPedidos } },
+      include: {
+        model: PedidoDux,
+        as: "pedidoDux",
+        attributes: ["fecha"]
+      }
+    });
+
+    const facturas = await Factura.findAll({
+      where: {
+        fecha_comp: { [Op.between]: [desde, hasta] },
+        anulada_boolean: false,
+        tipo_comp: {
+          [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+        },
+        nro_pedido: { [Op.in]: nroPedidos },
+      },
+      attributes: ["nro_pedido", "fecha_comp"],
+    });
+
+    const facturasPorNro = new Map(facturas.map(f => [f.nro_pedido, f]));
+
+    const detallesFacturas = await DetalleFactura.findAll({
+      include: {
+        model: Factura,
+        as: "factura",
+        where: {
+          fecha_comp: { [Op.between]: [desde, hasta] },
+          anulada_boolean: false,
+          tipo_comp: {
+            [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
+          },
+          nro_pedido: { [Op.in]: nroPedidos }
+        },
+        attributes: ["fecha_comp", "nro_pedido"]
+      }
+    });
+
+    const dataPorMes = {};
+
+    for (const d of detallesPedidos) {
+      const mes = dayjs(d.pedidoDux.fecha).format("YYYY-MM");
+      dataPorMes[mes] = dataPorMes[mes] || { pedida: 0, facturada: 0, totalLeadTime: 0, countLeadTime: 0 };
+      dataPorMes[mes].pedida += parseFloat(d.cantidad || "0");
+    }
+
+    for (const d of detallesFacturas) {
+      const nro = d.factura.nro_pedido;
+      const factura = d.factura;
+      const pedido = pedidosPorNro.get(nro);
+      if (!pedido) continue;
+
+      const mes = dayjs(factura.fecha_comp).format("YYYY-MM");
+
+      dataPorMes[mes] = dataPorMes[mes] || { pedida: 0, facturada: 0, totalLeadTime: 0, countLeadTime: 0 };
+      dataPorMes[mes].facturada += parseFloat(d.cantidad || "0");
+
+      const dias = Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)));
+      dataPorMes[mes].totalLeadTime += dias;
+      dataPorMes[mes].countLeadTime += 1;
+    }
+
+    const resultado = Object.entries(dataPorMes)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([mes, v]) => ({
+        mes,
+        fillRate: v.pedida > 0 ? +(Math.min(v.facturada / v.pedida, 1) * 100).toFixed(2) : 0,
+        leadTime: v.countLeadTime > 0 ? +(v.totalLeadTime / v.countLeadTime).toFixed(2) : null
+      }));
+
+    res.json(resultado);
+  } catch (error) {
+    console.error("Error en obtenerEvolucionEficienciaMensualPorCliente:", error);
+    res.status(500).json({ error: "Error al calcular eficiencia mensual por cliente" });
+  }
+};
+
+
 

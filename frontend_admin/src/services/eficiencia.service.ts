@@ -1,6 +1,6 @@
 import api from "./api";
 
-export async function fetchResumenEficiencia(params: {
+export async function fetchResumenEjecutivo(params: {
   desde: string;
   hasta: string;
 }) {
@@ -58,6 +58,7 @@ export async function fetchEficienciaPorCliente(params: {
   const { data } = await api.get("/eficiencia/por-cliente", { params });
   return data;
 }
+
 export async function fetchDetalleProducto(params: {
   desde: string;
   hasta: string;
@@ -95,3 +96,16 @@ export async function fetchDetallePorPedido(pedidoId: number | string) {
   });
   return data;
 }
+export const fetchEvolucionEficienciaMensual = async (hasta: string) => {
+  const res = await api.get("/eficiencia/evolucion-fillrate-mensual", {
+    params: { hasta },
+  });
+  return res.data;
+};
+
+export const fetchEvolucionEficienciaMensualPorCliente = async (hasta: string, cliente: string) => {
+  const res = await api.get("/eficiencia/evolucion-fillrate-mensual-cliente", {
+    params: { hasta, cliente }, 
+  });
+  return res.data;
+};
