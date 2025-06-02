@@ -1,5 +1,5 @@
 import { createResource, Show, For, createSignal } from "solid-js";
-import { formatearMiles, formatearFechaCorta } from "@/utils/formato";
+import { formatearMiles, formatearFechaCorta, formatearPrecio } from "@/utils/formato";
 import {
   fetchEficienciaPorProducto,
   fetchDetalleCliente,
@@ -76,6 +76,9 @@ export default function ModalDetalleEficiencia({
                     <th class="px-4 py-2">Cant. Pedida</th>
                     <th class="px-4 py-2">Cant. Facturada</th>
                     <th class="px-4 py-2">Fill Rate</th>
+                    <th class="px-4 py-2">$. Pedida</th>
+                    <th class="px-4 py-2">$. Facturada</th>
+                    <th class="px-4 py-2">FR Ponderado</th>
                     <th class="px-4 py-2">Lead Time (días)</th>
                   </tr>
                 </thead>
@@ -110,6 +113,13 @@ export default function ModalDetalleEficiencia({
                           {formatearMiles(item.cantidadFacturada)}
                         </td>
                         <td class="px-4 py-2">{item.fillRate?.toFixed(2)}%</td>
+                        <td class="px-4 py-2">
+                          {formatearPrecio(item.totalPedido)}
+                        </td>
+                        <td class="px-4 py-2">
+                          {formatearPrecio(item.totalFacturado)}
+                        </td>
+                        <td class="px-4 py-2">{item.fillRatePonderado?.toFixed(2)}%</td>
                         <td class="px-4 py-2">
                           {item.leadTimeDias?.toFixed(2) ?? "—"}
                         </td>

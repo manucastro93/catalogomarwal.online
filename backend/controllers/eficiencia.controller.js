@@ -894,10 +894,17 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
       const cantidadPedida = detallesP.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
       const cantidadFacturada = detallesF.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
 
+      const totalPedido = detallesP.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
+      const totalFacturado = detallesF.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
+
       if (cantidadFacturada === 0) continue;
 
       const fillRate = cantidadPedida > 0
         ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100)
+        : null;
+
+      const fillRatePonderado = totalPedido > 0
+        ? Math.min((totalFacturado / totalPedido) * 100, 100)
         : null;
 
       const leadTime = factura
@@ -911,14 +918,20 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
           leadTimes: [],
           totalPedida: 0,
           totalFacturada: 0,
+          totalPedido: 0,
+          totalFacturado: 0,
+          ponderados: [],
         });
       }
 
       const entry = clientesMap.get(cliente);
       if (fillRate !== null) entry.pedidos.push(fillRate);
+      if (fillRatePonderado !== null) entry.ponderados.push(fillRatePonderado);
       if (leadTime !== null) entry.leadTimes.push(leadTime);
       entry.totalPedida += cantidadPedida;
       entry.totalFacturada += cantidadFacturada;
+      entry.totalPedido += totalPedido;
+      entry.totalFacturado += totalFacturado;
     }
 
     const resultado = Array.from(clientesMap.values()).map(entry => {
@@ -929,9 +942,14 @@ export const obtenerEficienciaPorCliente = async (req, res) => {
         fillRate: entry.pedidos.length
           ? +(entry.pedidos.reduce((a, b) => a + b, 0) / entry.pedidos.length).toFixed(2)
           : null,
+        fillRatePonderado: entry.ponderados.length
+          ? +(entry.ponderados.reduce((a, b) => a + b, 0) / entry.ponderados.length).toFixed(2)
+          : null,
         leadTimePromedio: entry.leadTimes.length
           ? +(entry.leadTimes.reduce((a, b) => a + b, 0) / entry.leadTimes.length).toFixed(2)
           : null,
+        totalPedido: +entry.totalPedido.toFixed(2),
+        totalFacturado: +entry.totalFacturado.toFixed(2),
       };
     });
 
@@ -986,19 +1004,26 @@ export const obtenerDetallePorCliente = async (req, res) => {
     const resultado = pedidos.map(pedido => {
       const detallesP = detallesPedidos.filter(d => d.pedidoDuxId === pedido.id);
       const cantidadPedida = detallesP.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
+      const totalPedido = detallesP.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
 
       const detallesF = detallesFacturas.filter(d => d.factura?.nro_pedido === pedido.nro_pedido);
       const cantidadFacturada = detallesF.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
+      const totalFacturado = detallesF.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
 
       const fillRate = cantidadPedida > 0
         ? Math.min((cantidadFacturada / cantidadPedida) * 100, 100)
         : null;
+
+      const fillRatePonderado = totalPedido > 0
+        ? Math.min((totalFacturado / totalPedido) * 100, 100)
+        : null;  
 
       const factura = facturasMap.get(pedido.nro_pedido);
       const leadTimeDias =
         factura && cantidadFacturada > 0
           ? Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
           : null;
+
       const fechasFacturas = facturas
         .filter(f => f.nro_pedido === pedido.nro_pedido)
         .map(f => f.fecha_comp);
@@ -1011,6 +1036,9 @@ export const obtenerDetallePorCliente = async (req, res) => {
         cantidadFacturada,
         fillRate: fillRate !== null ? +fillRate.toFixed(2) : null,
         leadTimeDias,
+        totalPedido: +totalPedido.toFixed(2),
+        totalFacturado: +totalFacturado.toFixed(2),
+        fillRatePonderado: fillRatePonderado !== null ? +fillRatePonderado.toFixed(2) : null,
       };
     });
 
@@ -1020,5 +1048,4 @@ export const obtenerDetallePorCliente = async (req, res) => {
     res.status(500).json({ error: "Error al obtener detalle del cliente" });
   }
 };
-
 
