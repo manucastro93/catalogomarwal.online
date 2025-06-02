@@ -168,36 +168,39 @@ export default function CarritoSlideOver() {
         window.location.reload();
       }, 2500);
     } catch (error: any) {
-      console.error("❌ ERROR CATCH:", error);
-  
-      if (Array.isArray(error?.errores) && error.errores.length > 0) {
-        if (Array.isArray(error.carritoActualizado)) {
-          const nuevo = error.carritoActualizado.map((p: any) => ({
-            id: p.id,
-            nombre: p.nombre,
-            precioUnitario: p.precioUnitario,
-            precioPorBulto: p.unidadPorBulto ? p.precioUnitario * p.unidadPorBulto : undefined,
-            unidadPorBulto: p.unidadPorBulto,
-            cantidad: 1,
-            imagen: p.imagen || "",
-          }));
-          setCarrito(nuevo);
-        }
-  
-        const resumen = error.errores.map((e: any) => {
-          if (e.motivo === "El precio fue modificado.") {
-            return `🛑 ${e.nombre || "Producto"}: ${e.motivo} (${formatearPrecio(e.precioCliente)} ➜ ${formatearPrecio(e.precioActual)})`;
-          } else {
-            return `🛑 ${e.nombre || "Producto"}: ${e.motivo}`;
-          }
-        }).join("\n");
-  
-        setErroresDetalle(error.errores);
-        setMensajeError(`Algunos productos fueron modificados:\n\n${resumen}`);
+  console.error("❌ ERROR CATCH:", error);
+
+  const data = error?.response?.data;
+
+  if (Array.isArray(data?.errores) && data.errores.length > 0) {
+    if (Array.isArray(data.carritoActualizado)) {
+      const nuevo = data.carritoActualizado.map((p: any) => ({
+        id: p.id,
+        nombre: p.nombre,
+        precioUnitario: p.precioUnitario,
+        precioPorBulto: p.unidadPorBulto ? p.precioUnitario * p.unidadPorBulto : undefined,
+        unidadPorBulto: p.unidadPorBulto,
+        cantidad: 1,
+        imagen: p.imagen || "",
+      }));
+      setCarrito(nuevo);
+    }
+
+    const resumen = data.errores.map((e: any) => {
+      if (e.motivo === "El precio fue modificado.") {
+        return `🛑 ${e.nombre || "Producto"}: ${e.motivo} (${formatearPrecio(e.precioCliente)} ➜ ${formatearPrecio(e.precioActual)})`;
       } else {
-        setMensajeError(error?.mensaje || "Error inesperado al enviar el pedido.");
+        return `🛑 ${e.nombre || "Producto"}: ${e.motivo}`;
       }
-    } finally {
+    }).join("\n");
+
+    setErroresDetalle(data.errores);
+    setMensajeError(`Algunos productos fueron modificados:\n\n${resumen}`);
+  } else {
+    setMensajeError(data?.mensaje || "Error inesperado al enviar el pedido.");
+  }
+}
+ finally {
       setEnviando(false);
     }
   };
