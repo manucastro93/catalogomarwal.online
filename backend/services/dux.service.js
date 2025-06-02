@@ -383,6 +383,11 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
   const limit = 50;
   let totalProcesados = 0, creados = 0, actualizados = 0;
 
+  function parseFloatSeguro(valor) {
+    const n = parseFloat(valor);
+    return isNaN(n) ? 0 : n;
+  }
+
   try {
     while (true) {
       const res = await axios.get('https://erp.duxsoftware.com.ar/WSERP/rest/services/pedidos', {
@@ -411,7 +416,7 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
           cliente: p.cliente,
           personal: p.personal,
           fecha: new Date(p.fecha),
-          total: parseFloat(p.total),
+          total: parseFloatSeguro(p.total),
           estado_facturacion: p.estado_facturacion,
           observaciones: p.observaciones,
         };
@@ -429,22 +434,42 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
 
         // Detalles → tabla DetallePedidosDux
         if (Array.isArray(p.detalles)) {
-          await DetallePedidoDux.destroy({ where: { pedidoDuxId: pedido.id } }); // limpia anteriores
-
           for (const d of p.detalles) {
-            await DetallePedidoDux.create({
-              pedidoDuxId: pedido.id,
-              cantidad: parseFloat(d.cantidad),
-              precioUnitario: parseFloat(d.precio_unitario),
-              subtotal: parseFloat(d.subtotal),
-              descuento: parseFloat(d.descuento || 0),
-              codItem: d.cod_item,
-              descripcion: d.descripcion,
+            const cantidad = parseFloatSeguro(d.ctd);
+            const precioUnitario = parseFloatSeguro(d.precio_uni);
+            const subtotal = cantidad * precioUnitario;
+            const descuento = parseFloatSeguro(d.porc_desc);
+            const descripcion = d.item;
+            const codItem = d.cod_item;
+
+            const existenteDetalle = await DetallePedidoDux.findOne({
+              where: {
+                pedidoDuxId: pedido.id,
+                codItem: codItem
+              }
             });
+
+            const dataDetalle = {
+              cantidad,
+              precioUnitario,
+              subtotal,
+              descuento,
+              descripcion
+            };
+
+            if (existenteDetalle) {
+              await existenteDetalle.update(dataDetalle);
+            } else {
+              await DetallePedidoDux.create({
+                pedidoDuxId: pedido.id,
+                codItem,
+                ...dataDetalle
+              });
+            }
           }
         }
 
-        await esperar(500);
+        await esperar(300); // ligera pausa entre pedidos
       }
 
       totalProcesados += pedidos.length;
@@ -452,7 +477,7 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
     }
 
     return {
-      mensaje: `Sincronización de pedidos Dux finalizada. Total: ${totalProcesados}`,
+      mensaje: `✅ Sincronización de pedidos Dux finalizada. Total: ${totalProcesados}`,
       creados,
       actualizados
     };
@@ -465,7 +490,7 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
       return sincronizarPedidosDesdeDux(reintento + 1);
     }
 
-    console.error('❌ Error al sincronizar pedidos Dux:', error.message);
+    console.error('❌ Error general en la sincronización:', error.message);
     throw error;
   }
 }

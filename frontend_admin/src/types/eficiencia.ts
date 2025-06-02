@@ -2,11 +2,13 @@ export interface EficienciaBase {
   cantidadPedida: number;
   cantidadFacturada: number;
   fillRate: number | null;
+  fillRatePonderado: number | null;
   leadTimeDias?: number | null; // solo para eficiencia por pedido
   leadTimePromedio?: number | null; // usado en cliente, producto, categoría
+  totalPedido?: number;
+  totalFacturado?: number;
 }
 
-// Cada tipo tiene su discriminador `tipo`, excepto cliente que no lo tenía:
 export interface EficienciaPedido extends EficienciaBase {
   tipo: "pedido";
   nroPedido: string;
@@ -31,9 +33,10 @@ export interface EficienciaCliente extends EficienciaBase {
   tipo: "cliente";
   cliente: string;
   leadTimePromedio: number;
+  totalPedido: number;
+  totalFacturado: number;
 }
 
-// 🔁 Unión discriminada: ideal para switch/casos por tipo
 export type EficienciaItem =
   | EficienciaPedido
   | EficienciaCategoria

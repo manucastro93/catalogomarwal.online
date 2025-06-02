@@ -125,6 +125,12 @@ export default function TablaEficiencia({
       ? `${item.fillRate.toFixed(2)}%`
       : "—";
 
+  const getFillRatePonderado = (item: Item) =>
+    item.fillRatePonderado !== null && item.fillRatePonderado !== undefined
+      ? `${item.fillRatePonderado.toFixed(2)}%`
+      : "—";
+  
+
   const getCantidad = (valor: number | null | undefined) =>
     valor !== null && valor !== undefined ? formatearMiles(valor) : "—";
 
@@ -188,6 +194,12 @@ export default function TablaEficiencia({
             </th>
             <th
               class="px-4 py-2 cursor-pointer"
+              onClick={() => ordenar("fillRatePonderado")}
+            >
+              FR Ponderado ($){iconoOrden("fillRatePonderado")}
+            </th>
+            <th
+              class="px-4 py-2 cursor-pointer"
               onClick={() => ordenar("leadTimeDias")}
             >
               Lead Time (días){iconoOrden("leadTimeDias")}
@@ -222,6 +234,7 @@ export default function TablaEficiencia({
                     {getCantidad(item.cantidadFacturada)}
                   </td>
                   <td class="px-4 py-2">{getFillRate(item)}</td>
+                  <td class="px-4 py-2">{getFillRatePonderado(item)}</td>
                   <td class="px-4 py-2">{getLeadTime(item)}</td>
                 </tr>
               )}
