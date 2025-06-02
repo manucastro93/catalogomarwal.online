@@ -160,7 +160,7 @@ export const actualizarEstadoPedido = async (req, res, next) => {
 
     // 🔔 Notificar también a todos los administradores y supremos
     const admins = await Usuario.findAll({
-      where: { rolUsuarioId: { [Op.in]: [ROLES_USUARIO.SUPREMO, ROLES_USUARIO.ADMINISTRADOR] } },
+      where: { rolUsuarioId: { [Op.in]: [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR] } },
     });
 
     for (const admin of admins) {
