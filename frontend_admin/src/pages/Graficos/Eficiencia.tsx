@@ -136,7 +136,7 @@ export default function Eficiencia() {
   return (
     <div class="w-full max-w-screen-xl mx-auto px-3 py-4 md:p-6 space-y-6 md:space-y-8">
       <h1 class="text-lg md:text-2xl font-bold mb-4 text-center">
-        Eficiencia Comercial 📦
+        Servicio Comercial 📦
       </h1>
 
       <FiltrosEficiencia
