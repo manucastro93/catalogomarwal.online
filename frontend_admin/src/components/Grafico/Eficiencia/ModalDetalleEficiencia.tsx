@@ -97,14 +97,14 @@ export default function ModalDetalleEficiencia({
                         onClick={() => abrirDetallePedido(item)}
                       >
                         <td class="px-4 py-2">{item.nroPedido || "—"}</td>
-                        <td class="px-4 py-2">
+                        <td class="px-4 py-2 whitespace-nowrap">
                           {formatearFechaCorta(item.fecha?.split("T")[0])}
                         </td>
                         <td class="px-4 py-2 whitespace-nowrap">
-  {Array.isArray(item.fechasFacturas)
-    ? item.fechasFacturas.map(formatearFechaCorta).join(", ")
-    : "—"}
-</td>
+                          {Array.isArray(item.fechasFacturas)
+                            ? item.fechasFacturas.map(formatearFechaCorta).join(", ")
+                            : "—"}
+                        </td>
 
                         <td class="px-4 py-2">
                           {formatearMiles(item.cantidadPedida)}

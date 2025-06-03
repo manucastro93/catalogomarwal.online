@@ -5,6 +5,7 @@ export default (sequelize, DataTypes) => {
     id_empresa: DataTypes.INTEGER,
     nro_pto_vta: DataTypes.STRING,
     id_personal: DataTypes.INTEGER,
+    id_vendedor: DataTypes.INTEGER,
     nro_doc: DataTypes.STRING,
     tipo_comp: DataTypes.STRING,
     letra_comp: DataTypes.STRING,
