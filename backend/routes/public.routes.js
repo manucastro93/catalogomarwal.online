@@ -69,7 +69,6 @@ router.put('/pedidos/:id/cancelar-desde-cliente', cancelarPedidoDesdeCliente);
 router.get('/productos', listarProductosPublicos);
 router.get('/productos/:id', obtenerProductoPorId);
 router.get('/categorias', listarCategorias);
-router.post('/logs', registrarLogPublico);
 
 // 🧑‍💼 Vendedor
 router.get('/usuarios/vendedores/vendedor-por-link/:link', buscarVendedorPorLink);

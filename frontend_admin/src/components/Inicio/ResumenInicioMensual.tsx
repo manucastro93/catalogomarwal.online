@@ -1,10 +1,13 @@
 import { For, Show } from "solid-js";
 import { formatearPrecio } from "@/utils/formato";
 import type { ResumenEstadisticas } from "@/types/estadistica";
+import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import { useAuth } from '@/store/auth';
 
 export default function ResumenInicioMensual(props: {
   resumen: ResumenEstadisticas;
 }) {
+  const { usuario } = useAuth();
   const { resumen } = props;
 
   return (
@@ -40,22 +43,22 @@ export default function ResumenInicioMensual(props: {
           </div>
         </Show>
       </div>
-
-      <div class="bg-white p-4 rounded shadow">
-        <h2 class="font-semibold text-gray-700">Vendedor top del mes</h2>
-        <Show when={resumen.vendedorTop}>
-          {(vendedorTop) => (
-            <div>
-              <p class="font-semibold">{vendedorTop().usuario?.nombre}</p>
-              <p class="text-xs text-gray-500">
-                {vendedorTop().cantidad} pedidos —{" "}
-                {formatearPrecio(vendedorTop().totalFacturado ?? 0)}
-              </p>
-            </div>
-          )}
-        </Show>
-      </div>
-
+      <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.SUPREMO}>       
+        <div class="bg-white p-4 rounded shadow">
+          <h2 class="font-semibold text-gray-700">Vendedor top del mes</h2>
+          <Show when={resumen.vendedorTop}>
+            {(vendedorTop) => (
+              <div>
+                <p class="font-semibold">{vendedorTop().usuario?.nombre}</p>
+                <p class="text-xs text-gray-500">
+                  {vendedorTop().cantidad} pedidos —{" "}
+                  {formatearPrecio(vendedorTop().totalFacturado ?? 0)}
+                </p>
+              </div>
+            )}
+          </Show>
+        </div>
+      </Show> 
       <div class="bg-white p-4 rounded shadow">
         <h2 class="font-semibold text-gray-700">
           Categoría más vendida del mes
