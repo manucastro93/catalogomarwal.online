@@ -17,7 +17,6 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
     if (req.usuario?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {
       wherePedidos.usuarioId = req.usuario.id;
     }
-
     // Consultas principales
     const totalPedidos = await Pedido.count({ where: wherePedidos });
     const totalFacturado = await Pedido.sum('total', { where: wherePedidos });
