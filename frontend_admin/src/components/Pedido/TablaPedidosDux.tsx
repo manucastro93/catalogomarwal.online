@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js";
-import { formatearPrecio } from "@/utils/formato";
+import { formatearPrecio, formatearFechaCorta } from "@/utils/formato";
 import type { PedidoDux } from "@/types/pedido";
 
 export default function TablaPedidosDux(props: {
@@ -45,7 +45,7 @@ export default function TablaPedidosDux(props: {
                   <td class="p-3">{p.personal}</td>
                   <td class="p-3">{p.estado_facturacion}</td>
                   <td class="p-3">{formatearPrecio(Number(p.total))}</td>
-                  <td class="p-3">{new Date(p.fecha).toLocaleString()}</td>
+                  <td class="p-3">{formatearFechaCorta(p.fecha)}</td>
                   <td class="p-3 text-yellow-700 font-semibold">🔒 Solo lectura</td>
                 </tr>
               )}

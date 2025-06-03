@@ -204,180 +204,14 @@ export async function sincronizarProductosDesdeDux() {
     categoriasNuevas: categoriasCreadas.size
   };
 }
-/*
-export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new Date()) {
+
+export async function sincronizarPedidosDesdeDux() {
   const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-  const fechaDesde = '2025-01-01';
-  const hasta = fechaHasta.toISOString().slice(0, 10);
-
-  let offset = 0;
-  const limit = 50;
-  let totalProcesados = 0, creados = 0, actualizados = 0;
-
-  try {
-    while (true) {
-      const res = await axios.get('https://erp.duxsoftware.com.ar/WSERP/rest/services/pedidos', {
-        headers: {
-          Authorization: process.env.DUX_API_KEY,
-          Accept: 'application/json',
-        },
-        params: {
-          idEmpresa: EMPRESA,
-          idSucursal: SUCURSAL,
-          fechaDesde,
-          fechaHasta: hasta,
-          limit,
-          offset
-        },
-      });
-
-      const pedidos = res.data.results || [];
-      if (pedidos.length === 0) break;
-
-      for (const p of pedidos) {
-        const existente = await PedidoDux.findOne({ where: { nro_pedido: p.nro_pedido } });
-
-        const data = {
-          nro_pedido: p.nro_pedido,
-          cliente: p.cliente,
-          personal: p.personal,
-          fecha: new Date(p.fecha),
-          total: parseFloat(p.total),
-          estado_facturacion: p.estado_facturacion,
-          observaciones: p.observaciones,
-          detalles: p.detalles || [],
-        };
-
-        if (existente) {
-          await existente.update(data);
-          actualizados++;
-        } else {
-          await PedidoDux.create(data);
-          creados++;
-        }
-
-        await esperar(500);
-      }
-
-      totalProcesados += pedidos.length;
-      offset += limit;
-    }
-
-    return {
-      mensaje: `Sincronización de pedidos Dux finalizada. Total: ${totalProcesados}`,
-      creados,
-      actualizados
-    };
-
-  } catch (error) {
-    if (error.response?.status === 429 && reintento < 3) {
-      const espera = 5000 * (reintento + 1);
-      console.warn(`⚠️ 429 recibido. Esperando ${espera / 1000}s... Reintento #${reintento + 1}`);
-      await esperar(espera);
-      return sincronizarPedidosDesdeDux(reintento + 1);
-    }
-
-    console.error('❌ Error al sincronizar pedidos Dux:', error.message);
-    throw error;
-  }
-}
-
-export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
-  const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-  const fechaDesde = '2025-01-01';
-  const hasta = fechaHasta.toISOString().slice(0, 10);
-  const limit = 50;
-  let offset = 0;
-
-  let creadas = 0;
-  let actualizadas = 0;
-  let totalProcesadas = 0;
-
-  async function obtenerConReintentos(url, reintentos = 3) {
-    for (let i = 0; i < reintentos; i++) {
-      try {
-        const res = await axios.get(url, {
-          headers: {
-            accept: 'application/json',
-            authorization: API_KEY
-          }
-        });
-        return res.data.results || [];
-      } catch (error) {
-        if (error.response?.status === 429) {
-          console.warn('⚠️ 429 Too Many Requests: esperando 10s para reintentar...');
-          await esperar(10000);
-        } else if (error.code === 'ECONNRESET') {
-          console.warn(`🔁 ECONNRESET en offset ${offset}, intento ${i + 1}...`);
-          await esperar(3000 + i * 2000);
-        } else {
-          throw error;
-        }
-      }
-    }
-    throw new Error(`❌ Fallaron todos los intentos para offset ${offset}`);
-  }
-
-  while (true) {
-    const url = `${API_URL_FACTURAS}?fechaDesde=${fechaDesde}&fechaHasta=${hasta}&idEmpresa=${EMPRESA}&idSucursal=${SUCURSAL}&limit=${limit}&offset=${offset}`;
-    console.log(`➡️ Offset actual: ${offset}`);
-
-    let facturas;
-    try {
-      facturas = await obtenerConReintentos(url);
-    } catch (error) {
-      console.error('❌ Error al sincronizar facturas:', error.message);
-      break;
-    }
-
-    if (facturas.length === 0) break;
-
-    for (const f of facturas) {
-      const existente = await Factura.findByPk(f.id);
-
-      let estadoFacturaId = 1;
-      if (f.anulada_boolean) {
-        estadoFacturaId = 3;
-      } else if (f.detalles_cobro?.[0]?.detalles_mov_cobro?.length > 0) {
-        const totalCobrado = f.detalles_cobro
-          .flatMap(dc => dc.detalles_mov_cobro)
-          .reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
-
-        if (totalCobrado >= f.total) estadoFacturaId = 2;
-        else if (totalCobrado > 0) estadoFacturaId = 4;
-      }
-
-      const data = {
-        ...f,
-        estadoFacturaId,
-        fecha_comp: new Date(f.fecha_comp),
-        fecha_vencimiento_cae_cai: f.fecha_vencimiento_cae_cai ? new Date(f.fecha_vencimiento_cae_cai) : null,
-        fecha_registro: f.fecha_registro ? new Date(f.fecha_registro) : null,
-        sincronizadoEl: new Date(),
-      };
-
-      if (existente) {
-        await existente.update(data);
-        actualizadas++;
-      } else {
-        await Factura.create(data);
-        creadas++;
-      }
-    }
-
-    totalProcesadas += facturas.length;
-    offset += limit;
-    await esperar(3000);
-  }
-
-  return { creadas, actualizadas, total: totalProcesadas };
-}*/
-
-export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new Date()) {
-  const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-  const fechaDesde = '2025-05-01';
-  const hasta = fechaHasta.toISOString().slice(0, 10);
+  const fechaHasta = new Date();
+  const fechaDesde = new Date();
+  fechaDesde.setDate(fechaHasta.getDate() - 20);
+  const desde = fechaDesde.toISOString().split('T')[0]; // "YYYY-MM-DD"
+  const hasta = fechaHasta.toISOString().split('T')[0];
 
   let offset = 0;
   const limit = 50;
@@ -388,25 +222,44 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
     return isNaN(n) ? 0 : n;
   }
 
+  console.log(`⏳ Iniciando sincronización de pedidos Dux desde ${desde} hasta ${hasta}...`);
+
   try {
     while (true) {
-      const res = await axios.get('https://erp.duxsoftware.com.ar/WSERP/rest/services/pedidos', {
-        headers: {
-          Authorization: process.env.DUX_API_KEY,
-          Accept: 'application/json',
-        },
-        params: {
-          idEmpresa: EMPRESA,
-          idSucursal: SUCURSAL,
-          fechaDesde,
-          fechaHasta: hasta,
-          limit,
-          offset
-        },
-      });
+      console.log(`➡️ Consultando offset ${offset}...`);
+
+      let res;
+      try {
+        res = await axios.get('https://erp.duxsoftware.com.ar/WSERP/rest/services/pedidos', {
+          headers: {
+            Authorization: process.env.DUX_API_KEY,
+            Accept: 'application/json',
+          },
+          params: {
+            idEmpresa: EMPRESA,
+            idSucursal: SUCURSAL,
+            fechaDesde: desde,
+            fechaHasta: hasta,
+            limit,
+            offset
+          },
+        });
+      } catch (error) {
+        if (error.response?.status === 429) {
+          console.warn(`⚠️ 429 Too Many Requests. Esperando 15s antes de reintentar offset ${offset}...`);
+          await esperar(15000);
+          continue;
+        }
+
+        console.error('❌ Error al consultar pedidos:', error.message);
+        throw error;
+      }
 
       const pedidos = res.data.results || [];
-      if (pedidos.length === 0) break;
+      if (pedidos.length === 0) {
+        console.log(`✅ No se encontraron más pedidos. Finalizando.`);
+        break;
+      }
 
       for (const p of pedidos) {
         const existente = await PedidoDux.findOne({ where: { nro_pedido: p.nro_pedido } });
@@ -427,12 +280,13 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
           await existente.update(data);
           pedido = existente;
           actualizados++;
+          console.log(`🟡 Pedido ${p.nro_pedido} actualizado`);
         } else {
           pedido = await PedidoDux.create(data);
           creados++;
+          console.log(`🟢 Pedido ${p.nro_pedido} creado`);
         }
 
-        // Detalles → tabla DetallePedidosDux
         if (Array.isArray(p.detalles)) {
           for (const d of p.detalles) {
             const cantidad = parseFloatSeguro(d.ctd);
@@ -459,53 +313,56 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
 
             if (existenteDetalle) {
               await existenteDetalle.update(dataDetalle);
+              console.log(`   🔄 Detalle actualizado (${codItem})`);
             } else {
               await DetallePedidoDux.create({
                 pedidoDuxId: pedido.id,
                 codItem,
                 ...dataDetalle
               });
+              console.log(`   ➕ Detalle agregado (${codItem})`);
             }
           }
         }
 
-        await esperar(300); // ligera pausa entre pedidos
+        await esperar(500); // descanso para evitar bloqueo
       }
 
       totalProcesados += pedidos.length;
       offset += limit;
     }
 
+    console.log(`✅ Sincronización finalizada. Total procesados: ${totalProcesados}, creados: ${creados}, actualizados: ${actualizados}`);
     return {
-      mensaje: `✅ Sincronización de pedidos Dux finalizada. Total: ${totalProcesados}`,
+      mensaje: `Finalizada. Procesados: ${totalProcesados}`,
       creados,
       actualizados
     };
 
   } catch (error) {
-    if (error.response?.status === 429 && reintento < 3) {
-      const espera = 5000 * (reintento + 1);
-      console.warn(`⚠️ 429 recibido. Esperando ${espera / 1000}s... Reintento #${reintento + 1}`);
-      await esperar(espera);
-      return sincronizarPedidosDesdeDux(reintento + 1);
-    }
-
-    console.error('❌ Error general en la sincronización:', error.message);
+    console.error('❌ Error fatal fuera del ciclo:', error.message);
     throw error;
   }
 }
 
-export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
+export async function sincronizarFacturasDesdeDux() {
   const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-  const fechaDesde = '2025-05-01';
-  const hasta = fechaHasta.toISOString().slice(0, 10);
+  const fechaHasta = new Date();
+  const fechaDesde = new Date();
+  fechaDesde.setDate(fechaHasta.getDate() - 20);
+  const desde = fechaDesde.toISOString().split('T')[0]; // "YYYY-MM-DD"
+  const hasta = fechaHasta.toISOString().split('T')[0];
   const limit = 50;
   let offset = 0;
 
   let creadas = 0;
   let actualizadas = 0;
   let totalProcesadas = 0;
+
+  function parseFloatSeguro(valor) {
+    const n = parseFloat(valor);
+    return isNaN(n) ? 0 : n;
+  }
 
   async function obtenerConReintentos(url, reintentos = 3) {
     for (let i = 0; i < reintentos; i++) {
@@ -519,8 +376,8 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
         return res.data.results || [];
       } catch (error) {
         if (error.response?.status === 429) {
-          console.warn('⚠️ 429 Too Many Requests: esperando 10s para reintentar...');
-          await esperar(10000);
+          console.warn(`⚠️ 429 Too Many Requests: esperando 15s (intento ${i + 1})...`);
+          await esperar(15000);
         } else if (error.code === 'ECONNRESET') {
           console.warn(`🔁 ECONNRESET en offset ${offset}, intento ${i + 1}...`);
           await esperar(3000 + i * 2000);
@@ -532,9 +389,11 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
     throw new Error(`❌ Fallaron todos los intentos para offset ${offset}`);
   }
 
+  console.log(`⏳ Iniciando sincronización de facturas desde ${desde} hasta ${hasta}...`);
+
   while (true) {
-    const url = `${API_URL_FACTURAS}?fechaDesde=${fechaDesde}&fechaHasta=${hasta}&idEmpresa=${EMPRESA}&idSucursal=${SUCURSAL}&limit=${limit}&offset=${offset}`;
-    console.log(`➡️ Offset actual: ${offset}`);
+    const url = `${API_URL_FACTURAS}?fechaDesde=${desde}&fechaHasta=${hasta}&idEmpresa=${EMPRESA}&idSucursal=${SUCURSAL}&limit=${limit}&offset=${offset}`;
+    console.log(`➡️ Consultando offset ${offset}...`);
 
     let facturas;
     try {
@@ -544,7 +403,10 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
       break;
     }
 
-    if (facturas.length === 0) break;
+    if (facturas.length === 0) {
+      console.log(`✅ No hay más facturas. Finalizando.`);
+      break;
+    }
 
     for (const f of facturas) {
       const existente = await Factura.findByPk(f.id);
@@ -555,7 +417,7 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
       } else if (f.detalles_cobro?.[0]?.detalles_mov_cobro?.length > 0) {
         const totalCobrado = f.detalles_cobro
           .flatMap(dc => dc.detalles_mov_cobro)
-          .reduce((sum, d) => sum + (parseFloat(d.monto) || 0), 0);
+          .reduce((sum, d) => sum + (parseFloatSeguro(d.monto)), 0);
 
         if (totalCobrado >= f.total) estadoFacturaId = 2;
         else if (totalCobrado > 0) estadoFacturaId = 4;
@@ -576,34 +438,67 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
         await existente.update(data);
         factura = existente;
         actualizadas++;
+        console.log(`🟡 Factura ${f.id} actualizada`);
       } else {
         factura = await Factura.create(data);
         creadas++;
+        console.log(`🟢 Factura ${f.id} creada`);
       }
 
       // Detalles → tabla DetalleFacturas
       if (Array.isArray(f.detalles)) {
-        await DetalleFactura.destroy({ where: { facturaId: factura.id } });
-
         for (const d of f.detalles) {
-          await DetalleFactura.create({
-            facturaId: factura.id,
-            cantidad: parseFloat(d.cantidad),
-            precioUnitario: parseFloat(d.precio_unitario),
-            subtotal: parseFloat(d.subtotal),
-            descuento: parseFloat(d.descuento || 0),
-            costo: parseFloat(d.costo || 0),
-            codItem: d.cod_item,
-            descripcion: d.descripcion,
+          const cantidad = parseFloatSeguro(d.ctd);
+          const precioUnitario = parseFloatSeguro(d.precio_uni);
+          const subtotal = cantidad * precioUnitario;
+          const descuento = parseFloatSeguro(d.porc_desc);
+          const costo = parseFloatSeguro(d.costo);
+          const descripcion = d.item;
+          const codItem = d.cod_item;
+
+          if ([cantidad, precioUnitario, subtotal].some(v => isNaN(v))) {
+            console.warn(`❌ NaN detectado en factura ${factura.id} (${codItem}). Detalle omitido:`, d);
+            continue;
+          }
+
+          const existenteDetalle = await DetalleFactura.findOne({
+            where: {
+              facturaId: factura.id,
+              codItem: codItem
+            }
           });
+
+          const dataDetalle = {
+            cantidad,
+            precioUnitario,
+            subtotal,
+            descuento,
+            costo,
+            descripcion
+          };
+
+          if (existenteDetalle) {
+            await existenteDetalle.update(dataDetalle);
+            console.log(`   🔄 Detalle actualizado (${codItem})`);
+          } else {
+            await DetalleFactura.create({
+              facturaId: factura.id,
+              codItem,
+              ...dataDetalle
+            });
+            console.log(`   ➕ Detalle agregado (${codItem})`);
+          }
         }
+
       }
     }
 
     totalProcesadas += facturas.length;
     offset += limit;
-    await esperar(3000);
+    await esperar(3000); // control de frecuencia
   }
+
+  console.log(`✅ Sincronización de facturas finalizada. Total: ${totalProcesadas}, creadas: ${creadas}, actualizadas: ${actualizadas}`);
 
   return { creadas, actualizadas, total: totalProcesadas };
 }

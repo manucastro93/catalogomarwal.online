@@ -87,7 +87,8 @@ export const {
   Factura,
   EstadoFactura,
   DetallePedidoDux,
-  DetalleFactura
+  DetalleFactura,
+  HistorialSincronizacion
 } = db;
 
 export { sequelize, Sequelize };
