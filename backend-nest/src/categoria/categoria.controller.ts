@@ -1,4 +1,4 @@
-import { Categoria } from '@/models';
+import { Categoria } from '@/categoria/categoria.model';
 import Sequelize from 'sequelize';
 import cache from '@/utils/cache';
 import { crearAuditoria } from '@/utils/auditoria';

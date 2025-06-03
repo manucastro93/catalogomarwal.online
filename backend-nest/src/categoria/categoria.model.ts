@@ -1,5 +1,35 @@
-export default (sequelize, DataTypes) => {
-  const Categoria = sequelize.define(
+import {
+  Column,
+  DataType,
+  HasMany,
+  Model,
+  Table,
+} from 'sequelize-typescript';
+import { Producto } from '@/producto/producto.model';
+
+@Table({ tableName: 'Categorias', timestamps: true, paranoid: true })
+export class Categoria extends Model<Categoria> {
+  @Column({ type: DataType.INTEGER, primaryKey: true, autoIncrement: true })
+  id!: number;
+
+  @Column({ type: DataType.STRING(255), allowNull: false })
+  nombre!: string;
+
+  @Column({ field: 'nombreWeb', type: DataType.STRING(200), allowNull: false })
+  nombreWeb!: string;
+
+  @Column(DataType.INTEGER)
+  orden?: number;
+
+  @Column({ type: DataType.BOOLEAN, defaultValue: true })
+  estado?: boolean;
+
+  @HasMany(() => Producto)
+  productos?: Producto[];
+}
+
+export default (sequelize: any, DataTypes: any) =>
+  sequelize.define(
     'Categoria',
     {
       id: {
@@ -15,43 +45,15 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.STRING(200),
         allowNull: false,
       },
-      orden: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },
+      orden: DataTypes.INTEGER,
       estado: {
         type: DataTypes.BOOLEAN,
-        allowNull: true,
         defaultValue: true,
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-      },
-      deletedAt: {
-        type: DataTypes.DATE,
-        allowNull: true,
       },
     },
     {
-      sequelize,
-      modelName: 'Categoria',
       tableName: 'Categorias',
       timestamps: true,
       paranoid: true,
     }
   );
-
-  Categoria.associate = (models) => {
-    Categoria.hasMany(models.Producto, {
-      foreignKey: 'categoriaId',
-      as: 'Productos',
-    });
-  };
-
-  return Categoria;
-};

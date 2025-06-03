@@ -1,4 +1,5 @@
-import { Usuario, RolUsuario } from '@/models';
+import { Usuario } from '@/usuario/usuario.model';
+import { RolUsuario } from '@/rolusuario/rolusuario.model';
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
 import { nanoid } from 'nanoid';
