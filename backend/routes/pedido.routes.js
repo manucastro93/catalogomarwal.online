@@ -11,11 +11,12 @@ import {
 } from '../controllers/pedido.controller.js';
 
 import { validarPedidoBody } from '../validaciones/pedido.validation.js';
+import { verificarToken } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', obtenerPedidos);
-router.get('/inicio', obtenerPedidosInicio);
+router.get('/',verificarToken, obtenerPedidos);
+router.get('/inicio',verificarToken, obtenerPedidosInicio);
 router.get('/dux', listarPedidosDux);
 router.get('/:id', obtenerPedidoPorId);
 
