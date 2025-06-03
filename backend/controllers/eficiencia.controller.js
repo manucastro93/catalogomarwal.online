@@ -211,7 +211,7 @@ export const obtenerOutliersFillRate = async (req, res) => {
 export const obtenerEvolucionEficienciaMensual = async (req, res) => {
   try {
     const desde = "2015-01-01";
-    const hasta = req.query.hasta ? new Date(req.query.hasta) : null;
+    const hasta = new Date();
     const cliente = req.query.cliente?.toLowerCase();
 
     if (!hasta) return res.status(400).json({ error: "Parámetro 'hasta' requerido" });
@@ -1079,7 +1079,7 @@ export const obtenerDetallePorCliente = async (req, res) => {
 export const obtenerEvolucionEficienciaMensualPorCliente = async (req, res) => {
   try {
     const desde = "2015-01-01";
-    const hasta = req.query.hasta ? new Date(req.query.hasta) : null;
+    const hasta = new Date();
     const cliente = req.query.cliente?.toLowerCase();
 
     if (!hasta || !cliente) {

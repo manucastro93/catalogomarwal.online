@@ -118,3 +118,26 @@ export async function enviarEmailCancelacion({ cliente, pedido, vendedor }) {
     html,
   });
 }
+
+export async function enviarEmailCambioEstado({ cliente, pedido, estadoNombre, vendedor }) {
+  const html = `
+  <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 640px; margin: auto; background-color: #f0f8ff; border-radius: 10px;">
+    <h2 style="color: #004085;">🔄 Estado actualizado</h2>
+    <p>El estado de tu pedido <strong>#${pedido.id}</strong> ahora es: <strong>${estadoNombre}</strong>.</p>
+
+    <p><strong>Cliente:</strong> ${cliente.nombre}</p>
+    <p><strong>Email:</strong> ${cliente.email}</p>
+    <p><strong>Teléfono:</strong> ${cliente.telefono}</p>
+
+    <p style="margin-top: 24px;">Este email fue generado automáticamente por Catálogo Marwal.</p>
+  </div>
+  `;
+
+  await transporter.sendMail({
+    from: `"Catálogo Marwal" <${process.env.EMAIL_USER}>`,
+    to: [cliente.email, vendedor?.email].filter(Boolean).join(","),
+    subject: `🔄 Pedido #${pedido.id} – Estado actualizado a ${estadoNombre}`,
+    html,
+  });
+}
+

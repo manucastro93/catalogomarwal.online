@@ -96,16 +96,14 @@ export async function fetchDetallePorPedido(pedidoId: number | string) {
   });
   return data;
 }
-export const fetchEvolucionEficienciaMensual = async (hasta: string) => {
-  const res = await api.get("/eficiencia/evolucion-fillrate-mensual", {
-    params: { hasta },
-  });
+export const fetchEvolucionEficienciaMensual = async () => {
+  const res = await api.get("/eficiencia/evolucion-fillrate-mensual");
   return res.data;
 };
 
-export const fetchEvolucionEficienciaMensualPorCliente = async (hasta: string, cliente: string) => {
+export const fetchEvolucionEficienciaMensualPorCliente = async (cliente: string) => {
   const res = await api.get("/eficiencia/evolucion-fillrate-mensual-cliente", {
-    params: { hasta, cliente }, 
+    params: { cliente }, 
   });
   return res.data;
 };

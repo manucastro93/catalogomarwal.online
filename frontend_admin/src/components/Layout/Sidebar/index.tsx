@@ -4,10 +4,9 @@ import { useAuth } from "@/store/auth";
 import Logo from "./Logo";
 import Ventas from "./Ventas";
 import Produccion from "./Produccion";
-import Administradores from "./Administradores";
-import Pagina from "./Pagina";
-import Graficos from "./Graficos";
-import ConversacionesBot from "./ConversacionesBot";
+import Bot from "./Bot";
+import Informes from "./Informes";
+import BaseDatos from "./BaseDatos";
 import { Home } from "@/icons";
 import theme from "@/styles/sidebarTheme";
 
@@ -22,19 +21,16 @@ export default function Sidebar(props: {
 
   return (
     <aside
-  onMouseEnter={() => props.setExpandido(true)}
-  onMouseLeave={() => props.setExpandido(false)}
-  class={`sidebar-scroll scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent
-    overflow-y-auto transition-all duration-300 fixed top-0 left-0 z-50 h-screen bg-[#252C37] border-r border-[#1e293b] flex flex-col
-    ${props.expandido ? 'w-64' : 'w-16'}`}
->
-
-      {/* Logo */}
-      <div class="px-4 py-4 border-b border-[#334155]">
+      onMouseEnter={() => props.setExpandido(true)}
+      onMouseLeave={() => props.setExpandido(false)}
+      class={`sidebar-scroll scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent
+        overflow-y-auto transition-all duration-300 fixed top-0 left-0 z-50 h-screen bg-[#252C37] border-r border-[#1e293b] flex flex-col
+        ${props.expandido ? "w-64" : "w-16"}`}
+    >
+      <div class="px-2 py-2 border-b border-[#334155]">
         <Logo expandido={props.expandido} />
       </div>
 
-      {/* Contenido scrollable */}
       <nav
         class={`flex-1 overflow-y-auto ${theme.fuente} text-sm scrollbar-thin scrollbar-thumb-zinc-700`}
       >
@@ -47,23 +43,16 @@ export default function Sidebar(props: {
           expandido={props.expandido}
         />
 
-        <SeccionTitulo
-          texto="HERRAMIENTAS"
-          mostrar={props.expandido}
-          classExtra="mt-4"
-        />
+        <SeccionTitulo texto="GESTIÓN" mostrar={props.expandido} classExtra="mt-4" />
         <Ventas usuario={usuario()} expandido={props.expandido} />
         <Produccion usuario={usuario()} expandido={props.expandido} />
-        <ConversacionesBot usuario={usuario()} expandido={props.expandido} />
-        <Graficos expandido={props.expandido} />
+        <Bot usuario={usuario()} expandido={props.expandido} />
 
-        <SeccionTitulo
-          texto="CONFIGURACIÓN"
-          mostrar={props.expandido}
-          classExtra="mt-4"
-        />
-        <Administradores usuario={usuario()} expandido={props.expandido} />
-        <Pagina usuario={usuario()} expandido={props.expandido} />
+        <SeccionTitulo texto="ANÁLISIS" mostrar={props.expandido} classExtra="mt-4" />
+        <Informes expandido={props.expandido} />
+
+        <SeccionTitulo texto="BASE DE DATOS" mostrar={props.expandido} classExtra="mt-4" />
+        <BaseDatos expandido={props.expandido} />
       </nav>
     </aside>
   );
@@ -76,7 +65,7 @@ function SeccionTitulo(props: {
 }) {
   return (
     <div
-      class={`text-[11px] tracking-widest font-medium px-4 py-2 text-[#60a5fa] ${
+      class={`text-[9px] tracking-widest font-medium px-4 py-2 text-[#60a5fa] ${
         props.classExtra || ""
       }`}
     >

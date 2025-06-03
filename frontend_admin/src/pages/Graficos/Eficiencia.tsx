@@ -49,10 +49,10 @@ export default function Eficiencia() {
   const limit = 10;
   const [categorias] = createResource(obtenerCategorias);
 
-const [resumen] = createResource(
-  () => ({ desde: desde(), hasta: hasta() }),
-  fetchResumenEjecutivo
-);
+  const [resumen] = createResource(
+    () => ({ desde: desde(), hasta: hasta() }),
+    fetchResumenEjecutivo
+  );
 
 
   const [evolucionEficiencia] = createResource(
@@ -123,12 +123,12 @@ const [resumen] = createResource(
     }
   }
   const [datosMensual] = createResource(
-    () => [desde(), hasta(), cliente()],
-    async ([desde, hasta, cliente]) => {
+    () => [cliente()],
+    async ([cliente]) => {
       if (cliente.trim()) {
-        return await fetchEvolucionEficienciaMensualPorCliente(hasta, cliente);
+        return await fetchEvolucionEficienciaMensualPorCliente(cliente);
       }
-      return await fetchEvolucionEficienciaMensual(hasta);
+      return await fetchEvolucionEficienciaMensual();
     }
   );
   onMount(actualizarFiltros);
@@ -175,11 +175,11 @@ const [resumen] = createResource(
         onExportar={exportarResumenEficiencia}
       />
 
-<ResumenTextoEficiencia
-  desde={desde()}
-  hasta={hasta()}
-  resumen={resumen}
-/>
+      <ResumenTextoEficiencia
+        desde={desde}
+        hasta={hasta}
+        resumen={resumen}
+      />
 
 
 
@@ -202,16 +202,16 @@ const [resumen] = createResource(
           evolucionFillRate={[...evolucionFillRate()!].sort(
             (a, b) => a.fillRate - b.fillRate
           )}
-          datosMensual={datosMensual() || []} // ⬅️ nueva prop
+          datosMensual={datosMensual() || []}
           datosPedidos={modo() === "pedido" ? detalleEficiencia()! : []}
           datosCategorias={
             modo() === "categoria"
               ? detalleEficiencia()!.map((d: any) => ({
-                  ...d,
-                  categoria:
-                    categorias()?.find((c: any) => c.id == d.categoria)
-                      ?.nombre || "Sin nombre",
-                }))
+                ...d,
+                categoria:
+                  categorias()?.find((c: any) => c.id == d.categoria)
+                    ?.nombre || "Sin nombre",
+              }))
               : []
           }
           datosProductos={modo() === "producto" ? detalleEficiencia()! : []}
@@ -264,12 +264,12 @@ const [resumen] = createResource(
               modo() === "categoria"
                 ? item.categoria
                 : modo() === "producto"
-                ? item.producto
-                : modo() === "cliente"
-                ? item.cliente
-                : modo() === "pedido"
-                ? item.nroPedido
-                : "";
+                  ? item.producto
+                  : modo() === "cliente"
+                    ? item.cliente
+                    : modo() === "pedido"
+                      ? item.nroPedido
+                      : "";
             abrirModalDetalle(modo(), filtro);
           }}
         />

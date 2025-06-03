@@ -58,3 +58,15 @@ export async function enviarWhatsappCancelacion({ cliente, pedido, vendedor }) {
     }
   }
 }
+
+// ✅ Enviar aviso por cambio de estado (excepto cancelación)
+export async function enviarWhatsappCambioEstadoPedido({ cliente, pedido, estadoNombre }) {
+  const tel = formatearNumeroWhatsapp(cliente?.telefono);
+  if (!tel) return;
+
+  const idPedido = `#${pedido.id}`;
+
+  // ⚠️ Requiere template 'actualizacion_estado_pedido' con 2 variables:
+  // 1: número de pedido (#1234), 2: nuevo estado ("Preparando", "Entregado", etc.)
+  await enviarMensajeTemplateWhatsapp(tel, 'actualizacion_estado_pedido', [idPedido, estadoNombre]);
+}

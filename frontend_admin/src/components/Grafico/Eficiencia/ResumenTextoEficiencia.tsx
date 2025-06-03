@@ -3,8 +3,8 @@ import { formatearMiles, formatearFechaCorta } from "@/utils/formato";
 import type { ResumenEficiencia } from "@/types/eficiencia";
 
 interface Props {
-  desde: string;
-  hasta: string;
+  desde: Accessor<string>;
+  hasta: Accessor<string>;
   resumen: Accessor<ResumenEficiencia | undefined>;
 }
 
@@ -21,7 +21,6 @@ export default function ResumenTextoEficiencia({
       </div>
     );
   }
-
   return (
     <div class="bg-white p-4 rounded shadow-md text-sm md:text-base border border-gray-200 space-y-3">
       <button
@@ -40,8 +39,7 @@ export default function ResumenTextoEficiencia({
       >
         <div class="space-y-4">
           <p class="text-gray-600 font-medium">
-            <b>Período analizado:</b> del {formatearFechaCorta(desde)} al{" "}
-            {formatearFechaCorta(hasta)}
+            <b>Período analizado:</b> del {formatearFechaCorta(desde())} al{" "} {formatearFechaCorta(hasta())}
           </p>
 
           <p>

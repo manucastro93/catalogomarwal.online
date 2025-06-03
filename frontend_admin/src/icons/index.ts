@@ -10,3 +10,5 @@ export { default as ChevronLeft } from 'lucide-solid/icons/chevron-left';
 export { default as ChevronRight } from 'lucide-solid/icons/chevron-right';
 export { default as MessageCircle } from 'lucide-solid/icons/message-circle';
 export { default as TrendingUp } from 'lucide-solid/icons/trending-up';
+export { default as BarChart3 } from 'lucide-solid/icons/bar-chart-3';
+export { default as Database } from 'lucide-solid/icons/database';
