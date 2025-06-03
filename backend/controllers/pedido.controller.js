@@ -36,12 +36,12 @@ export const obtenerPedidos = async (req, res, next) => {
 
     // ✅ Si es VENDEDOR logueado, filtrar por SU ID
     if (req.usuario?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {
-      where.vendedorId = req.usuario.id;
+      where.usuarioId = req.usuario.id;
     }
 
     // ✅ Si en query viene vendedorId (y el usuario NO es vendedor) filtramos por ese
     if (vendedorIdQuery && req.usuario?.rolUsuarioId !== ROLES_USUARIOS.VENDEDOR) {
-      where.vendedorId = vendedorIdQuery;
+      where.usuarioId = vendedorIdQuery;
     }
 
     if (estado) {
