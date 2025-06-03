@@ -3,19 +3,15 @@ import { A, useLocation } from '@solidjs/router';
 import ConPermiso from '@/components/Layout/ConPermiso';
 import { Package, ChevronDown } from '@/icons';
 import { esOperario } from './utils';
-import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 import theme from '@/styles/sidebarTheme';
 
 export default function Ventas(props: { usuario: any; expandido: boolean }) {
   const location = useLocation();
   const [open, setOpen] = createSignal(
     location.pathname.startsWith('/Pedidos') ||
-    location.pathname.startsWith('/Productos') ||
-    location.pathname.startsWith('/Categorias') ||
-    location.pathname.startsWith('/Clientes') ||
-    location.pathname.startsWith('/Vendedores') ||
-    location.pathname.startsWith('/LogsCliente') ||
-    location.pathname.startsWith('/Estadisticas')
+    location.pathname.startsWith('/Facturas') ||
+    location.pathname.startsWith('/ServicioComercial') || // si lo renombras así
+    location.pathname.startsWith('/Stock')
   );
 
   const esActivo = (path: string) => location.pathname === path;
@@ -45,35 +41,20 @@ export default function Ventas(props: { usuario: any; expandido: boolean }) {
 
       <Show when={open() && props.expandido}>
         <div class="flex flex-col mt-1">
-          <ConPermiso modulo="Pedidos" accion="ver">
+          <ConPermiso modulo="Ventas_Pedidos" accion="ver">
             <SidebarLink href="/Pedidos" texto="Pedidos" activo={esActivo('/Pedidos')} />
           </ConPermiso>
-          <ConPermiso modulo="Productos" accion="ver">
-            <SidebarLink href="/Productos" texto="Productos" activo={esActivo('/Productos')} />
-          </ConPermiso>
-          <ConPermiso modulo="Categorias" accion="ver">
-            <SidebarLink href="/Categorias" texto="Categorías" activo={esActivo('/Categorias')} />
-          </ConPermiso>
-          <ConPermiso modulo="Clientes" accion="ver">
-            <SidebarLink href="/Clientes" texto="Clientes" activo={esActivo('/Clientes')} />
-          </ConPermiso>
-          <ConPermiso modulo="Facturas" accion="ver">
+          <ConPermiso modulo="Ventas_Facturas" accion="ver">
             <SidebarLink href="/Facturas" texto="Facturas" activo={esActivo('/Facturas')} />
           </ConPermiso>
-          <Show when={[ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(props.usuario?.rolUsuarioId)}>
-            <ConPermiso modulo="Vendedores" accion="ver">
-              <SidebarLink href="/Vendedores" texto="Vendedores" activo={esActivo('/Vendedores')} />
-            </ConPermiso>
-            <ConPermiso modulo="LogsCliente" accion="ver">
-              <SidebarLink href="/LogsCliente" texto="Actividad Clientes" activo={esActivo('/LogsCliente')} />
-            </ConPermiso>
-          </Show>
-          <ConPermiso modulo="Estadisticas" accion="ver">
-            <SidebarLink href="/Estadisticas" texto="Resumen del mes" activo={esActivo('/Estadisticas')} />
+          <ConPermiso modulo="Ventas_Eficiencia" accion="ver">
+            <SidebarLink href="/ServicioComercial" texto="Servicio comercial" activo={esActivo('/ServicioComercial')} />
+          </ConPermiso>
+          <ConPermiso modulo="Ventas_Stock" accion="ver">
+            <SidebarLink href="/Stock" texto="Stock" activo={esActivo('/Stock')} />
           </ConPermiso>
         </div>
       </Show>
-
     </div>
   );
 }

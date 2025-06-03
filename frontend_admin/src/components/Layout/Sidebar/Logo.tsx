@@ -5,7 +5,7 @@ export default function Logo(props: { expandido: boolean }) {
   const [pagina] = createResource(obtenerPagina);
 
   return (
-    <div class="flex justify-center items-center h-20 my-4">
+    <div class="flex justify-center items-center h-20">
       <Show when={props.expandido}>
   <img
     src={`${import.meta.env.VITE_BACKEND_URL}${pagina()?.logo || '/logo-default.png'}`}

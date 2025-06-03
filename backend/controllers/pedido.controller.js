@@ -115,33 +115,40 @@ export const actualizarEstadoPedido = async (req, res, next) => {
     const { id } = req.params;
     const { estadoPedidoId } = req.body;
 
-    // Validación rápida del ID de pedido
     if (isNaN(id)) {
       return res.status(400).json({ message: 'ID inválido' });
     }
 
-    const pedido = await Pedido.findByPk(id);
+    const pedido = await Pedido.findByPk(id, {
+      include: [
+        { model: Cliente, as: 'cliente' },
+        { model: Usuario, as: 'usuario' },
+        {
+          model: DetallePedido,
+          as: 'detalles',
+          include: [{ model: Producto, as: 'producto' }],
+        },
+      ],
+    });
     if (!pedido) {
       return res.status(404).json({ message: 'Pedido no encontrado' });
     }
 
-    // 🚫 Bloqueo si el pedido está en modo edición por el cliente
     if (pedido.estadoEdicion === true) {
       return res.status(409).json({
         message: 'El pedido está siendo editado por el cliente. No se puede cambiar el estado hasta que finalice la edición.',
       });
     }
 
-    // Validar que el estadoPedidoId recibido sea un estado válido
     const estadoPedido = await EstadoPedido.findByPk(estadoPedidoId);
     if (!estadoPedido) {
       return res.status(400).json({ message: 'Estado de pedido no válido' });
     }
 
-    // Actualizar el estado del pedido
+    const estadoAnteriorId = pedido.estadoPedidoId;
+    const estadoAnterior = await EstadoPedido.findByPk(estadoAnteriorId);
     await pedido.update({ estadoPedidoId });
 
-    // 📣 Crear notificación para el usuario asociado al pedido
     const estadoNombre = estadoPedido.nombre;
     const tituloBase = estadoNombre === 'Cancelado' ? 'Pedido cancelado' : 'Pedido actualizado';
     const mensajeBase = estadoNombre === 'Cancelado'
@@ -158,7 +165,6 @@ export const actualizarEstadoPedido = async (req, res, next) => {
       });
     }
 
-    // 🔔 Notificar también a todos los administradores y supremos
     const admins = await Usuario.findAll({
       where: { rolUsuarioId: { [Op.in]: [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR] } },
     });
@@ -173,19 +179,43 @@ export const actualizarEstadoPedido = async (req, res, next) => {
       });
     }
 
-    // 🕵🏻‍♂️ Auditar la acción de cambio de estado
+    // ✅ Envío de email y WhatsApp
+    try {
+      const cliente = pedido.cliente;
+      const vendedor = pedido.usuario;
+      const carrito = pedido.detalles?.map((d) => ({
+        id: d.productoId,
+        nombre: d.producto?.nombre || 'Producto sin nombre',
+        cantidad: d.cantidad,
+        precioUnitario: d.precioUnitario,
+        unidadPorBulto: d.unidadPorBulto,
+        precioPorBulto: d.precioPorBulto,
+        subtotal: d.subtotal,
+      })) || [];
+
+      if (estadoNombre === 'Cancelado') {
+        await enviarWhatsappCancelacion({ cliente, pedido, vendedor });
+        await enviarEmailCancelacion({ cliente, pedido, vendedor });
+      } else {
+        await enviarWhatsappCambioEstadoPedido({ cliente, pedido, estadoNombre });
+        await enviarEmailCambioEstado({ cliente, pedido, estadoNombre, vendedor });
+      }
+      
+    } catch (notiError) {
+      console.warn("❌ Error al enviar WhatsApp/email en cambio de estado:", notiError.message);
+    }
+
     await crearAuditoria({
       tabla: 'pedidos',
       accion: 'actualiza estado',
       registroId: pedido.id,
       usuarioId: req.usuario?.id || null,
       descripcion: `Pedido ${pedido.id} actualizado a estado "${estadoNombre}".`,
-      datosAntes: { estadoPedidoId: pedido.estadoPedidoId },
+      datosAntes: { estadoPedidoId: estadoAnteriorId },
       datosDespues: { estadoPedidoId },
       ip: req.ip,
     });
 
-    // 🔥 Devolver respuesta final
     res.json({
       message: 'Estado del pedido actualizado correctamente',
       estadoPedidoId,

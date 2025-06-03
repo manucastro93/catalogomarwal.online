@@ -376,7 +376,7 @@ export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
 
 export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new Date()) {
   const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-  const fechaDesde = '2025-01-01';
+  const fechaDesde = '2025-05-01';
   const hasta = fechaHasta.toISOString().slice(0, 10);
 
   let offset = 0;
@@ -498,7 +498,7 @@ export async function sincronizarPedidosDesdeDux(reintento = 0, fechaHasta = new
 export async function sincronizarFacturasDesdeDux(fechaHasta = new Date()) {
   const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  const fechaDesde = '2025-01-01';
+  const fechaDesde = '2025-05-01';
   const hasta = fechaHasta.toISOString().slice(0, 10);
   const limit = 50;
   let offset = 0;
