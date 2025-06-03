@@ -36,7 +36,7 @@ export default (sequelize, DataTypes) => {
     },
     detalles: {
       type: DataTypes.JSON,
-      allowNull: false,
+      allowNull: true,
     }
     }, {
     tableName: 'PedidosDux',
