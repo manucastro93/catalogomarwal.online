@@ -6,13 +6,13 @@ interface Props {
   categoriaId: string;
   producto: string;
   cliente: string;
-  modo: "pedido" | "categoria" | "producto" | "cliente";
+  modo:"categoria" | "producto" | "cliente";
   setDesde: (val: string) => void;
   setHasta: (val: string) => void;
   setCategoriaId: (val: string) => void;
   setProducto: (val: string) => void;
   setCliente: (val: string) => void;
-  setModo: (val: "pedido" | "categoria" | "producto" | "cliente") => void;
+  setModo: (val: "categoria" | "producto" | "cliente") => void;
   limpiarFiltros: () => void;
   onExportar: () => void;
   categorias: { id: string; nombre: string }[];
@@ -49,11 +49,10 @@ const FiltrosEficiencia: Component<Props> = (props) => {
         <select
           value={props.modo}
           onInput={(e) =>
-            props.setModo(e.currentTarget.value as "pedido" | "categoria" | "producto" | "cliente")
+            props.setModo(e.currentTarget.value as "categoria" | "producto" | "cliente")
           }
           class="input"
         >
-          <option value="pedido">Por pedido</option>
           <option value="categoria">Por categoría</option>
           <option value="producto">Por producto</option>
           <option value="cliente">Por cliente</option>

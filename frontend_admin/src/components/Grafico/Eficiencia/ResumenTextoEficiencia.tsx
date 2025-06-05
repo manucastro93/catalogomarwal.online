@@ -44,11 +44,9 @@ export default function ResumenTextoEficiencia({
 
           <p>
             Durante el período evaluado se procesaron{" "}
-            <b>{formatearMiles(resumen()?.totalPedidos)} pedidos</b>, de los
-            cuales{" "}
+            <b>{formatearMiles(resumen()?.totalPedidos)} pedidos</b>. Para estos pedidos, se emitieron {" "}
             <b>
-              {formatearMiles(resumen()?.totalFacturas)} fueron efectivamente
-              facturados
+              {formatearMiles(resumen()?.totalFacturas)} Facturas
             </b>
             .
           </p>

@@ -55,16 +55,16 @@ export default function ModalDetallePedido({ pedidoId, abierto, onCerrar }: Prop
                       <tr class="border-t hover:bg-gray-50">
                         <td class="px-4 py-2">{item.codItem ?? "—"}</td>
                         <td class="px-4 py-2">{item.descripcion ?? "—"}</td>
-                        <td class="px-4 py-2">{formatearMiles(item.pedida ?? 0)}</td>
-                        <td class="px-4 py-2">{formatearMiles(item.facturada ?? 0)}</td>
+                        <td class="px-4 py-2">{formatearMiles(item.cantidadPedida ?? 0)}</td>
+                        <td class="px-4 py-2">{formatearMiles(item.cantidadFacturada ?? 0)}</td>
                         <td class="px-4 py-2">
                           {item.fillRate !== undefined
                             ? `${item.fillRate.toFixed(2)}%`
                             : "—"}
                         </td>
                         <td class="px-4 py-2">
-                          {item.leadTimeDias !== undefined && item.leadTimeDias !== null
-                            ? item.leadTimeDias
+                          {item.leadTimeItem !== undefined && item.leadTimeItem !== null
+                            ? item.leadTimeItem
                             : "—"}
                         </td>
                       </tr>

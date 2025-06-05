@@ -4,14 +4,13 @@ import {
   fetchEficienciaPorProducto,
   fetchDetalleCliente,
   fetchDetalleCategoria,
-  fetchDetallePorPedido,
 } from "@/services/eficiencia.service";
-import ModalDetallePedido from "./ModalDetallePedido";
+import ModalDetallePedido from "./ModalDetallePedido"; // Asegúrate de que la ruta sea correcta
 
 interface Props {
   abierto: boolean;
   onCerrar: () => void;
-  modo: "categoria" | "cliente" | "producto" | "pedido";
+  modo: "categoria" | "cliente" | "producto";
   filtro: string;
   desde: string;
   hasta: string;
@@ -32,22 +31,48 @@ export default function ModalDetalleEficiencia({
 
   const fetch = () => {
     const filtros = { desde, hasta };
-    if (modo === "pedido") return fetchDetallePorPedido(filtro);
-    if (modo === "cliente")
-      return fetchDetalleCliente({ ...filtros, cliente: filtro });
-    if (modo === "categoria")
+    if (modo === "cliente") {
+      // Asegúrate de que el nombre del filtro coincida con lo que el service espera
+      // Por ejemplo, si el service espera 'clienteNombre', usa 'clienteNombre: filtro'
+      return fetchDetalleCliente({ ...filtros, cliente: filtro }); 
+    }
+    if (modo === "categoria") {
       return fetchDetalleCategoria({ ...filtros, categoriaId: filtro });
+    }
+    // Asumo que fetchEficienciaPorProducto se llama aquí, aunque su nombre puede sugerir otra cosa.
+    // Si esta función retorna el mismo tipo de detalle por pedido, es válido.
     return fetchEficienciaPorProducto({ ...filtros, producto: filtro });
   };
 
   const [datos] = createResource([modo, filtro, desde, hasta], fetch);
 
   const abrirDetallePedido = (item: any) => {
-    if (item?.pedidoId || item?.id) {
-      setPedidoSeleccionado(item.pedidoId || item.id);
+    // La propiedad que contiene el ID del pedido varía según el modo:
+    // - En modo 'cliente', el ID del pedido es 'pedidoId'
+    // - En modo 'categoria', el ID del pedido es 'nroPedido' (asumo que se mapea a un id interno si es necesario para ModalDetallePedido)
+    // - En modo 'producto', el ID del pedido puede ser 'pedidoId' o 'nroPedido' dependiendo de cómo lo devuelva el service.
+    // Asegúrate de que `ModalDetallePedido` pueda manejar el `pedidoId` o el `nroPedido` según corresponda.
+    // Por simplicidad, buscaré tanto 'pedidoId' como 'nroPedido' como un identificador único.
+    
+    // Si ModalDetallePedido espera el ID interno de la tabla PedidoDux,
+    // y tu service en modo 'categoria' o 'producto' no devuelve ese 'id' sino el 'nroPedido',
+    // podría necesitar ajuste.
+    // Para el detalle por cliente, el service devuelve 'pedidoId'.
+    // Para detalle por categoria, el service devuelve 'nroPedido'.
+    // Si ModalDetallePedido espera 'id' de PedidoDux, necesitas ajustar fetchDetalleCategoria.
+    
+    // Por ahora, asumiré que 'item.pedidoId' es el identificador principal para ModalDetallePedido.
+    if (item?.pedidoId) { // Priorizamos 'pedidoId' que viene de DetallePorCliente
+      setPedidoSeleccionado(item.pedidoId);
+      setVerModalPedido(true);
+    } else if (item?.nroPedido) { // Si no hay pedidoId, usamos nroPedido (ej. para categoría)
+      // ADVERTENCIA: Si ModalDetallePedido solo funciona con el ID interno de PedidoDux y no con nroPedido,
+      // esto necesitará que el service de categoria devuelva el 'id' de PedidoDux también.
+      setPedidoSeleccionado(item.nroPedido);
       setVerModalPedido(true);
     }
   };
+
 
   return (
     <Show when={abierto}>
@@ -97,13 +122,26 @@ export default function ModalDetalleEficiencia({
                         onClick={() => abrirDetallePedido(item)}
                       >
                         <td class="px-4 py-2">{item.nroPedido || "—"}</td>
+                        {/* ✅ CORRECCIÓN: Fecha Pedido ya viene formateada del backend */}
                         <td class="px-4 py-2 whitespace-nowrap">
-                          {formatearFechaCorta(item.fecha?.split("T")[0])}
+                          {item.fechaPedido || "—"}
                         </td>
+                        {/* ✅ CORRECCIÓN: Fecha Factura con lógica de truncado y tooltip */}
                         <td class="px-4 py-2 whitespace-nowrap">
-                          {Array.isArray(item.fechasFacturas)
-                            ? item.fechasFacturas.map(formatearFechaCorta).join(", ")
-                            : "—"}
+                          {item.fechasFacturas && item.fechasFacturas !== '—' ? (
+                            // Separamos la cadena de fechas por ', ' para contar
+                            item.fechasFacturas.split(', ').length > 2
+                              ? (
+                                // Usamos el atributo 'title' para un tooltip nativo del navegador
+                                // El texto visible será "X fechas", el completo estará en el title
+                                <span title={item.fechasFacturas}>
+                                  {`${item.fechasFacturas.split(', ').length} fechas`}
+                                </span>
+                              )
+                              : item.fechasFacturas // Si son 2 o menos, muestra todas
+                          ) : (
+                            '—' // Si no hay fechas o es el guion
+                          )}
                         </td>
 
                         <td class="px-4 py-2">
@@ -147,6 +185,12 @@ export default function ModalDetalleEficiencia({
           </div>
         </div>
 
+        {/* Asegúrate de que ModalDetallePedido recibe el ID correcto.
+            Si item.nroPedido es lo que estás pasando en modo 'categoria',
+            y ModalDetallePedido espera 'pedidoId' (el ID interno de la tabla PedidoDux),
+            entonces necesitarás un ajuste en el service de 'categoria'
+            para que devuelva también el pedidoId interno.
+        */}
         <Show when={verModalPedido()}>
           <ModalDetallePedido
             pedidoId={pedidoSeleccionado()!}

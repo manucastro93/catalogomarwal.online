@@ -45,8 +45,6 @@ export default function TablaEficiencia({
 
   const getKeyForModo = (modo: string) => {
     switch (modo) {
-      case "pedido":
-        return "nroPedido";
       case "categoria":
         return "categoriaNombre";
       case "producto":
@@ -103,8 +101,6 @@ export default function TablaEficiencia({
         return "producto" in item ? item.producto : "—";
       case "cliente":
         return "cliente" in item ? item.cliente : "—";
-      case "pedido":
-        return "nroPedido" in item ? item.nroPedido : "—";
       default:
         return "—";
     }
@@ -226,9 +222,6 @@ export default function TablaEficiencia({
                   <td class="px-4 py-2 font-semibold text-blue-600 hover:underline">
                     {String(getLabel(item))}
                   </td>
-                  {modo === "pedido" && (
-                    <td class="px-4 py-2">{getFecha(item)}</td>
-                  )}
                   <td class="px-4 py-2">{getCantidad(item.cantidadPedida)}</td>
                   <td class="px-4 py-2">
                     {getCantidad(item.cantidadFacturada)}
