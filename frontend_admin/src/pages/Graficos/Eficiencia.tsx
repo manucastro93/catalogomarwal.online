@@ -19,7 +19,7 @@ import ModalDetalleEficiencia from "@/components/Grafico/Eficiencia/ModalDetalle
 import ModalDetallePedido from "@/components/Grafico/Eficiencia/ModalDetallePedido";
 import { exportarDatosAExcel } from "@/utils/exportarDatosAExcel";
 
-export type ModoEficiencia = "pedido" | "categoria" | "producto" | "cliente";
+export type ModoEficiencia = "categoria" | "producto" | "cliente";
 
 export default function Eficiencia() {
   const today = new Date();
@@ -42,9 +42,6 @@ export default function Eficiencia() {
   }>({ modo: "producto", filtro: "" });
 
   const [modalPedidoAbierto, setModalPedidoAbierto] = createSignal(false);
-  const [pedidoSeleccionado, setPedidoSeleccionado] = createSignal<
-    number | null
-  >(null);
 
   const limit = 10;
   const [categorias] = createResource(obtenerCategorias);
@@ -75,7 +72,6 @@ export default function Eficiencia() {
     if (modo() === "categoria") return fetchEficienciaPorCategoria(filtros);
     if (modo() === "producto") return fetchEficienciaPorProducto(filtros);
     if (modo() === "cliente") return fetchEficienciaPorCliente(filtros);
-    return fetchEficienciaPorPedido(filtros);
   }
 
   const [detalleEficiencia] = createResource(
@@ -93,7 +89,6 @@ export default function Eficiencia() {
     setCategoriaId("");
     setProducto("");
     setCliente("");
-    setModo("pedido");
     setPage(1);
   }
 
@@ -114,13 +109,8 @@ export default function Eficiencia() {
   }
 
   function abrirModalDetalle(modoDetalle: ModoEficiencia, filtro: string) {
-    if (modoDetalle === "pedido") {
-      setPedidoSeleccionado(Number(filtro));
-      setModalPedidoAbierto(true);
-    } else {
       setDetalleModal({ modo: modoDetalle, filtro });
       setModalAbierto(true);
-    }
   }
   const [datosMensual] = createResource(
     () => [cliente()],
@@ -203,7 +193,6 @@ export default function Eficiencia() {
             (a, b) => a.fillRate - b.fillRate
           )}
           datosMensual={datosMensual() || []}
-          datosPedidos={modo() === "pedido" ? detalleEficiencia()! : []}
           datosCategorias={
             modo() === "categoria"
               ? detalleEficiencia()!.map((d: any) => ({
@@ -219,7 +208,6 @@ export default function Eficiencia() {
           filtros={{
             categoriaId: categoriaId(),
             producto: producto(),
-            nroPedido: "",
             cliente: cliente(),
           }}
           modo={modo()}
@@ -242,8 +230,6 @@ export default function Eficiencia() {
                 return [...datos].sort((a, b) =>
                   a.cliente.localeCompare(b.cliente)
                 );
-              case "pedido":
-                return datos;
               case "categoria":
                 return datos.map((d: any) => ({
                   ...d,
@@ -267,8 +253,6 @@ export default function Eficiencia() {
                   ? item.producto
                   : modo() === "cliente"
                     ? item.cliente
-                    : modo() === "pedido"
-                      ? item.nroPedido
                       : "";
             abrirModalDetalle(modo(), filtro);
           }}
@@ -286,13 +270,7 @@ export default function Eficiencia() {
         />
       </Show>
 
-      <Show when={modalPedidoAbierto() && pedidoSeleccionado() !== null}>
-        <ModalDetallePedido
-          pedidoId={pedidoSeleccionado()!}
-          abierto={modalPedidoAbierto()}
-          onCerrar={() => setModalPedidoAbierto(false)}
-        />
-      </Show>
+
     </div>
   );
 }

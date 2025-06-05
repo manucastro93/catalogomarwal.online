@@ -7,6 +7,7 @@ export interface EficienciaBase {
   leadTimePromedio?: number | null; // usado en cliente, producto, categoría
   totalPedido?: number;
   totalFacturado?: number;
+  leadTimeItem: number;
 }
 
 export interface EficienciaPedido extends EficienciaBase {

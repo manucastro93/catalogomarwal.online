@@ -1,6 +1,4 @@
 import {
-  PedidoFillRate,
-  PedidoLeadTime,
   CategoriaFillRate,
   CategoriaLeadTime,
   ProductoFillRate,
@@ -9,17 +7,15 @@ import {
   ClienteLeadTime,
 } from "./Graficos";
 import type {
-  EficienciaPedido,
   EficienciaCategoria,
   EficienciaProducto,
   EficienciaCliente,
   EficienciaMensual,
 } from "@/types/eficiencia";
 
-type ModoEficiencia = "pedido" | "categoria" | "producto" | "cliente";
+type ModoEficiencia = "categoria" | "producto" | "cliente";
 
 interface Props {
-  datosPedidos: EficienciaPedido[];
   datosCategorias: EficienciaCategoria[];
   datosProductos: EficienciaProducto[];
   datosClientes: EficienciaCliente[];
@@ -27,7 +23,6 @@ interface Props {
   filtros: {
     categoriaId: string;
     producto: string;
-    nroPedido: string;
     cliente: string;
   };
   evolucionEficiencia: { fecha: string; leadTime: number }[];
@@ -38,17 +33,6 @@ interface Props {
 export default function GraficosEficiencia(props: Props) {
   return (
     <div class="w-full grid grid-cols-1 gap-6">
-      {/* Pedido */}
-      {props.modo === "pedido" && props.datosPedidos?.length > 0 && (
-        <>
-          <div class="min-h-[320px]">
-            <PedidoFillRate datos={props.datosPedidos} />
-          </div>
-          <div class="min-h-[320px]">
-            <PedidoLeadTime datos={props.datosPedidos} />
-          </div>
-        </>
-      )}
 
       {/* Categoría */}
       {props.modo === "categoria" && props.datosCategorias?.length > 0 && (
