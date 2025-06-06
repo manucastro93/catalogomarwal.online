@@ -22,7 +22,7 @@ export default function ModalDetallePedido({ pedidoId, abierto, onCerrar }: Prop
       <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 md:mx-8">
           <div class="flex justify-between items-center px-6 py-4 border-b">
-            <h2 class="text-lg font-semibold">Detalle de pedido #{pedidoId}</h2>
+            <h2 class="text-lg font-semibold">Detalle de pedido #{detalle()?.nroPedido}</h2>
             <button class="text-gray-600 hover:text-gray-900 text-xl" onClick={onCerrar}>
               &times;
             </button>
