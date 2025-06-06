@@ -1,21 +1,19 @@
 import { Show, createSignal, createMemo, For } from "solid-js";
 import { formatearFechaCorta, formatearMiles } from "@/utils/formato";
 import type {
-  EficienciaPedido,
   EficienciaCategoria,
   EficienciaProducto,
   EficienciaCliente,
 } from "@/types/eficiencia";
 
 type Item =
-  | EficienciaPedido
   | EficienciaCategoria
   | EficienciaProducto
   | EficienciaCliente;
 
 interface Props {
   datos: Item[];
-  modo: "pedido" | "categoria" | "producto" | "cliente";
+  modo: "categoria" | "producto" | "cliente";
   loading?: boolean;
   onSeleccionar?: (item: Item) => void;
 }
@@ -106,11 +104,6 @@ export default function TablaEficiencia({
     }
   };
 
-  const getFecha = (item: Item) => {
-    if ("fecha" in item) return formatearFechaCorta(item.fecha);
-    return "—";
-  };
-
   const getLeadTime = (item: Item) => {
     const valor = item.leadTimeDias ?? item.leadTimePromedio;
     return typeof valor === "number" ? valor.toFixed(2) : "—";
@@ -142,7 +135,6 @@ export default function TablaEficiencia({
       </div>
     );
   }
-
   return (
     <div class="overflow-x-auto w-full">
       <table class="min-w-full bg-white shadow-md rounded-md">
@@ -154,8 +146,6 @@ export default function TablaEficiencia({
             >
               {(() => {
                 switch (modo) {
-                  case "pedido":
-                    return "Pedido";
                   case "categoria":
                     return "Categoría";
                   case "producto":
@@ -169,7 +159,6 @@ export default function TablaEficiencia({
               {iconoOrden(getKeyForModo(modo))}
             </th>
 
-            {modo === "pedido" && <th class="px-4 py-2">Fecha</th>}
             <th
               class="px-4 py-2 cursor-pointer"
               onClick={() => ordenar("cantidadPedida")}

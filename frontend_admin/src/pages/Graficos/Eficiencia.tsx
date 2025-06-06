@@ -78,7 +78,7 @@ export default function Eficiencia() {
     () => [modo(), desde(), hasta(), categoriaId(), producto(), cliente()],
     fetchDetalleActual
   );
-
+  
   function actualizarFiltros() {
     setPage(1);
   }
