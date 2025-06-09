@@ -1,15 +1,13 @@
+
 import { createSignal, createResource, onMount, Show } from "solid-js";
 import { obtenerCategorias } from "@/services/categoria.service";
 import {
   fetchResumenEjecutivo,
-  fetchEvolucionEficiencia,
-  fetchEvolucionFillRate,
   fetchEficienciaPorPedido,
   fetchEficienciaPorCategoria,
   fetchEficienciaPorProducto,
   fetchEficienciaPorCliente,
   fetchEvolucionEficienciaMensual,
-  fetchEvolucionEficienciaMensualPorCliente,
 } from "@/services/eficiencia.service";
 import FiltrosEficiencia from "@/components/Grafico/Eficiencia/FiltrosEficiencia";
 import ResumenTextoEficiencia from "@/components/Grafico/Eficiencia/ResumenTextoEficiencia";
@@ -25,22 +23,16 @@ export default function Eficiencia() {
   const today = new Date();
   const primerDiaMes = new Date(today.getFullYear(), today.getMonth(), 1);
 
-  const [desde, setDesde] = createSignal(
-    primerDiaMes.toISOString().slice(0, 10)
-  );
+  const [desde, setDesde] = createSignal(primerDiaMes.toISOString().slice(0, 10));
   const [hasta, setHasta] = createSignal(today.toISOString().slice(0, 10));
   const [categoriaId, setCategoriaId] = createSignal("");
   const [producto, setProducto] = createSignal("");
   const [cliente, setCliente] = createSignal("");
   const [modo, setModo] = createSignal<ModoEficiencia>("cliente");
   const [page, setPage] = createSignal(1);
-
+  const [nombreFiltro, setNombreFiltro] = createSignal("");
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [detalleModal, setDetalleModal] = createSignal<{
-    modo: ModoEficiencia;
-    filtro: string;
-  }>({ modo: "producto", filtro: "" });
-
+  const [detalleModal, setDetalleModal] = createSignal<{ modo: ModoEficiencia; filtro: string }>({ modo: "producto", filtro: "" });
   const [modalPedidoAbierto, setModalPedidoAbierto] = createSignal(false);
 
   const limit = 10;
@@ -51,16 +43,10 @@ export default function Eficiencia() {
     fetchResumenEjecutivo
   );
 
-
-  const [evolucionEficiencia] = createResource(
-    () => ({ desde: desde(), hasta: hasta() }),
-    fetchEvolucionEficiencia
+  const [evolucionMensual] = createResource(
+    () => ({ desde: "2015-01-01", hasta: hasta(), cliente: cliente() }),
+    fetchEvolucionEficienciaMensual
   );
-  const [evolucionFillRate] = createResource(
-    () => ({ desde: desde(), hasta: hasta() }),
-    fetchEvolucionFillRate
-  );
-
   function fetchDetalleActual() {
     const filtros = {
       desde: desde(),
@@ -73,12 +59,12 @@ export default function Eficiencia() {
     if (modo() === "producto") return fetchEficienciaPorProducto(filtros);
     if (modo() === "cliente") return fetchEficienciaPorCliente(filtros);
   }
-
+  
   const [detalleEficiencia] = createResource(
     () => [modo(), desde(), hasta(), categoriaId(), producto(), cliente()],
     fetchDetalleActual
   );
-  
+
   function actualizarFiltros() {
     setPage(1);
   }
@@ -108,19 +94,12 @@ export default function Eficiencia() {
     exportarDatosAExcel(dataCompleta, columnas, "Reporte Eficiencia");
   }
 
-  function abrirModalDetalle(modoDetalle: ModoEficiencia, filtro: string) {
-      setDetalleModal({ modo: modoDetalle, filtro });
-      setModalAbierto(true);
+  function abrirModalDetalle(modoDetalle: ModoEficiencia, filtro: string, nombre?: string) {
+    setDetalleModal({ modo: modoDetalle, filtro });
+    setNombreFiltro(nombre || filtro);
+    setModalAbierto(true);
   }
-  const [datosMensual] = createResource(
-    () => [cliente()],
-    async ([cliente]) => {
-      if (cliente.trim()) {
-        return await fetchEvolucionEficienciaMensualPorCliente(cliente);
-      }
-      return await fetchEvolucionEficienciaMensual();
-    }
-  );
+
   onMount(actualizarFiltros);
 
   return (
@@ -165,42 +144,22 @@ export default function Eficiencia() {
         onExportar={exportarResumenEficiencia}
       />
 
-      <ResumenTextoEficiencia
-        desde={desde}
-        hasta={hasta}
-        resumen={resumen}
-      />
-
-
+      <ResumenTextoEficiencia desde={desde} hasta={hasta} resumen={resumen} />
 
       <Show
-        when={
-          !evolucionEficiencia.loading &&
-          !evolucionFillRate.loading &&
-          !detalleEficiencia.loading
-        }
-        fallback={
-          <div class="p-6 text-center text-gray-500 text-sm">
-            Cargando datos de gráficos...
-          </div>
-        }
+        when={!evolucionMensual.loading && !detalleEficiencia.loading}
+        fallback={<div class="p-6 text-center text-gray-500 text-sm">Cargando datos de gráficos...</div>}
       >
         <GraficosEficiencia
-          evolucionEficiencia={[...evolucionEficiencia()!].sort(
-            (a, b) => a.leadTime - b.leadTime
-          )}
-          evolucionFillRate={[...evolucionFillRate()!].sort(
-            (a, b) => a.fillRate - b.fillRate
-          )}
-          datosMensual={datosMensual() || []}
+          evolucionEficiencia={[...evolucionMensual()!].sort((a, b) => a.leadTime - b.leadTime)}
+          evolucionFillRate={[...evolucionMensual()!].sort((a, b) => a.fillRate - b.fillRate)}
+          datosMensual={evolucionMensual() || []}
           datosCategorias={
             modo() === "categoria"
               ? detalleEficiencia()!.map((d: any) => ({
-                ...d,
-                categoria:
-                  categorias()?.find((c: any) => c.id == d.categoria)
-                    ?.nombre || "Sin nombre",
-              }))
+                  ...d,
+                  categoria: categorias()?.find((c: any) => c.id == d.categoria)?.nombre || "Sin nombre",
+                }))
               : []
           }
           datosProductos={modo() === "producto" ? detalleEficiencia()! : []}
@@ -214,31 +173,24 @@ export default function Eficiencia() {
         />
       </Show>
 
-      <Show
-        when={!detalleEficiencia.loading && detalleEficiencia()}
-        fallback={
-          <div class="p-6 text-center text-gray-500 text-sm">
-            Cargando datos de tabla...
-          </div>
-        }
-      >
+      <Show when={!detalleEficiencia.loading && detalleEficiencia()}>
         <TablaEficiencia
           datos={(() => {
             const datos = detalleEficiencia()!;
             switch (modo()) {
               case "cliente":
-                return [...datos].sort((a, b) =>
-                  a.cliente.localeCompare(b.cliente)
-                );
+                return [...datos].sort((a, b) => a.cliente.localeCompare(b.cliente));
               case "categoria":
                 return datos.map((d: any) => ({
                   ...d,
-                  categoria: d.categoria || "Sin categoría",
+                  categoria: d.categoriaId || "Sin categoría",
+                  categoriaNombre: d.categoriaNombre || "Sin categoría",
                 }));
               case "producto":
                 return datos.map((d: any) => ({
                   ...d,
-                  producto: d.descripcion ?? d.codItem ?? "Sin nombre",
+                  codItem: d.codItem,
+                  producto: d.producto,
                 }));
               default:
                 return [];
@@ -250,11 +202,18 @@ export default function Eficiencia() {
               modo() === "categoria"
                 ? item.categoria
                 : modo() === "producto"
-                  ? item.producto
-                  : modo() === "cliente"
-                    ? item.cliente
-                      : "";
-            abrirModalDetalle(modo(), filtro);
+                ? item.codItem ?? item.producto
+                : modo() === "cliente"
+                ? item.cliente
+                : "";
+
+            const nombre =
+              modo() === "categoria"
+                ? item.categoriaNombre
+                : modo() === "producto"
+                ? item.producto
+                : item.cliente;
+            abrirModalDetalle(modo(), filtro, nombre);
           }}
         />
       </Show>
@@ -267,10 +226,9 @@ export default function Eficiencia() {
           hasta={hasta()}
           modo={detalleModal().modo}
           filtro={detalleModal().filtro}
+          nombreFiltro={nombreFiltro()}
         />
       </Show>
-
-
     </div>
   );
 }

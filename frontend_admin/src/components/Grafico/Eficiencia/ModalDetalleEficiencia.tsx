@@ -1,17 +1,18 @@
 import { createResource, Show, For, createSignal } from "solid-js";
 import { formatearMiles, formatearFechaCorta, formatearPrecio } from "@/utils/formato";
 import {
-  fetchEficienciaPorProducto,
+  fetchDetalleProducto,
   fetchDetalleCliente,
   fetchDetalleCategoria,
 } from "@/services/eficiencia.service";
-import ModalDetallePedido from "./ModalDetallePedido"; // Asegúrate de que la ruta sea correcta
+import ModalDetallePedido from "./ModalDetallePedido";
 
 interface Props {
   abierto: boolean;
   onCerrar: () => void;
   modo: "categoria" | "cliente" | "producto";
   filtro: string;
+  nombreFiltro: string;
   desde: string;
   hasta: string;
 }
@@ -21,6 +22,7 @@ export default function ModalDetalleEficiencia({
   onCerrar,
   modo,
   filtro,
+  nombreFiltro,
   desde,
   hasta,
 }: Props) {
@@ -32,42 +34,21 @@ export default function ModalDetalleEficiencia({
   const fetch = () => {
     const filtros = { desde, hasta };
     if (modo === "cliente") {
-      // Asegúrate de que el nombre del filtro coincida con lo que el service espera
-      // Por ejemplo, si el service espera 'clienteNombre', usa 'clienteNombre: filtro'
       return fetchDetalleCliente({ ...filtros, cliente: filtro }); 
     }
     if (modo === "categoria") {
       return fetchDetalleCategoria({ ...filtros, categoriaId: filtro });
     }
-    // Asumo que fetchEficienciaPorProducto se llama aquí, aunque su nombre puede sugerir otra cosa.
-    // Si esta función retorna el mismo tipo de detalle por pedido, es válido.
-    return fetchEficienciaPorProducto({ ...filtros, producto: filtro });
+    return fetchDetalleProducto({ ...filtros, producto: filtro });
   };
 
   const [datos] = createResource([modo, filtro, desde, hasta], fetch);
 
   const abrirDetallePedido = (item: any) => {
-    // La propiedad que contiene el ID del pedido varía según el modo:
-    // - En modo 'cliente', el ID del pedido es 'pedidoId'
-    // - En modo 'categoria', el ID del pedido es 'nroPedido' (asumo que se mapea a un id interno si es necesario para ModalDetallePedido)
-    // - En modo 'producto', el ID del pedido puede ser 'pedidoId' o 'nroPedido' dependiendo de cómo lo devuelva el service.
-    // Asegúrate de que `ModalDetallePedido` pueda manejar el `pedidoId` o el `nroPedido` según corresponda.
-    // Por simplicidad, buscaré tanto 'pedidoId' como 'nroPedido' como un identificador único.
-    
-    // Si ModalDetallePedido espera el ID interno de la tabla PedidoDux,
-    // y tu service en modo 'categoria' o 'producto' no devuelve ese 'id' sino el 'nroPedido',
-    // podría necesitar ajuste.
-    // Para el detalle por cliente, el service devuelve 'pedidoId'.
-    // Para detalle por categoria, el service devuelve 'nroPedido'.
-    // Si ModalDetallePedido espera 'id' de PedidoDux, necesitas ajustar fetchDetalleCategoria.
-    
-    // Por ahora, asumiré que 'item.pedidoId' es el identificador principal para ModalDetallePedido.
-    if (item?.pedidoId) { // Priorizamos 'pedidoId' que viene de DetallePorCliente
+    if (item?.pedidoId) {
       setPedidoSeleccionado(item.pedidoId);
       setVerModalPedido(true);
-    } else if (item?.nroPedido) { // Si no hay pedidoId, usamos nroPedido (ej. para categoría)
-      // ADVERTENCIA: Si ModalDetallePedido solo funciona con el ID interno de PedidoDux y no con nroPedido,
-      // esto necesitará que el service de categoria devuelva el 'id' de PedidoDux también.
+    } else if (item?.nroPedido) {
       setPedidoSeleccionado(item.nroPedido);
       setVerModalPedido(true);
     }
@@ -80,7 +61,7 @@ export default function ModalDetalleEficiencia({
         <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full mx-4 md:mx-8">
           <div class="flex justify-between items-center px-6 py-4 border-b">
             <h2 class="text-lg font-semibold">
-              Detalle por {modo} – {filtro}
+              Detalle por {modo} – {nombreFiltro || filtro}
             </h2>
             <button
               class="text-gray-600 hover:text-gray-900 text-xl"
@@ -124,26 +105,22 @@ export default function ModalDetalleEficiencia({
                         <td class="px-4 py-2">{item.nroPedido || "—"}</td>
                         {/* ✅ CORRECCIÓN: Fecha Pedido ya viene formateada del backend */}
                         <td class="px-4 py-2 whitespace-nowrap">
-                          {item.fechaPedido || "—"}
+                          {(item.fechaPedido) || (item.fechaPedido)}
                         </td>
                         {/* ✅ CORRECCIÓN: Fecha Factura con lógica de truncado y tooltip */}
-                        <td class="px-4 py-2 whitespace-nowrap">
-                          {item.fechasFacturas && item.fechasFacturas !== '—' ? (
-                            // Separamos la cadena de fechas por ', ' para contar
-                            item.fechasFacturas.split(', ').length > 2
-                              ? (
-                                // Usamos el atributo 'title' para un tooltip nativo del navegador
-                                // El texto visible será "X fechas", el completo estará en el title
-                                <span title={item.fechasFacturas}>
-                                  {`${item.fechasFacturas.split(', ').length} fechas`}
-                                </span>
-                              )
-                              : item.fechasFacturas // Si son 2 o menos, muestra todas
+                       <td class="px-4 py-2 whitespace-nowrap">
+                          {Array.isArray(item.fechasFacturas) && item.fechasFacturas.length > 0 ? (
+                            item.fechasFacturas.length > 2 ? (
+                              <span title={item.fechasFacturas.join(', ')}>
+                                {`${item.fechasFacturas.length} fechas`}
+                              </span>
+                            ) : (
+                              item.fechasFacturas.join(', ')
+                            )
                           ) : (
-                            '—' // Si no hay fechas o es el guion
+                            '—'
                           )}
                         </td>
-
                         <td class="px-4 py-2">
                           {formatearMiles(item.cantidadPedida)}
                         </td>

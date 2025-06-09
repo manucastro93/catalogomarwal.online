@@ -1,7 +1,4 @@
 import { generarResumenEjecutivo,
-         obtenerEvolucionLeadTime,
-         obtenerEvolucionFillRate,
-         obtenerOutliersFillRate,
          obtenerEvolucionEficienciaMensualGeneral,
          obtenerEficienciaPorCliente,
          obtenerDetallePorCliente,
@@ -10,7 +7,9 @@ import { generarResumenEjecutivo,
          obtenerDetallePorProducto,
          obtenerEficienciaPorCategoria,
          obtenerEficienciaPorPedido,
-         obtenerDetallePorCategoria } from '../services/eficiencia.service.js';
+         obtenerDetallePorCategoria,
+         buscarClientesDesdeFacturas,
+       } from '../services/eficiencia.service.js';
 
 // ✅ Helper para manejar errores de forma consistente
 const handleError = (res, error, message) => {
@@ -32,56 +31,13 @@ export const obtenerResumenEficienciaController = async (req, res) => {
   }
 };
 
-// --- Evolución del Lead Time (por fecha de factura) ---
-export const obtenerEvolucionEficienciaController = async (req, res) => {
-  try {
-    const desde = req.query.desde;
-    const hasta = req.query.hasta;
-    if (!desde || !hasta) {
-      return res.status(400).json({ error: "Parámetros 'desde' y 'hasta' son requeridos" });
-    }
-    const resultado = await obtenerEvolucionLeadTime(desde, hasta);
-    res.json(resultado);
-  } catch (error) {
-    handleError(res, error, "calcular evolución de lead time");
-  }
-};
-
-// --- Evolución del Fill Rate (por fecha de factura) ---
-export const obtenerEvolucionFillRateController = async (req, res) => {
-  try {
-    const desde = req.query.desde;
-    const hasta = req.query.hasta;
-    if (!desde || !hasta) {
-      return res.status(400).json({ error: "Parámetros 'desde' y 'hasta' son requeridos" });
-    }
-    const resultado = await obtenerEvolucionFillRate(desde, hasta);
-    res.json(resultado);
-  } catch (error) {
-    handleError(res, error, "calcular evolución de fill rate");
-  }
-};
-
-// --- Outliers de Fill Rate (Productos con bajo fill rate) ---
-export const obtenerOutliersFillRateController = async (req, res) => {
-  try {
-    const { desde, hasta, producto } = req.query;
-    if (!desde || !hasta) {
-      return res.status(400).json({ error: "Parámetros 'desde' y 'hasta' son requeridos" });
-    }
-    const resultado = await obtenerOutliersFillRate(desde, hasta, producto);
-    res.json(resultado);
-  } catch (error) {
-    handleError(res, error, "obtener productos con bajo fill rate");
-  }
-};
-
 // --- Evolución Eficiencia Mensual (General) ---
 export const obtenerEvolucionEficienciaMensualController = async (req, res) => {
   try {
-    const desde = req.query.desde || "2015-01-01"; // Default si no se pasa
-    const hasta = req.query.hasta || new Date().toISOString().split('T')[0]; // Default a hoy
-    const resultado = await obtenerEvolucionEficienciaMensualGeneral(desde, hasta);
+    const desde = req.query.desde || "2015-01-01";
+    const hasta = req.query.hasta || new Date().toISOString().split('T')[0];
+    const cliente = req.query.cliente || null;
+    const resultado = await obtenerEvolucionEficienciaMensualGeneral(desde, hasta, cliente);
     res.json(resultado);
   } catch (error) {
     handleError(res, error, "calcular evolución de eficiencia mensual general");
@@ -91,10 +47,13 @@ export const obtenerEvolucionEficienciaMensualController = async (req, res) => {
 // --- Eficiencia por Cliente ---
 export const obtenerEficienciaPorClienteController = async (req, res) => {
   try {
-    const { desde, hasta, cliente } = req.query;
-    if (!desde || !hasta) {
-      return res.status(400).json({ error: "Faltan fechas de 'desde' o 'hasta'." });
-    }
+    let { desde, hasta, cliente } = req.query;
+
+    const hoy = new Date();
+    const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+    if (!desde) desde = primerDiaMes.toISOString().split("T")[0];
+    if (!hasta) hasta = hoy.toISOString().split("T")[0];
     const resultado = await obtenerEficienciaPorCliente(desde, hasta, cliente);
     res.json(resultado);
   } catch (error) {
@@ -146,11 +105,14 @@ export const obtenerEficienciaPorProductoController = async (req, res) => {
 // --- Detalle por Producto ---
 export const obtenerDetallePorProductoController = async (req, res) => {
   try {
-    const { desde, hasta } = req.query;
+    const { desde, hasta, producto } = req.query;
     if (!desde || !hasta) {
       return res.status(400).json({ error: "Parámetros 'desde' y 'hasta' son requeridos" });
     }
-    const resultado = await obtenerDetallePorProducto(desde, hasta);
+    if (!producto) {
+      return res.status(400).json({ error: "Parámetro 'producto' es requerido" });
+    }
+    const resultado = await obtenerDetallePorProducto(desde, hasta, producto);
     res.json(resultado);
   } catch (err) {
     handleError(res, err, "generar detalle por producto");
@@ -187,14 +149,26 @@ export const obtenerDetallePorCategoriaController = async (req, res) => {
 
 // --- Eficiencia por Pedido ---
 export const obtenerEficienciaPorPedidoController = async (req, res) => {
+
   try {
     const { desde, hasta } = req.query;
     if (!desde || !hasta) {
       return res.status(400).json({ error: "Parámetros 'desde' y 'hasta' son requeridos" });
     }
-    const resultado = await obtenerEficienciaPorPedido(desde, hasta); // Llama al service
+    const resultado = await obtenerEficienciaPorPedido(desde, hasta);
+
     res.json(resultado);
   } catch (error) {
     handleError(res, error, "calcular eficiencia por pedido");
+  }
+};
+
+export const buscarClientesFacturasController = async (req, res) => {
+  try {
+    const texto = req.query.buscar || "";
+    const resultado = await buscarClientesDesdeFacturas(texto);
+    res.json({ data: resultado });
+  } catch (error) {
+    handleError(res, error, "buscar clientes desde facturas");
   }
 };

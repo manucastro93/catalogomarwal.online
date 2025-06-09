@@ -24,7 +24,7 @@ export default function ClienteFillRateMensual({ datos }: Props) {
 
   // Fill rate más alto = color más fuerte
   const colores = valores.map((v) => {
-    const lightness = 0 + (v / maxValor) * 40;
+    const lightness = (v / maxValor) * 50;
     return `hsl(170, 70%, ${lightness}%)`; // verde azulado
   });
 

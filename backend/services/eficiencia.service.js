@@ -1,38 +1,242 @@
-import { Op, fn, col, where } from 'sequelize';
-import { PedidoDux, DetallePedidoDux, Factura, DetalleFactura, Cliente, Producto, Categoria } from '../models/index.js';
+// backend/services/eficiencia.service.js
+import { Op } from 'sequelize';
+import { PedidoDux, Factura, DetalleFactura, Producto } from '../models/index.js'; // Asegúrate de que las rutas a tus modelos sean correctas
+import {
+  // 📦 Helpers
+  formatFecha,
+  toFloat,
+  toFixed,
+
+  // 🔍 DB Queries
+  obtenerFacturasConDetallesEnRango,
+  obtenerPedidosPorNro,
+  obtenerDetallesPedidosPorId,
+  obtenerCategoriasValidasDB,
+  obtenerProductosPorSkusYCategoria, // Agregado para cargarYProcesarDatosCategoria
+
+  // 🧱 Mapeos
+  mapearDetallesPedidosPorPedido,
+  mapearCantidadPedidaPorItemEnPedido,
+
+  // 🧠 Procesamiento
+  procesarFacturasParaMapeo,
+  prepararMapeosCategoriasYProductos, // Agregado para cargarYProcesarDatosCategoria
+
+  // 📈 Reportes
+  generarReporteEvolucionMensual,
+  generarReporteEficienciaPorProducto,
+  generarDetalleProductoPorPedido,
+
+  // 🎯 Cliente
+  generarResumenEficienciaPorCliente,
+  generarDetallePorPedido,
+  // cargarYProcesarDatosCliente, // Esta función está definida aquí abajo
+
+  // 🧠 Categoría
+  generarResumenEficienciaPorCategoria,
+  generarDetallePorPedidoCategoria,
+  // cargarYProcesarDatosCategoria // Esta función está definida aquí abajo
+} from '../utils/eficiencia/index.js';
+
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
+
 dayjs.extend(utc);
 dayjs.extend(customParseFormat);
-// --- Helper para formatear fechas consistentemente ---
-const formatFecha = (date) => {
-  if (!date) return 'Sin Fecha';
-  return dayjs(date).utc().format("DD-MM-YYYY");
-};
+
+// --- Funciones auxiliares para cargar y procesar datos ---
+// Estas funciones se definen aquí y son exportadas si se necesitan en otros módulos.
+
+/*** 🎯 Carga, filtra y pre-procesa todos los datos base para reportes de cliente.
+ * @param {Date} desde - Fecha de inicio.
+ * @param {Date} hasta - Fecha de fin.
+ * @param {string} clienteFiltro - Filtro de cliente.
+ * @returns {Promise<object | null>} Objeto con datos procesados o null si no hay datos.
+ */
+export async function cargarYProcesarDatosCliente(desde, hasta, clienteFiltro) {
+  const fechaDesde = new Date(desde);
+  const fechaHasta = new Date(hasta);
+  const lowerCaseClienteFiltro = clienteFiltro?.toLowerCase();
+
+  // 1. Obtener los pedidos cuya fecha de pedido cae dentro del rango de fechas.
+  // Esto define el conjunto inicial de pedidos que potencialmente se analizarán.
+  const pedidosEnRangoDeFechas = await PedidoDux.findAll({
+    where: {
+      fecha: { [Op.between]: [fechaDesde, fechaHasta] }
+    },
+    attributes: ['id', 'nro_pedido', 'fecha', 'cliente']
+  });
+
+  // 2. Aplicar el filtro de cliente a estos pedidos.
+  let pedidosFiltrados = pedidosEnRangoDeFechas;
+  if (lowerCaseClienteFiltro) {
+    pedidosFiltrados = pedidosEnRangoDeFechas.filter(p => p.cliente?.toLowerCase().includes(lowerCaseClienteFiltro));
+  } else {
+  }
+
+  // Si no hay pedidos después de los filtros, no hay datos que procesar.
+  if (!pedidosFiltrados.length) {
+    return null;
+  }
+
+  // 3. Crear mapeos básicos de pedidos para facilitar el acceso.
+  const pedidosPorId = new Map(pedidosFiltrados.map(p => [p.id, p]));
+  // Asegurarse de que nro_pedido se convierta a número para la clave del mapa, si es que no lo es ya.
+  const pedidosPorNro = new Map(pedidosFiltrados.map(p => [Number(p.nro_pedido), p])); 
+  const pedidoFechaMap = new Map(pedidosFiltrados.map(p => [Number(p.nro_pedido), p.fecha])); // Asegurarse de que la clave sea numérica
+
+  // 4. Obtener los detalles de los pedidos filtrados.
+  const detallesPedidos = await obtenerDetallesPedidosPorId([...pedidosPorId.keys()]);
+
+  // 5. Crear mapeos de detalles de pedidos y cantidades pedidas.
+  const detallesPedidosPorPedido = mapearDetallesPedidosPorPedido(detallesPedidos);
+  const cantidadesPedidasPorItemEnPedido = mapearCantidadPedidaPorItemEnPedido(detallesPedidos);
+
+  // 6. OBTENER TODAS LAS FACTURAS HISTÓRICAS DE LOS PEDIDOS FILTRADOS.
+  // Este es el CAMBIO CRÍTICO para resolver la inconsistencia de cantidad facturada.
+  // Se obtiene la lista de nro_pedido de los pedidos que pasaron todos los filtros.
+  // Aseguramos que nro_pedido se convierta a número para la búsqueda.
+  const nroPedidosParaFacturasHistoricas = [...new Set(pedidosFiltrados.map(p => Number(p.nro_pedido)))].filter(n => !isNaN(n));
+
+  let facturasCompletas = [];
+  if (nroPedidosParaFacturasHistoricas.length > 0) {
+      // Llamamos a obtenerFacturasConDetallesEnRango pero le pasamos los nro_pedido
+      // y null para las fechas, para que traiga TODAS las facturas de esos pedidos.
+      facturasCompletas = await obtenerFacturasConDetallesEnRango(
+          null, // Ignorar fecha de inicio
+          null, // Ignorar fecha de fin
+          nroPedidosParaFacturasHistoricas // <--- Pasar la lista de números de pedido a la función de DB
+      );
+  }
+
+  // 7. Procesar las facturas completas para generar los mapeos finales.
+  const {
+    detallesFacturasPorPedido,
+    primeraFacturaPorPedido,
+    ultimaFacturaPorPedido, // NUEVO: Obtener la última factura por pedido del procesamiento
+    fechasFacturasArrayPorPedido,
+    cantidadesFacturadasPorItemEnPedido,
+    valorFacturadoPorItemEnPedido,
+    fechaUltimaFacturaPorItem, // NUEVO: Obtener la última fecha de factura por ítem
+  } = procesarFacturasParaMapeo(facturasCompletas); 
+
+  return {
+    pedidos: pedidosFiltrados,
+    pedidosPorId,
+    pedidosPorNro,
+    pedidoFechaMap,
+    detallesPedidos,
+    detallesPedidosPorPedido,
+    cantidadesPedidasPorItemEnPedido,
+    facturasCompletas, // Este contendrá el histórico completo de los pedidos filtrados
+    detallesFacturasPorPedido,
+    primeraFacturaPorPedido,
+    ultimaFacturaPorPedido, // NUEVO: Devolver también la última factura por pedido
+    fechasFacturasArrayPorPedido,
+    cantidadesFacturadasPorItemEnPedido,
+    valorFacturadoPorItemEnPedido,
+    fechaUltimaFacturaPorItem, // NUEVO: Devolver la última fecha de factura por ítem
+  };
+}
+
+/*** 🎯 Carga, filtra y pre-procesa todos los datos base para reportes de categoría.
+ * @param {Date} fechaDesde - Fecha de inicio del rango.
+ * @param {Date} fechaHasta - Fecha de fin del rango.
+ * @param {number} [categoriaIdFiltro=null] - ID de categoría para filtrar.
+ * @returns {Promise<object | null>} Objeto con datos procesados o null si no hay datos.
+ */
+export async function cargarYProcesarDatosCategoria(fechaDesde, fechaHasta, categoriaIdFiltro = null) {
+    const categoriasDB = await obtenerCategoriasValidasDB();
+    const productosDB = await Producto.findAll({ attributes: ['sku', 'categoriaId', 'nombre'] });
+    const { categoriasValidas, categoriaNombreMap, productoCategoriaMap } = prepararMapeosCategoriasYProductos(categoriasDB, productosDB);
+
+    let skusEnCategoriaFiltrada = new Set();
+    if (categoriaIdFiltro) {
+        if (!categoriasValidas.has(parseInt(categoriaIdFiltro))) {
+            return {
+                categoriasValidas,
+                categoriaNombreMap,
+                productoCategoriaMap,
+                skusEnCategoriaFiltrada,
+                pedidosPorId: new Map(),
+                pedidosPorNro: new Map(), // NUEVO: Asegurar que se inicializa y pasa pedidosPorNro
+                pedidoFechaMap: new Map(),
+                detallesPedidos: [],
+                facturasCompletas: []
+            };
+        }
+        for (const [sku, catId] of productoCategoriaMap.entries()) {
+            if (catId == categoriaIdFiltro) {
+                skusEnCategoriaFiltrada.add(sku);
+            }
+        }
+        if (skusEnCategoriaFiltrada.size === 0) {
+             return {
+                categoriasValidas,
+                categoriaNombreMap,
+                productoCategoriaMap,
+                skusEnCategoriaFiltrada,
+                pedidosPorId: new Map(),
+                pedidosPorNro: new Map(), // NUEVO: Asegurar que se inicializa y pasa pedidosPorNro
+                pedidoFechaMap: new Map(),
+                detallesPedidos: [],
+                facturasCompletas: []
+            };
+        }
+    } else {
+        skusEnCategoriaFiltrada = new Set(productoCategoriaMap.keys());
+    }
+
+    const pedidos = await PedidoDux.findAll({
+        where: { fecha: { [Op.between]: [fechaDesde, fechaHasta] } },
+        attributes: ['id', 'nro_pedido', 'fecha'],
+    });
+
+    const pedidosPorId = new Map(pedidos.map(p => [p.id, p]));
+    // CONSTRUIR UN MAPA DE nro_pedido A OBJETO PEDIDO PARA FACILITAR LA BÚSQUEDA POR NÚMERO
+    const pedidosPorNro = new Map(pedidos.map(p => [Number(p.nro_pedido), p])); // <-- IMPORTANTE: nro_pedido como clave numérica
+    const pedidoFechaMap = new Map(pedidos.map(p => [Number(p.nro_pedido), p.fecha])); // Asegurarse de que la clave sea numérica
+
+    const idPedidos = [...pedidosPorId.keys()];
+    const nroPedidos = [...pedidosPorNro.keys()]; // Usar las claves numéricas de pedidosPorNro
+
+    if (!idPedidos.length) return null;
+
+    const detallesPedidos = await obtenerDetallesPedidosPorId(idPedidos);
+    // Filtrar detallesPedidos por SKUs relevantes para la categoría
+    const detallesPedidosFiltradosPorSku = detallesPedidos.filter(dp => skusEnCategoriaFiltrada.has(dp.codItem));
+
+    // Obtener facturas completas para los nro_pedidos relevantes de forma histórica
+    const facturasCompletasHistoricas = await obtenerFacturasConDetallesEnRango(null, null, nroPedidos);
+    
+    // Filtrar detalles de facturas por SKUs relevantes para la categoría
+    const facturasFiltradasPorSkuYPedido = facturasCompletasHistoricas.map(f => ({
+        ...f.toJSON(), // Convertir a JSON para poder modificar detalles
+        detalles: f.detalles ? f.detalles.filter(det => skusEnCategoriaFiltrada.has(det.codItem)) : []
+    }));
+
+    return {
+        categoriasValidas,
+        categoriaNombreMap,
+        productoCategoriaMap,
+        skusEnCategoriaFiltrada,
+        pedidosPorId,
+        pedidosPorNro, // <--- PASAR ESTE MAPA COMPLETO
+        pedidoFechaMap,
+        detallesPedidos: detallesPedidosFiltradosPorSku,
+        facturasCompletas: facturasFiltradasPorSkuYPedido,
+        categoriaIdFiltro,
+    };
+}
 
 // --- Generar Resumen Ejecutivo (GENERAL) ---
 export const generarResumenEjecutivo = async (desde, hasta, comparar = true) => {
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
-
-  const facturasEnRangoConDetalles = await Factura.findAll({
-    where: {
-      fecha_comp: { [Op.between]: [fechaDesde, fechaHasta] },
-      anulada_boolean: false,
-      tipo_comp: {
-        [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-      }
-    },
-    attributes: ['nro_pedido', 'fecha_comp', 'apellido_razon_soc'],
-    include: [{
-      model: DetalleFactura,
-      as: 'detalles',
-      attributes: ['id', 'codItem', 'cantidad', 'descripcion']
-    }]
-  });
-
-  if (facturasEnRangoConDetalles.length === 0) {
+  
+  const datos = await cargarYProcesarDatosCliente(fechaDesde, fechaHasta, null); 
+  if (!datos) {
     return {
       totalPedidos: 0, totalFacturas: 0, fillRateGeneral: 0, leadTimePromedioDias: null,
       cantidadRetrasos: 0, porcentajePedidosAltosFillRate: 0, porcentajePedidosBajosFillRate: 0,
@@ -41,146 +245,100 @@ export const generarResumenEjecutivo = async (desde, hasta, comparar = true) => 
     };
   }
 
-  const nroPedidosUnicosConFacturasEnRango = [...new Set(facturasEnRangoConDetalles.map(f => f.nro_pedido))];
-
-  const pedidosAsociados = await PedidoDux.findAll({
-    where: { nro_pedido: { [Op.in]: nroPedidosUnicosConFacturasEnRango } },
-    attributes: ['id', 'nro_pedido', 'fecha', 'cliente'],
-  });
-
-
-  const pedidosPorId = new Map(pedidosAsociados.map(p => [p.id, p]));
-  const pedidosPorNro = new Map(pedidosAsociados.map(p => [p.nro_pedido, p]));
-
-  const allDetallesPedidos = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: { [Op.in]: pedidosAsociados.map(p => p.id) } },
-    attributes: ['id', 'pedidoDuxId', 'codItem', 'cantidad', 'descripcion']
-  });
-
-  const detallesPedidosPorPedidoId = new Map();
-  for (const dp of allDetallesPedidos) {
-    if (!detallesPedidosPorPedidoId.has(dp.pedidoDuxId)) {
-      detallesPedidosPorPedidoId.set(dp.pedidoDuxId, []);
-    }
-    detallesPedidosPorPedidoId.get(dp.pedidoDuxId).push(dp);
-  }
-
-  const cantidadesPedidasOriginalesPorItemEnPedido = new Map();
-  for (const dp of allDetallesPedidos) {
-    const clave = `${dp.pedidoDuxId}-${dp.codItem}`;
-    cantidadesPedidasOriginalesPorItemEnPedido.set(clave, (cantidadesPedidasOriginalesPorItemEnPedido.get(clave) || 0) + parseFloat(dp.cantidad || 0));
-  }
-
-  const todasLasFacturasDePedidosAsociados = await Factura.findAll({
-    where: {
-      nro_pedido: { [Op.in]: pedidosAsociados.map(p => p.nro_pedido) },
-      anulada_boolean: false
-    },
-    attributes: ['nro_pedido'],
-    include: [{
-      model: DetalleFactura,
-      as: 'detalles',
-      attributes: ['cantidad', 'codItem']
-    }]
-  });
-
-  const detallesFacturasTotalesPorPedido = new Map();
-  for (const factura of todasLasFacturasDePedidosAsociados) {
-    if (factura.detalles && Array.isArray(factura.detalles)) {
-      if (!detallesFacturasTotalesPorPedido.has(factura.nro_pedido)) {
-        detallesFacturasTotalesPorPedido.set(factura.nro_pedido, []);
-      }
-      factura.detalles.forEach(df => {
-        detallesFacturasTotalesPorPedido.get(factura.nro_pedido).push(df);
-      });
-    }
-  }
+  const {
+    pedidos,
+    pedidosPorId,
+    pedidosPorNro,
+    detallesPedidos,
+    detallesPedidosPorPedido,
+    cantidadesPedidasPorItemEnPedido,
+    facturasCompletas,
+    detallesFacturasPorPedido,
+    ultimaFacturaPorPedido, 
+  } = datos;
 
   let totalCantidadPedidaGeneral = 0;
   let totalCantidadFacturadaGeneral = 0;
   let sumaLeadTimeGeneral = 0;
   let totalLeadTimeCalculado = 0;
   let pedidosConRetraso = 0;
-  
-  const fillRatesDePedidosUnicos = []; 
-  const eficienciaPorCliente = {};
-  const sinFacturarPorProducto = {};
-  
-  const pedidosCompletosProcesadosParaMétricasPorPedido = new Set(); // Este Set contará los pedidos que realmente se procesan.
-  const itemsPedidosContabilizadosParaCantidadPedidaGeneral = new Set();
 
-  for (const facturaEnRango of facturasEnRangoConDetalles) {
-      if (!Array.isArray(facturaEnRango.detalles) || !facturaEnRango.fecha_comp) continue;
+  const fillRatesDePedidosUnicos = [];
+  const eficienciaPorCliente = {}; 
+  const sinFacturarPorProducto = {}; 
 
-      const pedido = pedidosPorNro.get(facturaEnRango.nro_pedido);
-      if (!pedido || !pedido.id || !pedido.fecha) continue;
+  // --- FILTRO CLAVE AQUÍ: Solo considerar pedidos con CANTIDAD FACTURADA > 0 para el resumen general ---
+  const pedidosParaResumenGeneral = pedidos.filter(pedido => {
+      const nroPedidoNum = Number(pedido.nro_pedido);
+      const detallesF = detallesFacturasPorPedido.get(nroPedidoNum) || [];
+      const cantidadFacturadaEstePedido = detallesF.reduce((acc, d) => acc + toFloat(d.cantidad), 0);
+      return cantidadFacturadaEstePedido > 0; // Solo incluye pedidos que tienen alguna cantidad facturada
+  });
 
-      // El Lead Time se calcula y se suma por cada DOCUMENTO de factura en el rango
-      const leadTime = Math.max(0, Math.round((new Date(facturaEnRango.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)));
+  // Iterar sobre los pedidos que tienen al menos un ítem facturado para calcular métricas generales
+  for (const pedido of pedidosParaResumenGeneral) { // CAMBIO: Iterar sobre la lista filtrada
+    const detallesP = detallesPedidosPorPedido.get(pedido.id) || [];
+    const nroPedidoNum = Number(pedido.nro_pedido); 
+    const detallesF = detallesFacturasPorPedido.get(nroPedidoNum) || []; // Sabemos que cantidadFacturadaEstePedido > 0
+    const ultimaFactura = ultimaFacturaPorPedido.get(nroPedidoNum); 
+
+    const cantidadPedidaTotalDelPedido = detallesP.reduce(
+      (acc, d) => acc + toFloat(d.cantidad), 0
+    );
+    const cantidadFacturadaTotalDelPedido = detallesF.reduce(
+      (acc, d) => acc + toFloat(d.cantidad), 0
+    );
+
+    const fillRateDePedido = cantidadPedidaTotalDelPedido > 0
+      ? toFixed(Math.min(cantidadFacturadaTotalDelPedido / cantidadPedidaTotalDelPedido, 1) * 100)
+      : 0;
+
+    fillRatesDePedidosUnicos.push(fillRateDePedido);
+
+    const nombreCliente = (pedido.cliente || '').trim();
+    if (!eficienciaPorCliente[nombreCliente]) {
+      eficienciaPorCliente[nombreCliente] = { pedidosCount: 0, totalFillRate: 0 };
+    }
+    eficienciaPorCliente[nombreCliente].pedidosCount++;
+    eficienciaPorCliente[nombreCliente].totalFillRate += fillRateDePedido;
+
+    // Calcular productos sin facturar (para estos pedidos ya facturados)
+    for (const dp of detallesP) {
+      const cantidadPedidaItem = toFloat(dp.cantidad);
+      const claveItemPedido = `${nroPedidoNum}-${(dp.codItem || '').toString().trim().toUpperCase()}`; 
+      const cantidadFacturadaItemTotal = detallesF
+        .filter(df => df.codItem === dp.codItem)
+        .reduce((acc, df) => acc + toFloat(df.cantidad), 0);
+
+      const diferencia = Math.max(0, cantidadPedidaItem - cantidadFacturadaItemTotal);
+      if (diferencia > 0) {
+        const descripcionProducto = dp.descripcion || dp.codItem;
+        if (!sinFacturarPorProducto[descripcionProducto]) {
+          sinFacturarPorProducto[descripcionProducto] = 0;
+        }
+        sinFacturarPorProducto[descripcionProducto] += diferencia;
+      }
+    }
+
+    // Calcular lead time general y retrasos
+    if (ultimaFactura && pedido.fecha && ultimaFactura.fecha_comp) {
+      const leadTime = Math.max(0, Math.round((new Date(ultimaFactura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)));
       sumaLeadTimeGeneral += leadTime;
       totalLeadTimeCalculado++;
       if (leadTime > 7) pedidosConRetraso++;
+    }
 
-      // ✅ Contamos el pedido aquí si es la primera vez que lo vemos en este Set
-      if (!pedidosCompletosProcesadosParaMétricasPorPedido.has(pedido.id)) {
-          pedidosCompletosProcesadosParaMétricasPorPedido.add(pedido.id); // Registrar que este pedido ya fue procesado para las métricas por pedido
-
-          // Calcular Fill Rate de este pedido completo (no solo de esta factura en rango)
-          const detallesPDelPedidoCompleto = detallesPedidosPorPedidoId.get(pedido.id) || [];
-          const cantidadPedidaTotalDelPedido = detallesPDelPedidoCompleto.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
-          
-          const detallesFacturasDelPedidoCompleto = detallesFacturasTotalesPorPedido.get(pedido.nro_pedido) || [];
-          const cantidadFacturadaTotalDelPedido = detallesFacturasDelPedidoCompleto.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
-
-          const fillRateDePedido = cantidadPedidaTotalDelPedido > 0
-              ? +(Math.min(cantidadFacturadaTotalDelPedido / cantidadPedidaTotalDelPedido, 1) * 100).toFixed(2)
-              : 0;
-          
-          fillRatesDePedidosUnicos.push(fillRateDePedido);
-
-          // Eficiencia por Cliente
-          const nombreCliente = (pedido.cliente || '').trim();
-          if (!eficienciaPorCliente[nombreCliente]) {
-              eficienciaPorCliente[nombreCliente] = { pedidosCount: 0, totalFillRate: 0 };
-          }
-          eficienciaPorCliente[nombreCliente].pedidosCount++;
-          eficienciaPorCliente[nombreCliente].totalFillRate += fillRateDePedido;
-
-          // Productos Problema (se calcula para el pedido completo, una sola vez)
-          for (const dp of detallesPDelPedidoCompleto) {
-              const cantidadPedidaItem = parseFloat(dp.cantidad || 0);
-              const cantidadFacturadaItemTotal = detallesFacturasDelPedidoCompleto
-                  .filter(df => df.codItem === dp.codItem)
-                  .reduce((acc, df) => acc + parseFloat(df.cantidad || 0), 0);
-              
-              const diferencia = Math.max(0, cantidadPedidaItem - cantidadFacturadaItemTotal);
-              if (diferencia > 0) {
-                  const descripcionProducto = dp.descripcion || dp.codItem;
-                  if (!sinFacturarPorProducto[descripcionProducto]) sinFacturarPorProducto[descripcionProducto] = 0;
-                  sinFacturarPorProducto[descripcionProducto] += diferencia;
-              }
-          }
-      }
-
-      // Acumular cantidades para el FILL RATE GENERAL (sumando por cada DETALLE DE FACTURA en el rango)
-      for (const df of facturaEnRango.detalles) {
-          totalCantidadFacturadaGeneral += parseFloat(df.cantidad || 0);
-
-          const claveItemPedido = `${pedido.id}-${df.codItem}`;
-          if (!itemsPedidosContabilizadosParaCantidadPedidaGeneral.has(claveItemPedido)) {
-              const cantidadPedidaOriginalItem = cantidadesPedidasOriginalesPorItemEnPedido.get(claveItemPedido) || 0;
-              totalCantidadPedidaGeneral += cantidadPedidaOriginalItem;
-              itemsPedidosContabilizadosParaCantidadPedidaGeneral.add(claveItemPedido);
-          }
-      }
+    // Sumar cantidades pedidas y facturadas para el fillRateGeneral
+    totalCantidadPedidaGeneral += cantidadPedidaTotalDelPedido;
+    totalCantidadFacturadaGeneral += cantidadFacturadaTotalDelPedido;
   }
 
   const fillRateGeneral = totalCantidadPedidaGeneral > 0
-    ? +(Math.min(totalCantidadFacturadaGeneral / totalCantidadPedidaGeneral, 1) * 100).toFixed(2)
+    ? toFixed(Math.min(totalCantidadFacturadaGeneral / totalCantidadPedidaGeneral, 1) * 100)
     : 0;
 
   const leadTimePromedioDias = totalLeadTimeCalculado > 0
-    ? +(sumaLeadTimeGeneral / totalLeadTimeCalculado).toFixed(2)
+    ? toFixed(sumaLeadTimeGeneral / totalLeadTimeCalculado)
     : null;
 
   const porcentajeAltosFillRate = fillRatesDePedidosUnicos.length
@@ -194,7 +352,7 @@ export const generarResumenEjecutivo = async (desde, hasta, comparar = true) => 
   const topClientesEficientes = Object.entries(eficienciaPorCliente)
     .map(([cliente, datos]) => ({
       cliente,
-      fillRate: +(datos.totalFillRate / datos.pedidosCount).toFixed(2)
+      fillRate: toFixed(datos.totalFillRate / datos.pedidosCount)
     }))
     .sort((a, b) => b.fillRate - a.fillRate)
     .slice(0, 5);
@@ -202,13 +360,13 @@ export const generarResumenEjecutivo = async (desde, hasta, comparar = true) => 
   const topClientesIneficientes = Object.entries(eficienciaPorCliente)
     .map(([cliente, datos]) => ({
       cliente,
-      fillRate: +(datos.totalFillRate / datos.pedidosCount).toFixed(2)
+      fillRate: toFixed(datos.totalFillRate / datos.pedidosCount)
     }))
     .sort((a, b) => a.fillRate - b.fillRate)
     .slice(0, 5);
 
   const topProductosProblema = Object.entries(sinFacturarPorProducto)
-    .map(([producto, diferencia]) => ({ producto, sinFacturar: +diferencia.toFixed(2) }))
+    .map(([producto, diferencia]) => ({ producto, sinFacturar: toFixed(diferencia) }))
     .sort((a, b) => b.sinFacturar - a.sinFacturar)
     .slice(0, 5);
 
@@ -216,37 +374,33 @@ export const generarResumenEjecutivo = async (desde, hasta, comparar = true) => 
   let variacionLeadTime = 0;
 
   if (comparar) {
-    const diasRango = Math.ceil((fechaHasta.getTime() - fechaDesde.getTime()) / (1000 * 60 * 60 * 24));
-    
-    const fechaDesdeAnterior = new Date(fechaDesde);
-    fechaDesdeAnterior.setDate(fechaDesdeAnterior.getDate() - diasRango);
-    const fechaHastaAnterior = new Date(fechaHasta);
-    fechaHastaAnterior.setDate(fechaHastaAnterior.getDate() - diasRango);
+    const diasRango = dayjs(fechaHasta).diff(dayjs(fechaDesde), 'days');
+    const desdeAnterior = dayjs(fechaDesde).subtract(diasRango, 'days').toDate();
+    const hastaAnterior = dayjs(fechaHasta).subtract(diasRango, 'days').toDate();
 
     const anterior = await generarResumenEjecutivo(
-      dayjs(fechaDesdeAnterior).format("YYYY-MM-DD"),
-      dayjs(fechaHastaAnterior).format("YYYY-MM-DD"),
+      dayjs(desdeAnterior).format("YYYY-MM-DD"),
+      dayjs(hastaAnterior).format("YYYY-MM-DD"),
       false
     );
 
     variacionFillRate = anterior.fillRateGeneral > 0
-      ? +((fillRateGeneral - anterior.fillRateGeneral) / anterior.fillRateGeneral * 100).toFixed(1)
+      ? toFixed(((fillRateGeneral - anterior.fillRateGeneral) / anterior.fillRateGeneral) * 100, 1)
       : 0;
 
     variacionLeadTime = anterior.leadTimePromedioDias != null && leadTimePromedioDias != null
-      ? +(leadTimePromedioDias - anterior.leadTimePromedioDias).toFixed(2)
+      ? toFixed(leadTimePromedioDias - anterior.leadTimePromedioDias)
       : 0;
   }
 
   return {
-    // ✅ CORRECCIÓN FINAL: totalPedidos cuenta los pedidos que fueron REALMENTE procesados en el bucle principal.
-    totalPedidos: pedidosCompletosProcesadosParaMétricasPorPedido.size, 
-    totalFacturas: facturasEnRangoConDetalles.length, // Sigue contando documentos de factura
+    totalPedidos: pedidosParaResumenGeneral.length, // CAMBIO: Usar la cantidad de pedidos que sí se facturaron
+    totalFacturas: facturasCompletas.length, // Se refiere al total de facturas cargadas para análisis
     fillRateGeneral,
     leadTimePromedioDias,
     cantidadRetrasos: pedidosConRetraso,
-    porcentajePedidosAltosFillRate: +porcentajeAltosFillRate.toFixed(1),
-    porcentajePedidosBajosFillRate: +porcentajeBajosFillRate.toFixed(1),
+    porcentajePedidosAltosFillRate: toFixed(porcentajeAltosFillRate, 1),
+    porcentajePedidosBajosFillRate: toFixed(porcentajeBajosFillRate, 1),
     variacionFillRate,
     variacionLeadTime,
     topClientesEficientes,
@@ -255,955 +409,153 @@ export const generarResumenEjecutivo = async (desde, hasta, comparar = true) => 
     categoriasCriticas: []
   };
 };
-// --- Evolución del Lead Time (por fecha de factura) ---
-export const obtenerEvolucionLeadTime = async (desde, hasta) => {
-  const fechaDesde = new Date(desde);
-  const fechaHasta = new Date(hasta);
-
-  // 1. Obtener todas las facturas en el rango de fecha_comp
-  const facturas = await Factura.findAll({
-    where: {
-      fecha_comp: { [Op.between]: [fechaDesde, fechaHasta] },
-      anulada_boolean: false,
-      tipo_comp: {
-        [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-      }
-    },
-    attributes: ['nro_pedido', 'fecha_comp'],
-  });
-
-  const nroPedidosConFacturas = facturas.map(f => f.nro_pedido);
-
-  // 2. Obtener los pedidos correspondientes a esas facturas (sin filtro de fecha de pedido)
-  const pedidosAsociados = await PedidoDux.findAll({
-    where: {
-      nro_pedido: { [Op.in]: nroPedidosConFacturas }
-    },
-    attributes: ['nro_pedido', 'fecha'],
-  });
-
-  const pedidosMap = new Map(pedidosAsociados.map(p => [p.nro_pedido, p]));
-
-  const porFecha = {}; // Acumulador por fecha de factura
-
-  for (const factura of facturas) {
-    const fechaStr = dayjs(factura.fecha_comp).format("YYYY-MM-DD");
-    const pedido = pedidosMap.get(factura.nro_pedido);
-
-    if (!pedido) {
-        continue;
-    }
-
-    const dias = Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)));
-
-    if (!porFecha[fechaStr]) {
-      porFecha[fechaStr] = { totalLeadTime: 0, count: 0 };
-    }
-
-    porFecha[fechaStr].totalLeadTime += dias;
-    porFecha[fechaStr].count += 1;
-  }
-
-  const resultado = Object.entries(porFecha).map(([fecha, valores]) => ({
-    fecha,
-    leadTime: +(valores.totalLeadTime / valores.count).toFixed(2)
-  }));
-
-  return resultado;
-};
-
-// --- Evolución del Fill Rate (por fecha de factura) ---
-export const obtenerEvolucionFillRate = async (desde, hasta) => {
-  const fechaDesde = new Date(desde);
-  const fechaHasta = new Date(hasta);
-
-  // 1. Obtener todas las facturas en el rango de fecha_comp, incluyendo sus detalles
-  const facturasConDetalles = await Factura.findAll({
-      where: {
-          fecha_comp: { [Op.between]: [fechaDesde, fechaHasta] },
-          anulada_boolean: false,
-          tipo_comp: {
-              [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-          }
-      },
-      attributes: ['nro_pedido', 'fecha_comp'],
-      include: [{
-          model: DetalleFactura,
-          as: 'detalles', // ✅ CORRECCIÓN DE ALIAS
-          attributes: ['codItem', 'cantidad']
-      }]
-  });
-
-  const nroPedidosDeFacturas = facturasConDetalles.map(f => f.nro_pedido);
-
-  // 2. Obtener los detalles de los pedidos correspondientes a esas facturas
-  // No filtramos por fecha de pedido aquí, ya que el pedido puede ser anterior.
-  const detallesPedidosAsociados = await DetallePedidoDux.findAll({
-      include: [{
-          model: PedidoDux,
-          as: 'pedidoDux',
-          where: {
-              nro_pedido: { [Op.in]: nroPedidosDeFacturas }
-          },
-          attributes: ['id', 'nro_pedido', 'fecha'] // Necesitamos id y nro_pedido para mapear
-      }],
-      attributes: ['pedidoDuxId', 'codItem', 'cantidad']
-  });
-
-  // Mapeo de cantidades pedidas por (pedidoId-codItem)
-  const cantidadesPedidasPorItem = new Map(); // Key: `${pedidoId}-${codItem}`, Value: cantidad
-  for (const dp of detallesPedidosAsociados) {
-      if (dp.pedidoDuxId && dp.codItem) {
-          const key = `${dp.pedidoDuxId}-${dp.codItem}`;
-          cantidadesPedidasPorItem.set(key, (cantidadesPedidasPorItem.get(key) || 0) + parseFloat(dp.cantidad || 0));
-      }
-  }
-
-  const dataPorFecha = {}; // Key: YYYY-MM-DD, Value: { pedida: sum, facturada: sum }
-
-  for (const factura of facturasConDetalles) {
-      const fechaStr = dayjs(factura.fecha_comp).format("YYYY-MM-DD");
-      if (!dataPorFecha[fechaStr]) {
-          dataPorFecha[fechaStr] = { pedida: 0, facturada: 0, itemsProcesados: new Set() }; // Usamos un Set para no duplicar 'pedida' por item
-      }
-
-      const pedidoDux = await PedidoDux.findOne({ // Se busca el pedidoDux para obtener el id
-          where: { nro_pedido: factura.nro_pedido },
-          attributes: ['id']
-      });
-      if (!pedidoDux) continue;
-
-      if (Array.isArray(factura.detalles)) {
-          for (const df of factura.detalles) {
-              const keyItem = `${pedidoDux.id}-${df.codItem}`;
-              const cantidadPedidaOriginal = cantidadesPedidasPorItem.get(keyItem) || 0;
-
-              // Solo sumar la cantidad pedida original una vez por item de pedido para esa fecha
-              if (!dataPorFecha[fechaStr].itemsProcesados.has(keyItem)) {
-                  dataPorFecha[fechaStr].pedida += cantidadPedidaOriginal;
-                  dataPorFecha[fechaStr].itemsProcesados.add(keyItem);
-              }
-              
-              dataPorFecha[fechaStr].facturada += parseFloat(df.cantidad || 0);
-          }
-      }
-  }
-
-  const fechas = Object.keys(dataPorFecha).sort();
-
-  const resultado = fechas.map((fecha) => {
-    const pedida = dataPorFecha[fecha].pedida || 0;
-    const facturada = dataPorFecha[fecha].facturada || 0;
-    const porcentaje = pedida > 0 ? +(Math.min(facturada / pedida, 1) * 100).toFixed(2) : 0;
-    return { fecha, fillRate: porcentaje };
-  });
-
-  return resultado;
-};
-
-// --- Outliers de Fill Rate (Productos con bajo fill rate) ---
-export const obtenerOutliersFillRate = async (desde, hasta, filtroProducto) => {
-  const fechaDesde = new Date(desde);
-  const fechaHasta = new Date(hasta);
-
-  // 1. Obtener pedidos en el rango de fecha de pedido
-  const pedidosEnRango = await PedidoDux.findAll({
-    where: { fecha: { [Op.between]: [fechaDesde, fechaHasta] } },
-    attributes: ['id', 'nro_pedido', 'fecha'] // Necesitamos fecha para lead time
-  });
-  const idPedidosEnRango = pedidosEnRango.map(p => p.id);
-  const nroPedidosEnRango = pedidosEnRango.map(p => p.nro_pedido);
-  const pedidoFechaMap = new Map(pedidosEnRango.map(p => [p.nro_pedido, p.fecha]));
-
-
-  // 2. Obtener DetallePedidos asociados a los pedidos en rango
-  const detallesPedidosDB = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: { [Op.in]: idPedidosEnRango } },
-    attributes: ['codItem', 'descripcion', 'cantidad']
-  });
-
-  // 3. Obtener TODAS las facturas (y sus detalles) asociadas a esos nro_pedidos
-  const facturasAsociadas = await Factura.findAll({
-      where: {
-          nro_pedido: { [Op.in]: nroPedidosEnRango },
-          anulada_boolean: false,
-          tipo_comp: {
-              [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-          }
-      },
-      attributes: ["nro_pedido", "fecha_comp"],
-      include: [{
-          model: DetalleFactura,
-          as: 'detalles', // ✅ CORRECCIÓN DE ALIAS
-          attributes: ["codItem", "cantidad", "descripcion"] // Añadir descripción
-      }]
-  });
-
-
-  const pedidasPorProducto = {}; // key: codItem, value: { producto: desc, pedida: sum }
-  const facturadasPorProducto = {}; // key: codItem, value: { producto: desc, facturada: sum, leadTimes: [] }
-
-  for (const dp of detallesPedidosDB) {
-    const key = dp.codItem;
-    const desc = dp.descripcion || key;
-    if (!filtroProducto || key.toLowerCase().includes(filtroProducto) || desc.toLowerCase().includes(filtroProducto)) {
-      if (!pedidasPorProducto[key]) pedidasPorProducto[key] = { producto: desc, pedida: 0 };
-      pedidasPorProducto[key].pedida += parseFloat(dp.cantidad || 0);
-    }
-  }
-
-  for (const factura of facturasAsociadas) {
-      if (!Array.isArray(factura.detalles)) continue;
-      for (const df of factura.detalles) {
-          const key = df.codItem;
-          // Usamos la descripción del lado de los pedidos si existe, sino la del detalle de factura, sino el codItem
-          const desc = (pedidasPorProducto[key] && pedidasPorProducto[key].producto) || df.descripcion || key; 
-          
-          if (!filtroProducto || key.toLowerCase().includes(filtroProducto) || desc.toLowerCase().includes(filtroProducto)) {
-              if (!facturadasPorProducto[key]) facturadasPorProducto[key] = { producto: desc, facturada: 0, leadTimes: [] };
-              facturadasPorProducto[key].facturada += parseFloat(df.cantidad || 0);
-
-              // Calcular lead time
-              const fechaPedido = pedidoFechaMap.get(factura.nro_pedido);
-              if (fechaPedido) {
-                  const diff = Math.max(0, Math.round(
-                      (new Date(factura.fecha_comp) - new Date(fechaPedido)) / (1000 * 60 * 60 * 24)
-                  ));
-                  facturadasPorProducto[key].leadTimes.push(diff);
-              }
-          }
-      }
-  }
-
-  const outliers = [];
-  // Iteramos sobre los productos que tuvieron pedidos en el rango
-  for (const key in pedidasPorProducto) {
-    const pedidaData = pedidasPorProducto[key];
-    const facturadaData = facturadasPorProducto[key] || { facturada: 0, leadTimes: [] };
-
-    const pedidas = pedidaData.pedida;
-    const facturadas = facturadaData.facturada;
-    const leadTimes = facturadaData.leadTimes;
-
-    const fillRate = pedidas > 0 ? +(Math.min(facturadas / pedidas, 1) * 100).toFixed(2) : 0;
-    const leadTimePromedio = leadTimes.length > 0
-      ? +(leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length).toFixed(2)
-      : null;
-
-    outliers.push({
-      codItem: key,
-      descripcion: pedidaData.producto, // Usamos la descripción del lado del pedido
-      pedidas: +pedidas.toFixed(2),
-      facturadas: +facturadas.toFixed(2),
-      fillRate,
-      leadTimePromedio // Incluimos lead time promedio para contexto
-    });
-  }
-
-  // Si hay productos que solo tienen facturas pero no pedidos en el rango, no se incluyen en "outliers"
-  // ya que esta función se enfoca en "fill rate", que requiere un "pedido".
-
-  outliers.sort((a, b) => a.fillRate - b.fillRate); // Peor fill rate primero
-  return outliers.slice(0, 20); // Top 20 peores
-};
 
 // --- Evolución Eficiencia Mensual (GENERAL) ---
-export const obtenerEvolucionEficienciaMensualGeneral = async (desde, hasta) => {
+export const obtenerEvolucionEficienciaMensualGeneral = async (desde, hasta, cliente) => {
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
 
-  const pedidos = await PedidoDux.findAll({
-    where: { fecha: { [Op.between]: [fechaDesde, fechaHasta] } },
-    attributes: ["id", "fecha", "nro_pedido"],
+  const datos = await cargarYProcesarDatosCliente(fechaDesde, fechaHasta, cliente);
+  if (!datos) return [];
+
+  // CAMBIO: Pasar los nuevos mapas de datos al reporte, incluyendo detallesPedidosPorPedido
+  const { facturasCompletas, pedidosPorNro, cantidadesPedidasPorItemEnPedido, detallesFacturasPorPedido, ultimaFacturaPorPedido, detallesPedidosPorPedido } = datos; 
+
+  return generarReporteEvolucionMensual({
+    facturas: facturasCompletas,
+    pedidosPorNro,
+    cantidadesPedidasPorItemEnPedido,
+    detallesFacturasPorPedido, 
+    ultimaFacturaPorPedido, 
+    detallesPedidosPorPedido // ¡NUEVO PARÁMETRO!
   });
-
-  const pedidosPorNro = new Map(pedidos.map(p => [p.nro_pedido, p]));
-  const idPedidos = pedidos.map(p => p.id);
-
-  const facturasEnRangoConDetalles = await Factura.findAll({
-    where: {
-      fecha_comp: { [Op.between]: [fechaDesde, hasta] }, // <<< Nota: 'hasta' debe ser fechaHasta
-      anulada_boolean: false,
-      tipo_comp: {
-        [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-      }
-    },
-    attributes: ["nro_pedido", "fecha_comp"],
-    include: [{
-      model: DetalleFactura,
-      as: 'detalles', // ✅ Alias correcto
-      attributes: ['codItem', 'cantidad']
-    }]
-  });
-
-  const cantidadesPedidasOriginalesPorItemEnPedido = new Map();
-  const allDetallesPedidos = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: { [Op.in]: idPedidos } },
-    attributes: ['pedidoDuxId', 'codItem', 'cantidad']
-  });
-  for (const dp of allDetallesPedidos) {
-    const clave = `${dp.pedidoDuxId}-${dp.codItem}`;
-    cantidadesPedidasOriginalesPorItemEnPedido.set(clave, (cantidadesPedidasOriginalesPorItemEnPedido.get(clave) || 0) + parseFloat(dp.cantidad || 0));
-  }
-
-  const dataPorMesFinal = {};
-  const consumidosPorItemEnPedido = new Map(); // Variable para controlar el consumo de items para el fillrate mensual
-
-  // --- BUCLE PRINCIPAL: Iterar sobre CADA DOCUMENTO DE FACTURA en el rango ---
-  for (const factura of facturasEnRangoConDetalles) { // Ahora 'factura' representa un documento de factura
-      if (!Array.isArray(factura.detalles) || !factura.fecha_comp) continue;
-
-      const pedido = pedidosPorNro.get(factura.nro_pedido);
-      if (!pedido || !pedido.id || !pedido.fecha) continue;
-
-      const fechaFactura = new Date(factura.fecha_comp);
-      const mes = dayjs(fechaFactura).format("YYYY-MM");
-
-      dataPorMesFinal[mes] = dataPorMesFinal[mes] || {
-        pedida: 0,
-        facturada: 0,
-        totalLeadTime: 0,
-        countLeadTime: 0,
-        itemsPedidosProcesadosEnMes: new Set(), // Para sumar 'pedida' una vez por item de pedido por mes
-        facturasProcesadasParaLeadTime: new Set() // Para contar Lead Time una vez por documento de factura por mes
-      };
-
-      // ✅ CÁLCULO DEL LEAD TIME: Una vez por DOCUMENTO DE FACTURA
-      if (!dataPorMesFinal[mes].facturasProcesadasParaLeadTime.has(factura.nro_pedido)) {
-          const fechaPedido = new Date(pedido.fecha);
-          const dias = Math.max(0, Math.round((fechaFactura - fechaPedido) / (1000 * 60 * 60 * 24)));
-          dataPorMesFinal[mes].totalLeadTime += dias;
-          dataPorMesFinal[mes].countLeadTime += 1;
-          dataPorMesFinal[mes].facturasProcesadasParaLeadTime.add(factura.nro_pedido);
-      }
-
-      // --- ACUMULACIÓN DE CANTIDADES (por cada DETALLE de factura) ---
-      for (const df of factura.detalles) { // Aquí sí se itera por detalle para las cantidades
-          // LÍNEA QUE CAUSABA EL ERROR ELIMINADA: totalCantidadFacturadaGeneral += parseFloat(df.cantidad || 0);
-
-          const claveItemPedido = `${pedido.id}-${df.codItem}`;
-          const cantidadPedidaOriginal = cantidadesPedidasOriginalesPorItemEnPedido.get(claveItemPedido) || 0;
-          const cantidadFacturadaActual = parseFloat(df.cantidad || "0"); // Asegurar que es string si puede ser null
-
-          const yaConsumido = consumidosPorItemEnPedido.get(claveItemPedido) || 0;
-          const restanteParaFacturar = Math.max(0, cantidadPedidaOriginal - yaConsumido);
-          const cantidadEfectivamenteFacturada = Math.min(restanteParaFacturar, cantidadFacturadaActual);
-
-          if (cantidadEfectivamenteFacturada === 0) continue;
-
-          consumidosPorItemEnPedido.set(claveItemPedido, yaConsumido + cantidadEfectivamenteFacturada);
-
-          dataPorMesFinal[mes].facturada += cantidadEfectivamenteFacturada;
-
-          // Sumar a 'pedida' del mes de la factura (la cantidad pedida original del item, una sola vez por item de pedido por mes).
-          if (!dataPorMesFinal[mes].itemsPedidosProcesadosEnMes.has(claveItemPedido)) {
-              dataPorMesFinal[mes].pedida += cantidadPedidaOriginal;
-              dataPorMesFinal[mes].itemsPedidosProcesadosEnMes.add(claveItemPedido);
-          }
-      }
-  }
-
-  // Limpiar propiedades auxiliares
-  for (const mes in dataPorMesFinal) {
-    delete dataPorMesFinal[mes].itemsPedidosProcesadosEnMes;
-    delete dataPorMesFinal[mes].facturasProcesadasParaLeadTime;
-  }
-
-  const resultado = Object.entries(dataPorMesFinal)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([mes, v]) => ({
-      mes,
-      fillRate: v.pedida > 0 ? +(Math.min(v.facturada / v.pedida, 1) * 100).toFixed(2) : 0,
-      leadTime: v.countLeadTime > 0 ? +(v.totalLeadTime / v.countLeadTime).toFixed(2) : null
-    }));
-
-  return resultado;
 };
+
 
 // --- Eficiencia por Cliente ---
-export const obtenerEficienciaPorCliente = async (desde, hasta, _filtroCliente) => {
+export const obtenerEficienciaPorCliente = async (desde, hasta, cliente) => {
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
-
-  const facturas = await Factura.findAll({
-    where: {
-      fecha_comp: { [Op.between]: [fechaDesde, fechaHasta] },
-      anulada_boolean: false,
-      tipo_comp: {
-        [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-      }
-    },
-    attributes: ["nro_pedido", "fecha_comp"]
+  const datos = await cargarYProcesarDatosCliente(fechaDesde, fechaHasta, cliente);
+  if (!datos) return [];
+  // CAMBIO: Ahora obtenemos 'ultimaFacturaPorPedido' de 'datos'
+  const { pedidos, detallesPedidosPorPedido, detallesFacturasPorPedido, ultimaFacturaPorPedido } = datos; 
+  return generarResumenEficienciaPorCliente({
+    pedidos,
+    detallesPedidosPorPedido,
+    detallesFacturasPorPedido,
+    // primeraFacturaPorPedido, // Ya no se pasa si el Lead Time es con la última
+    ultimaFacturaPorPedido // CAMBIO: Pasar la última factura
   });
-
-  const nroPedidos = [...new Set(facturas.map(f => f.nro_pedido))];
-  if (nroPedidos.length === 0) return [];
-
-  const pedidos = await PedidoDux.findAll({
-    where: { nro_pedido: { [Op.in]: nroPedidos } },
-    attributes: ['id', 'nro_pedido', 'fecha', 'cliente']
-  });
-
-  if (pedidos.length === 0) return [];
-
-  const pedidosPorNro = new Map(pedidos.map(p => [p.nro_pedido, p]));
-  const pedidosPorId = new Map(pedidos.map(p => [p.id, p]));
-
-  const detallesPedidos = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: { [Op.in]: pedidos.map(p => p.id) } },
-    attributes: ['pedidoDuxId', 'codItem', 'cantidad', 'precioUnitario']
-  });
-
-  const detallesPedidosPorPedido = new Map();
-  for (const d of detallesPedidos) {
-    if (!detallesPedidosPorPedido.has(d.pedidoDuxId)) {
-      detallesPedidosPorPedido.set(d.pedidoDuxId, []);
-    }
-    detallesPedidosPorPedido.get(d.pedidoDuxId).push(d);
-  }
-
-  const facturasConDetalles = await Factura.findAll({
-    where: {
-      nro_pedido: { [Op.in]: nroPedidos },
-      anulada_boolean: false,
-      tipo_comp: {
-        [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-      }
-    },
-    attributes: ["nro_pedido", "fecha_comp"],
-    include: [{
-      model: DetalleFactura,
-      as: "detalles",
-      attributes: ["codItem", "cantidad", "precioUnitario"]
-    }]
-  });
-
-  const resumenPorCliente = new Map();
-
-  for (const pedido of pedidos) {
-    const cliente = pedido.cliente || "Sin nombre";
-    const detallesP = detallesPedidosPorPedido.get(pedido.id) || [];
-
-    const cantidadPedida = detallesP.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
-    const totalPedido = detallesP.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
-
-    const facturasDelPedido = facturasConDetalles.filter(f => f.nro_pedido === pedido.nro_pedido);
-    const detallesF = facturasDelPedido.flatMap(f => f.detalles || []);
-
-    const cantidadFacturada = detallesF.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
-    const totalFacturado = detallesF.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
-
-    const facturaPrincipal = facturasDelPedido[0];
-    const leadTimeDias = facturaPrincipal && cantidadFacturada > 0
-      ? Math.max(0, Math.round((new Date(facturaPrincipal.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)))
-      : null;
-
-    if (!resumenPorCliente.has(cliente)) {
-      resumenPorCliente.set(cliente, {
-        cliente,
-        cantidadPedida: 0,
-        cantidadFacturada: 0,
-        totalPedido: 0,
-        totalFacturado: 0,
-        totalLeadTime: 0,
-        countLeadTime: 0
-      });
-    }
-
-    const entry = resumenPorCliente.get(cliente);
-    entry.cantidadPedida += cantidadPedida;
-    entry.cantidadFacturada += cantidadFacturada;
-    entry.totalPedido += totalPedido;
-    entry.totalFacturado += totalFacturado;
-    if (leadTimeDias !== null) {
-      entry.totalLeadTime += leadTimeDias;
-      entry.countLeadTime += 1;
-    }
-  }
-
-  const resultado = Array.from(resumenPorCliente.values()).map(entry => {
-    const fillRate = entry.cantidadPedida > 0
-      ? +(Math.min(entry.cantidadFacturada / entry.cantidadPedida, 1) * 100).toFixed(2)
-      : 0;
-
-    const fillRatePonderado = entry.totalPedido > 0
-      ? +(Math.min(entry.totalFacturado / entry.totalPedido, 1) * 100).toFixed(2)
-      : 0;
-
-    const leadTimePromedio = entry.countLeadTime > 0
-      ? +(entry.totalLeadTime / entry.countLeadTime).toFixed(2)
-      : null;
-
-    return {
-      cliente: entry.cliente,
-      cantidadPedida: +entry.cantidadPedida.toFixed(2),
-      cantidadFacturada: +entry.cantidadFacturada.toFixed(2),
-      totalPedido: +entry.totalPedido.toFixed(2),
-      totalFacturado: +entry.totalFacturado.toFixed(2),
-      fillRate,
-      fillRatePonderado,
-      leadTimePromedio
-    };
-  });
-
-  return resultado.sort((a, b) => a.cliente.localeCompare(b.cliente));
 };
-
-
 
 // --- Detalle por Cliente ---
 export const obtenerDetallePorCliente = async (desde, hasta, cliente) => {
-  const fechaDesde = new Date(desde);
-  const fechaHasta = new Date(hasta);
-  const filtroCliente = cliente?.toLowerCase();
+  const datos = await cargarYProcesarDatosCliente(desde, hasta, cliente);
+  if (!datos) return [];
 
-  // 1. Obtener TODAS las facturas que están en el rango de fechas.
-  const facturasEnRango = await Factura.findAll({
-    where: {
-      fecha_comp: { [Op.between]: [fechaDesde, fechaHasta] },
-      anulada_boolean: false,
-      tipo_comp: {
-        [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-      }
-    },
-    attributes: ["nro_pedido", "fecha_comp", "apellido_razon_soc"]
-  });
+  const {
+    pedidos,
+    detallesPedidosPorPedido,
+    // primeraFacturaPorPedido, // YA NO SE USA
+    ultimaFacturaPorPedido, // NUEVO: Obtener la última factura
+    fechasFacturasArrayPorPedido,
+    cantidadesFacturadasPorItemEnPedido,
+    valorFacturadoPorItemEnPedido,
+    // fechaPrimeraFacturaPorItem, // YA NO SE USA
+    fechaUltimaFacturaPorItem, // NUEVO: Obtener la última fecha de factura por ítem
+  } = datos;
 
-  const nroPedidosConFacturasEnRango = [...new Set(facturasEnRango.map(f => f.nro_pedido))];
-
-  if (nroPedidosConFacturasEnRango.length === 0) {
-    return [];
-  }
-
-  // 2. Obtener los PEDIDOS asociados a esos nro_pedidos de factura, y que correspondan al cliente.
-  // ✅ CORRECCIÓN CLAVE AQUÍ: MISMA LÓGICA DE FILTRADO QUE obtenerEficienciaPorCliente
-  const pedidos = await PedidoDux.findAll({
-    where: {
-      nro_pedido: { [Op.in]: nroPedidosConFacturasEnRango },
-      cliente: { [Op.like]: `%${filtroCliente}%` },
-    },
-    attributes: ['id', 'nro_pedido', 'fecha', 'cliente']
-  });
-
-  const idPedidosConsiderados = pedidos.map(p => p.id);
-  const nroPedidosConsiderados = pedidos.map(p => p.nro_pedido);
-
-  if (pedidos.length === 0) {
-    return [];
-  }
-
-  const pedidosPorNro = new Map(pedidos.map(p => [p.nro_pedido, p]));
-  const pedidosPorId = new Map(pedidos.map(p => [p.id, p])); // Se usará para los detalles
-
-  // 3. Obtener los detalles de los pedidos relevantes
-  const detallesPedidosDB = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: { [Op.in]: idPedidosConsiderados } },
-    attributes: ['id', 'pedidoDuxId', 'codItem', 'cantidad', 'precioUnitario']
-  });
-
-  const detallesPedidosPorPedido = new Map();
-  for (const dp of detallesPedidosDB) {
-    if (!detallesPedidosPorPedido.has(dp.pedidoDuxId)) {
-      detallesPedidosPorPedido.set(dp.pedidoDuxId, []);
-    }
-    detallesPedidosPorPedido.get(dp.pedidoDuxId).push(dp);
-  }
-
-  // 4. Obtener TODAS las facturas (y sus detalles) asociadas a los nro_pedidos considerados.
-  const facturasAsociadas = await Factura.findAll({
-      where: {
-          nro_pedido: { [Op.in]: nroPedidosConsiderados },
-          anulada_boolean: false,
-          tipo_comp: {
-              [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-          }
-      },
-      attributes: ["nro_pedido", "fecha_comp", "apellido_razon_soc"],
-      include: [{
-          model: DetalleFactura,
-          as: "detalles",
-          attributes: ["id", "codItem", "cantidad", "precioUnitario"]
-      }]
-  });
-
-  const facturasParaLeadTime = new Map();
-  const todasFechasFacturasPorNro = new Map();
-  const detallesFacturasPorPedido = new Map(); // Esto se llenará con las cantidades FACTURADAS REALES
-
-  for (const factura of facturasAsociadas) {
-    const nroPedido = factura.nro_pedido;
-
-    if (!pedidosPorNro.has(nroPedido)) {
-        continue;
-    }
-
-    if (!facturasParaLeadTime.has(nroPedido)) {
-      facturasParaLeadTime.set(nroPedido, factura);
-    }
-
-    if (!todasFechasFacturasPorNro.has(nroPedido)) {
-      todasFechasFacturasPorNro.set(nroPedido, new Set());
-    }
-    if (factura.fecha_comp) {
-      todasFechasFacturasPorNro.get(nroPedido).add(formatFecha(factura.fecha_comp));
-    }
-
-    // Llenar detallesFacturasPorPedido con las cantidades REALES facturadas (sin control de consumo)
-    if (!detallesFacturasPorPedido.has(nroPedido)) {
-      detallesFacturasPorPedido.set(nroPedido, []);
-    }
-    if (factura.detalles && Array.isArray(factura.detalles)) {
-      factura.detalles.forEach(df => {
-        detallesFacturasPorPedido.get(nroPedido).push(df); // Añadir el detalle tal cual viene de la DB
-      });
-    }
-  }
-  
-  // 5. Procesar y calcular métricas para cada pedido
-  const resultado = pedidos.map(pedido => {
+  return pedidos.map(pedido => {
     const detallesP = detallesPedidosPorPedido.get(pedido.id) || [];
-    const cantidadPedida = detallesP.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
-    const totalPedido = detallesP.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
+    const fechasFacturas = fechasFacturasArrayPorPedido.get(pedido.nro_pedido) || [];
+    // const primeraFacturaPedido = primeraFacturaPorPedido.get(pedido.nro_pedido); // YA NO SE USA
+    const ultimaFacturaPedidoIndividual = ultimaFacturaPorPedido.get(Number(pedido.nro_pedido)); // CAMBIO: Obtener la última factura, asegurando que la clave sea numérica
 
-    const detallesF = detallesFacturasPorPedido.get(pedido.nro_pedido) || [];
-    const cantidadFacturada = detallesF.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
-    const totalFacturado = detallesF.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
-
-    const fillRate = cantidadPedida > 0
-      ? +(Math.min(cantidadFacturada / cantidadPedida, 1) * 100).toFixed(2) // Math.min(..., 1) asegura que no pase de 100%
-      : 0;
-
-    const fillRatePonderado = totalPedido > 0
-      ? +(Math.min(totalFacturado / totalPedido, 1) * 100).toFixed(2) // Math.min(..., 1) asegura que no pase de 100%
-      : 0;
-
-    const facturaPrincipal = facturasParaLeadTime.get(pedido.nro_pedido);
-    
-    let leadTimeDias = null;
-    if (facturaPrincipal && cantidadFacturada > 0) { // Solo si hay factura y se facturó algo
-        leadTimeDias = Math.max(0, Math.round((new Date(facturaPrincipal.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)));
-    }
-    
-    const fechasFacturasArray = todasFechasFacturasPorNro.has(pedido.nro_pedido) 
-                             ? Array.from(todasFechasFacturasPorNro.get(pedido.nro_pedido)).sort()
-                             : [];
+    const detalle = generarDetallePorPedido({
+      pedido,
+      detallesPedido: detallesP,
+      fechasFacturasArray: fechasFacturas,
+      // primeraFacturaPedido, // YA NO SE USA
+      ultimaFacturaPedido: ultimaFacturaPedidoIndividual, // CAMBIO: Pasar la última factura
+      cantidadesFacturadasPorItemEnPedido,
+      valorFacturadoPorItemEnPedido,
+      // fechaPrimeraFacturaPorItem, // YA NO SE USA
+      fechaUltimaFacturaPorItem, // CAMBIO: Pasar la última fecha de factura por ítem
+    });
 
     return {
+      ...detalle,
       pedidoId: pedido.id,
-      nroPedido: pedido.nro_pedido,
-      fechaPedido: formatFecha(pedido.fecha),
-      fechasFacturas: fechasFacturasArray.length > 0 ? fechasFacturasArray.join(', ') : '—',
-      cantidadPedida: +cantidadPedida.toFixed(2),
-      cantidadFacturada: +cantidadFacturada.toFixed(2),
-      fillRate: +fillRate.toFixed(2),
-      leadTimeDias,
-      totalPedido: +totalPedido.toFixed(2),
-      totalFacturado: +totalFacturado.toFixed(2),
-      fillRatePonderado: +fillRatePonderado.toFixed(2),
     };
   });
-
-  return resultado;
 };
+
 
 // --- Detalle por Pedido (obtener un pedido específico) ---
 export const obtenerDetallePorPedido = async (pedidoId) => {
   const pedido = await PedidoDux.findByPk(pedidoId);
   if (!pedido) return null;
+  const detallesPedido = await obtenerDetallesPedidosPorId([pedidoId]);
 
-  const detallesPedido = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: pedidoId },
-    attributes: ['codItem', 'descripcion', 'cantidad', 'precioUnitario']
+  // Obtener TODAS las facturas históricas para este pedido específico
+  const facturasFiltradasPorPedido = await obtenerFacturasConDetallesEnRango(null, null, Number(pedido.nro_pedido)); // CAMBIO: Asegurar que nro_pedido sea número
+
+  const {
+    // primeraFacturaPorPedido, // YA NO SE USA
+    ultimaFacturaPorPedido, // NUEVO: Obtener la última factura por pedido
+    fechasFacturasArrayPorPedido,
+    cantidadesFacturadasPorItemEnPedido,
+    valorFacturadoPorItemEnPedido,
+    // fechaPrimeraFacturaPorItem, // YA NO SE USA
+    fechaUltimaFacturaPorItem, // NUEVO: Obtener la última fecha de factura por ítem
+  } = procesarFacturasParaMapeo(facturasFiltradasPorPedido);
+
+  const fechasFacturas = fechasFacturasArrayPorPedido.get(Number(pedido.nro_pedido)) || []; // CAMBIO: Asegurar que nro_pedido sea número
+  // const primeraFacturaPedido = primeraFacturaPorPedido.get(pedido.nro_pedido); // YA NO SE USA
+  const ultimaFacturaPedidoIndividual = ultimaFacturaPorPedido.get(Number(pedido.nro_pedido)); // CAMBIO: Obtener la última factura, asegurando que la clave sea numérica
+
+  return generarDetallePorPedido({
+    pedido,
+    detallesPedido,
+    fechasFacturasArray: fechasFacturas,
+    // primeraFacturaPedido, // YA NO SE USA
+    ultimaFacturaPedido: ultimaFacturaPedidoIndividual, // CAMBIO: Pasar la última factura
+    cantidadesFacturadasPorItemEnPedido,
+    valorFacturadoPorItemEnPedido,
+    // fechaPrimeraFacturaPorItem, // YA NO SE USA
+    fechaUltimaFacturaPorItem, // CAMBIO: Pasar la última fecha de factura por ítem
   });
-
-  const facturasAsociadas = await Factura.findAll({
-    where: {
-      nro_pedido: pedido.nro_pedido,
-      anulada_boolean: false,
-      tipo_comp: {
-        [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-      }
-    },
-    attributes: ['fecha_comp', 'nro_pedido'],
-    include: [{
-      model: DetalleFactura,
-      as: "detalles",
-      attributes: ['codItem', 'cantidad', 'precioUnitario']
-    }],
-  });
-
-  const mapFacturadas = {}; // key: codItem, value: cantidad_facturada_total
-  const mapTotalFacturadoValor = {}; // key: codItem, value: valor_facturado_total
-  const mapPrimeraFechaFacturaItem = {}; // key: codItem, value: Date (fecha más temprana de factura para ese item)
-
-  for (const factura of facturasAsociadas) {
-    const fechaFacturaActual = new Date(factura.fecha_comp);
-    for (const det of factura.detalles || []) {
-      const cod = det.codItem;
-      const cant = parseFloat(det.cantidad || 0);
-      const precio = parseFloat(det.precioUnitario || 0);
-
-      if (!mapFacturadas[cod]) mapFacturadas[cod] = 0;
-      if (!mapTotalFacturadoValor[cod]) mapTotalFacturadoValor[cod] = 0;
-      
-      mapFacturadas[cod] += cant;
-      mapTotalFacturadoValor[cod] += cant * precio;
-
-      if (!mapPrimeraFechaFacturaItem[cod] || fechaFacturaActual < mapPrimeraFechaFacturaItem[cod]) {
-          mapPrimeraFechaFacturaItem[cod] = fechaFacturaActual;
-      }
-    }
-  }
-
-  let leadTimePedido = null;
-  let fechasFacturas = [];
-  let totalCantidadFacturadaPedido = 0; // Se usará para el fill rate del pedido completo
-  let totalFacturadoValorPedido = 0; // Se usará para el fill rate ponderado del pedido completo
-
-  if (facturasAsociadas.length) {
-    const fechas = facturasAsociadas.map(f => new Date(f.fecha_comp)).sort((a, b) => a - b);
-    const fechaFacturaMasTemprana = fechas[0];
-
-    // Calcular totales facturados para el pedido completo
-    totalCantidadFacturadaPedido = Object.values(mapFacturadas).reduce((sum, val) => sum + val, 0);
-    totalFacturadoValorPedido = Object.values(mapTotalFacturadoValor).reduce((sum, val) => sum + val, 0);
-
-    if (totalCantidadFacturadaPedido > 0) {
-      leadTimePedido = Math.max(
-        0,
-        Math.round((fechaFacturaMasTemprana - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24))
-      );
-    }
-    
-    fechasFacturas = [...new Set(facturasAsociadas.map(f => formatFecha(f.fecha_comp)))].sort();
-  }
-
-  let totalCantidadPedidaPedido = 0; // Se usará para el fill rate del pedido completo
-  let totalPedidoValorPedido = 0; // Se usará para el fill rate ponderado del pedido completo
-
-  const productosDetalle = detallesPedido.map(p => {
-    const cantidadPedida = parseFloat(p.cantidad || 0);
-    const precioUnitarioPedido = parseFloat(p.precioUnitario || 0);
-    const cantidadFacturada = mapFacturadas[p.codItem] || 0;
-    const valorFacturadoItem = mapTotalFacturadoValor[p.codItem] || 0;
-
-    totalCantidadPedidaPedido += cantidadPedida;
-    totalPedidoValorPedido += cantidadPedida * precioUnitarioPedido;
-
-    const fillRate = cantidadPedida > 0
-      ? +(Math.min(cantidadFacturada / cantidadPedida, 1) * 100).toFixed(2) // ✅ Math.min para el 100%
-      : 0;
-      
-    // Calcular lead time para este ítem específico
-    let leadTimeItem = null;
-    if (cantidadFacturada > 0 && mapPrimeraFechaFacturaItem[p.codItem]) {
-        leadTimeItem = Math.max(0, Math.round(
-            (mapPrimeraFechaFacturaItem[p.codItem] - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)
-        ));
-    }
-
-    return {
-      codItem: p.codItem,
-      descripcion: p.descripcion || "Sin descripción",
-      cantidadPedida: +cantidadPedida.toFixed(2),
-      cantidadFacturada: +cantidadFacturada.toFixed(2),
-      fillRate,
-      precioUnitarioPedido: +precioUnitarioPedido.toFixed(2),
-      valorFacturadoItem: +valorFacturadoItem.toFixed(2),
-      leadTimeItem // Añadir el lead time del ítem aquí
-    };
-  });
-
-  // ✅ Calcular Fill Rate del pedido completo
-  const fillRatePedidoCompleto = totalCantidadPedidaPedido > 0
-    ? +(Math.min(totalCantidadFacturadaPedido / totalCantidadPedidaPedido, 1) * 100).toFixed(2)
-    : 0;
-
-  // ✅ Calcular Fill Rate Ponderado del pedido completo
-  const fillRatePonderadoPedidoCompleto = totalPedidoValorPedido > 0
-    ? +(Math.min(totalFacturadoValorPedido / totalPedidoValorPedido, 1) * 100).toFixed(2)
-    : 0;
-
-  return {
-    nroPedido: pedido.nro_pedido,
-    fechaPedido: formatFecha(pedido.fecha),
-    leadTimePedido,
-    fechasFacturas: fechasFacturas.length > 0 ? fechasFacturas.join(', ') : '—',
-    totalCantidadPedida: +totalCantidadPedidaPedido.toFixed(2),
-    totalCantidadFacturada: +totalCantidadFacturadaPedido.toFixed(2),
-    totalPedidoValor: +totalPedidoValorPedido.toFixed(2),
-    totalFacturadoValor: +totalFacturadoValorPedido.toFixed(2),
-    fillRatePedidoCompleto, // ✅ Incluir el fill rate calculado del pedido completo
-    fillRatePonderadoPedidoCompleto, // ✅ Incluir el fill rate ponderado calculado del pedido completo
-    productos: productosDetalle
-  };
+  
 };
 
 // --- Eficiencia por Producto ---
 export const obtenerEficienciaPorProducto = async (desde, hasta, filtro) => {
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
-  const filtroProducto = filtro?.toLowerCase() || "";
 
-  // 1. Obtener pedidos en el rango de fecha de pedido
-  const pedidosEnRango = await PedidoDux.findAll({
-    where: { fecha: { [Op.between]: [fechaDesde, fechaHasta] } },
-    attributes: ['id', 'nro_pedido', 'fecha']
-  });
-  const idPedidosEnRango = pedidosEnRango.map(p => p.id);
-  const nroPedidosEnRango = pedidosEnRango.map(p => p.nro_pedido);
-  const pedidoFechaMap = new Map(pedidosEnRango.map(p => [p.nro_pedido, p.fecha]));
+  const datos = await cargarYProcesarDatosCliente(fechaDesde, fechaHasta, null);
+  if (!datos) return [];
 
+  const { pedidos, detallesPedidos, facturasCompletas, pedidoFechaMap } = datos;
 
-  // 2. Obtener DetallePedidos asociados a los pedidos en rango
-  const detallesPedidosDB = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: { [Op.in]: idPedidosEnRango } },
-    attributes: ['codItem', 'descripcion', 'cantidad']
-  });
-
-  // 3. Obtener TODAS las facturas (y sus detalles) asociadas a esos nro_pedidos
-  const facturasAsociadas = await Factura.findAll({
-      where: {
-          nro_pedido: { [Op.in]: nroPedidosEnRango },
-          anulada_boolean: false,
-          tipo_comp: {
-              [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-          }
-      },
-      attributes: ["nro_pedido", "fecha_comp"],
-      include: [{
-          model: DetalleFactura,
-          as: 'detalles', // ✅ CORRECCIÓN DE ALIAS
-          attributes: ["codItem", "cantidad", "descripcion"]
-      }]
-  });
-
-
-  const pedidasPorProducto = {}; // key: codItem, value: { producto: desc, pedida: sum }
-  const facturadasPorProducto = {}; // key: codItem, value: { producto: desc, facturada: sum, leadTimes: [] }
-
-  for (const dp of detallesPedidosDB) {
-    const key = dp.codItem;
-    const desc = dp.descripcion || key;
-    if (!filtroProducto || key.toLowerCase().includes(filtroProducto) || desc.toLowerCase().includes(filtroProducto)) {
-      if (!pedidasPorProducto[key]) pedidasPorProducto[key] = { producto: desc, pedida: 0 };
-      pedidasPorProducto[key].pedida += parseFloat(dp.cantidad || 0);
-    }
-  }
-
-  for (const factura of facturasAsociadas) {
-      if (!Array.isArray(factura.detalles)) continue;
-      for (const df of factura.detalles) {
-          const key = df.codItem;
-          const desc = (pedidasPorProducto[key] && pedidasPorProducto[key].producto) || df.descripcion || key; 
-          
-          if (!filtroProducto || key.toLowerCase().includes(filtroProducto) || desc.toLowerCase().includes(filtroProducto)) {
-              if (!facturadasPorProducto[key]) facturadasPorProducto[key] = { producto: desc, facturada: 0, leadTimes: [] };
-              facturadasPorProducto[key].facturada += parseFloat(df.cantidad || 0);
-
-              const fechaPedido = pedidoFechaMap.get(factura.nro_pedido);
-              if (fechaPedido) {
-                  const diff = Math.max(0, Math.round(
-                      (new Date(factura.fecha_comp) - new Date(fechaPedido)) / (1000 * 60 * 60 * 24)
-                  ));
-                  facturadasPorProducto[key].leadTimes.push(diff);
-              }
-          }
-      }
-  }
-
-  const resultado = Object.keys(pedidasPorProducto).map(key => {
-    const pedidaData = pedidasPorProducto[key];
-    const facturadaData = facturadasPorProducto[key] || { facturada: 0, leadTimes: [] };
-
-    const pedidas = pedidaData.pedida;
-    const facturadas = facturadaData.facturada;
-    const leadTimes = facturadaData.leadTimes;
-
-    const fillRate = pedidas > 0 ? +(Math.min(facturadas / pedidas, 1) * 100).toFixed(2) : 0;
-    const leadTimePromedio = leadTimes.length > 0
-      ? +(leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length).toFixed(2)
-      : null;
-
-    return {
-      producto: pedidaData.producto,
-      cantidadPedida: +pedidas.toFixed(2),
-      cantidadFacturada: +facturadas.toFixed(2),
-      fillRate,
-      leadTimePromedio
-    };
-  }).filter(item => item.cantidadPedida > 0 || item.cantidadFacturada > 0);
-
-  return resultado;
+  return generarReporteEficienciaPorProducto(
+    detallesPedidos,
+    facturasCompletas,
+    pedidos,
+    filtro
+  );
 };
 
 // --- Detalle por Producto ---
-export const obtenerDetallePorProducto = async (desde, hasta) => {
+export const obtenerDetallePorProducto = async (desde, hasta, productoSku) => {
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
 
-  // 1. Obtener pedidos en el rango de fecha de pedido
-  const pedidosEnRango = await PedidoDux.findAll({
-    where: { fecha: { [Op.between]: [fechaDesde, fechaHasta] } },
-    attributes: ['id', 'nro_pedido']
-  });
-  const idPedidosEnRango = pedidosEnRango.map(p => p.id);
-  const nroPedidosEnRango = pedidosEnRango.map(p => p.nro_pedido);
+  const datos = await cargarYProcesarDatosCliente(fechaDesde, fechaHasta, null);
+  if (!datos) return [];
 
-  // 2. Obtener DetallePedidos asociados a los pedidos en rango
-  const detallesPedidosDB = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: { [Op.in]: idPedidosEnRango } },
-    attributes: ['codItem', 'descripcion', 'cantidad']
-  });
-
-  // 3. Obtener TODAS las facturas (y sus detalles) asociadas a esos nro_pedidos
-  const facturasAsociadas = await Factura.findAll({
-      where: {
-          nro_pedido: { [Op.in]: nroPedidosEnRango },
-          anulada_boolean: false,
-          tipo_comp: {
-              [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-          }
-      },
-      attributes: ["nro_pedido", "fecha_comp"],
-      include: [{
-          model: DetalleFactura,
-          as: 'detalles', // ✅ CORRECCIÓN DE ALIAS
-          attributes: ["codItem", "cantidad", "descripcion"]
-      }]
-  });
-
-  const map = new Map(); // key: codItem, value: { codItem, descripcion, pedida, facturada }
-
-  for (const dp of detallesPedidosDB) {
-    const key = dp.codItem;
-    const desc = dp.descripcion || key;
-    if (!map.has(key)) {
-      map.set(key, { codItem: key, descripcion: desc, pedida: 0, facturada: 0 });
-    }
-    const item = map.get(key);
-    item.pedida += parseFloat(dp.cantidad || 0);
-  }
-
-  for (const factura of facturasAsociadas) {
-      if (!Array.isArray(factura.detalles)) continue;
-      for (const df of factura.detalles) {
-          const key = df.codItem;
-          const desc = df.descripcion || key;
-          if (!map.has(key)) {
-            map.set(key, { codItem: key, descripcion: desc, pedida: 0, facturada: 0 });
-          }
-          const item = map.get(key);
-          item.facturada += parseFloat(df.cantidad || 0);
-      }
-  }
-
-  const resultado = Array.from(map.values()).map((item) => ({
-    ...item,
-    diferencia: +(item.facturada - item.pedida).toFixed(2)
-  }));
-
-  return resultado;
+  return generarDetalleProductoPorPedido(productoSku, datos);
 };
 
 // --- Eficiencia por Categoría ---
@@ -1211,356 +563,148 @@ export const obtenerEficienciaPorCategoria = async (desde, hasta, categoriaId) =
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
 
-  // 1. Obtener Categorías válidas (excluye las que contienen "producción")
-  const categorias = await Categoria.findAll({
-    where: where(fn('LOWER', col('nombre')), {
-      [Op.notLike]: '%producción%'
-    }),
-    attributes: ['id', 'nombre']
+  const datos = await cargarYProcesarDatosCategoria(fechaDesde, fechaHasta, categoriaId);
+  if (!datos) return [];
+
+  const {
+    categoriasValidas,
+    categoriaNombreMap,
+    productoCategoriaMap,
+    pedidoFechaMap,
+    detallesPedidos,
+    facturasCompletas,
+    categoriaIdFiltro,
+    pedidosPorId,
+    pedidosPorNro
+  } = datos;
+
+  return generarResumenEficienciaPorCategoria({
+    categoriaIdFiltro,
+    categoriasValidas,
+    categoriaNombreMap,
+    productoCategoriaMap,
+    pedidoFechaMap,
+    detallesPedidos,
+    facturasCompletas,
+    pedidosPorId,
+    pedidosPorNro // <--- PASAR A LA FUNCIÓN GENERADORA
   });
-  const categoriasValidas = new Set(categorias.map(c => c.id));
-  const categoriaNombreMap = new Map(categorias.map(c => [c.id, c.nombre]));
-
-  // 2. Obtener Productos que pertenecen solo a categorías válidas
-  const productos = await Producto.findAll({
-    where: { categoriaId: { [Op.in]: Array.from(categoriasValidas) } },
-    attributes: ['sku', 'categoriaId']
-  });
-  const productoCategoriaMap = new Map(productos.map(p => [p.sku, p.categoriaId]));
-  
-  if (productos.length === 0) return [];
-
-
-  // 3. Obtener Pedidos en el rango de fecha de pedido
-  const pedidosEnRango = await PedidoDux.findAll({
-    where: { fecha: { [Op.between]: [fechaDesde, fechaHasta] } },
-    attributes: ['id', 'nro_pedido', 'fecha']
-  });
-  const idPedidosEnRango = pedidosEnRango.map(p => p.id);
-  const nroPedidosEnRango = pedidosEnRango.map(p => p.nro_pedido);
-  const pedidoFechaMap = new Map(pedidosEnRango.map(p => [p.nro_pedido, p.fecha]));
-
-
-  // 4. Obtener Detalles de Pedidos asociados a los pedidos en rango
-  const detallesPedidosDB = await DetallePedidoDux.findAll({
-    where: { pedidoDuxId: { [Op.in]: idPedidosEnRango } },
-    attributes: ['codItem', 'cantidad'] // Solo necesitamos codItem y cantidad
-  });
-
-  // 5. Obtener TODAS las facturas (y sus detalles) asociadas a esos nro_pedidos
-  const facturasAsociadas = await Factura.findAll({
-      where: {
-          nro_pedido: { [Op.in]: nroPedidosEnRango },
-          anulada_boolean: false,
-          tipo_comp: {
-              [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-          }
-      },
-      attributes: ["nro_pedido", "fecha_comp"],
-      include: [{
-          model: DetalleFactura,
-          as: 'detalles', // ✅ CORRECCIÓN DE ALIAS
-          attributes: ["codItem", "cantidad"]
-      }]
-  });
-
-  const resumenPorCategoria = {}; // key: categoriaId, value: { nombre, cantidadPedida, cantidadFacturada, leadTimes }
-
-
-  for (const dp of detallesPedidosDB) {
-    const codItem = dp.codItem;
-    const catId = productoCategoriaMap.get(codItem);
-    
-    if (!catId || !categoriasValidas.has(catId) || (categoriaId && catId != categoriaId)) continue;
-
-    if (!resumenPorCategoria[catId]) {
-      resumenPorCategoria[catId] = {
-        nombre: categoriaNombreMap.get(catId) || 'Sin categoría',
-        cantidadPedida: 0,
-        cantidadFacturada: 0,
-        leadTimes: [],
-      };
-    }
-    resumenPorCategoria[catId].cantidadPedida += parseFloat(dp.cantidad || 0);
-  }
-
-  for (const factura of facturasAsociadas) {
-      if (!Array.isArray(factura.detalles)) continue;
-      for (const df of factura.detalles) {
-          const codItem = df.codItem;
-          const catId = productoCategoriaMap.get(codItem);
-
-          if (!catId || !categoriasValidas.has(catId) || (categoriaId && catId != categoriaId)) continue;
-
-          const cantidadFacturada = parseFloat(df.cantidad || 0);
-          if (cantidadFacturada === 0) continue;
-
-          if (!resumenPorCategoria[catId]) {
-              resumenPorCategoria[catId] = {
-                  nombre: categoriaNombreMap.get(catId) || 'Sin categoría',
-                  cantidadPedida: 0,
-                  cantidadFacturada: 0,
-                  leadTimes: [],
-              };
-          }
-
-          resumenPorCategoria[catId].cantidadFacturada += cantidadFacturada;
-
-          const fechaPedido = pedidoFechaMap.get(factura.nro_pedido);
-          if (fechaPedido) {
-              const dias = Math.max(0, Math.round((new Date(factura.fecha_comp) - new Date(fechaPedido)) / (1000 * 60 * 60 * 24)));
-              resumenPorCategoria[catId].leadTimes.push(dias);
-          }
-      }
-  }
-
-  const resultado = Object.entries(resumenPorCategoria)
-    .filter(([_, data]) => data.cantidadPedida > 0 || data.cantidadFacturada > 0)
-    .map(([catId, data]) => {
-      const fillRate = data.cantidadPedida > 0
-        ? +(Math.min(data.cantidadFacturada / data.cantidadPedida, 1) * 100).toFixed(2)
-        : 0;
-
-      const leadTimePromedio = data.leadTimes.length > 0
-        ? +(data.leadTimes.reduce((a, b) => a + b, 0) / data.leadTimes.length).toFixed(2)
-        : null;
-
-      return {
-        categoria: catId,
-        categoriaNombre: data.nombre,
-        cantidadPedida: +data.cantidadPedida.toFixed(2),
-        cantidadFacturada: +data.cantidadFacturada.toFixed(2),
-        fillRate,
-        leadTimePromedio
-      };
-    });
-
-  return resultado;
 };
 
 // --- Detalle por Categoría ---
 export const obtenerDetallePorCategoria = async (desde, hasta, categoriaId) => {
-  const desdeFecha = new Date(desde);
-  const hastaFecha = new Date(hasta);
+  const fechaDesde = new Date(desde);
+  const fechaHasta = new Date(hasta);
 
-  // 1. Obtener Categorías válidas (excluye las que contienen "producción")
-  const categorias = await Categoria.findAll({
-    where: where(fn('LOWER', col('nombre')), {
-      [Op.notLike]: '%producción%'
-    }),
-    attributes: ['id']
+  const datos = await cargarYProcesarDatosCategoria(fechaDesde, fechaHasta, categoriaId);
+  if (!datos) return [];
+
+  const {
+    detallesPedidos,
+    pedidosPorId,
+    pedidosPorNro,
+    facturasCompletas,
+    pedidoFechaMap,
+  } = datos;
+
+  // Asumiendo que generarDetallePorPedidoCategoria puede necesitar pedidosPorNro
+  // para sus cálculos internos, especialmente si debe relacionar facturas con pedidos
+  // y obtener fechas o IDs de pedidos de forma eficiente.
+  return generarDetallePorPedidoCategoria({
+    detallesPedidos,
+    pedidosPorId,
+    pedidosPorNro,
+    facturasCompletas,
+    pedidoFechaMap,
   });
-  const categoriasValidas = new Set(categorias.map(c => c.id));
-
-  // 2. Obtener Productos que pertenecen a la categoría seleccionada (y que sea válida)
-  const productosEnCategoria = await Producto.findAll({
-    where: {
-      sku: { [Op.ne]: null },
-      categoriaId: categoriaId
-    },
-    attributes: ['sku']
-  });
-  const skusEnCategoria = new Set(productosEnCategoria.map(p => p.sku));
-
-  if (!categoriasValidas.has(parseInt(categoriaId)) || skusEnCategoria.size === 0) {
-      return [];
-  }
-
-  // 3. Obtener pedidos en el rango de fecha de pedido
-  const pedidosEnRango = await PedidoDux.findAll({
-    where: { fecha: { [Op.between]: [desdeFecha, hastaFecha] } },
-    attributes: ['id', 'nro_pedido', 'fecha']
-  });
-  const idPedidosEnRango = pedidosEnRango.map(p => p.id);
-  const nroPedidosEnRango = pedidosEnRango.map(p => p.nro_pedido);
-  const pedidosPorId = new Map(pedidosEnRango.map(p => [p.id, p])); // Necesario para el bucle
-  const pedidoFechaMap = new Map(pedidosEnRango.map(p => [p.nro_pedido, p.fecha]));
-
-
-  // 4. Obtener Detalles de Pedidos para los productos de la categoría y pedidos en rango
-  const detallesPedidosDB = await DetallePedidoDux.findAll({
-    where: {
-      pedidoDuxId: { [Op.in]: idPedidosEnRango },
-      codItem: { [Op.in]: Array.from(skusEnCategoria) }
-    },
-    attributes: ['pedidoDuxId', 'codItem', 'cantidad', 'descripcion']
-  });
-
-  // 5. Obtener TODAS las facturas (y sus detalles) asociadas a esos nro_pedidos
-  const facturasAsociadas = await Factura.findAll({
-      where: {
-          nro_pedido: { [Op.in]: nroPedidosEnRango },
-          anulada_boolean: false,
-          tipo_comp: {
-              [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-          }
-      },
-      attributes: ["nro_pedido", "fecha_comp"],
-      include: [{
-          model: DetalleFactura,
-          as: 'detalles', // ✅ CORRECCIÓN DE ALIAS
-          where: {
-              codItem: { [Op.in]: Array.from(skusEnCategoria) }
-          },
-          attributes: ["codItem", "cantidad"]
-      }]
-  });
-
-  const agrupado = {}; // key: nro_pedido, value: { nroPedido, fecha, cantidadPedida, cantidadFacturada, leadTimeDias }
-
-  for (const dp of detallesPedidosDB) {
-    const pedido = pedidosPorId.get(dp.pedidoDuxId);
-    if (!pedido) continue;
-
-    if (!agrupado[pedido.nro_pedido]) {
-      agrupado[pedido.nro_pedido] = {
-        nroPedido: pedido.nro_pedido,
-        fecha: pedido.fecha,
-        cantidadPedida: 0,
-        cantidadFacturada: 0,
-        leadTimeDias: null
-      };
-    }
-    agrupado[pedido.nro_pedido].cantidadPedida += parseFloat(dp.cantidad || 0);
-  }
-
-  for (const factura of facturasAsociadas) {
-      if (!Array.isArray(factura.detalles)) continue;
-      for (const df of factura.detalles) {
-          const nro = factura.nro_pedido;
-          if (nro && agrupado[nro]) {
-              agrupado[nro].cantidadFacturada += parseFloat(df.cantidad || 0);
-              
-              if (factura.fecha_comp && agrupado[nro].fecha) {
-                  const diff = Math.max(0, Math.round(
-                    (new Date(factura.fecha_comp) - new Date(agrupado[nro].fecha)) / (1000 * 60 * 60 * 24)
-                  ));
-                  agrupado[nro].leadTimeDias = diff;
-              }
-          }
-      }
-  }
-
-  const resultado = Object.values(agrupado).map((p) => {
-    const fillRate = p.cantidadPedida > 0
-      ? +(Math.min(p.cantidadFacturada / p.cantidadPedida, 1) * 100).toFixed(2)
-      : 0;
-
-    return {
-      nroPedido: p.nroPedido,
-      fechaPedido: formatFecha(p.fecha),
-      cantidadPedida: +p.cantidadPedida.toFixed(2),
-      cantidadFacturada: +p.cantidadFacturada.toFixed(2),
-      fillRate,
-      leadTimeDias: p.leadTimeDias
-    };
-  }).filter(p => p.cantidadPedida > 0 || p.cantidadFacturada > 0);
-
-  return resultado;
 };
 
 // --- Eficiencia por Pedido ---
 export const obtenerEficienciaPorPedido = async (desde, hasta) => {
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
-
-  // 1. Obtener los pedidos en el rango de fecha de pedido
+  // 1. Buscar pedidos en rango
   const pedidos = await PedidoDux.findAll({
     where: {
       fecha: { [Op.between]: [fechaDesde, fechaHasta] }
     },
-    attributes: ['id', 'nro_pedido', 'fecha', 'cliente'] // Incluimos cliente para el contexto si se necesitara en el futuro
+    attributes: ['id', 'nro_pedido', 'fecha', 'cliente']
   });
 
   const idPedidos = pedidos.map(p => p.id);
-  const nroPedidos = pedidos.map(p => p.nro_pedido);
+  const nroPedidos = pedidos.map(p => Number(p.nro_pedido)).filter(n => !isNaN(n)); // CAMBIO: Asegurar nro_pedido sea numérico
 
-  // 2. Obtener los detalles de los pedidos relevantes
-  const detallesPedidosDB = await DetallePedidoDux.findAll({
-    where: {
-      pedidoDuxId: { [Op.in]: idPedidos }
-    },
-    attributes: ['pedidoDuxId', 'cantidad', 'precioUnitario']
-  });
+  // 2. Buscar detalles de pedidos
+  const detallesPedidosDB = await obtenerDetallesPedidosPorId(idPedidos);
+  const detallesPedidosPorPedido = mapearDetallesPedidosPorPedido(detallesPedidosDB);
 
-  // Mapear detalles de pedidos por pedidoDuxId
-  const detallesPedidosPorPedido = new Map();
-  for (const dp of detallesPedidosDB) {
-    if (!detallesPedidosPorPedido.has(dp.pedidoDuxId)) {
-      detallesPedidosPorPedido.set(dp.pedidoDuxId, []);
-    }
-    detallesPedidosPorPedido.get(dp.pedidoDuxId).push(dp);
-  }
+  // 3. Buscar facturas solo para esos pedidos, incluyendo detalles (históricas)
+  const facturasFiltradasPorNroPedido = await obtenerFacturasConDetallesEnRango(
+    null, // Ignorar fecha de inicio
+    null, // Ignorar fecha de fin
+    nroPedidos // <--- Pasar la lista de números de pedido a la función de DB
+  );
 
-  // 3. Obtener TODAS las facturas (y sus detalles) asociadas a esos nro_pedidos
-  // SIN filtro de fecha de factura para capturar todas las facturas de estos pedidos
-  const facturasAsociadas = await Factura.findAll({
-    where: {
-      nro_pedido: { [Op.in]: nroPedidos },
-      anulada_boolean: false,
-      tipo_comp: {
-        [Op.in]: ["FACTURA", "COMPROBANTE_VENTA", "NOTA_DEBITO", "FACTURA_FCE_MIPYMES"]
-      }
-    },
-    attributes: ['nro_pedido', 'fecha_comp'],
-    include: [{
-      model: DetalleFactura,
-      as: 'detalles',
-      attributes: ['cantidad']
-    }]
-  });
+  // 4. Procesar las facturas
+  const {
+    detallesFacturasPorPedido,
+    // primeraFacturaPorPedido, // YA NO SE USA
+    ultimaFacturaPorPedido, // NUEVO: Obtener la última factura por pedido
+    fechasFacturasArrayPorPedido,
+    cantidadesFacturadasPorItemEnPedido,
+    valorFacturadoPorItemEnPedido,
+    // fechaPrimeraFacturaPorItem, // YA NO SE USA
+    fechaUltimaFacturaPorItem, // NUEVO: Obtener la última fecha de factura por ítem
+  } = procesarFacturasParaMapeo(facturasFiltradasPorNroPedido);
 
-  // Mapear facturas y sus detalles
-  const facturasParaLeadTime = new Map(); // Guarda la primera factura para el lead time
-  const detallesFacturasPorPedido = new Map(); // Guarda todos los detalles de factura por pedido
-
-  for (const factura of facturasAsociadas) {
-    const nroPedido = factura.nro_pedido;
-    if (!facturasParaLeadTime.has(nroPedido)) {
-      facturasParaLeadTime.set(nroPedido, factura); // Guardar la primera factura para este pedido
-    }
-    if (factura.detalles && Array.isArray(factura.detalles)) {
-      if (!detallesFacturasPorPedido.has(nroPedido)) {
-        detallesFacturasPorPedido.set(nroPedido, []);
-      }
-      factura.detalles.forEach(df => {
-        detallesFacturasPorPedido.get(nroPedido).push(df);
-      });
-    }
-  }
-
-  // 4. Procesar cada pedido y calcular sus métricas
+  // 5. Armar resultado final
   const resultado = pedidos.map(pedido => {
     const detallesP = detallesPedidosPorPedido.get(pedido.id) || [];
-    const cantidadPedida = detallesP.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
-    const totalPedido = detallesP.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0);
+    const fechasFacturas = fechasFacturasArrayPorPedido.get(Number(pedido.nro_pedido)) || []; // CAMBIO: Asegurar nro_pedido sea numérico
+    // const primeraFactura = primeraFacturaPorPedido.get(pedido.nro_pedido); // YA NO SE USA
+    const ultimaFactura = ultimaFacturaPorPedido.get(Number(pedido.nro_pedido)); // CAMBIO: Obtener la última factura, asegurando que la clave sea numérica
 
-
-    const detallesF = detallesFacturasPorPedido.get(pedido.nro_pedido) || [];
-    const cantidadFacturada = detallesF.reduce((acc, d) => acc + parseFloat(d.cantidad || 0), 0);
-    const totalFacturado = detallesF.reduce((acc, d) => acc + (parseFloat(d.cantidad || 0) * parseFloat(d.precioUnitario || 0)), 0); // Asumiendo precioUnitario en DetalleFactura
-
-
-    const fillRate = cantidadPedida > 0 ? +(Math.min((cantidadFacturada / cantidadPedida), 1) * 100).toFixed(2) : 0;
-
-    const facturaPrincipal = facturasParaLeadTime.get(pedido.nro_pedido);
-    let leadTimeDias = null;
-    if (facturaPrincipal && cantidadFacturada > 0) { // Solo si hay factura y se facturó algo
-      leadTimeDias = Math.max(0, Math.round((new Date(facturaPrincipal.fecha_comp) - new Date(pedido.fecha)) / (1000 * 60 * 60 * 24)));
-    }
-
-    return {
-      pedidoId: pedido.id,
-      nroPedido: pedido.nro_pedido,
-      fechaPedido: formatFecha(pedido.fecha),
-      cantidadPedida: +cantidadPedida.toFixed(2),
-      cantidadFacturada: +cantidadFacturada.toFixed(2),
-      totalPedido: +totalPedido.toFixed(2),
-      totalFacturado: +totalFacturado.toFixed(2),
-      fillRate,
-      leadTimeDias
-    };
+    return generarDetallePorPedido({
+      pedido,
+      detallesPedido: detallesP,
+      fechasFacturasArray: fechasFacturas,
+      // primeraFacturaPedido: primeraFactura, // YA NO SE USA
+      ultimaFacturaPedido: ultimaFactura, // CAMBIO: Pasar la última factura
+      cantidadesFacturadasPorItemEnPedido,
+      valorFacturadoPorItemEnPedido,
+      // fechaPrimeraFacturaPorItem, // YA NO SE USA
+      fechaUltimaFacturaPorItem, // CAMBIO: Pasar la última fecha de factura por ítem
+    });
   });
 
   return resultado;
+};
+
+// --- Buscar Clientes desde Facturas ---
+export const buscarClientesDesdeFacturas = async (texto = "", limit = 10000) => {
+  const textoLower = texto.toLowerCase();
+
+  const facturas = await Factura.findAll({
+    where: {
+      anulada_boolean: false,
+      apellido_razon_soc: {
+        [Op.like]: `%${textoLower}%`,
+      },
+    },
+    include: [{
+      model: PedidoDux,
+      as: "pedidoDux",
+      attributes: ["cliente"]
+    }],
+    attributes: ["apellido_razon_soc"],
+    limit,
+  });
+  
+  const nombres = facturas.map(f => ({
+    nombre: f.pedidoDux?.cliente ?? "",
+    razon_social: f.apellido_razon_soc
+  }));
+
+  const unicos = Array.from(new Map(nombres.map(n => [n.nombre, n])).values());
+  return unicos;
 };

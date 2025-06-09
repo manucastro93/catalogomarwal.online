@@ -4,8 +4,11 @@ import type { EficienciaProducto } from "@/types/eficiencia";
 export default function ProductoLeadTime({ datos }: { datos: EficienciaProducto[] }) {
   if (!datos.length) return null;
 
-  const labels = datos.map(d => d.producto);
-  const valores = datos.map(d => d.leadTimePromedio);
+  // Ordenar los datos por leadTimePromedio ascendente
+  const datosOrdenados = [...datos].sort((a, b) => a.leadTimePromedio - b.leadTimePromedio);
+
+  const labels = datosOrdenados.map(d => d.producto);
+  const valores = datosOrdenados.map(d => d.leadTimePromedio);
 
   const key = "leadtime_prod_" + labels.join("|");
 

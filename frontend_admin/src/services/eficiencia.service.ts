@@ -1,4 +1,5 @@
 import api from "./api";
+import type { ClienteFactura } from '@/types/cliente';
 
 export async function fetchResumenEjecutivo(params: {
   desde: string;
@@ -6,30 +7,6 @@ export async function fetchResumenEjecutivo(params: {
 }) {
   const { data } = await api.get("/eficiencia/resumen", { params });
   return data;
-}
-
-export async function fetchEvolucionEficiencia(params: {
-  desde: string;
-  hasta: string;
-}) {
-  const { data } = await api.get("/eficiencia/evolucion", { params });
-  return data; // [{ fecha: '2024-05-01', leadTime: 4.2 }, ...]
-}
-
-export async function fetchEvolucionFillRate(params: {
-  desde: string;
-  hasta: string;
-}) {
-  const { data } = await api.get("/eficiencia/evolucion-fillrate", { params });
-  return data; // [{ fecha: '2024-05-01', fillRate: 94.2 }, ...]
-}
-
-export async function fetchOutliersFillRate(params: {
-  desde: string;
-  hasta: string;
-}) {
-  const { data } = await api.get("/eficiencia/outliers-fillrate", { params });
-  return data; // [{ codItem, descripcion, pedidas, facturadas, fillRate }]
 }
 
 export async function fetchEficienciaPorPedido(params: {
@@ -96,14 +73,22 @@ export async function fetchDetallePorPedido(pedidoId: number | string) {
   });
   return data;
 }
-export const fetchEvolucionEficienciaMensual = async () => {
-  const res = await api.get("/eficiencia/evolucion-fillrate-mensual");
-  return res.data;
-};
 
-export const fetchEvolucionEficienciaMensualPorCliente = async (cliente: string) => {
-  const res = await api.get("/eficiencia/evolucion-fillrate-mensual-cliente", {
-    params: { cliente }, 
+export async function fetchEvolucionEficienciaMensual(params: {
+  desde: string;
+  hasta: string;
+  cliente: string;
+}) {
+  const { data } = await api.get("/eficiencia/evolucion-fillrate-mensual", {
+    params,
   });
-  return res.data;
+  return data;
+}
+
+export const buscarClientesFacturas = async (texto: string): Promise<ClienteFactura[]> => {
+  const { data } = await api.get("/eficiencia/clientes-sugeridos", {
+    params: { buscar: texto, limit: 20 },
+  });
+  console.log(data)
+  return data.data || [];
 };

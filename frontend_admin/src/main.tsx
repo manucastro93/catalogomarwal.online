@@ -224,7 +224,7 @@ render(
 
       {/* Bot */}
       <Route
-        path="/Bot/Conversaciones"
+        path="/Bot/ConversacionesBot"
         component={() => (
           <ProtectedRoute>
             <Layout>

@@ -32,10 +32,11 @@ export default function ModalDetallePedido({ pedidoId, abierto, onCerrar }: Prop
             <Show when={!detalle.loading && detalle()}>
               <div class="px-6 py-4 border-b text-sm text-gray-700">
                 <p><strong>Lead time del pedido:</strong> {
-                  detalle()?.leadTimePedido !== null && detalle()?.leadTimePedido !== undefined
-                    ? `${detalle()?.leadTimePedido} días`
-                    : "—"
-                }</p>
+  detalle()?.leadTimeDias !== null && detalle()?.leadTimeDias !== undefined
+    ? `${detalle()?.leadTimeDias} días`
+    : "—"
+}</p>
+
               </div>
 
               <table class="min-w-full text-sm text-left">

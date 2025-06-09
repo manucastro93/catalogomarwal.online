@@ -5,8 +5,11 @@ import { formatearMiles } from "@/utils/formato";
 export default function ProductoFillRate({ datos }: { datos: EficienciaProducto[] }) {
   if (!datos.length) return null;
 
-  const labels = datos.map(d => d.producto);
-  const valores = datos.map((r) => r.fillRate);
+  // Ordenar los datos por fillRate ascendente
+  const datosOrdenados = [...datos].sort((a, b) => (a.fillRate ?? 0) - (b.fillRate ?? 0));
+
+  const labels = datosOrdenados.map(d => d.producto);
+  const valores = datosOrdenados.map((r) => r.fillRate);
   const key = "fillrate_prod_" + labels.join("|");
 
   return (

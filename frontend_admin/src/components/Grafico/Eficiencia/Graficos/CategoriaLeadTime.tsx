@@ -10,7 +10,7 @@ export default function CategoriaLeadTime({ datos }: { datos: EficienciaCategori
     return aVal - bVal;
   });
 
-  const labels = datosOrdenados.map((r) => r.categoria);
+  const labels = datosOrdenados.map((r) => r.categoriaNombre);
   const valores = datosOrdenados.map((r) =>
     typeof r.leadTimePromedio === "number" && !isNaN(r.leadTimePromedio) ? r.leadTimePromedio : 0
   );

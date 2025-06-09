@@ -6,7 +6,7 @@ import theme from '@/styles/sidebarTheme';
 
 export default function Bot(props: { usuario: any; expandido: boolean }) {
   const location = useLocation();
-  const [open, setOpen] = createSignal(location.pathname.startsWith('/ConversacionesBot'));
+  const [open, setOpen] = createSignal(location.pathname.startsWith('/Bot/ConversacionesBot'));
   const esActivo = (path: string) => location.pathname === path;
 
   return (
@@ -34,7 +34,7 @@ export default function Bot(props: { usuario: any; expandido: boolean }) {
         <Show when={open() && props.expandido}>
           <div class="mt-1 flex flex-col">
             <SidebarLink
-              href="/ConversacionesBot"
+              href="/Bot/ConversacionesBot"
               texto="Conversaciones"
               activo={esActivo('/ConversacionesBot')}
             />
