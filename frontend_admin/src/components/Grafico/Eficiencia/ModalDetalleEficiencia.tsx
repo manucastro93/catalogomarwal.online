@@ -105,7 +105,7 @@ export default function ModalDetalleEficiencia({
                         <td class="px-4 py-2">{item.nroPedido || "—"}</td>
                         {/* ✅ CORRECCIÓN: Fecha Pedido ya viene formateada del backend */}
                         <td class="px-4 py-2 whitespace-nowrap">
-                          {(item.fechaPedido) || (item.fechaPedido)}
+                          {item.fecha || item.fechaPedido}
                         </td>
                         {/* ✅ CORRECCIÓN: Fecha Factura con lógica de truncado y tooltip */}
                        <td class="px-4 py-2 whitespace-nowrap">

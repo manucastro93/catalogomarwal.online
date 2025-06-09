@@ -53,6 +53,7 @@ export async function fetchDetalleCliente(params: {
   cliente: string;
 }) {
   const { data } = await api.get("/eficiencia/por-cliente/detalle", { params });
+  console.log(data);
   return data;
 }
 
