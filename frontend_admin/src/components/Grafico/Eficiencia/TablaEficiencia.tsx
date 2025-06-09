@@ -44,7 +44,7 @@ export default function TablaEficiencia({
   const getKeyForModo = (modo: string) => {
     switch (modo) {
       case "categoria":
-        return "categoriaNombre";
+        return "categoria";
       case "producto":
         return "producto";
       case "cliente":
@@ -93,12 +93,20 @@ export default function TablaEficiencia({
 
   const getLabel = (item: Item) => {
     switch (modo) {
-      case "categoria":
-        return "categoriaNombre" in item ? item.categoriaNombre : "—";
-      case "producto":
-        return "producto" in item ? item.producto : "—";
-      case "cliente":
-        return "cliente" in item ? item.cliente : "—";
+      case "categoria": {
+        const cat = item as EficienciaCategoria;
+        return cat.categoriaNombre || "—";
+      }
+      case "producto": {
+        const prod = item as EficienciaProducto;
+        return prod.codItem && prod.producto
+          ? `${prod.codItem} - ${prod.producto}`
+          : prod.producto || prod.codItem || "—";
+      }
+      case "cliente": {
+        const cli = item as EficienciaCliente;
+        return cli.cliente || "—";
+      }
       default:
         return "—";
     }

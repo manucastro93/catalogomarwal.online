@@ -1,4 +1,6 @@
-import type { Component } from "solid-js";
+import { Component, createSignal, Show, For } from "solid-js";
+import type { ClienteFactura } from "@/types/cliente";
+import { buscarClientesFacturas } from "@/services/eficiencia.service";
 
 interface Props {
   desde: string;
@@ -6,7 +8,7 @@ interface Props {
   categoriaId: string;
   producto: string;
   cliente: string;
-  modo:"categoria" | "producto" | "cliente";
+  modo: "categoria" | "producto" | "cliente";
   setDesde: (val: string) => void;
   setHasta: (val: string) => void;
   setCategoriaId: (val: string) => void;
@@ -19,8 +21,29 @@ interface Props {
 }
 
 const FiltrosEficiencia: Component<Props> = (props) => {
+  const [sugerencias, setSugerencias] = createSignal<ClienteFactura[]>([]);
+  const [mostrarSugerencias, setMostrarSugerencias] = createSignal(false);
+
+  const handleClienteInput = async (e: Event) => {
+    const valor = (e.target as HTMLInputElement).value;
+    props.setCliente(valor);
+    if (valor.length >= 2) {
+      const resultados = await buscarClientesFacturas(valor);
+      setSugerencias(resultados);
+      setMostrarSugerencias(true);
+    } else {
+      setSugerencias([]);
+      setMostrarSugerencias(false);
+    }
+  };
+
+  const seleccionarCliente = (cliente: ClienteFactura) => {
+    props.setCliente(cliente.razon_social || cliente.nombre);
+    setMostrarSugerencias(false);
+  };
+
   return (
-    <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+    <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end relative">
       {/* Fecha desde */}
       <div>
         <label class="text-sm">Desde</label>
@@ -92,24 +115,45 @@ const FiltrosEficiencia: Component<Props> = (props) => {
 
       {/* Filtro por cliente */}
       {props.modo === "cliente" && (
-        <div>
+        <div class="relative">
           <label class="text-sm">Cliente</label>
           <input
             type="text"
             placeholder="Buscar por nombre o razón social"
             value={props.cliente}
-            onInput={(e) => props.setCliente(e.currentTarget.value)}
+            onInput={handleClienteInput}
+            onBlur={() => setTimeout(() => setMostrarSugerencias(false), 200)}
             class="input"
           />
+          <Show when={mostrarSugerencias() && sugerencias().length > 0}>
+            <ul class="absolute z-10 bg-white border border-gray-300 w-full mt-1 max-h-48 overflow-y-auto shadow-lg rounded text-sm">
+              <For each={sugerencias()}>
+                {(c) => (
+                  <li
+                    class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => seleccionarCliente(c)}
+                  >
+                    {c.razon_social || c.nombre}
+                  </li>
+                )}
+              </For>
+            </ul>
+          </Show>
         </div>
       )}
 
       {/* Botones */}
       <div class="flex gap-2 col-span-1 md:col-span-1">
-        <button onClick={props.onExportar} class="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        <button
+          onClick={props.onExportar}
+          class="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
           Exportar
         </button>
-        <button onClick={props.limpiarFiltros} class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+        <button
+          onClick={props.limpiarFiltros}
+          class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+        >
           Limpiar
         </button>
       </div>

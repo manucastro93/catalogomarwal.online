@@ -41,3 +41,8 @@ export interface Cliente {
   observacionesSeguimiento?: string;
   ultimoMensajeAutomatico?: string;
 }
+
+export interface ClienteFactura {
+  nombre: string;
+  razon_social: string;
+}

@@ -27,6 +27,7 @@ export interface EficienciaCategoria extends EficienciaBase {
 export interface EficienciaProducto extends EficienciaBase {
   tipo: "producto";
   producto: string;
+  codItem: string;
   leadTimePromedio: number;
 }
 

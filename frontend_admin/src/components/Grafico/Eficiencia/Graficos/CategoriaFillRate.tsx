@@ -11,7 +11,7 @@ export default function CategoriaFillRate({ datos }: { datos: EficienciaCategori
 
   if (!datosValidos.length) return null;
 
-  const labels = datosValidos.map((r) => r.categoria);
+  const labels = datosValidos.map((r) => r.categoriaNombre);
   const valores = datosValidos.map((r) => r.fillRate);
   const key = "fillrate_" + labels.join("|");
 
