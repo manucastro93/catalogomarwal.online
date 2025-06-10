@@ -16,6 +16,7 @@ import GraficosEficiencia from "@/components/Grafico/Eficiencia/GraficosEficienc
 import ModalDetalleEficiencia from "@/components/Grafico/Eficiencia/ModalDetalleEficiencia";
 import ModalDetallePedido from "@/components/Grafico/Eficiencia/ModalDetallePedido";
 import { exportarDatosAExcel } from "@/utils/exportarDatosAExcel";
+import { formatearFechaCorta } from "@/utils/formato";
 
 export type ModoEficiencia = "categoria" | "producto" | "cliente";
 
@@ -78,21 +79,53 @@ export default function Eficiencia() {
     setPage(1);
   }
 
-  async function exportarResumenEficiencia() {
-    const dataCompleta = await fetchEficienciaPorPedido({
-      desde: desde(),
-      hasta: hasta(),
-    });
-    const columnas = [
-      { label: "Pedido", key: "nroPedido" },
-      { label: "Fecha", key: "fecha" },
-      { label: "Lead Time (días)", key: "leadTimeDias" },
-      { label: "Fill Rate (%)", key: "fillRate" },
-      { label: "Pedidas", key: "cantidadPedida" },
-      { label: "Facturadas", key: "cantidadFacturada" },
-    ];
-    exportarDatosAExcel(dataCompleta, columnas, "Reporte Eficiencia");
+async function exportarDetalleEficiencia() {
+  const datos = detalleEficiencia() || [];
+  const desdeTexto = formatearFechaCorta(desde());
+  const hastaTexto = formatearFechaCorta(hasta());
+  const rangoFechas = `${desdeTexto} a ${hastaTexto}`;
+  let columnas: { label: string; key: string }[] = [];
+  let nombreArchivo = `Detalle eficiencia por ${modo()}`;
+
+  switch (modo()) {
+    case "cliente":
+      columnas = [
+        { label: "Cliente", key: "cliente" },
+        { label: "Cant. Pedida", key: "cantidadPedida" },
+        { label: "Cant. Facturada", key: "cantidadFacturada" },
+        { label: "Fill Rate", key: "fillRate" },
+        { label: "Fill Rate Ponderado", key: "fillRatePonderado" },
+        { label: "Lead Time (días)", key: "leadTimePromedio" },
+      ];
+      break;
+    case "producto":
+      columnas = [
+        { label: "SKU", key: "codItem" },
+        { label: "Producto", key: "producto" },
+        { label: "Cant. Pedida", key: "cantidadPedida" },
+        { label: "Cant. Facturada", key: "cantidadFacturada" },
+        { label: "Fill Rate", key: "fillRate" },
+        { label: "Fill Rate Ponderado", key: "fillRatePonderado" },
+        { label: "Lead Time (días)", key: "leadTimePromedio" },
+      ];
+      break;
+    case "categoria":
+      columnas = [
+        { label: "Categoría", key: "categoriaNombre" },
+        { label: "Cant. Pedida", key: "cantidadPedida" },
+        { label: "Cant. Facturada", key: "cantidadFacturada" },
+        { label: "Fill Rate", key: "fillRate" },
+        { label: "Fill Rate Ponderado", key: "fillRatePonderado" },
+        { label: "Lead Time (días)", key: "leadTimePromedio" },
+      ];
+      break;
   }
+
+  const datosFormateados = datos.map((item: any) => ({ ...item }));
+
+  exportarDatosAExcel(datosFormateados, columnas, nombreArchivo, rangoFechas);
+}
+
 
   function abrirModalDetalle(modoDetalle: ModoEficiencia, filtro: string, nombre?: string) {
     setDetalleModal({ modo: modoDetalle, filtro });
@@ -141,7 +174,7 @@ export default function Eficiencia() {
           actualizarFiltros();
         }}
         limpiarFiltros={limpiarFiltros}
-        onExportar={exportarResumenEficiencia}
+        onExportar={exportarDetalleEficiencia}
       />
 
       <ResumenTextoEficiencia desde={desde} hasta={hasta} resumen={resumen} />
