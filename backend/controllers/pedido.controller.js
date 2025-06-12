@@ -59,7 +59,7 @@ export const obtenerPedidos = async (req, res, next) => {
       if (!camposValidos.includes(orden)) return [['createdAt', 'DESC']];
       return [[orden, direccion]];
     })();
-
+    console.log("orderby: ",orderBy)
     const idsPaginados = await Pedido.findAll({
       attributes: ['id'],
       where,
