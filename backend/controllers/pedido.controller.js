@@ -35,12 +35,10 @@ export const obtenerPedidos = async (req, res, next) => {
       };
     }
 
-    // ✅ Si es VENDEDOR logueado, filtrar por SU ID
     if (req.usuario?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR) {
       where.usuarioId = req.usuario.id;
     }
 
-    // ✅ Si en query viene vendedorId (y el usuario NO es vendedor) filtramos por ese
     if (vendedorIdQuery && req.usuario?.rolUsuarioId !== ROLES_USUARIOS.VENDEDOR) {
       where.usuarioId = vendedorIdQuery;
     }
@@ -53,13 +51,15 @@ export const obtenerPedidos = async (req, res, next) => {
       ? { nombre: { [Op.like]: `%${busqueda}%` } }
       : undefined;
 
+    const camposValidos = ['id', 'createdAt', 'updatedAt', 'total']; // Ajustá según tus columnas reales
+
     const orderBy = (() => {
       if (orden === 'cliente') return [[{ model: Cliente, as: 'cliente' }, 'nombre', direccion]];
       if (orden === 'vendedor') return [[{ model: Usuario, as: 'usuario' }, 'nombre', direccion]];
+      if (!camposValidos.includes(orden)) return [['createdAt', 'DESC']];
       return [[orden, direccion]];
     })();
 
-    // 🥇 Primero paginamos solo los IDs
     const idsPaginados = await Pedido.findAll({
       attributes: ['id'],
       where,
@@ -74,7 +74,6 @@ export const obtenerPedidos = async (req, res, next) => {
 
     const ids = idsPaginados.map((p) => p.id);
 
-    // 🥈 Traemos los datos completos
     const pedidos = await Pedido.findAll({
       where: { id: ids },
       include: [
@@ -110,6 +109,7 @@ export const obtenerPedidos = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const actualizarEstadoPedido = async (req, res, next) => {
   try {
