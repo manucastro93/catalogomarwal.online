@@ -1,21 +1,52 @@
-import { For, Show } from "solid-js";
+import { For, Show, createSignal, createEffect, createMemo } from "solid-js";
 import type { Usuario } from "@/types/usuario";
 import type { EstadoPedido } from "types/estadoPedido";
-import { ESTADOS_PEDIDO } from "@/constants/estadosPedidos";
+import type { VendedorOption } from "@/types/vendedor";
+
+const ESTADOS_DUX = [
+  { id: 1, nombre: "PENDIENTE" },
+  { id: 2, nombre: "FACTURADO_PARCIAL" },
+  { id: 3, nombre: "FACTURADO" },
+  { id: 4, nombre: "CERRADO" },
+];
 
 export default function FiltrosPedidos(props: {
   busqueda: string;
   vendedorId: number | undefined;
-  estado?: number;
+  estado?: number[];
   esVendedor: boolean;
   vendedores: Usuario[];
+  vendedoresDux: VendedorOption[];
   estados: EstadoPedido[];
+  desde: string;
+  hasta: string;
   mostrarPedidosDux?: boolean;
   onTogglePedidosDux?: (valor: boolean) => void;
   onBuscar: (text: string) => void;
   onVendedorSeleccionado: (id: number | undefined) => void;
-  onEstadoSeleccionado: (estado: number | undefined) => void;
+  onEstadoSeleccionado: (estado: number[] | undefined) => void;
+  onFechaDesdeSeleccionada: (fecha: string) => void;
+  onFechaHastaSeleccionada: (fecha: string) => void;
 }) {
+  const [estadoFiltrado, setEstadoFiltrado] = createSignal<number[] | undefined>(props.estado);
+
+const idsDuxPorDefecto = [1, 2];
+
+createEffect(() => {
+  if (props.mostrarPedidosDux && !estadoFiltrado()) {
+    setEstadoFiltrado(idsDuxPorDefecto);
+    props.onEstadoSeleccionado(idsDuxPorDefecto);
+  }
+});
+
+  const estadosDisponibles = createMemo(() => {
+    return props.mostrarPedidosDux ? ESTADOS_DUX : props.estados;
+  });
+
+  const vendedoresDisponibles = createMemo(() =>
+    props.mostrarPedidosDux ? props.vendedoresDux : props.vendedores
+  );
+
   return (
     <div class="flex flex-wrap items-center gap-2 mb-4">
       <input
@@ -24,6 +55,19 @@ export default function FiltrosPedidos(props: {
         class="p-2 border rounded w-full max-w-md"
         value={props.busqueda}
         onInput={(e) => props.onBuscar(e.currentTarget.value)}
+      />
+
+      <input
+        type="date"
+        class="p-2 border rounded"
+        value={props.desde}
+        onChange={(e) => props.onFechaDesdeSeleccionada(e.currentTarget.value)}
+      />
+      <input
+        type="date"
+        class="p-2 border rounded"
+        value={props.hasta}
+        onChange={(e) => props.onFechaHastaSeleccionada(e.currentTarget.value)}
       />
 
       <Show when={!props.esVendedor}>
@@ -37,26 +81,33 @@ export default function FiltrosPedidos(props: {
           }
         >
           <option value="">Todos los vendedores</option>
-          <For each={props.vendedores}>
-            {(v) => <option value={v.id}>{v.nombre}</option>}
+          <For each={vendedoresDisponibles()}>
+            {(v) => (
+              <option value={v.id}>
+                {v.nombre}
+                {"apellido_razon_social" in v ? ` ${v.apellido_razon_social}` : ""}
+              </option>
+            )}
           </For>
         </select>
       </Show>
 
       <select
         class="border p-2 rounded"
-        value={props.estado || ""}
-        onChange={(e) =>
-          props.onEstadoSeleccionado(
-            e.currentTarget.value ? Number(e.currentTarget.value) : undefined
-          )
-        }
+        value={estadoFiltrado()?.length === 1 ? estadoFiltrado()?.[0].toString() : ""}
+        onChange={(e) => {
+          const val = Number(e.currentTarget.value);
+          const nuevaSeleccion = val ? [val] : [1, 2]; // default múltiple si vacío
+          setEstadoFiltrado(nuevaSeleccion);
+          props.onEstadoSeleccionado(nuevaSeleccion);
+        }}
       >
-        <option value="">Todos los estados</option>
-        <For each={props.estados}>
+        <option value="">Pendiente o Facturado Parcial</option>
+        <For each={estadosDisponibles()}>
           {(estado) => <option value={estado.id}>{estado.nombre}</option>}
         </For>
       </select>
+
       <input
         type="checkbox"
         checked={props.mostrarPedidosDux || false}

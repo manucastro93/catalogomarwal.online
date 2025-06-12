@@ -6,3 +6,9 @@ export interface Vendedor extends Usuario {
   clientesAtendidos?: number;
   fechaRegistro?: string;
 }
+
+export type VendedorOption = {
+  id: number;
+  nombre: string;
+  apellido_razon_social: string;
+};

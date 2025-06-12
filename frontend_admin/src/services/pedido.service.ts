@@ -1,4 +1,5 @@
 import api from './api';
+import qs from "qs";
 import type { Pedido, PedidoPayload, RespuestaPaginadaPedidos } from '@/types/pedido';
 import type { FiltrosPedidos } from 'types/filtro'; 
 
@@ -44,6 +45,14 @@ export const obtenerPedidosInicio = async (
 };*/
 
 export async function obtenerPedidosDux(params?: any) {
-  const res = await api.get('/pedidos/dux', { params });
+  const res = await api.get('/pedidos/dux', {
+    params,
+    paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat' }),
+  });
+  return res.data;
+}
+
+export async function obtenerDetallesPedidoDux(pedidoDuxId: number) {
+  const res = await api.get(`/pedidos/dux/${pedidoDuxId}`);
   return res.data;
 }

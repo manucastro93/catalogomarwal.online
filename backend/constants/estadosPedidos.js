@@ -8,3 +8,10 @@ export const ESTADOS_PEDIDO = {
   RECHAZADO: 7,
   CANCELADO: 8,
 }
+
+export const ESTADOS_DUX = {
+  PENDIENTE: 1,
+  FACTURADO_PARCIAL: 2,
+  FACTURADO: 3,
+  CERRADO: 4, 
+};

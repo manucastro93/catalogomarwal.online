@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Factura, EstadoFactura } from '../models/index.js';
+import { Factura, EstadoFactura, PersonalDux } from '../models/index.js';
 
 export const listarFacturas = async (req, res, next) => {
   try {
@@ -36,16 +36,21 @@ export const listarFacturas = async (req, res, next) => {
 
     const { count, rows } = await Factura.findAndCountAll({
       where,
-      limit: parseInt(limit),
-      offset,
-      order: [['fecha_comp', 'DESC']],
       include: [
+        {
+          model: PersonalDux,
+          as: "personal",
+          attributes: ["nombre", "apellido_razon_social"],
+        },
         {
           model: EstadoFactura,
           as: 'estado',
           attributes: ['id', 'nombre'],
         },
       ],
+      limit: parseInt(limit),
+      offset,
+      order: [['fecha_comp', 'DESC']],
     });
 
     res.json({
@@ -61,3 +66,4 @@ export const listarFacturas = async (req, res, next) => {
     next(error);
   }
 };
+

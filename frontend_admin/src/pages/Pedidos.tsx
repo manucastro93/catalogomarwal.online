@@ -1,6 +1,7 @@
 import { createSignal, createResource, createMemo, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { useAuth } from "@/store/auth";
+import { obtenerPersonalDux } from "@/services/personalDux.service";
 import { obtenerPedidos, obtenerPedidosDux } from "@/services/pedido.service";
 import { obtenerUsuariosPorRolPorId } from "@/services/usuario.service";
 import { obtenerEstadosPedido } from "@/services/estadoPedido.service";
@@ -10,6 +11,7 @@ import { exportarDatosAExcel } from "@/utils/exportarDatosAExcel";
 import ModalActualizarEstadoPedido from "@/components/Pedido/ModalActualizarEstadoPedido";
 import ModalMensaje from "@/components/Layout/ModalMensaje";
 import VerPedidoModal from "@/components/Pedido/VerPedidoModal";
+import VerPedidoDuxModal from "@/components/Pedido/VerPedidoDuxModal";
 import TablaPedidosLocal from "@/components/Pedido/TablaPedidosLocal";
 import TablaPedidosDux from "@/components/Pedido/TablaPedidosDux";
 import FiltrosPedidos from "@/components/Pedido/FiltrosPedidos";
@@ -20,21 +22,21 @@ export default function Pedidos() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
 
+  const [vendedoresDux] = createResource(obtenerPersonalDux);
   const [pagina, setPagina] = createSignal(1);
   const [orden, setOrden] = createSignal("createdAt");
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
-  const [pedidoParaActualizar, setPedidoParaActualizar] =
-    createSignal<Pedido | null>(null);
+  const [pedidoParaActualizar, setPedidoParaActualizar] = createSignal<Pedido | null>(null);
   const [mensaje, setMensaje] = createSignal("");
   const [busqueda, setBusqueda] = createSignal("");
-  const [vendedorSeleccionado, setVendedorSeleccionado] = createSignal<
-    number | undefined
-  >(undefined);
-  const [estadoSeleccionado, setEstadoSeleccionado] = createSignal<
-    number | undefined
-  >(undefined);
+  const [vendedorSeleccionado, setVendedorSeleccionado] = createSignal<number | undefined>(undefined);
+  const [estadoSeleccionado, setEstadoSeleccionado] = createSignal<number[] | undefined>(undefined);
+
   const [verPedido, setVerPedido] = createSignal<Pedido | null>(null);
+  const [verPedidoDux, setVerPedidoDux] = createSignal<PedidoDux | null>(null);
   const [mostrarPedidosDux, setMostrarPedidosDux] = createSignal(false);
+  const [fechaDesde, setFechaDesde] = createSignal("");
+  const [fechaHasta, setFechaHasta] = createSignal("");
 
   const [vendedores] = createResource(async () => {
     const rol = usuario()?.rolUsuarioId as 1 | 2;
@@ -52,7 +54,9 @@ export default function Pedidos() {
     direccion: direccion(),
     busqueda: busqueda(),
     vendedorId: vendedorSeleccionado(),
-    estado: estadoSeleccionado(),
+    estado: estadoSeleccionado()?.length ? estadoSeleccionado() : undefined,
+    desde: fechaDesde(),
+    hasta: fechaHasta(),
     dux: mostrarPedidosDux(),
   }));
 
@@ -60,18 +64,25 @@ export default function Pedidos() {
     fetchParams,
     async (params) => {
       if (params.dux) {
-  const res = await obtenerPedidosDux({
-    pagina: params.pagina,
-    limit: 50, // o el valor que uses
-  });
-  return {
-    data: res.data.map((p: Pedido) => ({ ...p, tipo: "dux" })),
-    pagina: res.pagina,
-    totalPaginas: res.totalPaginas,
-  };
-}
- else {
-        return await obtenerPedidos(params);
+        const res = await obtenerPedidosDux({
+          pagina: params.pagina,
+          limit: 50,
+          busqueda: params.busqueda,
+          vendedorId: params.vendedorId,
+          estado: params.estado,
+          desde: params.desde,
+          hasta: params.hasta,
+        });
+        return {
+          data: res.data.map((p: Pedido) => ({ ...p, tipo: "dux" })),
+          pagina: res.pagina,
+          totalPaginas: res.totalPaginas,
+        };
+      } else {
+        return await obtenerPedidos({
+          ...params,
+          estado: Array.isArray(params.estado) ? params.estado[0] : params.estado,
+        });
       }
     }
   );
@@ -93,6 +104,7 @@ export default function Pedidos() {
       ? { data: await obtenerPedidosDux() }
       : await obtenerPedidos({
           ...(fetchParams() as any),
+          estado: estadoSeleccionado()?.[0],
           pagina: 1,
           limit: 9999,
         });
@@ -142,7 +154,10 @@ export default function Pedidos() {
         vendedorId={vendedorSeleccionado()}
         estado={estadoSeleccionado()}
         vendedores={vendedores() ?? []}
+        vendedoresDux={vendedoresDux() ?? []}
         estados={estadosPedido() ?? []}
+        desde={fechaDesde()}
+        hasta={fechaHasta()}
         esVendedor={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}
         mostrarPedidosDux={mostrarPedidosDux()}
         onBuscar={(v) => {
@@ -153,10 +168,12 @@ export default function Pedidos() {
           setVendedorSeleccionado(id);
           setPagina(1);
         }}
-        onEstadoSeleccionado={(estadoId) => {
-          setEstadoSeleccionado(estadoId || undefined);
+        onEstadoSeleccionado={(estadoIds) => {
+          setEstadoSeleccionado(estadoIds || undefined);
           setPagina(1);
         }}
+        onFechaDesdeSeleccionada={setFechaDesde}
+        onFechaHastaSeleccionada={setFechaHasta}
         onTogglePedidosDux={(valor) => {
           setMostrarPedidosDux(valor);
           setPagina(1);
@@ -183,7 +200,7 @@ export default function Pedidos() {
             orden={orden()}
             direccion={direccion()}
             onOrdenar={cambiarOrden}
-            onVer={setVerPedido}
+            onVer={setVerPedidoDux}
           />
         </Show>
       </Show>
@@ -211,12 +228,12 @@ export default function Pedidos() {
       </div>
 
       <VerPedidoModal pedido={verPedido()} onClose={() => setVerPedido(null)} />
+      <Show when={verPedidoDux()}>
+        <VerPedidoDuxModal pedido={verPedidoDux()} onClose={() => setVerPedidoDux(null)} />
+      </Show>
 
       <Show
-        when={
-          usuario()?.rolUsuarioId !== ROLES_USUARIOS.VENDEDOR &&
-          !mostrarPedidosDux()
-        }
+        when={usuario()?.rolUsuarioId !== ROLES_USUARIOS.VENDEDOR && !mostrarPedidosDux()}
       >
         <ModalActualizarEstadoPedido
           pedido={pedidoParaActualizar()}
