@@ -43,6 +43,7 @@ export default (sequelize, DataTypes) => {
     timestamps: true,
     paranoid: true
   });
-
+    
+  
   return PedidoDux;
 };

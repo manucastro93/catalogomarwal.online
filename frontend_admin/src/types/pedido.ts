@@ -46,6 +46,9 @@ export interface PedidoDux {
   estado_facturacion: string;
   observaciones: string;
   detalles: PedidoDuxItem[];
+
+  nombre_vendedor?: string;
+  apellido_vendedor?: string;
 }
 
 export type Pedido = PedidoLocal | PedidoDux;

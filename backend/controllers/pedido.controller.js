@@ -1,8 +1,9 @@
-import { Pedido, DetallePedido, Producto, Cliente, Usuario, Notificacion, EstadoPedido, PedidoDux } from '../models/index.js';
-import { ESTADOS_PEDIDO } from '../constants/estadosPedidos.js';
+import sequelize from '../config/database.js';
+import { Pedido, DetallePedido, Producto, Cliente, Usuario, Notificacion, EstadoPedido, PedidoDux, DetallePedidoDux, PersonalDux } from '../models/index.js';
+import { ESTADOS_PEDIDO, ESTADOS_DUX } from '../constants/estadosPedidos.js';
 import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
 import { DATOS_EMPRESA_DUX } from '../constants/datosEmpresaDux.js';
-import { Op } from 'sequelize';
+import { QueryTypes, Op } from 'sequelize';
 import { enviarEmailPedido } from "../utils/notificaciones/email.js";
 import { enviarWhatsappPedido } from "../utils/notificaciones/whatsapp.js";
 import { crearClienteConGeocodificacion } from '../helpers/clientes.js';
@@ -529,25 +530,130 @@ export const enviarPedidoADux = async (req, res, next) => {
 
 export const listarPedidosDux = async (req, res, next) => {
   try {
-    const { pagina = 1, limit = 50 } = req.query;
-    const offset = (parseInt(pagina) - 1) * parseInt(limit);
+    const {
+      pagina = 1,
+      limit = 50,
+      busqueda = "",
+      vendedorId,
+      desde,
+      hasta,
+    } = req.query;
 
-    const { count, rows } = await PedidoDux.findAndCountAll({
-      limit: parseInt(limit),
-      offset,
-      order: [['fecha', 'DESC']],
-    });
+    const offset = (parseInt(pagina) - 1) * parseInt(limit);
+    const filtros = [];
+    const replacements = {};
+
+    // 📌 Busqueda por cliente
+    if (busqueda) {
+      filtros.push("p.cliente LIKE :busqueda");
+      replacements.busqueda = `%${busqueda}%`;
+    }
+
+    // ✅ Estados: puede venir como array o string
+let estadoQuery = req.query.estado;
+console.log("estadoquery: ", estadoQuery)
+const estadoIds = Array.isArray(estadoQuery)
+  ? estadoQuery
+  : estadoQuery
+  ? [estadoQuery]
+  : [];
+console.log("estadoIds: ", estadoIds)
+const estadosTexto = estadoIds
+  .map((id) =>
+    Object.entries(ESTADOS_DUX).find(([_, val]) => Number(id) === Number(val))?.[0]
+  )
+  .filter(Boolean);
+console.log("estadosTexto: ", estadosTexto)
+if (estadosTexto.length > 0) {
+  const estadoPlaceholders = estadosTexto.map((_, i) => `:estado${i}`).join(", ");
+  filtros.push(`UPPER(p.estado_facturacion) IN (${estadoPlaceholders})`);
+  estadosTexto.forEach((estadoNombre, i) => {
+    replacements[`estado${i}`] = estadoNombre.toUpperCase();
+  });
+}
+ else {
+  // Filtro por defecto si no hay estados
+  filtros.push("p.estado_facturacion IN ('FACTURADO_PARCIAL', 'PENDIENTE')");
+}
+
+    // 📌 Filtro por vendedor
+    if (vendedorId) {
+      filtros.push("f.id_vendedor = :vendedorId");
+      replacements.vendedorId = vendedorId;
+    }
+
+    // 📌 Filtro por fecha
+    if (desde && hasta) {
+      filtros.push("p.fecha BETWEEN :desde AND :hasta");
+      replacements.desde = desde;
+      replacements.hasta = hasta;
+    }
+
+    const whereClause = filtros.length ? "WHERE " + filtros.join(" AND ") : "";
+
+    const data = await sequelize.query(
+      `
+      SELECT p.*, MIN(pd.nombre) AS nombre_vendedor, MIN(pd.apellido_razon_social) AS apellido_vendedor
+      FROM PedidosDux p
+      LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
+      LEFT JOIN PersonalDux pd ON pd.id_personal = f.id_vendedor
+      ${whereClause}
+      GROUP BY p.id
+      ORDER BY p.fecha DESC
+      LIMIT :limit OFFSET :offset
+      `,
+      {
+        replacements: {
+          ...replacements,
+          limit: parseInt(limit),
+          offset,
+        },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    const countRes = await sequelize.query(
+      `
+      SELECT COUNT(DISTINCT p.id) AS total
+      FROM PedidosDux p
+      LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
+      LEFT JOIN PersonalDux pd ON pd.id_personal = f.id_vendedor
+      ${whereClause}
+      `,
+      {
+        replacements,
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    const count = countRes[0].total;
+    console.log("🧪 SQL WHERE:", filtros.join(" AND "));
+console.log("🧪 replacements:", replacements);
 
     res.json({
-      data: rows,
+      data,
       pagina: parseInt(pagina),
       totalPaginas: Math.ceil(count / parseInt(limit)),
       totalItems: count,
-      hasNextPage: offset + rows.length < count,
+      hasNextPage: offset + data.length < count,
       hasPrevPage: offset > 0,
     });
   } catch (error) {
-    console.error('❌ Error al listar pedidos Dux:', error);
+    console.error("❌ Error al listar pedidos Dux:", error);
+    next(error);
+  }
+};
+
+
+export const obtenerDetallesPedidoDux = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const detalles = await DetallePedidoDux.findAll({
+      where: { pedidoDuxId: id },
+    });
+    res.json(detalles);
+  } catch (error) {
+    console.error("❌ Error al obtener detalles pedido Dux:", error);
     next(error);
   }
 };

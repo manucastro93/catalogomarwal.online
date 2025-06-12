@@ -7,7 +7,8 @@ import {
   validarCarritoSolo,
   obtenerPedidosInicio,
   enviarPedidoADux,
-  listarPedidosDux
+  listarPedidosDux,
+  obtenerDetallesPedidoDux
 } from '../controllers/pedido.controller.js';
 
 import { validarPedidoBody } from '../validaciones/pedido.validation.js';
@@ -18,8 +19,8 @@ const router = express.Router();
 router.get('/',verificarToken, obtenerPedidos);
 router.get('/inicio',verificarToken, obtenerPedidosInicio);
 router.get('/dux', listarPedidosDux);
+router.get('/dux/:id', obtenerDetallesPedidoDux);
 router.get('/:id', obtenerPedidoPorId);
-
 
 router.post('/desde-panel', validarPedidoBody, crearPedidoDesdePanel);
 router.post('/validar', validarCarritoSolo);

@@ -14,12 +14,12 @@ export default function TablaPedidosDux(props: {
       <table class="w-full text-sm border-collapse">
         <thead class="bg-yellow-100 sticky top-0">
           <tr>
-            {["nro_pedido", "cliente", "vendedor", "estado", "total", "fecha"].map((col) => (
+            {["fecha", "nro_pedido", "cliente", "estado", "total", "vendedor"].map((col) => (
               <th
                 class="text-left p-3 border-b cursor-pointer"
                 onClick={() => props.onOrdenar(col)}
               >
-                {col === 'nro_pedido' ? 'Id' : col.charAt(0).toUpperCase() + col.slice(1)}{" "}
+                {col === 'nro_pedido' ? 'Pedido Nro' : col.charAt(0).toUpperCase() + col.slice(1)}{" "}
                 {props.orden === col && (props.direccion === "asc" ? "▲" : "▼")}
               </th>
             ))}
@@ -40,13 +40,24 @@ export default function TablaPedidosDux(props: {
             <For each={props.pedidos}>
               {(p) => (
                 <tr class="bg-yellow-50 text-gray-800 border-b">
+                  <td class="p-3">{formatearFechaCorta(p.fecha)}</td>
                   <td class="p-3">{p.nro_pedido}</td>
                   <td class="p-3">{p.cliente}</td>
-                  <td class="p-3">{p.personal}</td>
                   <td class="p-3">{p.estado_facturacion}</td>
                   <td class="p-3">{formatearPrecio(Number(p.total))}</td>
-                  <td class="p-3">{formatearFechaCorta(p.fecha)}</td>
-                  <td class="p-3 text-yellow-700 font-semibold">🔒 Solo lectura</td>
+                  <td class="p-3">
+                    {p.nombre_vendedor
+                      ? `${p.nombre_vendedor} ${p.apellido_vendedor ?? ""}`
+                      : "—"}
+                  </td>
+                  <td class="p-3">
+                    <button
+                      class="text-blue-600 hover:underline"
+                      onClick={() => props.onVer(p)}
+                    >
+                      Ver
+                    </button>
+                  </td>
                 </tr>
               )}
             </For>

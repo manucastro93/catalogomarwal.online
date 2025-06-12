@@ -1,9 +1,10 @@
 import axios from 'axios';
-import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux } from '../models/index.js';
+import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux, PersonalDux } from '../models/index.js';
 import { estadoSync } from '../state/estadoSync.js';
 
 const API_URL = process.env.DUX_API_URL_PRODUCTOS;
 const API_URL_FACTURAS = process.env.DUX_API_URL_FACTURAS;
+const API_URL_PERSONAL = process.env.DUX_API_URL_PERSONAL;
 const EMPRESA = process.env.DUX_API_EMPRESA;
 const SUCURSAL = process.env.DUX_API_SUCURSAL_CASA_CENTRAL;
 const API_KEY = process.env.DUX_API_KEY;
@@ -27,6 +28,63 @@ function obtenerPrecioLista(listas, nombreBuscado) {
 
 function limpiarNombreCategoria(nombre) {
   return typeof nombre === 'string' && nombre.trim() ? nombre.trim() : 'Sin categoría';
+}
+
+function parseFloatSeguro(valor) { // Función auxiliar que ya existía pero es buena práctica mantenerla cerca de las utilidades
+  const n = parseFloat(valor);
+  return isNaN(n) ? 0 : n;
+}
+
+async function obtenerConReintentos(url, params = {}, reintentos = 3) {
+  for (let i = 0; i < reintentos; i++) {
+    try {
+      const res = await axios.get(url, {
+        headers: {
+          accept: 'application/json',
+          authorization: API_KEY
+        },
+        params
+      });
+      return res.data.results || [];
+    } catch (error) {
+      if (error.response?.status === 429) {
+        console.warn(`⚠️ 429 Too Many Requests: esperando 15s (intento ${i + 1})...`);
+        await esperar(15000);
+      } else if (error.code === 'ECONNRESET') {
+        console.warn(`🔁 ECONNRESET en ${url}, intento ${i + 1}...`);
+        await esperar(3000 + i * 2000);
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw new Error(`❌ Fallaron todos los intentos para ${url}`);
+}
+
+async function obtenerPersonalDuxDirecto(reintento = 0) {
+  try {
+    const options = {
+      method: 'GET',
+      url: API_URL_PERSONAL,
+      headers: {
+        accept: 'application/json',
+        authorization: API_KEY // Usamos la API_KEY global aquí
+      }
+    };
+
+    const res = await axios.request(options);
+    // Según tu ejemplo, la API de personal devuelve un array directo, no un objeto con 'results'
+    return res.data || [];
+  } catch (error) {
+    if (error.response?.status === 429 && reintento < 5) {
+      const espera = 5000 * (reintento + 1);
+      console.warn(`⏳ Esperando ${espera / 1000}s por 429 al obtener personal... Reintento #${reintento + 1}`);
+      await esperar(espera);
+      return obtenerPersonalDuxDirecto(reintento + 1);
+    }
+    console.error('❌ Error al obtener personal desde Dux:', error.response?.status, error.response?.data, error.message);
+    throw error;
+  }
 }
 
 export async function obtenerCategoriasDesdeDux(reintento = 0) {
@@ -56,6 +114,8 @@ export async function obtenerTodosLosItemsDesdeDux() {
 
   while (true) {
     console.log(`📦 Pidiendo página ${pagina} (offset ${offset})`);
+    // Esta función intentarObtenerPagina también debería usar obtenerConReintentos o ser global
+    // Por ahora, se asume que intentaObtenerPagina está definida o es una función simple
     const lote = await intentarObtenerPagina(offset, limit, pagina);
 
     if (!lote?.items?.length) break;
@@ -81,6 +141,7 @@ export async function obtenerTodosLosItemsDesdeDux() {
 }
 
 async function intentarObtenerPagina(offset, limit, pagina, reintento = 0) {
+  // Esta función también podría usar obtenerConReintentos si se adapta su lógica
   try {
     const res = await axios.get(`${API_URL}/items`, {
       headers: { Authorization: API_KEY, Accept: 'application/json' },
@@ -206,7 +267,6 @@ export async function sincronizarProductosDesdeDux() {
 }
 
 export async function sincronizarPedidosDesdeDux() {
-  const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   const fechaHasta = new Date();
   const fechaDesde = new Date();
   fechaDesde.setDate(fechaHasta.getDate() - 20);
@@ -217,45 +277,25 @@ export async function sincronizarPedidosDesdeDux() {
   const limit = 50;
   let totalProcesados = 0, creados = 0, actualizados = 0;
 
-  function parseFloatSeguro(valor) {
-    const n = parseFloat(valor);
-    return isNaN(n) ? 0 : n;
-  }
-
   console.log(`⏳ Iniciando sincronización de pedidos Dux desde ${desde} hasta ${hasta}...`);
 
   try {
     while (true) {
       console.log(`➡️ Consultando offset ${offset}...`);
 
-      let res;
-      try {
-        res = await axios.get('https://erp.duxsoftware.com.ar/WSERP/rest/services/pedidos', {
-          headers: {
-            Authorization: process.env.DUX_API_KEY,
-            Accept: 'application/json',
-          },
-          params: {
-            idEmpresa: EMPRESA,
-            idSucursal: SUCURSAL,
-            fechaDesde: desde,
-            fechaHasta: hasta,
-            limit,
-            offset
-          },
-        });
-      } catch (error) {
-        if (error.response?.status === 429) {
-          console.warn(`⚠️ 429 Too Many Requests. Esperando 15s antes de reintentar offset ${offset}...`);
-          await esperar(15000);
-          continue;
+      // Usa la función global obtenerConReintentos
+      const pedidos = await obtenerConReintentos(
+        'https://erp.duxsoftware.com.ar/WSERP/rest/services/pedidos',
+        {
+          idEmpresa: EMPRESA,
+          idSucursal: SUCURSAL,
+          fechaDesde: desde,
+          fechaHasta: hasta,
+          limit,
+          offset
         }
+      );
 
-        console.error('❌ Error al consultar pedidos:', error.message);
-        throw error;
-      }
-
-      const pedidos = res.data.results || [];
       if (pedidos.length === 0) {
         console.log(`✅ No se encontraron más pedidos. Finalizando.`);
         break;
@@ -346,7 +386,6 @@ export async function sincronizarPedidosDesdeDux() {
 }
 
 export async function sincronizarFacturasDesdeDux() {
-  const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   const fechaHasta = new Date();
   const fechaDesde = new Date();
   fechaDesde.setDate(fechaHasta.getDate() - 20);
@@ -359,44 +398,16 @@ export async function sincronizarFacturasDesdeDux() {
   let actualizadas = 0;
   let totalProcesadas = 0;
 
-  function parseFloatSeguro(valor) {
-    const n = parseFloat(valor);
-    return isNaN(n) ? 0 : n;
-  }
-
-  async function obtenerConReintentos(url, reintentos = 3) {
-    for (let i = 0; i < reintentos; i++) {
-      try {
-        const res = await axios.get(url, {
-          headers: {
-            accept: 'application/json',
-            authorization: API_KEY
-          }
-        });
-        return res.data.results || [];
-      } catch (error) {
-        if (error.response?.status === 429) {
-          console.warn(`⚠️ 429 Too Many Requests: esperando 15s (intento ${i + 1})...`);
-          await esperar(15000);
-        } else if (error.code === 'ECONNRESET') {
-          console.warn(`🔁 ECONNRESET en offset ${offset}, intento ${i + 1}...`);
-          await esperar(3000 + i * 2000);
-        } else {
-          throw error;
-        }
-      }
-    }
-    throw new Error(`❌ Fallaron todos los intentos para offset ${offset}`);
-  }
-
   console.log(`⏳ Iniciando sincronización de facturas desde ${desde} hasta ${hasta}...`);
 
   while (true) {
+    // La URL de facturas puede necesitar el API_URL_FACTURAS del entorno
     const url = `${API_URL_FACTURAS}?fechaDesde=${desde}&fechaHasta=${hasta}&idEmpresa=${EMPRESA}&idSucursal=${SUCURSAL}&limit=${limit}&offset=${offset}`;
     console.log(`➡️ Consultando offset ${offset}...`);
 
     let facturas;
     try {
+      // Usa la función global obtenerConReintentos
       facturas = await obtenerConReintentos(url);
     } catch (error) {
       console.error('❌ Error al sincronizar facturas:', error.message);
@@ -501,4 +512,58 @@ export async function sincronizarFacturasDesdeDux() {
   console.log(`✅ Sincronización de facturas finalizada. Total: ${totalProcesadas}, creadas: ${creadas}, actualizadas: ${actualizadas}`);
 
   return { creadas, actualizadas, total: totalProcesadas };
+}
+
+export async function sincronizarPersonalDesdeDux() {
+  let creados = 0;
+  let actualizados = 0;
+  let totalProcesados = 0;
+
+  console.log(`⏳ Iniciando sincronización de personal desde Dux...`);
+
+  try {
+    // Usamos la nueva función específica para obtener personal
+    const personalDux = await obtenerPersonalDuxDirecto(); 
+
+    if (!Array.isArray(personalDux) || personalDux.length === 0) {
+      console.log(`✅ No se encontró personal o la respuesta no es un array. Finalizando.`);
+      return {
+        mensaje: `Sincronización de personal finalizada. Procesados: 0`,
+        creados: 0,
+        actualizados: 0
+      };
+    }
+
+    for (const p of personalDux) {
+      const existente = await PersonalDux.findOne({ where: { id_personal: p.id } }); 
+
+      const data = {
+        id_personal: p.id,
+        nombre: p.nombre,
+        apellido_razon_social: p.apellido_razon_social,
+        sincronizadoEl: new Date(),
+      };
+
+      if (existente) {
+        await existente.update(data);
+        actualizados++;
+        console.log(`🟡 Personal ${p.id} (${p.nombre} ${p.apellido_razon_social}) actualizado`);
+      } else {
+        await PersonalDux.create(data);
+        creados++;
+        console.log(`🟢 Personal ${p.id} (${p.nombre} ${p.apellido_razon_social}) creado`);
+      }
+    }
+
+    totalProcesados = personalDux.length;
+    console.log(`✅ Sincronización de personal finalizada. Total: ${totalProcesados}, creados: ${creados}, actualizados: ${actualizados}`);
+    return {
+      mensaje: `Sincronización de personal finalizada. Procesados: ${totalProcesados}`,
+      creados,
+      actualizados
+    };
+  } catch (error) {
+    console.error('❌ Error fatal en sincronización de personal:', error.message);
+    throw error;
+  }
 }
