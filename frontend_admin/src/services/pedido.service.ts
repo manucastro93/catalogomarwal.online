@@ -2,6 +2,7 @@ import api from './api';
 import qs from "qs";
 import type { Pedido, PedidoPayload, RespuestaPaginadaPedidos } from '@/types/pedido';
 import type { FiltrosPedidos } from 'types/filtro'; 
+import type { ProductoPendiente } from "@/types/producto";
 
 export const obtenerPedidos = async (
   params: FiltrosPedidos
@@ -55,4 +56,27 @@ export async function obtenerPedidosDux(params?: any) {
 export async function obtenerDetallesPedidoDux(pedidoDuxId: number) {
   const res = await api.get(`/pedidos/dux/${pedidoDuxId}`);
   return res.data;
+}
+
+export async function obtenerProductosPedidosPendientes(params: {
+  desde?: string;
+  hasta?: string;
+  vendedorId?: number;
+}): Promise<ProductoPendiente[]> {
+  const { data } = await api.get('/pedidos/productos-pendientes', {
+    params,
+    paramsSerializer: (params) => qs.stringify(params, { arrayFormat: 'repeat' }),
+  });
+  return data;
+}
+
+export async function obtenerPedidosPendientesPorProducto(
+  codItem: string,
+  params?: { desde?: string; hasta?: string }
+) {
+  const { data } = await api.get(`/pedidos/productos-pendientes/${codItem}`, {
+    params,
+    paramsSerializer: (p) => qs.stringify(p),
+  });
+  return data;
 }

@@ -29,3 +29,11 @@ export interface Producto {
   Marca?: { id: number; nombre: string };
   Imagenes?: ImagenProducto[];
 }
+
+export interface ProductoPendiente {
+  codItem: string;
+  descripcion: string;
+  cantidad_pedida: number;
+  cantidad_facturada: number;
+  cantidad_pendiente: number;
+}
