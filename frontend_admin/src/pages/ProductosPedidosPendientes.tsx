@@ -5,8 +5,10 @@ import { obtenerPersonalDux } from "@/services/personalDux.service";
 import VerPedidosPendientesProductoModal from "@/components/ProductosPedidosPendientes/VerPedidosPendientesProductoModal";
 import FiltrosProductosPendientes from "@/components/ProductosPedidosPendientes/FiltrosProductosPendientes";
 import TablaProductosPendientes from "@/components/ProductosPedidosPendientes/TablaProductosPendientes";
+import { exportarDatosAExcel } from "@/utils/exportarDatosAExcel";
 import Loader from "@/components/Layout/Loader";
 import type { ProductoPendiente } from "@/types/producto";
+import { formatearFechaCorta } from "@/utils/formato";
 
 export default function ProductosPedidosPendientes() {
   const hoy = dayjs().format("YYYY-MM-DD");
@@ -75,10 +77,38 @@ export default function ProductosPedidosPendientes() {
 
   const totalPaginas = () => Math.ceil((productos()?.length ?? 0) / elementosPorPagina);
 
+  async function exportarProductosPendientesFiltrados() {
+    const filtros = fetchParams();
+    const data = await obtenerProductosPedidosPendientes(filtros);
+
+    const desdeTexto = formatearFechaCorta(fechaDesde());
+    const hastaTexto = formatearFechaCorta(fechaHasta());
+    const rangoFechas = `${desdeTexto} a ${hastaTexto}`;
+    const nombreArchivo = "Productos Pedidos Pendientes";
+
+    const columnas = [
+      { label: "Código", key: "codItem" },
+      { label: "Categoría", key: "categoria" },
+      { label: "Descripción", key: "descripcion" },
+      { label: "Cantidad Pedida", key: "cantidad_pedida" },
+      { label: "Cantidad Facturada", key: "cantidad_facturada" },
+      { label: "Cantidad Pendiente", key: "cantidad_pendiente" },
+    ];
+
+    const datosFormateados = data.map((item: any) => ({ ...item }));
+
+    exportarDatosAExcel(datosFormateados, columnas, nombreArchivo, rangoFechas);
+  }
+
   return (
     <div class="p-6">
       <h1 class="text-2xl font-bold mb-4">Productos Pedidos Pendientes</h1>
-
+      <button
+        onClick={exportarProductosPendientesFiltrados}
+        class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+      >
+        Exportar Excel
+      </button>
       <FiltrosProductosPendientes
         textoProducto={textoProducto()}
         vendedorId={vendedorId()}
