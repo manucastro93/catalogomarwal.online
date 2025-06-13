@@ -656,16 +656,18 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
   try {
     const { desde, hasta, vendedorId, textoProducto } = req.query;
     const replacements = {};
-    const condiciones = [];
+    const condiciones = [
+      "p.estado_facturacion != 'CERRADO'"
+    ];
 
     if (desde && hasta) {
-      condiciones.push(`p.fecha BETWEEN :desde AND :hasta`);
+      condiciones.push("p.fecha BETWEEN :desde AND :hasta");
       replacements.desde = desde;
       replacements.hasta = hasta;
     }
 
     if (vendedorId) {
-      condiciones.push(`f.id_vendedor = :vendedorId`);
+      condiciones.push("f.id_vendedor = :vendedorId");
       replacements.vendedorId = vendedorId;
     }
 
@@ -679,21 +681,34 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
     const resultados = await sequelize.query(
       `
       SELECT
-        dp.codItem,
-        dp.descripcion,
-        cat.nombre AS categoria,
-        SUM(dp.cantidad) AS cantidad_pedida,
-        COALESCE(SUM(df.cantidad), 0) AS cantidad_facturada,
-        (SUM(dp.cantidad) - COALESCE(SUM(df.cantidad), 0)) AS cantidad_pendiente
-      FROM DetallePedidosDux dp
-      INNER JOIN PedidosDux p ON p.id = dp.pedidoDuxId
-      LEFT JOIN Productos prod ON CONVERT(prod.sku USING utf8mb4) COLLATE utf8mb4_general_ci = dp.codItem
-      LEFT JOIN Categorias cat ON cat.id = prod.categoriaId
-      LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
-      LEFT JOIN DetalleFacturas df ON df.codItem = dp.codItem AND df.facturaId = f.id
-      ${whereClause}
-      GROUP BY dp.codItem, dp.descripcion, cat.nombre
-      HAVING cantidad_pendiente > 0
+        codItem,
+        descripcion,
+        categoria,
+        SUM(cantidad_pedida) AS cantidad_pedida,
+        SUM(cantidad_facturada) AS cantidad_facturada,
+        SUM(pendiente) AS cantidad_pendiente
+      FROM (
+        SELECT
+          dp.codItem AS codItem,
+          dp.descripcion,
+          cat.nombre AS categoria,
+          dp.cantidad AS cantidad_pedida,
+          COALESCE(SUM(df.cantidad), 0) AS cantidad_facturada,
+          (dp.cantidad - COALESCE(SUM(df.cantidad), 0)) AS pendiente
+        FROM DetallePedidosDux dp
+        INNER JOIN PedidosDux p ON p.id = dp.pedidoDuxId
+        LEFT JOIN Productos prod ON CONVERT(prod.sku USING utf8mb4) COLLATE utf8mb4_general_ci = dp.codItem
+        LEFT JOIN Categorias cat ON cat.id = prod.categoriaId
+        LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
+        LEFT JOIN DetalleFacturas df 
+          ON df.codItem = dp.codItem 
+          AND df.facturaId = f.id
+          AND f.nro_pedido = p.nro_pedido
+        ${whereClause}
+        GROUP BY dp.pedidoDuxId, dp.codItem, dp.descripcion, cat.nombre, dp.cantidad
+        HAVING pendiente > 0
+      ) AS sub
+      GROUP BY codItem, descripcion, categoria
       ORDER BY cantidad_pendiente DESC
       `,
       {
@@ -745,7 +760,10 @@ export const obtenerPedidosPendientesPorProducto = async (req, res, next) => {
       FROM DetallePedidosDux dp
       INNER JOIN PedidosDux p ON p.id = dp.pedidoDuxId
       LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
-      LEFT JOIN DetalleFacturas df ON df.codItem = dp.codItem AND df.facturaId = f.id
+      LEFT JOIN DetalleFacturas df 
+        ON df.codItem = dp.codItem 
+        AND df.facturaId = f.id
+        AND f.nro_pedido = p.nro_pedido
       ${whereClause}
       GROUP BY p.nro_pedido, p.cliente, p.fecha, dp.cantidad
       HAVING cantidad_pendiente > 0
