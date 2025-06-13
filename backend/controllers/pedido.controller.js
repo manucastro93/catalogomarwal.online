@@ -59,7 +59,6 @@ export const obtenerPedidos = async (req, res, next) => {
       if (!camposValidos.includes(orden)) return [['createdAt', 'DESC']];
       return [[orden, direccion]];
     })();
-    console.log("orderby: ",orderBy)
     const idsPaginados = await Pedido.findAll({
       attributes: ['id'],
       where,
@@ -551,19 +550,16 @@ export const listarPedidosDux = async (req, res, next) => {
 
     // ✅ Estados: puede venir como array o string
 let estadoQuery = req.query.estado;
-console.log("estadoquery: ", estadoQuery)
 const estadoIds = Array.isArray(estadoQuery)
   ? estadoQuery
   : estadoQuery
   ? [estadoQuery]
   : [];
-console.log("estadoIds: ", estadoIds)
 const estadosTexto = estadoIds
   .map((id) =>
     Object.entries(ESTADOS_DUX).find(([_, val]) => Number(id) === Number(val))?.[0]
   )
   .filter(Boolean);
-console.log("estadosTexto: ", estadosTexto)
 if (estadosTexto.length > 0) {
   const estadoPlaceholders = estadosTexto.map((_, i) => `:estado${i}`).join(", ");
   filtros.push(`UPPER(p.estado_facturacion) IN (${estadoPlaceholders})`);
@@ -627,8 +623,6 @@ if (estadosTexto.length > 0) {
     );
 
     const count = countRes[0].total;
-    console.log("🧪 SQL WHERE:", filtros.join(" AND "));
-console.log("🧪 replacements:", replacements);
 
     res.json({
       data,
@@ -654,6 +648,110 @@ export const obtenerDetallesPedidoDux = async (req, res, next) => {
     res.json(detalles);
   } catch (error) {
     console.error("❌ Error al obtener detalles pedido Dux:", error);
+    next(error);
+  }
+};
+
+export const obtenerProductosPedidosPendientes = async (req, res, next) => {
+  try {
+    const { desde, hasta, vendedorId } = req.query;
+    const replacements = {};
+    const condiciones = [];
+
+    if (desde && hasta) {
+      condiciones.push(`p.fecha BETWEEN :desde AND :hasta`);
+      replacements.desde = desde;
+      replacements.hasta = hasta;
+    }
+
+    if (vendedorId) {
+      condiciones.push(`f.id_vendedor = :vendedorId`);
+      replacements.vendedorId = vendedorId;
+    }
+
+    const whereClause = condiciones.length ? "WHERE " + condiciones.join(" AND ") : "";
+
+    const resultados = await sequelize.query(
+      `
+      SELECT
+        dp.codItem,
+        dp.descripcion,
+        SUM(dp.cantidad) AS cantidad_pedida,
+        COALESCE(SUM(df.cantidad), 0) AS cantidad_facturada,
+        (SUM(dp.cantidad) - COALESCE(SUM(df.cantidad), 0)) AS cantidad_pendiente
+      FROM DetallePedidosDux dp
+      INNER JOIN PedidosDux p ON p.id = dp.pedidoDuxId
+      LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
+      LEFT JOIN DetalleFacturas df ON df.codItem = dp.codItem AND df.facturaId = f.id
+      ${whereClause}
+      GROUP BY dp.codItem, dp.descripcion
+      HAVING cantidad_pendiente > 0
+      ORDER BY cantidad_pendiente DESC
+      `,
+      {
+        replacements,
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    res.json(resultados);
+  } catch (error) {
+    console.error("❌ Error en obtenerProductosPedidosPendientes:", error);
+    next(error);
+  }
+};
+
+export const obtenerPedidosPendientesPorProducto = async (req, res, next) => {
+  try {
+    const { codItem } = req.params;
+    const { desde, hasta, vendedorId } = req.query;
+
+    const replacements = { codItem };
+    const condiciones = [
+      "dp.codItem = :codItem",
+      "p.estado_facturacion != 'CERRADO'"
+    ];
+
+    if (desde && hasta) {
+      condiciones.push("p.fecha BETWEEN :desde AND :hasta");
+      replacements.desde = desde;
+      replacements.hasta = hasta;
+    }
+
+    if (vendedorId) {
+      condiciones.push("f.id_vendedor = :vendedorId");
+      replacements.vendedorId = vendedorId;
+    }
+
+    const whereClause = condiciones.length ? "WHERE " + condiciones.join(" AND ") : "";
+
+    const pedidos = await sequelize.query(
+      `
+      SELECT
+        p.nro_pedido,
+        p.cliente,
+        p.fecha,
+        dp.cantidad AS cantidad_pedida,
+        COALESCE(SUM(df.cantidad), 0) AS cantidad_facturada,
+        (dp.cantidad - COALESCE(SUM(df.cantidad), 0)) AS cantidad_pendiente
+      FROM DetallePedidosDux dp
+      INNER JOIN PedidosDux p ON p.id = dp.pedidoDuxId
+      LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
+      LEFT JOIN DetalleFacturas df ON df.codItem = dp.codItem AND df.facturaId = f.id
+      ${whereClause}
+      GROUP BY p.nro_pedido, p.cliente, p.fecha, dp.cantidad
+      HAVING cantidad_pendiente > 0
+      ORDER BY p.fecha DESC
+      `,
+      {
+        replacements,
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    res.json(pedidos);
+  } catch (error) {
+    console.error("❌ Error en obtenerPedidosPendientesPorProducto:", error);
     next(error);
   }
 };

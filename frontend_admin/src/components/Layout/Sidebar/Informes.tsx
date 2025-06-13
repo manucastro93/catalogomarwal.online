@@ -65,8 +65,8 @@ export default function Informes(props: { expandido: boolean }) {
             </div>
           </Show>
 
-          <ConPermiso modulo="Informes_PedidosPendientes" accion="ver">
-            <SidebarLink href="/Informes/PedidosPendientes" texto="Pedidos pendientes" activo={esActivo('/Informes/PedidosPendientes')} />
+          <ConPermiso modulo="Informes_ProductosPedidosPendientes" accion="ver">
+            <SidebarLink href="/Informes/ProductosPedidosPendientes" texto="Productos Pedidos pendientes" activo={esActivo('/Informes/ProductosPedidosPendientes')} />
           </ConPermiso>
           <ConPermiso modulo="Informes_Ventas" accion="ver">
             <SidebarLink href="/Informes/Ventas" texto="Ventas" activo={esActivo('/Informes/Ventas')} />

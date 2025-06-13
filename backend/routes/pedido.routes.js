@@ -8,7 +8,9 @@ import {
   obtenerPedidosInicio,
   enviarPedidoADux,
   listarPedidosDux,
-  obtenerDetallesPedidoDux
+  obtenerDetallesPedidoDux,
+  obtenerProductosPedidosPendientes,
+  obtenerPedidosPendientesPorProducto
 } from '../controllers/pedido.controller.js';
 
 import { validarPedidoBody } from '../validaciones/pedido.validation.js';
@@ -18,8 +20,10 @@ const router = express.Router();
 
 router.get('/',verificarToken, obtenerPedidos);
 router.get('/inicio',verificarToken, obtenerPedidosInicio);
+router.get('/productos-pendientes', verificarToken, obtenerProductosPedidosPendientes);
 router.get('/dux', listarPedidosDux);
 router.get('/dux/:id', obtenerDetallesPedidoDux);
+router.get('/productos-pendientes/:codItem', verificarToken, obtenerPedidosPendientesPorProducto);
 router.get('/:id', obtenerPedidoPorId);
 
 router.post('/desde-panel', validarPedidoBody, crearPedidoDesdePanel);

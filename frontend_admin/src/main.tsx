@@ -43,6 +43,7 @@ const Logo = lazy(() => import("./pages/Pagina/Logo"));
 const Vendedores = lazy(() => import("./pages/Vendedores"));
 const ConversacionesBot = lazy(() => import("./pages/ConversacionesBot"));
 const Facturas = lazy(() => import("./pages/Facturas"));
+const ProductosPedidosPendientes = lazy(() => import("./pages/ProductosPedidosPendientes"));
 
 // ✅ Restaurar sesión si existe
 checkLocalStorage();
@@ -202,11 +203,11 @@ render(
         )}
       />
       <Route
-        path="/Informes/PedidosPendientes"
+        path="/Informes/ProductosPedidosPendientes"
         component={() => (
           <ProtectedRoute>
             <Layout>
-              <Pedidos />
+              <ProductosPedidosPendientes />
             </Layout>
           </ProtectedRoute>
         )}
