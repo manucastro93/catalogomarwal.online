@@ -654,7 +654,7 @@ export const obtenerDetallesPedidoDux = async (req, res, next) => {
 
 export const obtenerProductosPedidosPendientes = async (req, res, next) => {
   try {
-    const { desde, hasta, vendedorId } = req.query;
+    const { desde, hasta, vendedorId, textoProducto } = req.query;
     const replacements = {};
     const condiciones = [];
 
@@ -669,6 +669,11 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
       replacements.vendedorId = vendedorId;
     }
 
+    if (textoProducto) {
+      condiciones.push(`(dp.descripcion LIKE :textoProducto OR dp.codItem LIKE :textoProducto)`);
+      replacements.textoProducto = `%${textoProducto}%`;
+    }
+
     const whereClause = condiciones.length ? "WHERE " + condiciones.join(" AND ") : "";
 
     const resultados = await sequelize.query(
@@ -676,15 +681,18 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
       SELECT
         dp.codItem,
         dp.descripcion,
+        cat.nombre AS categoria,
         SUM(dp.cantidad) AS cantidad_pedida,
         COALESCE(SUM(df.cantidad), 0) AS cantidad_facturada,
         (SUM(dp.cantidad) - COALESCE(SUM(df.cantidad), 0)) AS cantidad_pendiente
       FROM DetallePedidosDux dp
       INNER JOIN PedidosDux p ON p.id = dp.pedidoDuxId
+      LEFT JOIN Productos prod ON CONVERT(prod.sku USING utf8mb4) COLLATE utf8mb4_general_ci = dp.codItem
+      LEFT JOIN Categorias cat ON cat.id = prod.categoriaId
       LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
       LEFT JOIN DetalleFacturas df ON df.codItem = dp.codItem AND df.facturaId = f.id
       ${whereClause}
-      GROUP BY dp.codItem, dp.descripcion
+      GROUP BY dp.codItem, dp.descripcion, cat.nombre
       HAVING cantidad_pendiente > 0
       ORDER BY cantidad_pendiente DESC
       `,

@@ -33,6 +33,7 @@ export interface Producto {
 export interface ProductoPendiente {
   codItem: string;
   descripcion: string;
+  categoria: string;
   cantidad_pedida: number;
   cantidad_facturada: number;
   cantidad_pendiente: number;
