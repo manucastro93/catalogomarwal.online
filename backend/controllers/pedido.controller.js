@@ -652,7 +652,7 @@ export const obtenerDetallesPedidoDux = async (req, res, next) => {
   }
 };
 
-export const obtenerProductosPedidosPendientes = async (req, res, next) => {
+export const obtenerProductosPedidosPendiente = async (req, res, next) => {
   try {
     const { desde, hasta, vendedorId, textoProducto } = req.query;
     const replacements = {};
