@@ -53,7 +53,7 @@ export default function TablaProductosPendientes(props: {
                                         when={(p.cantidad_pendiente - p.stock) > 0}
                                         fallback="-"
                                     >
-                                        {formatearMiles((p.cantidad_pendiente - p.stock) * 1.2)}
+                                        {formatearMiles(Math.ceil((p.cantidad_pendiente - p.stock) * 1.2))}
                                     </Show>
                                     </td>
                                 </tr>
