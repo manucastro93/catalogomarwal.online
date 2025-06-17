@@ -68,7 +68,8 @@ export const obtenerClientePorId = async (req, res, next) => {
 
 export const obtenerClientePorTelefono = async (req, res, next) => {
   try {
-    const numero = req.params.numero?.replace(/\D/g, ""); // limpia por si viene con espacios o guiones
+    //const numero = req.params.numero?.replace(/\D/g, ""); // limpia por si viene con espacios o guiones
+    const numero = req.params.numero;
     if (!numero || numero.length < 10) {
       return res.status(400).json({ message: "Número inválido" });
     }

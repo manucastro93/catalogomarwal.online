@@ -50,8 +50,7 @@ export const buscarClientePorTelefono = async (
   numero: string
 ): Promise<Cliente | null> => {
   try {
-    const limpio = numero.replace(/\D/g, "");
-    const res = await api.get(`/cliente-por-telefono/${limpio}`);
+    const res = await api.get(`/cliente-por-telefono/${numero}`);
     return res.data;
   } catch (err: any) {
     if (err?.response?.status === 404) return null;
