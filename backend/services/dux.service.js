@@ -17,7 +17,7 @@ function esperar(ms) {
 
 function calcularStock(item) {
   if (!Array.isArray(item.stock)) return 0;
-  return item.stock.reduce((acc, s) => acc + parseFloat(s.stock_disponible || '0'), 0);
+  return item.stock.reduce((acc, s) => acc + parseFloat(s.stock_real || '0'), 0);
 }
 
 function obtenerPrecioLista(listas, nombreBuscado) {
@@ -30,7 +30,7 @@ function limpiarNombreCategoria(nombre) {
   return typeof nombre === 'string' && nombre.trim() ? nombre.trim() : 'Sin categoría';
 }
 
-function parseFloatSeguro(valor) { // Función auxiliar que ya existía pero es buena práctica mantenerla cerca de las utilidades
+function parseFloatSeguro(valor) {
   const n = parseFloat(valor);
   return isNaN(n) ? 0 : n;
 }
@@ -230,6 +230,7 @@ export async function sincronizarProductosDesdeDux() {
         precioUnitario: precio,
         costoDux: parseFloat(item.costo || '0'),
         stock: calcularStock(item),
+        //stock: item.stock.stock_real,
         categoriaId,
         activo: true
       };

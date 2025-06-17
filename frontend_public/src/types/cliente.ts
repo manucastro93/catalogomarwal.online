@@ -17,6 +17,7 @@ export interface Cliente {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
+  codigoPostal?: string;
 
   provincia?: Provincia;
   localidad?: Localidad;
