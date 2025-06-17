@@ -1,4 +1,4 @@
-import { createSignal, createResource, createMemo, Show, onMount } from "solid-js";
+import { createSignal, createResource, createMemo, Show } from "solid-js";
 import dayjs from "dayjs";
 import { obtenerProductosPedidosPendientes } from "@/services/pedido.service";
 import { obtenerPersonalDux } from "@/services/personalDux.service";
@@ -18,7 +18,7 @@ export default function ProductosPedidosPendientes() {
   const [vendedorId, setVendedorId] = createSignal<number | undefined>(undefined);
   const [fechaDesde, setFechaDesde] = createSignal(haceUnMes);
   const [fechaHasta, setFechaHasta] = createSignal(hoy);
-  const [orden, setOrden] = createSignal<keyof ProductoPendiente>("cantidad_pendiente");
+  const [orden, setOrden] = createSignal<keyof ProductoPendiente>("fabricar");
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
   const [pagina, setPagina] = createSignal(1);
   const elementosPorPagina = 20;
@@ -43,11 +43,20 @@ export default function ProductosPedidosPendientes() {
 
   const [productos, { mutate }] = createResource(fetchParams, async (params) => {
     const res = await obtenerProductosPedidosPendientes(params);
-    return res.sort((a, b) =>
-      camposNumericos.includes(orden())
-        ? Number(b[orden()]) - Number(a[orden()])
-        : String(b[orden()]).localeCompare(String(a[orden()]))
-    );
+
+    const procesados = res.map((p: ProductoPendiente) => {
+      const faltante = p.cantidad_pendiente - p.stock;
+      const fabricar = faltante > 0 ? Math.floor(faltante * 1.2) : 0;
+      return { ...p, fabricar };
+    });
+
+    return procesados.sort((a, b) => {
+      const col = orden();
+      if (camposNumericos.includes(col)) {
+        return (Number(b[col]) - Number(a[col])) * (direccion() === "asc" ? -1 : 1);
+      }
+      return String(b[col]).localeCompare(String(a[col])) * (direccion() === "asc" ? -1 : 1);
+    });
   });
 
   const cambiarOrden = (col: keyof ProductoPendiente) => {
@@ -79,28 +88,37 @@ export default function ProductosPedidosPendientes() {
 
   const totalPaginas = () => Math.ceil((productos()?.length ?? 0) / elementosPorPagina);
 
-  async function exportarProductosPendientesFiltrados() {
-    const filtros = fetchParams();
-    const data = await obtenerProductosPedidosPendientes(filtros);
+async function exportarProductosPendientesFiltrados() {
+  const filtros = fetchParams();
+  const data = await obtenerProductosPedidosPendientes(filtros);
 
-    const desdeTexto = formatearFechaCorta(fechaDesde());
-    const hastaTexto = formatearFechaCorta(fechaHasta());
-    const rangoFechas = `${desdeTexto} a ${hastaTexto}`;
-    const nombreArchivo = "Productos Pedidos Pendientes";
+  const desdeTexto = formatearFechaCorta(fechaDesde());
+  const hastaTexto = formatearFechaCorta(fechaHasta());
+  const rangoFechas = `${desdeTexto} a ${hastaTexto}`;
+  const nombreArchivo = "Productos Pedidos Pendientes";
 
-    const columnas = [
-      { label: "Código", key: "codItem" },
-      { label: "Categoría", key: "categoria" },
-      { label: "Descripción", key: "descripcion" },
-      { label: "Cantidad Pedida", key: "cantidad_pedida" },
-      { label: "Cantidad Facturada", key: "cantidad_facturada" },
-      { label: "Cantidad Pendiente", key: "cantidad_pendiente" },
-    ];
+  const columnas = [
+    { label: "Código", key: "codItem" },
+    { label: "Categoría", key: "categoria" },
+    { label: "Descripción", key: "descripcion" },
+    { label: "Cantidad Pedida", key: "cantidad_pedida" },
+    { label: "Cantidad Facturada", key: "cantidad_facturada" },
+    { label: "Cantidad Pendiente", key: "cantidad_pendiente" },
+    { label: "Stock", key: "stock" },
+    { label: "Fabricar", key: "fabricar" },
+  ];
 
-    const datosFormateados = data.map((item: any) => ({ ...item }));
+  const datosFormateados = data.map((item: any) => ({
+    ...item,
+    fabricar:
+      item.cantidad_pendiente > item.stock
+        ? Math.floor((item.cantidad_pendiente - item.stock) * 1.2)
+        : 0,
+  }));
 
-    exportarDatosAExcel(datosFormateados, columnas, nombreArchivo, rangoFechas);
-  }
+  exportarDatosAExcel(datosFormateados, columnas, nombreArchivo, rangoFechas);
+}
+
 
   return (
     <div class="p-6">

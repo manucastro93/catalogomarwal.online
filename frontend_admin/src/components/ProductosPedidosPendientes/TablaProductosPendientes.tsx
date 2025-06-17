@@ -14,7 +14,7 @@ export default function TablaProductosPendientes(props: {
             <table class="w-full text-sm border-collapse">
                 <thead class="bg-gray-100 sticky top-0">
                     <tr>
-                        {(["cod_item", "descripcion", "cantidad_pedida", "cantidad_facturada", "cantidad_pendiente", "stock", "fabricar"] as (keyof ProductoPendiente)[]).map((col) => (
+                        {(["codItem", "descripcion", "cantidad_pedida", "cantidad_facturada", "cantidad_pendiente", "stock", "fabricar"] as (keyof ProductoPendiente)[]).map((col) => (
                             <th
                                 class="text-left p-3 border-b cursor-pointer whitespace-nowrap"
                                 onClick={() => props.onOrdenar(col)}
