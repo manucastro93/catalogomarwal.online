@@ -38,4 +38,5 @@ export interface ProductoPendiente {
   cantidad_pedida: number;
   cantidad_facturada: number;
   cantidad_pendiente: number;
+  fabricar: number;
 }
