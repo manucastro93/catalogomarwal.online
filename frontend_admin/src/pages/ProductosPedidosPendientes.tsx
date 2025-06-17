@@ -1,7 +1,7 @@
 import { createSignal, createResource, createMemo, Show } from "solid-js";
 import dayjs from "dayjs";
 import { obtenerProductosPedidosPendientes } from "@/services/pedido.service";
-import { obtenerPersonalDux } from "@/services/personalDux.service";
+import { obtenerCategorias } from "@/services/categoria.service";
 import VerPedidosPendientesProductoModal from "@/components/ProductosPedidosPendientes/VerPedidosPendientesProductoModal";
 import FiltrosProductosPendientes from "@/components/ProductosPedidosPendientes/FiltrosProductosPendientes";
 import TablaProductosPendientes from "@/components/ProductosPedidosPendientes/TablaProductosPendientes";
@@ -15,7 +15,7 @@ export default function ProductosPedidosPendientes() {
   const haceUnMes = dayjs().subtract(1, "month").format("YYYY-MM-DD");
 
   const [textoProducto, setTextoProducto] = createSignal("");
-  const [vendedorId, setVendedorId] = createSignal<number | undefined>(undefined);
+  const [categoriaId, setCategoriaId] = createSignal<number | undefined>(undefined);
   const [fechaDesde, setFechaDesde] = createSignal(haceUnMes);
   const [fechaHasta, setFechaHasta] = createSignal(hoy);
   const [orden, setOrden] = createSignal<keyof ProductoPendiente>("fabricar");
@@ -24,7 +24,7 @@ export default function ProductosPedidosPendientes() {
   const elementosPorPagina = 20;
 
   const [productoSeleccionado, setProductoSeleccionado] = createSignal<string | null>(null);
-  const [vendedores] = createResource(obtenerPersonalDux);
+  const [categorias] = createResource(obtenerCategorias);
 
   const camposNumericos: (keyof ProductoPendiente)[] = [
     "codItem",
@@ -38,7 +38,7 @@ export default function ProductosPedidosPendientes() {
     desde: fechaDesde(),
     hasta: fechaHasta(),
     textoProducto: textoProducto(),
-    vendedorId: vendedorId(),
+    categoriaId: categoriaId(),
   }));
 
   const [productos, { mutate }] = createResource(fetchParams, async (params) => {
@@ -88,49 +88,49 @@ export default function ProductosPedidosPendientes() {
 
   const totalPaginas = () => Math.ceil((productos()?.length ?? 0) / elementosPorPagina);
 
-async function exportarProductosPendientesFiltrados() {
-  const filtros = fetchParams();
-  const desdeTexto = formatearFechaCorta(fechaDesde());
-  const hastaTexto = formatearFechaCorta(fechaHasta());
-  const rangoFechas = `${desdeTexto} a ${hastaTexto}`;
-  const nombreArchivo = "Productos Pedidos Pendientes";
+  async function exportarProductosPendientesFiltrados() {
+    const filtros = fetchParams();
+    const desdeTexto = formatearFechaCorta(fechaDesde());
+    const hastaTexto = formatearFechaCorta(fechaHasta());
+    const rangoFechas = `${desdeTexto} a ${hastaTexto}`;
+    const nombreArchivo = "Productos Pedidos Pendientes";
 
-  const data = await obtenerProductosPedidosPendientes(filtros);
+    const data = await obtenerProductosPedidosPendientes(filtros);
 
-  const datosFormateados = data.map((item: any) => ({
-    ...item,
-    fabricar:
-      item.cantidad_pendiente > item.stock
-        ? Math.floor((item.cantidad_pendiente - item.stock) * 1.2)
-        : 0,
-  }));
+    const datosFormateados = data.map((item: any) => ({
+      ...item,
+      fabricar:
+        item.cantidad_pendiente > item.stock
+          ? Math.floor((item.cantidad_pendiente - item.stock) * 1.2)
+          : 0,
+    }));
 
-  const listaOrdenada = datosFormateados.sort((a, b) => {
-    const col = orden();
-    const mult = direccion() === "asc" ? 1 : -1;
+    const listaOrdenada = datosFormateados.sort((a, b) => {
+      const col = orden();
+      const mult = direccion() === "asc" ? 1 : -1;
 
-    if (
-      ["cantidad_pedida", "cantidad_facturada", "cantidad_pendiente", "stock", "fabricar"].includes(col)
-    ) {
-      return (Number(a[col]) - Number(b[col])) * mult;
-    }
+      if (
+        ["cantidad_pedida", "cantidad_facturada", "cantidad_pendiente", "stock", "fabricar"].includes(col)
+      ) {
+        return (Number(a[col]) - Number(b[col])) * mult;
+      }
 
-    return String(a[col]).localeCompare(String(b[col])) * mult;
-  });
+      return String(a[col]).localeCompare(String(b[col])) * mult;
+    });
 
-  const columnas = [
-    { label: "Código", key: "codItem" },
-    { label: "Categoría", key: "categoria" },
-    { label: "Descripción", key: "descripcion" },
-    { label: "Cantidad Pedida", key: "cantidad_pedida" },
-    { label: "Cantidad Facturada", key: "cantidad_facturada" },
-    { label: "Cantidad Pendiente", key: "cantidad_pendiente" },
-    { label: "Stock", key: "stock" },
-    { label: "Fabricar", key: "fabricar" },
-  ];
+    const columnas = [
+      { label: "Código", key: "codItem" },
+      { label: "Categoría", key: "categoria" },
+      { label: "Descripción", key: "descripcion" },
+      { label: "Cantidad Pedida", key: "cantidad_pedida" },
+      { label: "Cantidad Facturada", key: "cantidad_facturada" },
+      { label: "Cantidad Pendiente", key: "cantidad_pendiente" },
+      { label: "Stock", key: "stock" },
+      { label: "Fabricar", key: "fabricar" },
+    ];
 
-  exportarDatosAExcel(listaOrdenada, columnas, nombreArchivo, rangoFechas);
-}
+    exportarDatosAExcel(listaOrdenada, columnas, nombreArchivo, rangoFechas);
+  }
 
   return (
     <div class="p-6">
@@ -143,16 +143,16 @@ async function exportarProductosPendientesFiltrados() {
       </button>
       <FiltrosProductosPendientes
         textoProducto={textoProducto()}
-        vendedorId={vendedorId()}
+        categoriaId={categoriaId()}
         desde={fechaDesde()}
         hasta={fechaHasta()}
-        vendedores={vendedores() ?? []}
+        categorias={categorias() ?? []}
         onBuscarTexto={(txt) => {
           setTextoProducto(txt);
           setPagina(1);
         }}
-        onVendedorSeleccionado={(id) => {
-          setVendedorId(id);
+        onCategoriaSeleccionada={(id) => {
+          setCategoriaId(id);
           setPagina(1);
         }}
         onFechaDesdeSeleccionada={(d) => {
