@@ -2,15 +2,15 @@ import { Cliente, Provincia, Localidad, HistorialCliente } from '../models/index
 import { geocodificarDireccionExtendida } from '../utils/geocodificacion.js';
 
 export const crearClienteConGeocodificacion = async (clienteData, vendedorId = null) => {
-  const { nombre, telefono, email, razonSocial, direccion, cuit_cuil } = clienteData;
+  const { nombre, telefono, email, razonSocial, direccion, cuit_cuil, localidad, provincia } = clienteData;
   const direccionCompleta = `${direccion}, Argentina`;
-  const { latitud, longitud, ciudad, provincia } = await geocodificarDireccionExtendida(direccionCompleta);
+  const { latitud, longitud } = await geocodificarDireccionExtendida(direccionCompleta);
 
   let provinciaDb = await Provincia.findOne({ where: { nombre: provincia } });
   if (!provinciaDb) provinciaDb = await Provincia.create({ nombre: provincia });
 
-  let localidadDb = await Localidad.findOne({ where: { nombre: ciudad, provinciaId: provinciaDb.id } });
-  if (!localidadDb) localidadDb = await Localidad.create({ nombre: ciudad, provinciaId: provinciaDb.id });
+  let localidadDb = await Localidad.findOne({ where: { nombre: localidad, provinciaId: provinciaDb.id } });
+  if (!localidadDb) localidadDb = await Localidad.create({ nombre: localidad, provinciaId: provinciaDb.id });
 
   return Cliente.create({
     nombre,
@@ -28,16 +28,16 @@ export const crearClienteConGeocodificacion = async (clienteData, vendedorId = n
 };
 
 export const actualizarClienteExistenteConGeocodificacion = async (clienteExistente, clienteData, usuarioId) => {
-  const { nombre, telefono, email, razonSocial, direccion, cuit_cuil, vendedorId } = clienteData;
+  const { nombre, telefono, email, razonSocial, direccion, cuit_cuil, vendedorId, localidad, provincia } = clienteData;
 
   const direccionCompleta = `${direccion}, Argentina`;
-  const { latitud, longitud, ciudad, provincia } = await geocodificarDireccionExtendida(direccionCompleta);
+  const { latitud, longitud } = await geocodificarDireccionExtendida(direccionCompleta);
 
   let provinciaDb = await Provincia.findOne({ where: { nombre: provincia } });
   if (!provinciaDb) provinciaDb = await Provincia.create({ nombre: provincia });
 
-  let localidadDb = await Localidad.findOne({ where: { nombre: ciudad, provinciaId: provinciaDb.id } });
-  if (!localidadDb) localidadDb = await Localidad.create({ nombre: ciudad, provinciaId: provinciaDb.id });
+  let localidadDb = await Localidad.findOne({ where: { nombre: localidad, provinciaId: provinciaDb.id } });
+  if (!localidadDb) localidadDb = await Localidad.create({ nombre: localidad, provinciaId: provinciaDb.id });
 
   for (const campo of ['nombre','telefono','email','razonSocial','direccion','cuit_cuil','vendedorId']) {
     if (clienteExistente[campo] !== clienteData[campo]) {
