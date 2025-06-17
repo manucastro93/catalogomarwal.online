@@ -48,7 +48,14 @@ export default function TablaProductosPendientes(props: {
                                     <td class="p-3">{formatearMiles(p.cantidad_facturada)}</td>
                                     <td class="p-3 font-bold text-red-600">{formatearMiles(p.cantidad_pendiente)}</td>
                                     <td class="p-3">{formatearMiles(p.stock)}</td>
-                                    <td class="p-3">{formatearMiles(p.cantidad_pendiente - p.stock)}</td>
+                                    <td class="p-3">
+                                    <Show
+                                        when={(p.cantidad_pendiente - p.stock) > 0}
+                                        fallback="-"
+                                    >
+                                        {formatearMiles((p.cantidad_pendiente - p.stock) * 1.2)}
+                                    </Show>
+                                    </td>
                                 </tr>
                             )}
                         </For>
