@@ -27,9 +27,11 @@ export default function ProductosPedidosPendientes() {
   const [vendedores] = createResource(obtenerPersonalDux);
 
   const camposNumericos: (keyof ProductoPendiente)[] = [
+    "codItem",
     "cantidad_pedida",
     "cantidad_facturada",
     "cantidad_pendiente",
+    "fabricar"
   ];
 
   const fetchParams = createMemo(() => ({
