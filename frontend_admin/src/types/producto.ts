@@ -32,6 +32,7 @@ export interface Producto {
 
 export interface ProductoPendiente {
   codItem: string;
+  stock: number;
   descripcion: string;
   categoria: string;
   cantidad_pedida: number;

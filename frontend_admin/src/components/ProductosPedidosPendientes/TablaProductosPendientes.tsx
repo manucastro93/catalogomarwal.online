@@ -14,7 +14,7 @@ export default function TablaProductosPendientes(props: {
             <table class="w-full text-sm border-collapse">
                 <thead class="bg-gray-100 sticky top-0">
                     <tr>
-                        {(["cod_item", "descripcion", "cantidad_pedida", "cantidad_facturada", "cantidad_pendiente"] as (keyof ProductoPendiente)[]).map((col) => (
+                        {(["cod_item", "descripcion", "cantidad_pedida", "cantidad_facturada", "cantidad_pendiente", "stock"] as (keyof ProductoPendiente)[]).map((col) => (
                             <th
                                 class="text-left p-3 border-b cursor-pointer whitespace-nowrap"
                                 onClick={() => props.onOrdenar(col)}
@@ -47,6 +47,7 @@ export default function TablaProductosPendientes(props: {
                                     <td class="p-3">{formatearMiles(p.cantidad_pedida)}</td>
                                     <td class="p-3">{formatearMiles(p.cantidad_facturada)}</td>
                                     <td class="p-3 font-bold text-red-600">{formatearMiles(p.cantidad_pendiente)}</td>
+                                    <td class="p-3">{formatearMiles(p.stock)}</td>
                                 </tr>
                             )}
                         </For>

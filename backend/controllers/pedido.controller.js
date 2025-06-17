@@ -684,6 +684,7 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
         codItem,
         descripcion,
         categoria,
+        MAX(stock) AS stock,
         SUM(cantidad_pedida) AS cantidad_pedida,
         SUM(cantidad_facturada) AS cantidad_facturada,
         SUM(pendiente) AS cantidad_pendiente
@@ -691,6 +692,7 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
         SELECT
           dp.codItem AS codItem,
           dp.descripcion,
+          prod.stock AS stock,
           cat.nombre AS categoria,
           dp.cantidad AS cantidad_pedida,
           COALESCE(SUM(df.cantidad), 0) AS cantidad_facturada,
@@ -705,7 +707,7 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
           AND df.facturaId = f.id
           AND f.nro_pedido = p.nro_pedido
         ${whereClause}
-        GROUP BY dp.pedidoDuxId, dp.codItem, dp.descripcion, cat.nombre, dp.cantidad
+        GROUP BY dp.pedidoDuxId, dp.codItem, dp.descripcion, cat.nombre, dp.cantidad, prod.stock
         HAVING pendiente > 0
       ) AS sub
       GROUP BY codItem, descripcion, categoria
