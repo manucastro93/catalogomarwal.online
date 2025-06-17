@@ -22,8 +22,7 @@ async function ejecutar() {
 
     console.log('⏳ Ejecutando sincronizarPersonalDesdeDux...');
     const resPersonal = await sincronizarPersonalDesdeDux();
-    console.log(`✅ Personal: ${JSON.stringify(resPersonal, null, 2)}`);
-    
+    console.log(`✅ Personal: ${JSON.stringify(resPersonal, null, 2)}`);   
 
   } catch (error) {
     console.error('❌ Error general en la sincronización:', error);

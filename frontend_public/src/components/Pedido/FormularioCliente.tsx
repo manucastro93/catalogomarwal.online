@@ -9,12 +9,12 @@ import {
 } from "solid-js";
 import { capitalizarTexto, formatearCUIT } from "@/utils/formato";
 import {
-  formatearTelefonoArgentino,
   formatearTelefonoVisual,
 } from "@/utils/formatearTelefono";
 import { useDireccionAutocomplete } from "@/hooks/useDireccionAutocomplete";
 import { useValidacionWhatsapp } from "@/hooks/useValidacionWhatsapp";
 import { validarCamposCliente } from "@/utils/validarCamposCliente";
+import { buscarClientePorTelefono } from "@/services/cliente.service";
 
 interface Props {
   onConfirmar: (datosCliente: any) => void;
@@ -120,6 +120,33 @@ export default function FormularioCliente({ onConfirmar }: Props) {
       setTelefonoValidado(false);
     }
   });
+
+  const completarConDatosCliente = async () => {
+    try {
+      const cliente = await buscarClientePorTelefono(telefono());
+      if (!cliente) return;
+
+      if (!nombre()) setNombre(cliente.nombre);
+      if (!email()) setEmail(cliente.email);
+      if (!direccion()) setDireccion(cliente.direccion);
+      if (!razonSocial()) setRazonSocial(cliente.razonSocial || "");
+      if (!cuit()) setCuit(cliente.cuit_cuil || "");
+      if (!transporte()) setTransporte(cliente.transporte || "");
+      if (!localidad()) setLocalidad(cliente.localidad || "");
+      if (!provincia()) setProvincia(cliente.provincia || "");
+      if (!codigoPostal()) setCodigoPostal(cliente.codigoPostal || "");
+      persistirDatos();
+    } catch (err) {
+      console.error("❌ Error al completar datos del cliente:", err);
+    }
+  };
+
+  const confirmarTelefono = () => {
+    verificarCodigo();
+    setTelefonoValidado(true);
+    persistirDatos();
+    completarConDatosCliente();
+  };  
 
   const enviar = () => {
     const nuevosErrores = validarCamposCliente({
@@ -255,11 +282,7 @@ export default function FormularioCliente({ onConfirmar }: Props) {
             />
             <button
               class="px-2 py-1 bg-green-600 text-white rounded text-xs"
-              onClick={() => {
-                verificarCodigo();
-                setTelefonoValidado(true);
-                persistirDatos();
-              }}
+              onClick={confirmarTelefono}
             >
               Confirmar
             </button>

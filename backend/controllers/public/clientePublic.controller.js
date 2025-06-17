@@ -65,3 +65,28 @@ export const obtenerClientePorId = async (req, res, next) => {
     next(error);
   }
 };
+
+export const obtenerClientePorTelefono = async (req, res, next) => {
+  try {
+    const numero = req.params.numero?.replace(/\D/g, ""); // limpia por si viene con espacios o guiones
+    if (!numero || numero.length < 10) {
+      return res.status(400).json({ message: "Número inválido" });
+    }
+
+    const cliente = await Cliente.findOne({
+      where: { telefono: numero },
+      include: [
+        { model: Provincia, as: 'provincia' },
+        { model: Localidad, as: 'localidad' },
+        { model: Usuario, as: 'vendedor' },
+      ],
+    });
+
+    if (!cliente) return res.status(404).json({ message: "Cliente no encontrado" });
+
+    res.json(cliente);
+  } catch (error) {
+    console.error("❌ Error al buscar cliente por teléfono:", error);
+    next(error);
+  }
+};

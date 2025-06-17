@@ -14,6 +14,7 @@ import {
   obtenerClientePorIp,
   obtenerClientePorId,
   registrarLogPublico,
+  obtenerClientePorTelefono,
 } from '../controllers/public/clientePublic.controller.js';
 // 📦 Pedido
 import {
@@ -45,8 +46,10 @@ const router = express.Router();
 
 // 🧾 Cliente
 router.get('/cliente-por-ip', obtenerClientePorIp);
-router.get('/cliente/:id', obtenerClientePorId);
 router.post('/logs', registrarLogPublico);
+router.get('/cliente/:id', obtenerClientePorId);
+router.get('/cliente-por-telefono/:numero', obtenerClientePorTelefono);
+
 //Validar whatsap
 router.post('/validar-whatsapp/enviar', enviarCodigoWhatsapp);
 router.post('/validar-whatsapp/verificar', validarCodigoWhatsapp);
