@@ -90,12 +90,33 @@ export default function ProductosPedidosPendientes() {
 
 async function exportarProductosPendientesFiltrados() {
   const filtros = fetchParams();
-  const data = await obtenerProductosPedidosPendientes(filtros);
-
   const desdeTexto = formatearFechaCorta(fechaDesde());
   const hastaTexto = formatearFechaCorta(fechaHasta());
   const rangoFechas = `${desdeTexto} a ${hastaTexto}`;
   const nombreArchivo = "Productos Pedidos Pendientes";
+
+  const data = await obtenerProductosPedidosPendientes(filtros);
+
+  const datosFormateados = data.map((item: any) => ({
+    ...item,
+    fabricar:
+      item.cantidad_pendiente > item.stock
+        ? Math.floor((item.cantidad_pendiente - item.stock) * 1.2)
+        : 0,
+  }));
+
+  const listaOrdenada = datosFormateados.sort((a, b) => {
+    const col = orden();
+    const mult = direccion() === "asc" ? 1 : -1;
+
+    if (
+      ["cantidad_pedida", "cantidad_facturada", "cantidad_pendiente", "stock", "fabricar"].includes(col)
+    ) {
+      return (Number(a[col]) - Number(b[col])) * mult;
+    }
+
+    return String(a[col]).localeCompare(String(b[col])) * mult;
+  });
 
   const columnas = [
     { label: "Código", key: "codItem" },
@@ -108,17 +129,8 @@ async function exportarProductosPendientesFiltrados() {
     { label: "Fabricar", key: "fabricar" },
   ];
 
-  const datosFormateados = data.map((item: any) => ({
-    ...item,
-    fabricar:
-      item.cantidad_pendiente > item.stock
-        ? Math.floor((item.cantidad_pendiente - item.stock) * 1.2)
-        : 0,
-  }));
-
-  exportarDatosAExcel(datosFormateados, columnas, nombreArchivo, rangoFechas);
+  exportarDatosAExcel(listaOrdenada, columnas, nombreArchivo, rangoFechas);
 }
-
 
   return (
     <div class="p-6">
