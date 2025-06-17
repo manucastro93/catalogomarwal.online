@@ -61,7 +61,7 @@ export async function obtenerDetallesPedidoDux(pedidoDuxId: number) {
 export async function obtenerProductosPedidosPendientes(params: {
   desde?: string;
   hasta?: string;
-  vendedorId?: number;
+  categoriaId?: number;
 }): Promise<ProductoPendiente[]> {
   const { data } = await api.get('/pedidos/productos-pendientes', {
     params,

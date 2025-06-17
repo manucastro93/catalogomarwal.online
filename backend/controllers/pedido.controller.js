@@ -654,11 +654,9 @@ export const obtenerDetallesPedidoDux = async (req, res, next) => {
 
 export const obtenerProductosPedidosPendientes = async (req, res, next) => {
   try {
-    const { desde, hasta, vendedorId, textoProducto } = req.query;
+    const { desde, hasta, textoProducto, categoriaId } = req.query;
     const replacements = {};
-    const condiciones = [
-      "p.estado_facturacion != 'CERRADO'"
-    ];
+    const condiciones = ["p.estado_facturacion != 'CERRADO'"];
 
     if (desde && hasta) {
       condiciones.push("p.fecha BETWEEN :desde AND :hasta");
@@ -666,14 +664,14 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
       replacements.hasta = hasta;
     }
 
-    if (vendedorId) {
-      condiciones.push("f.id_vendedor = :vendedorId");
-      replacements.vendedorId = vendedorId;
-    }
-
     if (textoProducto) {
       condiciones.push(`(dp.descripcion LIKE :textoProducto OR dp.codItem LIKE :textoProducto)`);
       replacements.textoProducto = `%${textoProducto}%`;
+    }
+
+    if (categoriaId) {
+      condiciones.push("cat.id = :categoriaId");
+      replacements.categoriaId = categoriaId;
     }
 
     const whereClause = condiciones.length ? "WHERE " + condiciones.join(" AND ") : "";
@@ -725,6 +723,7 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const obtenerPedidosPendientesPorProducto = async (req, res, next) => {
   try {

@@ -1,15 +1,15 @@
-import { For, Show } from "solid-js";
-import type { VendedorOption } from "@/types/vendedor";
+import { For } from "solid-js";
+import type { Categoria } from "@/types/categoria";
 
 interface Props {
   textoProducto: string;
-  vendedorId: number | undefined;
+  categoriaId: number | undefined;
   desde: string;
   hasta: string;
-  vendedores: VendedorOption[];
+  categorias: Categoria[];
 
   onBuscarTexto: (texto: string) => void;
-  onVendedorSeleccionado: (id: number | undefined) => void;
+  onCategoriaSeleccionada: (id: number | undefined) => void;
   onFechaDesdeSeleccionada: (fecha: string) => void;
   onFechaHastaSeleccionada: (fecha: string) => void;
 }
@@ -27,20 +27,17 @@ export default function FiltrosProductosPendientes(props: Props) {
 
       <select
         class="p-2 border rounded"
-        value={props.vendedorId ?? ""}
+        value={props.categoriaId ?? ""}
         onChange={(e) =>
-          props.onVendedorSeleccionado(
+          props.onCategoriaSeleccionada(
             e.currentTarget.value ? Number(e.currentTarget.value) : undefined
           )
         }
       >
-        <option value="">Todos los vendedores</option>
-        <For each={props.vendedores}>
-          {(v) => (
-            <option value={v.id}>
-              {v.nombre}
-              {v.apellido_razon_social ? ` ${v.apellido_razon_social}` : ""}
-            </option>
+        <option value="">Todas las categorías</option>
+        <For each={props.categorias}>
+          {(c) => (
+            <option value={c.id}>{c.nombre}</option>
           )}
         </For>
       </select>
