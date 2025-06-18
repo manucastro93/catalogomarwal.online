@@ -35,7 +35,7 @@ function parseFloatSeguro(valor) {
   return isNaN(n) ? 0 : n;
 }
 
-async function obtenerConReintentos(url, params = {}, reintentos = 3) {
+async function obtenerConReintentos(url, params = {}, reintentos = 5) {
   for (let i = 0; i < reintentos; i++) {
     try {
       const res = await axios.get(url, {
@@ -267,10 +267,10 @@ export async function sincronizarProductosDesdeDux() {
   };
 }
 
-export async function sincronizarPedidosDesdeDux() {
+export async function sincronizarPedidosDesdeDux(diasAtras) {
   const fechaHasta = new Date();
   const fechaDesde = new Date();
-  fechaDesde.setDate(fechaHasta.getDate() - 20);
+  fechaDesde.setDate(fechaHasta.getDate() - diasAtras);
   const desde = fechaDesde.toISOString().split('T')[0]; // "YYYY-MM-DD"
   const hasta = fechaHasta.toISOString().split('T')[0];
 
@@ -386,10 +386,10 @@ export async function sincronizarPedidosDesdeDux() {
   }
 }
 
-export async function sincronizarFacturasDesdeDux() {
+export async function sincronizarFacturasDesdeDux(diasAtras) {
   const fechaHasta = new Date();
   const fechaDesde = new Date();
-  fechaDesde.setDate(fechaHasta.getDate() - 20);
+  fechaDesde.setDate(fechaHasta.getDate() - diasAtras);
   const desde = fechaDesde.toISOString().split('T')[0]; // "YYYY-MM-DD"
   const hasta = fechaHasta.toISOString().split('T')[0];
   const limit = 50;
