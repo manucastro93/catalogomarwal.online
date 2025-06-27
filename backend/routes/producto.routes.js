@@ -10,7 +10,8 @@ import {
   eliminarImagenProducto,
   importarProductosDesdeExcel,
   actualizarOrdenImagenes,
-  obtenerProductosProduccion
+  obtenerProductosProduccion,
+  obtenerProductosProveedores
 } from '../controllers/producto.controller.js';
 
 import { validarProducto } from '../validaciones/producto.validation.js';
@@ -20,6 +21,7 @@ const router = express.Router();
 
 router.get('/', obtenerProductos);
 router.get('/produccion', obtenerProductosProduccion);
+router.get('/proveedores', obtenerProductosProveedores);
 router.get('/:id', obtenerProductoPorId);
 
 router.post('/', validarProducto, crearProducto);

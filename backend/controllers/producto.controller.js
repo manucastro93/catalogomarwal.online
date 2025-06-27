@@ -1,4 +1,4 @@
-import { Producto, Categoria, ImagenProducto, ListaPrecioProducto } from '../models/index.js';
+import { Producto, Categoria, ImagenProducto, ListaPrecioProducto, Subcategoria } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize';
 import { leerExcelProductos } from '../utils/leerExcel.js';
 import cache from '../utils/cache.js';
@@ -28,7 +28,7 @@ export const obtenerProductos = async (req, res, next) => {
         order: [['orden', 'ASC']],
       }
     ];
-    
+
     if (buscar) {
       include.push({
         model: Categoria,
@@ -38,7 +38,7 @@ export const obtenerProductos = async (req, res, next) => {
           nombre: { [Op.like]: `%${buscar}%` },
         },
       });
-    
+
       where[Op.or] = [
         { nombre: { [Op.like]: `%${buscar}%` } },
         { sku: { [Op.like]: `%${buscar}%` } },
@@ -91,6 +91,104 @@ export const obtenerProductos = async (req, res, next) => {
   }
 };
 
+export const obtenerProductosProveedores = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      orden = 'sku',
+      direccion = 'ASC',
+      buscar = '',
+      categoriaId,
+      listaPrecioId,
+      subcategoriaId
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+    const where = {};
+    const include = [
+      {
+        model: ImagenProducto,
+        as: 'Imagenes',
+        required: false,
+        attributes: ['id', 'url', 'orden'],
+        separate: true,
+        order: [['orden', 'ASC']],
+      }
+    ];
+
+    if (buscar) {
+      include.push({
+        model: Categoria,
+        as: 'Categoria',
+        required: false,
+        where: {
+          nombre: { [Op.like]: `%${buscar}%` },
+        },
+      });
+
+      where[Op.or] = [
+        { nombre: { [Op.like]: `%${buscar}%` } },
+        { sku: { [Op.like]: `%${buscar}%` } },
+      ];
+    } else {
+      include.push({
+        model: Categoria,
+        as: 'Categoria',
+        required: false,
+      });
+
+      include.push({
+        model: Subcategoria,
+        as: 'Subcategoria',
+        required: false,
+      });
+
+      if (listaPrecioId) {
+        include.push({
+          model: ListaPrecioProducto,
+          as: 'listasPrecio',
+          required: true,
+          where: { listaPrecioId },
+        });
+      }
+
+    }
+
+    if (subcategoriaId) {
+      where.subcategoriaId = subcategoriaId;
+    } else if (categoriaId) {
+      where.categoriaId = categoriaId;
+    } else {
+      where.categoriaId = { [Op.eq]: 12 };
+    }
+
+    where.costoDux = { [Op.gt]: 0 };
+
+    const { count, rows } = await Producto.findAndCountAll({
+      where,
+      include,
+      offset,
+      limit: Number(limit),
+      order: [[orden, direccion]],
+    });
+
+    const totalPaginas = Math.ceil(count / limit);
+
+    res.json({
+      data: rows,
+      pagina: Number(page),
+      totalPaginas,
+      totalItems: count,
+      hasNextPage: Number(page) < totalPaginas,
+      hasPrevPage: Number(page) > 1,
+    });
+  } catch (error) {
+    console.error('❌ Error al obtener productos:', error);
+    next(error);
+  }
+};
+
 export const obtenerProductosProduccion = async (req, res, next) => {
   try {
     const {
@@ -115,7 +213,7 @@ export const obtenerProductosProduccion = async (req, res, next) => {
         order: [['orden', 'ASC']],
       }
     ];
-    
+
     if (buscar) {
       include.push({
         model: Categoria,
@@ -125,7 +223,7 @@ export const obtenerProductosProduccion = async (req, res, next) => {
           nombre: { [Op.like]: `%${buscar}%` },
         },
       });
-    
+
       where[Op.or] = [
         { nombre: { [Op.like]: `%${buscar}%` } },
         { sku: { [Op.like]: `%${buscar}%` } },
@@ -247,7 +345,7 @@ export const crearProductoConImagenes = async (req, res, next) => {
       }));
       await ImagenProducto.bulkCreate(imagenes);
     }
-    
+
     await crearAuditoria({
       tabla: 'productos',
       accion: 'crea producto',
@@ -256,8 +354,8 @@ export const crearProductoConImagenes = async (req, res, next) => {
       descripcion: `Se creó el prodcuto ${producto.nombre}`,
       ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
     });
-    
-    
+
+
     cache.flushAll();
     res.json({ producto });
   } catch (error) {
@@ -446,7 +544,7 @@ export const eliminarImagenProducto = async (req, res, next) => {
       descripcion: `Se creó el usuario ${imagen.url}`,
       ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
     });
-    
+
 
     res.json({ message: 'Imagen eliminada correctamente' });
   } catch (error) {

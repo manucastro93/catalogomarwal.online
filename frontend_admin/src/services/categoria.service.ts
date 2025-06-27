@@ -8,6 +8,12 @@ export const obtenerCategorias = async () => {
   return data.data;
 };
 
+export const obtenerSubcategorias = async () => {
+  const { data } = await api.get('/subcategorias', {
+    params: { limit: 100 } 
+  });
+  return data.data;
+};
 
 export const crearCategoria = async (categoria: Partial<Categoria>) => {
   const { data } = await api.post('/categorias', categoria);

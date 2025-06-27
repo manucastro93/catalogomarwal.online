@@ -7,3 +7,14 @@ export interface Categoria {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Subcategoria {
+  id: number;
+  nombre: string;
+  categoriaId: number;
+  orden?: number | null;
+  estado?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}

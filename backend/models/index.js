@@ -89,7 +89,8 @@ export const {
   DetallePedidoDux,
   DetalleFactura,
   HistorialSincronizacion,
-  PersonalDux
+  PersonalDux,
+  Subcategoria
 } = db;
 
 export { sequelize, Sequelize };

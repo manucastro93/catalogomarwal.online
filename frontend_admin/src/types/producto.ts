@@ -1,4 +1,4 @@
-import type { Categoria } from './categoria';
+import type { Categoria, Subcategoria } from './categoria';
 
 export interface ImagenProducto {
   id: number;
@@ -18,6 +18,7 @@ export interface Producto {
   unidadPorBulto?: number | null;
   costoMP?: number | null;
   categoriaId: number;
+  subcategoriaId?: number | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -26,6 +27,7 @@ export interface Producto {
   marcaId?: number | null;
   costoDux?: number | null;
   Categoria?: Categoria;
+  Subcategoria?: Subcategoria;
   Marca?: { id: number; nombre: string };
   Imagenes?: ImagenProducto[];
 }

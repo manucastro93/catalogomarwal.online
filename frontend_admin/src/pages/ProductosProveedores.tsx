@@ -6,33 +6,33 @@ import {
   Show,
 } from 'solid-js';
 import {
-  obtenerProductos,
+  obtenerProductosProveedores,
   obtenerProductoPorId,
   eliminarProducto,
   sincronizarProductosDesdeDux,
   obtenerProgresoSync,
 } from '@/services/producto.service';
-import { obtenerCategorias } from '@/services/categoria.service';
+import { obtenerSubcategorias } from '@/services/categoria.service';
 import { useAuth } from '@/store/auth';
 import ConPermiso from '@/components/Layout/ConPermiso';
-import ModalNuevoProducto from '@/components/Producto/ModalNuevoProducto';
-import VerProductoModal from '@/components/Producto/VerProductoModal';
+import ModalNuevoProducto from '@/components/ProductoProveedor/ModalNuevoProducto';
+import VerProductoModal from '@/components/ProductoProveedor/VerProductoModal';
 import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
 import ModalMensaje from '@/components/Layout/ModalMensaje';
 import Loader from '@/components/Layout/Loader';
-import FiltrosProductos from '@/components/Producto/FiltrosProductos';
-import TablaProductos from '@/components/Producto/TablaProductos';
-import BotonSyncDux from '@/components/Producto/BotonSyncDux';
+import FiltrosProductos from '@/components/ProductoProveedor/FiltrosProductos';
+import TablaProductos from '@/components/ProductoProveedor/TablaProductos';
+import BotonSyncDux from '@/components/ProductoProveedor/BotonSyncDux';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 import type { Producto } from '@/types/producto';
 
-export default function Productos() {
+export default function ProductosProveedores() {
   const [pagina, setPagina] = createSignal(1);
   const [orden, setOrden] = createSignal('sku');
   const [direccion, setDireccion] = createSignal<'asc' | 'desc'>('asc');
 
   const [busqueda, setBusqueda] = createSignal('');
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = createSignal('');
+  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = createSignal('');
 
   const [modalAbierto, setModalAbierto] = createSignal(false);
   const [productoSeleccionado, setProductoSeleccionado] = createSignal<Producto | null>(null);
@@ -46,22 +46,22 @@ export default function Productos() {
   const { usuario } = useAuth();
   const esVendedor = usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR;
 
-  const [categorias] = createResource(obtenerCategorias);
+  const [categorias] = createResource(obtenerSubcategorias);
 
   const fetchParams = createMemo(() => ({
-    page: pagina(),
-    limit: 20,
-    orden: orden(),
-    direccion: direccion(),
-    buscar: busqueda(),
-    categoriaId: categoriaSeleccionada(),
-  }));
+  page: pagina(),
+  limit: 20,
+  orden: orden(),
+  direccion: direccion(),
+  buscar: busqueda(),
+  subcategoriaId: subcategoriaSeleccionada(),
+}));
+
 
   const [respuesta, { refetch }] = createResource(
     fetchParams,
-    obtenerProductos
+    obtenerProductosProveedores
   );
-
   const cambiarOrden = (col: string) => {
     if (orden() === col) {
       setDireccion(direccion() === 'asc' ? 'desc' : 'asc');
@@ -100,14 +100,14 @@ export default function Productos() {
 
       <FiltrosProductos
         busqueda={busqueda()}
-        categoriaSeleccionada={categoriaSeleccionada()}
-        categorias={categorias() ?? []}
+        subcategoriaSeleccionada={subcategoriaSeleccionada()}
+        subcategorias={categorias() ?? []}
         onBuscar={(valor) => {
           setBusqueda(valor);
           setPagina(1);
         }}
-        onSeleccionCategoria={(valor) => {
-          setCategoriaSeleccionada(valor);
+        onSeleccionSubcategoria={(valor) => {
+          setSubcategoriaSeleccionada(valor);
           setPagina(1);
         }}
       />
