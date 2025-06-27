@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux, PersonalDux } from '../models/index.js';
+import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux, PersonalDux, Subcategoria } from '../models/index.js';
 import { estadoSync } from '../state/estadoSync.js';
 
 const API_URL = process.env.DUX_API_URL_PRODUCTOS;
@@ -105,6 +105,88 @@ export async function obtenerCategoriasDesdeDux(reintento = 0) {
   }
 }
 
+export async function obtenerSubcategoriasDesdeDux(reintento = 0) {
+  try {
+    const res = await axios.get(`${API_URL}/subrubros`, {
+      headers: { Authorization: API_KEY, Accept: 'application/json' }
+    });
+
+    return res.data;
+  } catch (error) {
+    if (error.response?.status === 429 && reintento < 5) {
+      const espera = 5000 * (reintento + 1);
+      console.warn(`⏳ Esperando ${espera / 1000}s por 429... Reintento #${reintento + 1}`);
+      await esperar(espera);
+      return obtenerSubcategoriasDesdeDux(reintento + 1);
+    }
+    console.error('❌ Error al obtener subrubros desde Dux:', error.response?.status, error.response?.data);
+    throw error;
+  }
+}
+
+export async function sincronizarCategoriasDesdeDux() {
+  const rubros = await obtenerCategoriasDesdeDux();
+  const categoriasCreadas = new Set();
+
+  for (const rubro of rubros) {
+    const nombre = limpiarNombreCategoria(rubro.nombre);
+
+    const existente = await Categoria.findOne({ where: { nombre } });
+
+    if (!existente) {
+      const nueva = await Categoria.create({
+        nombre,
+        nombreWeb: nombre,
+        orden: 0,
+        estado: true
+      });
+      categoriasCreadas.add(nueva.id);
+    }
+  }
+
+  // Cargar todas las categorías en memoria para lookup rápido
+  const todasCategorias = await Categoria.findAll();
+  const categoriasMap = {};
+  for (const cat of todasCategorias) {
+    categoriasMap[limpiarNombreCategoria(cat.nombre)] = cat.id;
+  }
+
+  return { categoriasMap, categoriasCreadas };
+}
+
+export async function sincronizarSubcategoriasDesdeDux(categoriasMap) {
+  const subrubros = await obtenerSubcategoriasDesdeDux();
+  const subcategoriasMap = {};
+
+  for (const sub of subrubros) {
+    const id = sub.id_sub_rubro;
+    const nombreSub = limpiarNombreCategoria(sub.sub_rubro);
+    const nombreCategoria = limpiarNombreCategoria(sub.rubro);
+    const categoriaId = categoriasMap[nombreCategoria];
+
+    if (!id || !nombreSub || !categoriaId) {
+      console.warn(`⚠️ Subcategoría omitida: id=${id}, sub=${sub.sub_rubro}, rubro=${sub.rubro}`);
+      continue;
+    }
+
+    let existente = await Subcategoria.findByPk(id);
+
+    if (!existente) {
+      existente = await Subcategoria.create({
+        id,
+        nombre: nombreSub,
+        categoriaId,
+        orden: 0,
+        estado: true,
+      });
+    }
+
+    subcategoriasMap[id] = existente.id;
+  }
+
+  return subcategoriasMap;
+}
+
 export async function obtenerTodosLosItemsDesdeDux() {
   const todos = [];
   let offset = 0;
@@ -141,7 +223,6 @@ export async function obtenerTodosLosItemsDesdeDux() {
 }
 
 async function intentarObtenerPagina(offset, limit, pagina, reintento = 0) {
-  // Esta función también podría usar obtenerConReintentos si se adapta su lógica
   try {
     const res = await axios.get(`${API_URL}/items`, {
       headers: { Authorization: API_KEY, Accept: 'application/json' },
@@ -152,10 +233,16 @@ async function intentarObtenerPagina(offset, limit, pagina, reintento = 0) {
       items: res.data.results,
       total: res.data.paging?.total || 0
     };
+
   } catch (error) {
-    if (error.response?.status === 429 && reintento < 5) {
-      const espera = 5000 * (reintento + 1);
-      console.warn(`⚠️ 429 en página ${pagina}. Esperando ${espera / 1000}s... Reintento #${reintento + 1}`);
+    const status = error.response?.status;
+    const esECONNRESET = error.code === 'ECONNRESET';
+
+    if ((status === 429 || esECONNRESET) && reintento < 5) {
+      const espera = esECONNRESET ? 3000 + reintento * 2000 : 5000 * (reintento + 1);
+      const motivo = esECONNRESET ? 'ECONNRESET' : '429';
+
+      console.warn(`⚠️ ${motivo} en página ${pagina}. Esperando ${espera / 1000}s... Reintento #${reintento + 1}`);
       await esperar(espera);
       return intentarObtenerPagina(offset, limit, pagina, reintento + 1);
     }
@@ -168,35 +255,9 @@ async function intentarObtenerPagina(offset, limit, pagina, reintento = 0) {
 export async function sincronizarProductosDesdeDux() {
   estadoSync.porcentaje = 0;
 
-  // Paso 1: sincronizar categorías
   await esperar(5000);
-  const rubros = await obtenerCategoriasDesdeDux();
-  const categoriasCreadas = new Set();
-
-  for (const rubro of rubros) {
-    const nombre = limpiarNombreCategoria(rubro.nombre);
-
-    const existente = await Categoria.findOne({ where: { nombre } });
-
-    if (!existente) {
-      const nueva = await Categoria.create({
-        nombre,
-        nombreWeb: nombre,
-        orden: 0,
-        estado: true
-      });
-      categoriasCreadas.add(nueva.id);
-    }
-  }
-
-  // Cargar todas las categorías en memoria para lookup rápido
-  const todasCategorias = await Categoria.findAll();
-  const categoriasMap = {};
-  for (const cat of todasCategorias) {
-    categoriasMap[limpiarNombreCategoria(cat.nombre)] = cat.id;
-  }
-
-  // Paso 2: sincronizar productos
+  const { categoriasMap, categoriasCreadas } = await sincronizarCategoriasDesdeDux();
+  const subcategoriasMap = await sincronizarSubcategoriasDesdeDux(categoriasMap);
   const items = await obtenerTodosLosItemsDesdeDux();
 
   let creados = 0;
@@ -207,15 +268,14 @@ export async function sincronizarProductosDesdeDux() {
       const sku = String(item.cod_item).trim();
       let categoriaId = null;
 
-      const productoExistente = await Producto.findOne({
-        where: { sku }
-      });
+      const productoExistente = await Producto.findOne({ where: { sku } });
 
       if (productoExistente?.categoriaId) {
         categoriaId = productoExistente.categoriaId;
       } else {
         const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
         categoriaId = categoriasMap[nombreCategoria] || 11;
+
       }
 
       let precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL);
@@ -230,8 +290,8 @@ export async function sincronizarProductosDesdeDux() {
         precioUnitario: precio,
         costoDux: parseFloat(item.costo || '0'),
         stock: calcularStock(item),
-        //stock: item.stock.stock_real,
         categoriaId,
+        subcategoriaId: item.sub_rubro?.id,
         activo: true
       };
 

@@ -3,6 +3,7 @@ import { Show } from "solid-js";
 import { useAuth } from "@/store/auth";
 import Logo from "./Logo";
 import Ventas from "./Ventas";
+import Compras from "./Compras";
 import Produccion from "./Produccion";
 import Bot from "./Bot";
 import Informes from "./Informes";
@@ -45,6 +46,7 @@ export default function Sidebar(props: {
 
         <SeccionTitulo texto="GESTIÓN" mostrar={props.expandido} classExtra="mt-4" />
         <Ventas usuario={usuario()} expandido={props.expandido} />
+        <Compras usuario={usuario()} expandido={props.expandido} />
         <Produccion usuario={usuario()} expandido={props.expandido} />
         <Bot usuario={usuario()} expandido={props.expandido} />
 

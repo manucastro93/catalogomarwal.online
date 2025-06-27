@@ -60,6 +60,16 @@ export default (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: 0,
     },
+    subcategoriaId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Subcategorias',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    },
   }, {
     tableName: 'Productos',
     timestamps: true,
@@ -86,6 +96,12 @@ export default (sequelize, DataTypes) => {
       foreignKey: 'productoId',
       as: 'listasPrecio',
     });
+
+    Producto.belongsTo(models.Subcategoria, {
+      foreignKey: 'subcategoriaId',
+      as: 'Subcategoria',
+    });
+
   };
 
   return Producto;
