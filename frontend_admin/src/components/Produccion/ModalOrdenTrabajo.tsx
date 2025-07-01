@@ -5,6 +5,7 @@ import { obtenerPlantas } from '@/services/planta.service';
 import { useAuth } from '@/store/auth';
 import type { Producto } from '@/types/producto';
 import type { CrearOrdenTrabajo } from '@/types/ordenTrabajo';
+import { formatearPrecio } from '@/utils/formato';
 
 export default function ModalOrdenTrabajo(props: { onCerrar: () => void }) {
   const [busqueda, setBusqueda] = createSignal("");
@@ -263,11 +264,11 @@ export default function ModalOrdenTrabajo(props: { onCerrar: () => void }) {
                           />
                         </td>
                         <td class="p-2 text-right">
-                          $ {item.producto.precioUnitario?.toLocaleString("es-AR") ?? "-"}
+                          {formatearPrecio(item.producto.precioUnitario) ?? "-"}
                         </td>
                         <td class="p-2 text-right">
                           {item.cantidad && item.producto.precioUnitario
-                            ? `$ ${(item.cantidad * item.producto.precioUnitario).toLocaleString("es-AR")}`
+                            ? `${formatearPrecio(item.cantidad * item.producto.precioUnitario)}`
                             : "-"}
                         </td>
                         <td class="p-2 text-right">
