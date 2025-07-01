@@ -1,6 +1,6 @@
 import { For } from "solid-js";
 import type { ReporteProduccionEncabezado } from "@/types/produccion";
-import { formatearPrecio } from "@/utils/formato";
+import { formatearPrecio, formatearFechaCorta } from "@/utils/formato";
 
 interface Props {
   reportes: ReporteProduccionEncabezado[];
@@ -42,7 +42,7 @@ export default function TablaProduccionDiaria({
           <For each={reportes}>
             {(r) => (
               <tr class="border-t hover:bg-gray-50">
-                <td class="p-2">{new Date(r.fecha).toLocaleDateString()}</td>
+                <td class="p-2">{formatearFechaCorta(r.fecha)}</td>
                 <td class="p-2 capitalize">{r.turno}</td>
                 <td class="p-2">{r.planta?.nombre ?? r.plantaId}</td>
                 <td class="p-2">{r.usuario?.nombre}</td>
@@ -80,7 +80,7 @@ export default function TablaProduccionDiaria({
           {(r) => (
             <div class="border rounded-lg p-3 shadow-sm text-sm bg-white">
               <div>
-                <strong>Fecha:</strong> {new Date(r.fecha).toLocaleDateString()}
+                <strong>Fecha:</strong> {formatearFechaCorta(r.fecha)}
               </div>
               <div>
                 <strong>Turno:</strong>{" "}
