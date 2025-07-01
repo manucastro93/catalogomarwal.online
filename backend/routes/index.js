@@ -24,6 +24,8 @@ import conversacionBotRoutes from './conversacionBot.routes.js';
 import facturaRoutes from './factura.routes.js';
 import eficienciaRoutes from "./eficiencia.routes.js";
 import personalDuxRoutes from "./personalDux.routes.js";
+import MateriaPrimaRoutes from './materiaPrima.routes.js';
+import composicionRoutes from './composicion.routes.js';
 
 const router = express.Router();
 
@@ -51,5 +53,7 @@ router.use('/conversaciones-bot', conversacionBotRoutes);
 router.use('/facturas', facturaRoutes);
 router.use("/eficiencia", eficienciaRoutes);
 router.use("/personalDux", personalDuxRoutes);
+router.use("/materias-primas", MateriaPrimaRoutes);
+router.use("/composiciones", composicionRoutes);
 
 export default router;

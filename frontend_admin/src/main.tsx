@@ -31,7 +31,7 @@ const Operarios = lazy(() => import("./pages/Operarios"));
 const PedidoRapido = lazy(() => import("./pages/PedidoRapido"));
 const Pedidos = lazy(() => import("./pages/Pedidos"));
 const Productos = lazy(() => import("./pages/Productos"));
-const ProductosProveedores = lazy(() => import("./pages/ProductosProveedores"));
+const MateriasPrimas = lazy(() => import("./pages/MateriasPrimas"));
 const ProduccionDiaria = lazy(() => import("./pages/ProduccionDiaria"));
 const ResumenProduccion = lazy(
   () => import("./pages/Graficos/ResumenProduccion")
@@ -112,11 +112,11 @@ render(
 
     {/* Compras */}
       <Route
-        path="/ProductosProveedores"
+        path="/MateriasPrimas"
         component={() => (
           <ProtectedRoute>
             <Layout>
-              <ProductosProveedores />
+              <MateriasPrimas />
             </Layout>
           </ProtectedRoute>
         )}

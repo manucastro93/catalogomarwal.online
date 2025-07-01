@@ -50,16 +50,6 @@ export default (sequelize, DataTypes) => {
         key: 'id',
       },
     },
-    costoMP: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: 0,
-    },
-    costoDux: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      defaultValue: 0,
-    },
     subcategoriaId: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -69,6 +59,26 @@ export default (sequelize, DataTypes) => {
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
+    },
+    proveedorId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Proveedores',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    },
+    costoMP: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0,
+    },
+    costoDux: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0,
     },
   }, {
     tableName: 'Productos',
@@ -87,6 +97,16 @@ export default (sequelize, DataTypes) => {
       as: 'Marca',
     });
 
+    Producto.belongsTo(models.Subcategoria, {
+      foreignKey: 'subcategoriaId',
+      as: 'Subcategoria',
+    });
+
+    Producto.belongsTo(models.Proveedor, {
+      foreignKey: 'proveedorId',
+      as: 'Proveedor',
+    });
+
     Producto.hasMany(models.ImagenProducto, {
       foreignKey: 'productoId',
       as: 'Imagenes',
@@ -97,9 +117,9 @@ export default (sequelize, DataTypes) => {
       as: 'listasPrecio',
     });
 
-    Producto.belongsTo(models.Subcategoria, {
-      foreignKey: 'subcategoriaId',
-      as: 'Subcategoria',
+    Producto.hasMany(models.ComposicionProductoMateriaPrima, {
+      foreignKey: 'productoId',
+      as: 'MateriasPrimasAsociadas',
     });
 
   };

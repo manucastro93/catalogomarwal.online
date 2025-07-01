@@ -90,7 +90,10 @@ export const {
   DetalleFactura,
   HistorialSincronizacion,
   PersonalDux,
-  Subcategoria
+  Subcategoria,
+  Proveedor,
+  MateriaPrima,
+  ComposicionProductoMateriaPrima
 } = db;
 
 export { sequelize, Sequelize };

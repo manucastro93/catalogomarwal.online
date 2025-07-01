@@ -1,7 +1,7 @@
 import { For } from "solid-js";
 import type { Subcategoria } from "@/types/categoria";
 
-export default function FiltrosProductos(props: {
+export default function FiltrosMateriasPrimas(props: {
   busqueda: string;
   subcategoriaSeleccionada: string;
   subcategorias: Subcategoria[];

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux, PersonalDux, Subcategoria } from '../models/index.js';
+import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux, PersonalDux, Subcategoria, Proveedor } from '../models/index.js';
 import { estadoSync } from '../state/estadoSync.js';
 
 const API_URL = process.env.DUX_API_URL_PRODUCTOS;
@@ -124,6 +124,41 @@ export async function obtenerSubcategoriasDesdeDux(reintento = 0) {
   }
 }
 
+export async function guardarProveedorDesdeDux(proveedorDux) {
+  if (!proveedorDux || !proveedorDux.id_proveedor) return null;
+
+  const proveedorExistente = await Proveedor.findOne({
+    where: { id: proveedorDux.id_proveedor },
+  });
+
+  const datos = {
+    id: proveedorDux.id_proveedor,
+    nombre: proveedorDux.proveedor || '',
+    tipoDoc: proveedorDux.tipo_doc,
+    nroDoc: proveedorDux.nro_doc,
+    provincia: proveedorDux.provincia,
+    localidad: proveedorDux.localidad,
+    domicilio: proveedorDux.domicilio,
+    barrio: proveedorDux.barrio,
+    codPostal: proveedorDux.cod_postal,
+    telefono: proveedorDux.telefono,
+    fax: proveedorDux.fax,
+    companiaCelular: proveedorDux.compania_celular,
+    celular: proveedorDux.cel,
+    personaContacto: proveedorDux.persona_contacto,
+    email: proveedorDux.email,
+    paginaWeb: proveedorDux.pagina_web,
+  };
+
+  if (proveedorExistente) {
+    await proveedorExistente.update(datos);
+    return proveedorExistente.id;
+  } else {
+    const nuevoProveedor = await Proveedor.create(datos);
+    return nuevoProveedor.id;
+  }
+}
+
 export async function sincronizarCategoriasDesdeDux() {
   const rubros = await obtenerCategoriasDesdeDux();
   const categoriasCreadas = new Set();
@@ -196,8 +231,7 @@ export async function obtenerTodosLosItemsDesdeDux() {
 
   while (true) {
     console.log(`📦 Pidiendo página ${pagina} (offset ${offset})`);
-    // Esta función intentarObtenerPagina también debería usar obtenerConReintentos o ser global
-    // Por ahora, se asume que intentaObtenerPagina está definida o es una función simple
+
     const lote = await intentarObtenerPagina(offset, limit, pagina);
 
     if (!lote?.items?.length) break;
@@ -266,43 +300,48 @@ export async function sincronizarProductosDesdeDux() {
   for (const item of items) {
     try {
       const sku = String(item.cod_item).trim();
-      let categoriaId = null;
+      const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
+      const categoriaId = categoriasMap[nombreCategoria] || 11;
+      const proveedorId = await guardarProveedorDesdeDux(item.proveedor);
+      const precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL) || 0;
 
-      const productoExistente = await Producto.findOne({ where: { sku } });
+      if (categoriaId === 12) {
+        const existente = await MateriaPrima.findOne({ where: { sku } });
+        const data = {
+          nombre: item.item,
+          sku,
+          stock: calcularStock(item),
+          activo: true,
+          categoria: item.sub_rubro?.nombre || '',
+        };
 
-      if (productoExistente?.categoriaId) {
-        categoriaId = productoExistente.categoriaId;
+        if (existente) {
+          await existente.update(data);
+        } else {
+          await MateriaPrima.create(data);
+        }
       } else {
-        const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
-        categoriaId = categoriasMap[nombreCategoria] || 11;
+        const productoExistente = await Producto.findOne({ where: { sku } });
+        const data = {
+          nombre: item.item,
+          sku,
+          precioUnitario: Math.round(precio / 1.21),
+          costoDux: parseFloat(item.costo || '0'),
+          stock: calcularStock(item),
+          categoriaId,
+          subcategoriaId: item.sub_rubro?.id,
+          proveedorId,
+          activo: true
+        };
 
+        if (productoExistente) {
+          await productoExistente.update(data);
+          actualizados++;
+        } else {
+          await Producto.create(data);
+          creados++;
+        }
       }
-
-      let precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL);
-      if (!precio || precio === 0) {
-        precio = obtenerPrecioLista(item.precios, 'RETAIL');
-      }
-      precio = Math.round(precio / 1.21);
-
-      const data = {
-        nombre: item.item,
-        sku,
-        precioUnitario: precio,
-        costoDux: parseFloat(item.costo || '0'),
-        stock: calcularStock(item),
-        categoriaId,
-        subcategoriaId: item.sub_rubro?.id,
-        activo: true
-      };
-
-      if (productoExistente) {
-        await productoExistente.update(data);
-        actualizados++;
-      } else {
-        await Producto.create(data);
-        creados++;
-      }
-
     } catch (error) {
       if (error.name === 'SequelizeUniqueConstraintError') {
         console.warn(`⚠️ SKU duplicado: ${item.cod_item}, se omite creación`);
@@ -311,11 +350,6 @@ export async function sincronizarProductosDesdeDux() {
       }
     }
   }
-
-  console.log('\n🎉 Sincronización finalizada.');
-  setTimeout(() => {
-    estadoSync.porcentaje = 0;
-  }, 3000);
 
   estadoSync.ultimaActualizacionProductos = Date.now();
 
