@@ -49,6 +49,9 @@ export default function Produccion(props: { usuario: any; expandido: boolean }) 
           <ConPermiso modulo="Produccion_Diaria" accion="ver">
             <SidebarLink href="/Produccion/ProduccionDiaria" texto="Producción diaria" activo={esActivo('/Produccion/ProduccionDiaria')} />
           </ConPermiso>
+          <ConPermiso modulo="Produccion_OT" accion="ver">
+            <SidebarLink href="/Produccion/OrdenesDeTrabajo" texto="Órdenes de trabajo" activo={esActivo('/Produccion/OrdenesDeTrabajo')} />
+          </ConPermiso>
         </div>
       </Show>
     </div>

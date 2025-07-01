@@ -1,4 +1,4 @@
-import { OrdenTrabajo, DetalleOrdenTrabajo, Producto, Usuario, Planta } from "../models/index.js";
+import { OrdenTrabajo, DetalleOrdenTrabajo, Producto, Usuario, Planta, ReporteProduccionEncabezado } from "../models/index.js";
 import { Op } from "sequelize";
 import { crearAuditoria } from "../utils/auditoria.js";
 
@@ -46,7 +46,6 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const crearOrdenTrabajo = async (req, res, next) => {
   try {
@@ -115,6 +114,67 @@ export const eliminarOrdenTrabajo = async (req, res, next) => {
     });
 
     res.json({ mensaje: "Orden de trabajo eliminada correctamente" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const obtenerOrdenesTrabajoPendientes = async (req, res, next) => {
+  try {
+    const pagina = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (pagina - 1) * limit;
+    const where = {};
+
+    // Otros filtros
+    if (req.query.desde) {
+      where.fecha = { [Op.gte]: new Date(req.query.desde) };
+    }
+    if (req.query.hasta) {
+      where.fecha = where.fecha
+        ? { ...where.fecha, [Op.lte]: new Date(req.query.hasta) }
+        : { [Op.lte]: new Date(req.query.hasta) };
+    }
+    if (req.query.turno) {
+      where.turno = req.query.turno;
+    }
+    if (req.query.plantaId) {
+      where.plantaId = req.query.plantaId;
+    }
+
+    // **Filtro clave: solo OTs sin reportes relacionados**
+    where['$reportesProduccion.id$'] = null;
+
+    const { count, rows } = await OrdenTrabajo.findAndCountAll({
+      where,
+      include: [
+        {
+          model: DetalleOrdenTrabajo,
+          as: "productos",
+          include: [{ model: Producto, as: "producto" }]
+        },
+        { model: Usuario, as: "usuario", attributes: ["id", "nombre", "email"] },
+        { model: Planta, as: "planta", attributes: ["id", "nombre", "direccion"] },
+        {
+          model: ReporteProduccionEncabezado,
+          as: "reportesProduccion",
+          required: false,
+          attributes: [],
+        }
+      ],
+      order: [["fecha", "ASC"]],
+      limit,
+      offset,
+      subQuery: false, // Esencial para filtrar por includes
+    });
+
+    const totalPaginas = Math.ceil(count / limit);
+    res.json({
+      data: rows,
+      total: count,
+      pagina,
+      totalPaginas,
+    });
   } catch (error) {
     next(error);
   }

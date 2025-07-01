@@ -15,3 +15,9 @@ export const eliminarOrdenTrabajo = async (id: number) => {
   const { data } = await api.delete(`/ordenes-trabajo/${id}`);
   return data;
 };
+
+export const obtenerOrdenesTrabajoPendientes = async () => {
+  const { data } = await api.get("/ordenes-trabajo/pendientes");
+  return data;
+};
+

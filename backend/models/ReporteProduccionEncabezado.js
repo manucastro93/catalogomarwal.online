@@ -8,6 +8,14 @@ export default (sequelize, DataTypes) => {
       usuarioId: { type: DataTypes.INTEGER, allowNull: false },
       plantaId: { type: DataTypes.INTEGER, allowNull: false },
       nota: { type: DataTypes.STRING(300), allowNull: true },
+      ordenTrabajoId: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        allowNull: true,
+        references: {
+          model: "OrdenTrabajo",
+          key: "id"
+        }
+      },
     },
     {
       tableName: "ReporteProduccionEncabezados",
@@ -22,6 +30,10 @@ export default (sequelize, DataTypes) => {
       foreignKey: "reporteProduccionEncabezadoId",
       as: "productos",
       onDelete: "CASCADE",
+    });
+    ReporteProduccionEncabezado.belongsTo(models.OrdenTrabajo, {
+      foreignKey: "ordenTrabajoId",
+      as: "ordenTrabajo"
     });
   };
   return ReporteProduccionEncabezado;

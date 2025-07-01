@@ -89,18 +89,6 @@ export default function ProduccionDiaria() {
         >
           + Nuevo Reporte Diario
         </button>
-        <button
-          onClick={() => setModalOrdenTrabajoAbierto(true)}
-          class="bg-green-600 text-white px-3 py-1 rounded text-sm"
-        >
-          + Crear Orden de Trabajo
-        </button>
-        <button
-          onClick={() => setModalOrdenesPendientesAbierto(true)}
-          class="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
-        >
-          Ver Ordenes Pendientes
-        </button>
       </div>
 
       <Show when={plantasCargadas().length > 0}>
