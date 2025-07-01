@@ -51,6 +51,11 @@ export default (sequelize, DataTypes) => {
   as: "productos",
   onDelete: "CASCADE",
 });
+OrdenTrabajo.hasMany(models.ReporteProduccionEncabezado, {
+  foreignKey: "ordenTrabajoId",
+  as: "reportesProduccion",
+});
+
   };
 
   return OrdenTrabajo;

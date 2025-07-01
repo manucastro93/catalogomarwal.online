@@ -56,6 +56,7 @@ export interface CrearReporteProduccionEncabezado {
     productoId: number;
     cantidad: number;
   }[];
+  ordenTrabajoId?: number;
 }
 
 // Por compatibilidad: el antiguo (ya no se usa para crear, pero puede quedar en código viejo)
