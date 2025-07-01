@@ -6,27 +6,23 @@ import {
   Show,
 } from 'solid-js';
 import {
-  obtenerProductosProveedores,
-  obtenerProductoPorId,
-  eliminarProducto,
-  sincronizarProductosDesdeDux,
-  obtenerProgresoSync,
-} from '@/services/producto.service';
+  obtenerMateriasPrimas,
+  obtenerMateriaPrimaPorId
+} from '@/services/materiaPrima.service';
 import { obtenerSubcategorias } from '@/services/categoria.service';
 import { useAuth } from '@/store/auth';
 import ConPermiso from '@/components/Layout/ConPermiso';
-import ModalNuevoProducto from '@/components/ProductoProveedor/ModalNuevoProducto';
-import VerProductoModal from '@/components/ProductoProveedor/VerProductoModal';
+import ModalNuevaMateriaPrima from '@/components/MateriaPrima/ModalMateriaPrima';
+import VerMateriaPrimaModal from '@/components/MateriaPrima/VerMateriaPrimaModal';
 import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
 import ModalMensaje from '@/components/Layout/ModalMensaje';
 import Loader from '@/components/Layout/Loader';
-import FiltrosProductos from '@/components/ProductoProveedor/FiltrosProductos';
-import TablaProductos from '@/components/ProductoProveedor/TablaProductos';
-import BotonSyncDux from '@/components/ProductoProveedor/BotonSyncDux';
+import FiltrosMateriasPrimas from '@/components/MateriaPrima/FiltrosMateriasPrimas';
+import TablaMateriasPrimas from '@/components/MateriaPrima/TablaMateriasPrimas';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
-import type { Producto } from '@/types/producto';
+import type { MateriaPrima } from '@/types/materiaPrima';
 
-export default function ProductosProveedores() {
+export default function MateriasPrimas() {
   const [pagina, setPagina] = createSignal(1);
   const [orden, setOrden] = createSignal('sku');
   const [direccion, setDireccion] = createSignal<'asc' | 'desc'>('asc');
@@ -35,13 +31,10 @@ export default function ProductosProveedores() {
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = createSignal('');
 
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [productoSeleccionado, setProductoSeleccionado] = createSignal<Producto | null>(null);
-  const [verProducto, setVerProducto] = createSignal<Producto | null>(null);
-  const [productoAEliminar, setProductoAEliminar] = createSignal<Producto | null>(null);
+  const [materiaPrimaSeleccionada, setMateriaPrimaSeleccionada] = createSignal<MateriaPrima | null>(null);
+  const [verMateriaPrima, setVerMateriaPrima] = createSignal<MateriaPrima | null>(null);
 
   const [mensaje, setMensaje] = createSignal('');
-  const [syncCargando, setSyncCargando] = createSignal(false);
-  const [syncMensaje, setSyncMensaje] = createSignal('');
 
   const { usuario } = useAuth();
   const esVendedor = usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR;
@@ -49,19 +42,19 @@ export default function ProductosProveedores() {
   const [categorias] = createResource(obtenerSubcategorias);
 
   const fetchParams = createMemo(() => ({
-  page: pagina(),
-  limit: 20,
-  orden: orden(),
-  direccion: direccion(),
-  buscar: busqueda(),
-  subcategoriaId: subcategoriaSeleccionada(),
-}));
-
+    page: pagina(),
+    limit: 20,
+    orden: orden(),
+    direccion: direccion(),
+    buscar: busqueda(),
+    subcategoriaId: subcategoriaSeleccionada(),
+  }));
 
   const [respuesta, { refetch }] = createResource(
     fetchParams,
-    obtenerProductosProveedores
+    obtenerMateriasPrimas
   );
+
   const cambiarOrden = (col: string) => {
     if (orden() === col) {
       setDireccion(direccion() === 'asc' ? 'desc' : 'asc');
@@ -71,34 +64,24 @@ export default function ProductosProveedores() {
     }
   };
 
-  const verProductoCompleto = async (id: number) => {
-    const producto = await obtenerProductoPorId(id);
-    setVerProducto(producto);
+  const verMateriaPrimaCompleta = async (id: number) => {
+    const materiaPrima = await obtenerMateriaPrimaPorId(id);
+    setVerMateriaPrima(materiaPrima);
   };
 
-  const editarProductoCompleto = async (id: number) => {
-    const producto = await obtenerProductoPorId(id);
-    setProductoSeleccionado(producto);
+  const editarMateriaPrimaCompleta = async (id: number) => {
+    const materiaPrima = await obtenerMateriaPrimaPorId(id);
+    setMateriaPrimaSeleccionada(materiaPrima);
     setModalAbierto(true);
-  };
-
-  const handleEliminar = (id: number) => {
-    setProductoAEliminar(
-      respuesta()?.data.find((p: Producto) => p.id === id) || null
-    );
   };
 
   return (
     <div class="p-6">
       <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold">Productos</h1>
-        {!esVendedor && (
-          <div class="flex gap-2">
-          </div>
-        )}
+        <h1 class="text-2xl font-bold">Materias Primas</h1>
       </div>
 
-      <FiltrosProductos
+      <FiltrosMateriasPrimas
         busqueda={busqueda()}
         subcategoriaSeleccionada={subcategoriaSeleccionada()}
         subcategorias={categorias() ?? []}
@@ -113,15 +96,14 @@ export default function ProductosProveedores() {
       />
 
       <Show when={!respuesta.loading} fallback={<Loader />}>
-        <TablaProductos
-          productos={respuesta()?.data ?? []}
+        <TablaMateriasPrimas
+          materiasPrimas={respuesta()?.data ?? []}
           orden={orden()}
           direccion={direccion()}
           esVendedor={esVendedor}
           onOrdenar={cambiarOrden}
-          onVer={verProductoCompleto}
-          onEditar={editarProductoCompleto}
-          onEliminar={handleEliminar}
+          onVer={verMateriaPrimaCompleta}
+          onEditar={editarMateriaPrimaCompleta}
         />
       </Show>
 
@@ -145,9 +127,9 @@ export default function ProductosProveedores() {
         </button>
       </div>
 
-      <ModalNuevoProducto
+      <ModalNuevaMateriaPrima
         abierto={modalAbierto()}
-        producto={productoSeleccionado()}
+        materiaPrima={materiaPrimaSeleccionada()}
         onCerrar={(mensajeExito?: string) => {
           setModalAbierto(false);
           refetch();
@@ -155,23 +137,9 @@ export default function ProductosProveedores() {
         }}
       />
 
-      <VerProductoModal
-        producto={verProducto()}
-        onCerrar={() => setVerProducto(null)}
-      />
-
-      <ModalConfirmacion
-        mensaje="¿Estás seguro que querés eliminar este producto?"
-        abierto={!!productoAEliminar()}
-        onCancelar={() => setProductoAEliminar(null)}
-        onConfirmar={async () => {
-          if (productoAEliminar()) {
-            await eliminarProducto(productoAEliminar()!.id);
-            setProductoAEliminar(null);
-            refetch();
-            setMensaje('Producto eliminado correctamente');
-          }
-        }}
+      <VerMateriaPrimaModal
+        materiaPrima={verMateriaPrima()}
+        onCerrar={() => setVerMateriaPrima(null)}
       />
 
       <ModalMensaje mensaje={mensaje()} cerrar={() => setMensaje('')} />

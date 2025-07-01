@@ -165,16 +165,21 @@ export const obtenerProductosProveedores = async (req, res, next) => {
 
     where.costoDux = { [Op.gt]: 0 };
 
+    const orderClause =
+      orden === 'valorizado'
+        ? [[Sequelize.literal('costoDux * stock'), direccion]]
+        : [[orden, direccion]];  
+
     const { count, rows } = await Producto.findAndCountAll({
       where,
       include,
       offset,
       limit: Number(limit),
-      order: [[orden, direccion]],
+      order: orderClause,
     });
 
     const totalPaginas = Math.ceil(count / limit);
-
+    
     res.json({
       data: rows,
       pagina: Number(page),

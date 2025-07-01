@@ -28,6 +28,13 @@ export const productoSchema = z.object({
       message: "Debe ser un número válido mayor a 0",
     }),
 
+  costoDux: z
+    .string()
+    .min(1, "El costoDux es obligatorio")
+    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+      message: "Debe ser un número válido mayor a 0",
+    }),    
+
   precioPorBulto: z
     .string()
     .min(1, "El precio por bulto es obligatorio")
@@ -45,4 +52,8 @@ export const productoSchema = z.object({
   categoriaId: z
     .string()
     .min(1, "La categoría es obligatoria"),
+
+  subcategoriaId: z
+    .string()
+    .min(1, "La categoría es obligatoria"),    
 });

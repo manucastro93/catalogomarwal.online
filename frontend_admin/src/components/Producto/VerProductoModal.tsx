@@ -3,12 +3,13 @@ import type { Producto } from '@/types/producto';
 import TabDetalles from './Tabs/TabDetalles';
 import TabEstadisticas from './Tabs/TabEstadisticas';
 import TabImagenes from './Tabs/TabImagenes';
+import TabComposicion from './Tabs/TabComposicion';
 
 export default function VerProductoModal(props: {
   producto: Producto | null;
   onCerrar: () => void;
 }) {
-  const [tab, setTab] = createSignal<'detalles' | 'estadisticas' | 'imagenes'>('detalles');
+  const [tab, setTab] = createSignal<'detalles' | 'estadisticas' | 'imagenes'  | 'composicion'>('detalles');
 
   return (
     <Show when={props.producto}>
@@ -37,6 +38,12 @@ export default function VerProductoModal(props: {
             >
               Imágenes
             </button>
+              <button
+    class={`pb-2 cursor-pointer ${tab() === 'composicion' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}
+    onClick={() => setTab('composicion')}
+  >
+    Composición
+  </button>
           </div>
 
           <Show when={tab() === 'detalles'}>
@@ -49,6 +56,10 @@ export default function VerProductoModal(props: {
 
           <Show when={tab() === 'imagenes'}>
             <TabImagenes imagenes={props.producto?.Imagenes || []} />
+          </Show>
+
+          <Show when={tab() === 'composicion'}>
+            <TabComposicion productoId={props.producto!.id} />
           </Show>
 
           <div class="text-right mt-6">

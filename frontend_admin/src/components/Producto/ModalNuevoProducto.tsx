@@ -5,13 +5,14 @@ import { productoSchema } from '@/validations/producto.schema';
 import { formatearPrecio } from '@/utils/formato';
 import ModalMensaje from '../Layout/ModalMensaje';
 import type { Producto, ImagenProducto } from '@/types/producto';
+import TabComposicionEdicion from './Tabs/TabComposicionEdicion';
 
 export default function ModalNuevoProducto(props: {
   abierto: boolean;
   producto?: Producto | null;
   onCerrar: (mensajeExito?: string) => void;
 }) {
-  const [tab, setTab] = createSignal<"datos" | "imagenes">("datos");
+  const [tab, setTab] = createSignal<"datos" | "imagenes" | "composicion">("datos");
   const [categorias] = createResource(obtenerCategorias);
 
   const [nombre, setNombre] = createSignal("");
@@ -171,6 +172,14 @@ export default function ModalNuevoProducto(props: {
             >
               Imágenes
             </button>
+              <button
+                class={`pb-2 cursor-pointer ${tab() === "composicion" ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"}`}
+                onClick={() => setTab("composicion")}
+                disabled={!props.producto?.id}
+                title={!props.producto?.id ? "Primero debes crear el producto" : ""}
+              >
+                Composición
+              </button>
           </div>
 
           <Show when={tab() === "datos"}>
@@ -496,6 +505,10 @@ export default function ModalNuevoProducto(props: {
                 Guardar orden
               </button>
             </div>
+          </Show>
+
+          <Show when={tab() === "composicion" && !!props.producto}>
+            <TabComposicionEdicion productoId={props.producto!.id} />
           </Show>
 
           <div class="text-right mt-6">
