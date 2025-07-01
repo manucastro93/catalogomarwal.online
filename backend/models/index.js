@@ -93,7 +93,10 @@ export const {
   Subcategoria,
   Proveedor,
   MateriaPrima,
-  ComposicionProductoMateriaPrima
+  ComposicionProductoMateriaPrima,
+  OrdenTrabajo,
+  DetalleOrdenTrabajo,
+  ReporteProduccionEncabezado
 } = db;
 
 export { sequelize, Sequelize };
