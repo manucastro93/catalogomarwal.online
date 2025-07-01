@@ -26,6 +26,7 @@ import eficienciaRoutes from "./eficiencia.routes.js";
 import personalDuxRoutes from "./personalDux.routes.js";
 import MateriaPrimaRoutes from './materiaPrima.routes.js';
 import composicionRoutes from './composicion.routes.js';
+import ordenTrabajoRoutes from './ordenTrabajo.routes.js';
 
 const router = express.Router();
 
@@ -55,5 +56,6 @@ router.use("/eficiencia", eficienciaRoutes);
 router.use("/personalDux", personalDuxRoutes);
 router.use("/materias-primas", MateriaPrimaRoutes);
 router.use("/composiciones", composicionRoutes);
+router.use("/ordenes-trabajo", ordenTrabajoRoutes);
 
 export default router;

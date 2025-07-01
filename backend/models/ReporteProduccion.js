@@ -7,6 +7,10 @@ export default (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
+      reporteProduccionEncabezadoId: { 
+        type: DataTypes.INTEGER.UNSIGNED, 
+        allowNull: true 
+      },
       fecha: {
         type: DataTypes.DATE,
         allowNull: true,
@@ -55,6 +59,12 @@ export default (sequelize, DataTypes) => {
       foreignKey: "plantaId",
       as: "planta",
     });
+
+    ReporteProduccion.belongsTo(models.ReporteProduccionEncabezado, {
+      foreignKey: "reporteProduccionEncabezadoId",
+      as: "encabezado"
+    });
+
   };
 
   return ReporteProduccion;

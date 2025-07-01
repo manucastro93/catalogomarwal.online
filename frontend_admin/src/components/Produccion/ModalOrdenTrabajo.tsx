@@ -1,12 +1,12 @@
 import { createSignal, Show, For, createResource } from 'solid-js';
 import { buscarProductosPorTexto } from '@/services/producto.service';
-import { guardarReporteProduccionEncabezado } from '@/services/produccion.service';
+import { guardarOrdenTrabajo } from '@/services/ordenTrabajo.service';
 import { obtenerPlantas } from '@/services/planta.service';
 import { useAuth } from '@/store/auth';
 import type { Producto } from '@/types/producto';
-import type { CrearReporteProduccionEncabezado } from '@/types/produccion';
+import type { CrearOrdenTrabajo } from '@/types/ordenTrabajo';
 
-export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
+export default function ModalOrdenTrabajo(props: { onCerrar: () => void }) {
   const [busqueda, setBusqueda] = createSignal("");
   const [productos] = createResource(busqueda, buscarProductosPorTexto);
   const [items, setItems] = createSignal<
@@ -18,9 +18,8 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
   const [plantas] = createResource(obtenerPlantas);
   const [plantaId, setPlantaId] = createSignal<string>("");
   const [turno, setTurno] = createSignal("");
-  const [nota, setNota] = createSignal("");
-  const hoy = new Date().toISOString().split("T")[0];
-  const [fecha, setFecha] = createSignal(hoy);
+  const [fecha, setFecha] = createSignal(""); // Fecha de la orden
+  const [nota, setNota] = createSignal(""); // Nota opcional
 
   const agregarItem = (producto: Producto) => {
     const yaExiste = items().find((item) => item.producto.id === producto.id);
@@ -42,7 +41,7 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
     setItems((prev) => prev.filter((item) => item.producto.id !== productoId));
   };
 
-  const guardarReporte = async () => {
+  const guardarOrden = async () => {
     const usuarioId = usuario()?.id;
     if (!usuarioId) {
       setMensaje("Error: usuario no identificado.");
@@ -69,12 +68,11 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
       return;
     }
     if (items().length === 0) {
-      setMensaje("Agregá al menos un producto al reporte");
+      setMensaje("Agregá al menos un producto a la orden");
       return;
     }
-
-    // Armar el payload del encabezado
-    const payload: CrearReporteProduccionEncabezado = {
+    // Armamos un solo payload con todos los ítems
+    const payload: CrearOrdenTrabajo = {
       fecha: fecha(),
       turno: turno() as "mañana" | "tarde" | "noche",
       plantaId: parseInt(plantaId()),
@@ -85,19 +83,34 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
         cantidad: item.cantidad as number,
       })),
     };
-    await guardarReporteProduccionEncabezado(payload);
+    await guardarOrdenTrabajo(payload);
     props.onCerrar();
   };
+
+  // Fecha por default (hoy)
+  const hoy = new Date().toISOString().split('T')[0];
+
+  // Calcula el total de la orden
+  const totalOrden = () =>
+    items().reduce(
+      (acc, item) =>
+        acc +
+        (item.cantidad && item.producto.precioUnitario
+          ? item.cantidad * item.producto.precioUnitario
+          : 0),
+      0
+    );
 
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl h-full md:h-[90vh] p-4 md:p-6 border border-gray-300 flex flex-col overflow-y-auto">
-        <h2 class="text-xl font-bold mb-4">Nuevo Reporte de Producción</h2>
+        <h2 class="text-xl font-bold mb-4">Crear Orden de Trabajo</h2>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4 text-sm">
           <input
             type="date"
             class="border p-2 rounded"
-            value={fecha()}
+            value={fecha() || hoy}
             min={hoy}
             onInput={(e) => setFecha(e.currentTarget.value)}
           />
@@ -142,6 +155,7 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
         </div>
 
         <div class="flex-1 overflow-y-auto">
+          {/* Sugerencias de productos */}
           <Show when={busqueda() && productos()}>
             <div class="space-y-2 max-h-60 overflow-y-auto border p-2 mb-4 rounded">
               <For each={productos()} fallback={<p>No hay productos</p>}>
@@ -168,6 +182,13 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
                   <div class="border rounded p-2 bg-white text-sm">
                     <div><strong>SKU:</strong> {item.producto.sku}</div>
                     <div><strong>Producto:</strong> {item.producto.nombre}</div>
+                    <div><strong>Precio unitario:</strong> $ {item.producto.precioUnitario?.toLocaleString("es-AR") ?? "-"}</div>
+                    <div>
+                      <strong>Subtotal:</strong>{" "}
+                      {item.cantidad && item.producto.precioUnitario
+                        ? `$ ${(item.cantidad * item.producto.precioUnitario).toLocaleString("es-AR")}`
+                        : "-"}
+                    </div>
                     <div class="flex justify-between items-center mt-2">
                       <input
                         type="number"
@@ -194,6 +215,13 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
                   </div>
                 )}
               </For>
+              {/* Total general mobile */}
+              <div class="flex justify-end mt-2">
+                <span class="font-bold text-lg">
+                  Total: ${" "}
+                  {totalOrden().toLocaleString("es-AR")}
+                </span>
+              </div>
             </div>
           </Show>
 
@@ -206,6 +234,8 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
                     <th class="p-2 w-[120px]">SKU</th>
                     <th class="p-2">Producto</th>
                     <th class="p-2 w-[100px]">Cantidad</th>
+                    <th class="p-2 w-[100px] text-right">Precio Unitario</th>
+                    <th class="p-2 w-[100px] text-right">Subtotal</th>
                     <th class="p-2 w-[80px] text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -233,6 +263,14 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
                           />
                         </td>
                         <td class="p-2 text-right">
+                          $ {item.producto.precioUnitario?.toLocaleString("es-AR") ?? "-"}
+                        </td>
+                        <td class="p-2 text-right">
+                          {item.cantidad && item.producto.precioUnitario
+                            ? `$ ${(item.cantidad * item.producto.precioUnitario).toLocaleString("es-AR")}`
+                            : "-"}
+                        </td>
+                        <td class="p-2 text-right">
                           <button
                             onClick={() => eliminarItem(item.producto.id)}
                             class="text-red-600 text-sm hover:underline"
@@ -245,6 +283,13 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
                   </For>
                 </tbody>
               </table>
+              {/* Total general desktop */}
+              <div class="flex justify-end mt-2">
+                <span class="font-bold text-lg">
+                  Total: ${" "}
+                  {totalOrden().toLocaleString("es-AR")}
+                </span>
+              </div>
             </div>
           </Show>
         </div>
@@ -261,10 +306,10 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
             Cancelar
           </button>
           <button
-            onClick={guardarReporte}
+            onClick={guardarOrden}
             class="bg-green-600 text-white px-4 py-2 rounded text-sm"
           >
-            Guardar Reporte
+            Guardar Orden
           </button>
         </div>
       </div>

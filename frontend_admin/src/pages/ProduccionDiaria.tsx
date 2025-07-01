@@ -1,13 +1,16 @@
 import { createSignal, createResource, createMemo, Show, createEffect } from 'solid-js';
-import { obtenerReportesProduccion, eliminarReporteProduccion } from '@/services/produccion.service';
+import { obtenerReportesProduccion, eliminarReporteProduccionEncabezado } from '@/services/produccion.service';
 import { obtenerPlantas } from '@/services/planta.service';
 import ModalNuevoReporte from '@/components/Produccion/ModalNuevoReporte';
+import ModalOrdenTrabajo from '@/components/Produccion/ModalOrdenTrabajo';
+import ModalOrdenesPendientes from '@/components/Produccion/ModalOrdenesPendientes';
+import ModalDetalleReporteProduccion from '@/components/Produccion/ModalDetalleReporteProduccion';
 import ModalMensaje from '@/components/Layout/ModalMensaje';
 import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
 import Loader from '@/components/Layout/Loader';
 import TablaProduccionDiaria from '@/components/Produccion/TablaProduccionDiaria';
 import FiltrosProduccionDiaria from '@/components/Produccion/FiltrosProduccionDiaria';
-import type { ReporteProduccion, ProduccionParams } from '@/types/produccion';
+import type { ReporteProduccion, ProduccionParams, ReporteProduccionEncabezado } from '@/types/produccion';
 import type { Planta } from '@/types/planta';
 
 const TURNOS_VALIDOS = ["mañana", "tarde", "noche"];
@@ -18,8 +21,11 @@ export default function ProduccionDiaria() {
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
   const [mensaje, setMensaje] = createSignal("");
   const [modalAbierto, setModalAbierto] = createSignal(false);
+  const [modalOrdenTrabajoAbierto, setModalOrdenTrabajoAbierto] = createSignal(false);
   const [reporteAEliminar, setReporteAEliminar] =
     createSignal<ReporteProduccion | null>(null);
+  const [modalOrdenesPendientesAbierto, setModalOrdenesPendientesAbierto] = createSignal(false);
+  const [reporteParaVerDetalle, setReporteParaVerDetalle] = createSignal<ReporteProduccionEncabezado | null>(null);
 
   // Filtros
   const [desde, setDesde] = createSignal("");
@@ -67,7 +73,7 @@ export default function ProduccionDiaria() {
 
   const confirmarEliminacion = async () => {
     if (!reporteAEliminar()) return;
-    await eliminarReporteProduccion(reporteAEliminar()!.id);
+    await eliminarReporteProduccionEncabezado(reporteAEliminar()!.id);
     setReporteAEliminar(null);
     setMensaje("Reporte eliminado correctamente ✅");
     refetch();
@@ -81,7 +87,19 @@ export default function ProduccionDiaria() {
           onClick={() => setModalAbierto(true)}
           class="bg-blue-600 text-white px-3 py-1 rounded text-sm"
         >
-          + Nuevo Reporte
+          + Nuevo Reporte Diario
+        </button>
+        <button
+          onClick={() => setModalOrdenTrabajoAbierto(true)}
+          class="bg-green-600 text-white px-3 py-1 rounded text-sm"
+        >
+          + Crear Orden de Trabajo
+        </button>
+        <button
+          onClick={() => setModalOrdenesPendientesAbierto(true)}
+          class="bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+        >
+          Ver Ordenes Pendientes
         </button>
       </div>
 
@@ -103,10 +121,11 @@ export default function ProduccionDiaria() {
       <Show when={!respuesta.loading} fallback={<Loader />}>
         <TablaProduccionDiaria
           reportes={respuesta()?.data ?? []}
-          onEliminar={setReporteAEliminar}
+          onEliminarReporte={setReporteAEliminar}
           onOrdenar={cambiarOrden}
           orden={orden()}
           direccion={direccion()}
+          onVerDetalle={setReporteParaVerDetalle}
         />
       </Show>
 
@@ -139,6 +158,28 @@ export default function ProduccionDiaria() {
             setModalAbierto(false);
             refetch();
           }}
+        />
+      </Show>
+
+      <Show when={modalOrdenTrabajoAbierto()}>
+        <ModalOrdenTrabajo
+          onCerrar={() => {
+            setModalOrdenTrabajoAbierto(false);
+            refetch();
+          }}
+        />
+      </Show>
+
+      <Show when={modalOrdenesPendientesAbierto()}>
+        <ModalOrdenesPendientes
+          onCerrar={() => setModalOrdenesPendientesAbierto(false)}
+        />
+      </Show>
+
+      <Show when={!!reporteParaVerDetalle()}>
+        <ModalDetalleReporteProduccion
+          reporte={reporteParaVerDetalle()!}
+          onCerrar={() => setReporteParaVerDetalle(null)}
         />
       </Show>
 

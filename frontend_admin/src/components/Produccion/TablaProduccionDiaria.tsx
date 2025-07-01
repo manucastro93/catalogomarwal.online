@@ -1,21 +1,23 @@
 import { For } from "solid-js";
-import type { ReporteProduccion } from "@/types/produccion";
+import type { ReporteProduccionEncabezado } from "@/types/produccion";
 import { formatearPrecio } from "@/utils/formato";
 
 interface Props {
-  reportes: ReporteProduccion[];
-  onEliminar: (reporte: ReporteProduccion) => void;
+  reportes: ReporteProduccionEncabezado[];
+  onEliminarReporte: (reporte: ReporteProduccionEncabezado) => void;
   onOrdenar: (col: string) => void;
   orden: string;
   direccion: "asc" | "desc";
+  onVerDetalle?: (reporte: ReporteProduccionEncabezado) => void;
 }
 
 export default function TablaProduccionDiaria({
   reportes,
-  onEliminar,
+  onEliminarReporte,
   onOrdenar,
   orden,
   direccion,
+  onVerDetalle,
 }: Props) {
   const th = (label: string, col: string) => (
     <th class="p-2 cursor-pointer select-none" onClick={() => onOrdenar(col)}>
@@ -29,15 +31,11 @@ export default function TablaProduccionDiaria({
         <thead class="bg-gray-100 sticky top-0">
           <tr>
             {th("Fecha", "fecha")}
-            {th("SKU", "producto.sku")}
-            {th("Producto", "producto.nombre")}
-            <th class="p-2">Costo</th>
-            <th class="p-2">Cantidad</th>
-            <th class="p-2">Turno</th>
-            <th class="p-2">Planta</th>
-            <th class="p-2">Costo Total</th>
-            <th class="p-2">Cargado por</th>
-            <th class="p-2">Acciones</th>
+            {th("Turno", "turno")}
+            {th("Planta", "planta.nombre")}
+            <th class="p-2">Usuario</th>
+            <th class="p-2 text-right">Total ($)</th>
+            <th class="p-2 text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -45,51 +43,44 @@ export default function TablaProduccionDiaria({
             {(r) => (
               <tr class="border-t hover:bg-gray-50">
                 <td class="p-2">{new Date(r.fecha).toLocaleDateString()}</td>
-                <td class="p-2">{r.producto?.sku}</td>
-                <td class="p-2">{r.producto?.nombre}</td>
-                <td class="p-2">{formatearPrecio(r.producto?.costoDux)}</td>
-                <td class="p-2">{r.cantidad}</td>
                 <td class="p-2 capitalize">{r.turno}</td>
                 <td class="p-2">{r.planta?.nombre ?? r.plantaId}</td>
-                <td class="p-2">
-                  {formatearPrecio(
-                    (r.producto?.costoDux ?? 0) * (r.cantidad ?? 0)
-                  )}
-                </td>
                 <td class="p-2">{r.usuario?.nombre}</td>
                 <td class="p-2 text-right">
-                  <button
-                    onClick={() => onEliminar(r)}
-                    class="text-red-600 hover:underline text-sm"
-                  >
-                    Eliminar
-                  </button>
+                  {formatearPrecio(
+                    r.productos?.reduce(
+                      (acc, item) =>
+                        acc +
+                        (item.cantidad && item.producto?.costoDux
+                          ? item.cantidad * item.producto.costoDux
+                          : 0),
+                      0
+                    ) ?? 0
+                  )}
+                </td>
+                <td class="p-2 text-right flex gap-2 justify-end">
+
+                  {onVerDetalle && (
+                    <button
+                      onClick={() => onVerDetalle(r)}
+                      class="text-blue-600 hover:underline text-sm"
+                    >
+                      Ver detalle
+                    </button>
+                  )}
                 </td>
               </tr>
             )}
           </For>
         </tbody>
       </table>
-
-      {/* Tabla MOBILE */}
+      {/* Versión mobile (opcional, adaptala igual que la desktop) */}
       <div class="md:hidden space-y-4">
         <For each={reportes}>
           {(r) => (
             <div class="border rounded-lg p-3 shadow-sm text-sm bg-white">
               <div>
                 <strong>Fecha:</strong> {new Date(r.fecha).toLocaleDateString()}
-              </div>
-              <div>
-                <strong>SKU:</strong> {r.producto?.sku}
-              </div>
-              <div>
-                <strong>Producto:</strong> {r.producto?.nombre}
-              </div>
-              <div>
-                <strong>CostoMP:</strong> {formatearPrecio(r.producto?.costoDux)}
-              </div>
-              <div>
-                <strong>Cantidad:</strong> {r.cantidad}
               </div>
               <div>
                 <strong>Turno:</strong>{" "}
@@ -104,16 +95,31 @@ export default function TablaProduccionDiaria({
               <div>
                 <strong>Total:</strong>{" "}
                 {formatearPrecio(
-                  (r.producto?.precioUnitario ?? 0) * (r.cantidad ?? 0)
+                  r.productos?.reduce(
+                    (acc, item) =>
+                      acc +
+                      (item.cantidad && item.producto?.costoDux
+                        ? item.cantidad * item.producto.costoDux
+                        : 0),
+                    0
+                  ) ?? 0
                 )}
               </div>
-              <div class="text-right mt-2">
+              <div class="flex gap-2 mt-2 justify-end">
                 <button
-                  onClick={() => onEliminar(r)}
+                  onClick={() => onEliminarReporte(r)}
                   class="text-red-600 hover:underline text-sm"
                 >
                   Eliminar
                 </button>
+                {onVerDetalle && (
+                  <button
+                    onClick={() => onVerDetalle(r)}
+                    class="text-blue-600 hover:underline text-sm"
+                  >
+                    Ver detalle
+                  </button>
+                )}
               </div>
             </div>
           )}

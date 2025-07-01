@@ -1,4 +1,4 @@
-import { ReporteProduccion, Producto, Usuario, LogAuditoria, Planta } from "../models/index.js";
+import { ReporteProduccionEncabezado, ReporteProduccion, Producto, Usuario, LogAuditoria, Planta } from "../models/index.js";
 import { Op } from "sequelize";
 import { crearAuditoria } from "../utils/auditoria.js";
 
@@ -11,35 +11,25 @@ export const obtenerReportesProduccion = async (req, res, next) => {
     const direccion = req.query.direccion?.toUpperCase() === "ASC" ? "ASC" : "DESC";
     const where = {};
 
-    if (req.query.turno) {
-      where.turno = req.query.turno;
-    }
-
-    if (req.query.plantaId) {
-      where.plantaId = req.query.plantaId;
-    }
-
+    if (req.query.turno) where.turno = req.query.turno;
+    if (req.query.plantaId) where.plantaId = req.query.plantaId;
     if (req.query.desde && req.query.hasta) {
       const desde = new Date(req.query.desde + 'T00:00:00');
       const hasta = new Date(req.query.hasta + 'T23:59:59');
-      where.fecha = {
-        [Op.between]: [new Date(desde), new Date(hasta)],
-      };
+      where.fecha = { [Op.between]: [desde, hasta] };
     }
 
-    let order;
-    if (orden.includes(".")) {
-      const partes = orden.split(".");
-      order = [[...partes, direccion]];
-    } else {
-      order = [[orden, direccion]];
-    }
+    let order = [[orden, direccion]];
 
-
-    const { count, rows } = await ReporteProduccion.findAndCountAll({
+    // Traer encabezados con detalles y sus productos
+    const { count, rows } = await ReporteProduccionEncabezado.findAndCountAll({
       where,
       include: [
-        { model: Producto, as: "producto" },
+        {
+          model: ReporteProduccion,
+          as: "productos", // así lo definiste
+          include: [{ model: Producto, as: "producto" }]
+        },
         { model: Usuario, as: "usuario", attributes: ["id", "nombre", "email"] },
         { model: Planta, as: "planta", attributes: ["id", "nombre", "direccion"] }
       ],
@@ -63,32 +53,27 @@ export const obtenerReportesProduccion = async (req, res, next) => {
 
 export const crearReporteProduccion = async (req, res, next) => {
   try {
-    const { productoId, cantidad, plantaId, turno } = req.body;
-    const usuarioId = req.usuario?.id || req.body.usuarioId;
-
-    if (!productoId || !cantidad || !usuarioId) {
+    const { fecha, turno, usuarioId, plantaId, nota, productos } = req.body;
+    if (!fecha || !turno || !usuarioId || !plantaId || !productos?.length) {
       return res.status(400).json({ mensaje: "Faltan datos obligatorios" });
     }
 
-    const nuevo = await ReporteProduccion.create({
-      productoId,
-      cantidad,
-      usuarioId,
-      plantaId,
-      turno,
+    // 1. Crear encabezado
+    const encabezado = await ReporteProduccionEncabezado.create({
+      fecha, turno, usuarioId, plantaId, nota,
     });
-    
-    await crearAuditoria({
-      tabla: 'reporte produccion diaria',
-      accion: 'crea reporte',
-      registroId: nuevo.id,
-      usuarioId: req.usuario?.id || null,
-      descripcion: `Se creó el reporte de producción con ID ${nuevo.id}`,
-      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
-    });
-    
 
-    res.json(nuevo);
+    // 2. Crear los detalles
+    await Promise.all(productos.map(p =>
+      ReporteProduccion.create({
+        reporteProduccionEncabezadoId: encabezado.id,
+        productoId: p.productoId,
+        cantidad: p.cantidad,
+        usuarioId: encabezado.usuarioId,
+      })
+    ));
+
+    res.json({ ok: true, encabezadoId: encabezado.id });
   } catch (error) {
     next(error);
   }
@@ -97,25 +82,9 @@ export const crearReporteProduccion = async (req, res, next) => {
 export const eliminarReporteProduccion = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const usuarioId = req.usuario?.id;
-
-    if (!usuarioId) {
-      return res.status(401).json({ mensaje: "Usuario no autenticado" });
-    }
-
-    // 1. Eliminar el reporte
-    await ReporteProduccion.destroy({ where: { id } });
-
-    await crearAuditoria({
-      tabla: 'reporte produccion diaria',
-      accion: 'elimina reporte',
-      registroId: id,
-      usuarioId: req.usuario?.id || null,
-      descripcion: `Se eliminó el reporte de producción con ID ${id}`,
-      ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null,
-    });
-
-    res.json({ mensaje: "Reporte eliminado y registrado correctamente" });
+    // Borra el encabezado y los detalles caen en cascada
+    await ReporteProduccionEncabezado.destroy({ where: { id } });
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }
