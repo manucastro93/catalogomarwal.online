@@ -175,7 +175,7 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
             type="date"
             class="border p-2 rounded"
             value={fecha()}
-            min={hoy}
+            //min={hoy}
             onInput={(e) => setFecha(e.currentTarget.value)}
           />
           <select
