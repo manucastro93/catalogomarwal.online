@@ -9,7 +9,7 @@ const EMPRESA = process.env.DUX_API_EMPRESA;
 const SUCURSAL = process.env.DUX_API_SUCURSAL_CASA_CENTRAL;
 const API_KEY = process.env.DUX_API_KEY;
 const NOMBRE_LISTA_GENERAL = process.env.DUX_LISTA_GENERAL;
-
+const NOMBRE_LISTA_ALTERNATIVA = process.env.DUX_LISTA_ALTERNATIVA;
 
 function esperar(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -20,11 +20,24 @@ function calcularStock(item) {
   return item.stock.reduce((acc, s) => acc + parseFloat(s.stock_real || '0'), 0);
 }
 
-function obtenerPrecioLista(listas, nombreBuscado) {
+function obtenerPrecioLista(listas, nombreBuscado, nombreAlternativo) {
   if (!Array.isArray(listas)) return 0;
+
+  // Buscar primer nombre
   const lista = listas.find(p => p.nombre?.toUpperCase().includes(nombreBuscado.toUpperCase()));
-  return lista ? parseFloat(lista.precio || '0') : 0;
+  const precio = lista ? parseFloat(lista.precio || '0') : 0;
+
+  // Si el precio es mayor a 0, devolvés ese. Sino, buscás en la alternativa
+  if (precio > 0) return precio;
+
+  if (nombreAlternativo) {
+    const listaAlt = listas.find(p => p.nombre?.toUpperCase().includes(nombreAlternativo.toUpperCase()));
+    return listaAlt ? parseFloat(listaAlt.precio || '0') : 0;
+  }
+
+  return 0;
 }
+
 
 function limpiarNombreCategoria(nombre) {
   return typeof nombre === 'string' && nombre.trim() ? nombre.trim() : 'Sin categoría';
@@ -303,7 +316,7 @@ export async function sincronizarProductosDesdeDux() {
       const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
       const categoriaId = categoriasMap[nombreCategoria] || 11;
       const proveedorId = await guardarProveedorDesdeDux(item.proveedor);
-      const precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL) || 0;
+      const precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL, NOMBRE_LISTA_ALTERNATIVA) || 0;
 
       if (categoriaId === 12) {
         const existente = await MateriaPrima.findOne({ where: { sku } });
