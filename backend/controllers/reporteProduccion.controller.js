@@ -70,6 +70,7 @@ export const crearReporteProduccion = async (req, res, next) => {
         productoId: p.productoId,
         cantidad: p.cantidad,
         usuarioId: encabezado.usuarioId,
+        plantaId: encabezado.plantaId,
       })
     ));
 
