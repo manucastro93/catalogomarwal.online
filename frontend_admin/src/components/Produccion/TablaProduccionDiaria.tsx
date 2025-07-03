@@ -34,7 +34,8 @@ export default function TablaProduccionDiaria({
             {th("Turno", "turno")}
             {th("Planta", "planta.nombre")}
             <th class="p-2">Usuario</th>
-            <th class="p-2 text-right">Total ($)</th>
+            <th class="p-2 text-right">Total Costo($)</th>
+            <th class="p-2 text-right">Total Venta($)</th>
             <th class="p-2 text-right">Acciones</th>
           </tr>
         </thead>
@@ -53,6 +54,18 @@ export default function TablaProduccionDiaria({
                         acc +
                         (item.cantidad && item.producto?.costoDux
                           ? item.cantidad * item.producto.costoDux
+                          : 0),
+                      0
+                    ) ?? 0
+                  )}
+                </td>
+                <td class="p-2 text-right">
+                  {formatearPrecio(
+                    r.productos?.reduce(
+                      (acc, item) =>
+                        acc +
+                        (item.cantidad && item.producto?.precioUnitario
+                          ? item.cantidad * item.producto.precioUnitario
                           : 0),
                       0
                     ) ?? 0
