@@ -29,7 +29,7 @@ export function construirResumenDetallePorProducto(detallesPedidos, detallesFact
   }));
 }
 
-export function generarReporteEvolucionMensual({ facturas, pedidosPorNro, cantidadesPedidasPorItemEnPedido, detallesFacturasPorPedido, ultimaFacturaPorPedido, detallesPedidosPorPedido }) { // ¡Añadido detallesPedidosPorPedido!
+export function generarReporteEvolucionMensual({ facturas, pedidosPorNro, detallesPedidosPorPedido }) {
   const dataPorMes = {};
   
   const pedidosAgregadosPorMes = new Map();

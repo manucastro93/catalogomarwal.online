@@ -1,5 +1,5 @@
 import { createSignal, createResource, Show, createEffect } from "solid-js";
-import { obtenerOrdenesTrabajo } from "@/services/ordenTrabajo.service";
+import { obtenerOrdenesTrabajo, eliminarOrdenTrabajo } from "@/services/ordenTrabajo.service";
 import { obtenerPlantas } from '@/services/planta.service';
 import FiltrosOrdenesTrabajo from "@/components/OrdenTrabajo/FiltrosOrdenesTrabajo";
 import TablaOrdenesTrabajo from "@/components/OrdenTrabajo/TablaOrdenesTrabajo";
@@ -45,6 +45,17 @@ export default function OrdenesDeTrabajoPage() {
   const [modalNuevaOT, setModalNuevaOT] = createSignal(false);
   const [otParaDetalle, setOtParaDetalle] = createSignal<OrdenTrabajo | null>(null);
 
+
+  const eliminarOT = async (ot: OrdenTrabajo) => {
+    if (!window.confirm("¿Estás seguro de que querés eliminar esta Orden de Trabajo?")) return;
+    try {
+      await eliminarOrdenTrabajo(ot.id); // Acá usás el id del objeto
+      refetch();
+    } catch (err) {
+      alert("Error al eliminar la OT");
+    }
+  };
+
   return (
     <div class="p-6">
       <div class="flex justify-between items-center mb-4">
@@ -74,7 +85,7 @@ export default function OrdenesDeTrabajoPage() {
         <TablaOrdenesTrabajo
           ordenes={respuesta()?.data ?? []}
           onVerDetalle={setOtParaDetalle}
-          onEliminarOT={() => {}} // Cambia por handler real si usás eliminar
+          onEliminarOT={eliminarOT}
           orden={orden()}
           direccion={direccion()}
           onOrdenar={setOrden}

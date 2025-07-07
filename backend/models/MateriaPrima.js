@@ -58,6 +58,16 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    proveedorId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Proveedores',
+        key: 'id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+    },
     subcategoriaId: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -85,6 +95,10 @@ export default (sequelize, DataTypes) => {
       as: 'ProductosAsociados',
     });
 
+    MateriaPrima.belongsTo(models.Proveedor, {
+      foreignKey: 'proveedorId',
+      as: 'Proveedor',
+    });
   };
 
   return MateriaPrima;

@@ -57,18 +57,23 @@ const PORT = 3000;
 
 async function init() {
   try {
+    console.log('⏳ 1. Iniciando conexión a la base de datos...');
     await sequelize.authenticate();
-    console.log('🟢 Conexión a la base de datos exitosa');
+    console.log('🟢 2. Conexión a la base de datos exitosa');
 
+    console.log('⏳ 3. Creando servidor HTTP...');
     const httpServer = createServer(app);
+    console.log('⏳ 4. Inicializando sockets...');
     initSockets(httpServer);
 
+    console.log('⏳ 5. Escuchando puerto...');
     httpServer.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Servidor y WebSocket corriendo en puerto ${PORT}`);
+      console.log(`🚀 6. Servidor y WebSocket corriendo en puerto ${PORT}`);
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);
   }
 }
+
 
 init();

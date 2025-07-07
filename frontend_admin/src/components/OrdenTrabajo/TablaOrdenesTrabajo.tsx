@@ -30,6 +30,7 @@ export default function TablaOrdenesTrabajo({
       <table class="w-full text-sm border-collapse hidden md:table">
         <thead class="bg-gray-100 sticky top-0">
           <tr>
+            <th class="p-2">Número</th>
             {th("Fecha", "fecha")}
             {th("Turno", "turno")}
             {th("Planta", "planta.nombre")}
@@ -42,6 +43,7 @@ export default function TablaOrdenesTrabajo({
           <For each={ordenes}>
             {(ot) => (
               <tr class="border-t hover:bg-gray-50">
+                <td class="p-2">{ot.id}</td>
                 <td class="p-2">{formatearFechaCorta(ot.fecha)}</td>
                 <td class="p-2 capitalize">{ot.turno}</td>
                 <td class="p-2">{ot.planta?.nombre ?? ot.plantaId}</td>

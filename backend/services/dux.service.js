@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux, PersonalDux, Subcategoria, Proveedor } from '../models/index.js';
+import { Categoria, Producto, Factura, PedidoDux, DetalleFactura, DetallePedidoDux, PersonalDux, Subcategoria, Proveedor, MateriaPrima } from '../models/index.js';
 import { estadoSync } from '../state/estadoSync.js';
 
 const API_URL = process.env.DUX_API_URL_PRODUCTOS;
@@ -37,7 +37,6 @@ function obtenerPrecioLista(listas, nombreBuscado, nombreAlternativo) {
 
   return 0;
 }
-
 
 function limpiarNombreCategoria(nombre) {
   return typeof nombre === 'string' && nombre.trim() ? nombre.trim() : 'Sin categoría';
@@ -304,7 +303,7 @@ export async function sincronizarProductosDesdeDux() {
 
   await esperar(5000);
   const { categoriasMap, categoriasCreadas } = await sincronizarCategoriasDesdeDux();
-  const subcategoriasMap = await sincronizarSubcategoriasDesdeDux(categoriasMap);
+  await sincronizarSubcategoriasDesdeDux(categoriasMap);
   const items = await obtenerTodosLosItemsDesdeDux();
 
   let creados = 0;
@@ -315,10 +314,10 @@ export async function sincronizarProductosDesdeDux() {
       const sku = String(item.cod_item).trim();
       const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
       const categoriaId = categoriasMap[nombreCategoria] || 11;
-      const proveedorId = await guardarProveedorDesdeDux(item.proveedor);
       const precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL, NOMBRE_LISTA_ALTERNATIVA) || 0;
 
       if (categoriaId === 12) {
+        const proveedorId = await guardarProveedorDesdeDux(item.proveedor);
         const existente = await MateriaPrima.findOne({ where: { sku } });
         const data = {
           nombre: item.item,
@@ -326,6 +325,7 @@ export async function sincronizarProductosDesdeDux() {
           stock: calcularStock(item),
           activo: true,
           categoria: item.sub_rubro?.nombre || '',
+          proveedorId,
         };
 
         if (existente) {
@@ -343,7 +343,6 @@ export async function sincronizarProductosDesdeDux() {
           stock: calcularStock(item),
           categoriaId,
           subcategoriaId: item.sub_rubro?.id,
-          proveedorId,
           activo: true
         };
 

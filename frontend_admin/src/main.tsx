@@ -18,12 +18,14 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 // 🛠️ Funciones / Store
 import { checkLocalStorage } from "./store/auth";
+//import Proveedores from "./pages/Proveedores";
 
 // ⚡ Lazy load para páginas protegidas
 const Administradores = lazy(() => import("./pages/Administradores"));
 const Banners = lazy(() => import("./pages/Pagina/Banners"));
 const Categorias = lazy(() => import("./pages/Categorias"));
 const Clientes = lazy(() => import("./pages/Clientes"));
+const Proveedores = lazy(() => import("./pages/Proveedores"));
 const Estadisticas = lazy(() => import("./pages/Estadisticas"));
 const Inicio = lazy(() => import("./pages/Inicio"));
 const LogsCliente = lazy(() => import("./pages/LogsCliente"));
@@ -111,7 +113,17 @@ render(
         )}
       />
 
-    {/* Compras */}
+      {/* Compras */}
+      <Route
+        path="/Proveedores"
+        component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <Proveedores />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      />
       <Route
         path="/MateriasPrimas"
         component={() => (
@@ -300,7 +312,7 @@ render(
           </ProtectedRoute>
         )}
       />
-     
+
       {/* Página / Configuración general */}
       <Route
         path="/Pagina/logo"

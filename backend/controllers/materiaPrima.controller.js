@@ -33,6 +33,10 @@ export const obtenerMateriasPrimas = async (req, res, next) => {
             where.subcategoriaId = subcategoriaId;
         }
 
+        if (req.query.proveedorId) {
+            where.proveedorId = req.query.proveedorId;
+        }
+
         const orderClause =
             orden === 'valorizado'
                 ? [[Sequelize.literal('costoDux * stock'), direccion]]

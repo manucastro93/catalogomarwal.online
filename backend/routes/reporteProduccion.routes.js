@@ -8,8 +8,8 @@ import { verificarToken } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get("/", obtenerReportesProduccion);
-router.post("/", crearReporteProduccion);
+router.get("/", verificarToken, obtenerReportesProduccion);
+router.post("/", verificarToken, crearReporteProduccion);
 router.delete("/reportes-produccion/:id", verificarToken, eliminarReporteProduccion);
 
 export default router;
