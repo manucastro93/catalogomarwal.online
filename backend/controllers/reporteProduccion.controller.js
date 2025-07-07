@@ -74,6 +74,18 @@ export const crearReporteProduccion = async (req, res, next) => {
       })
     ));
 
+    // 3. Auditoría 
+    await crearAuditoria({
+      tabla: "ReporteProduccionEncabezado",
+      accion: "crear",
+      registroId: encabezado.id,
+      usuarioId: encabezado.usuarioId,
+      descripcion: `Creación de reporte de producción para planta ${plantaId} y turno ${turno} (fecha: ${fecha})`,
+      datosAntes: null,
+      datosDespues: encabezado.toJSON(),
+      ip: req.ip,
+    });
+
     res.json({ ok: true, encabezadoId: encabezado.id });
   } catch (error) {
     next(error);
@@ -83,10 +95,39 @@ export const crearReporteProduccion = async (req, res, next) => {
 export const eliminarReporteProduccion = async (req, res, next) => {
   try {
     const { id } = req.params;
-    // Borra el encabezado y los detalles caen en cascada
+
+    // 1. Traer el encabezado y detalles antes de borrar (para auditar)
+    const encabezado = await ReporteProduccionEncabezado.findByPk(id, {
+      include: [
+        {
+          model: ReporteProduccion,
+          as: "productos", // o el alias que tengas
+        },
+      ],
+    });
+
+    if (!encabezado) {
+      return res.status(404).json({ mensaje: "Reporte no encontrado" });
+    }
+
+    // 2. Auditar antes de borrar
+    await crearAuditoria({
+      tabla: "ReporteProduccionEncabezado",
+      accion: "eliminar",
+      registroId: id,
+      usuarioId: req.usuario?.id || encabezado.usuarioId,
+      descripcion: `Eliminación de reporte de producción con id ${id}`,
+      datosAntes: encabezado.toJSON(),
+      datosDespues: null,
+      ip: req.ip,
+    });
+
+    // 3. Borrar el encabezado (los detalles caen en cascada)
     await ReporteProduccionEncabezado.destroy({ where: { id } });
+
     res.json({ ok: true });
   } catch (error) {
     next(error);
   }
 };
+

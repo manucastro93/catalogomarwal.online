@@ -7,6 +7,7 @@ import { useAuth } from '@/store/auth';
 import type { Producto } from '@/types/producto';
 import type { CrearReporteProduccionEncabezado } from '@/types/produccion';
 import type { OrdenTrabajo } from '@/types/ordenTrabajo';
+import SelectorOTPendienteModal from '@/components/Produccion/SelectorOTPendienteModal';
 
 export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
   const [busqueda, setBusqueda] = createSignal("");
@@ -143,31 +144,15 @@ export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
 
         {/* Modal selector OTs pendientes */}
         <Show when={mostrarSelectorOT()}>
-          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
-              <div class="font-bold text-lg mb-2">Seleccioná una OT pendiente</div>
-              <Show when={otsPendientes.loading}>Cargando...</Show>
-              <Show when={otsPendientes.error}>Error cargando OTs</Show>
-              <Show when={otsPendientes()}>
-                <For each={otsPendientes()?.data ?? []}>
-                  {(ot) => (
-                    <div class="p-2 border-b flex justify-between items-center">
-                      <div>
-                        #{ot.id} — {ot.planta?.nombre} — {ot.fecha} — {ot.turno}
-                      </div>
-                      <button
-                        onClick={() => handleSeleccionarOT(ot)}
-                        class="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                      >
-                        Seleccionar
-                      </button>
-                    </div>
-                  )}
-                </For>
-                <button onClick={() => setMostrarSelectorOT(false)} class="mt-2 text-red-600 underline">Cerrar</button>
-              </Show>
-            </div>
-          </div>
+          <SelectorOTPendienteModal
+            otsPendientes={{
+              loading: otsPendientes.loading,
+              error: otsPendientes.error,
+              data: otsPendientes()?.data ?? [],
+            }}
+            onClose={() => setMostrarSelectorOT(false)}
+            onSeleccionar={handleSeleccionarOT}
+          />
         </Show>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4 text-sm">

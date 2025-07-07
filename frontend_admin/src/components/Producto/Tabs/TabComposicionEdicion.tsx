@@ -1,39 +1,22 @@
 import { createSignal, createResource, For, Show, onMount } from "solid-js";
-import { obtenerMateriasPrimas } from "@/services/materiaPrima.service";
-import { obtenerSubcategorias } from "@/services/categoria.service";
 import { guardarComposicionProducto } from "@/services/composicion.service";
 import type { MateriaPrima } from "@/types/materiaPrima";
 import type { ProductoComposicion } from "@/types/composicion";
+import ModalAgregarPorProveedor from "@/components/Producto/ModalAgregarPorProveedor";
 
 export default function TabComposicionEdicion(props: {
     productoId: number;
     composicionInicial?: ProductoComposicion[];
     onGuardado?: () => void;
 }) {
-    // Estado de filtros y búsqueda
-    const [subcategoriaId, setSubcategoriaId] = createSignal<string>("");
-    const [busqueda, setBusqueda] = createSignal<string>("");
     const [materiaPrimaSeleccionada, setMateriaPrimaSeleccionada] = createSignal<MateriaPrima | null>(null);
     const [cantidad, setCantidad] = createSignal<string>("");
-
-    // Estado de la composición
+    // AHORA incluye unidadMedida
     const [composicion, setComposicion] = createSignal<
-        { materiaPrima: MateriaPrima; cantidad: number }[]
+      { materiaPrima: MateriaPrima; cantidad: number; unidadMedida: string }[]
     >([]);
+    const [modalAgregarPorProveedor, setModalAgregarPorProveedor] = createSignal(false);
 
-    // Subcategorías para filtro
-    const [subcategorias] = createResource(obtenerSubcategorias);
-
-    // Materias primas encontradas (filtrado)
-    const [resultadosBusqueda] = createResource(
-        () => ({
-            subcategoriaId: subcategoriaId() || undefined,
-            buscar: busqueda() || undefined,
-        }),
-        obtenerMateriasPrimas
-    );
-
-    // Cargar composición inicial si existe
     onMount(() => {
         if (props.composicionInicial?.length) {
             setComposicion(
@@ -42,38 +25,36 @@ export default function TabComposicionEdicion(props: {
                     .map((c) => ({
                         materiaPrima: c.MateriaPrima as MateriaPrima,
                         cantidad: c.cantidad,
+                        // Si tu modelo original no trae unidad, usá la que trae la materia prima o "UN" por defecto
+                        unidadMedida: (c as any).unidadMedida || c.MateriaPrima?.unidadMedida || "UN",
                     }))
             );
-
         }
     });
 
-
-
-    // Handler: agregar materia prima a composición
+    // Handler: agregar materia prima individual (opcional)
     const agregarMateriaPrima = () => {
         if (!materiaPrimaSeleccionada() || !cantidad()) return;
         setComposicion([
             ...composicion(),
-            { materiaPrima: materiaPrimaSeleccionada()!, cantidad: Number(cantidad()) },
+            { materiaPrima: materiaPrimaSeleccionada()!, cantidad: Number(cantidad()), unidadMedida: materiaPrimaSeleccionada()!.unidadMedida || "UN" },
         ]);
         setMateriaPrimaSeleccionada(null);
         setCantidad("");
-        setBusqueda("");
     };
 
-    // Handler: quitar una materia prima
     const eliminarMateriaPrima = (index: number) => {
         setComposicion(composicion().filter((_, i) => i !== index));
     };
 
-    // Handler: guardar composición en backend
+    // IMPORTANTE: ahora mandamos unidadMedida también al backend
     const guardarComposicion = async () => {
         await guardarComposicionProducto(
             props.productoId,
             composicion().map((item) => ({
                 materiaPrimaId: item.materiaPrima.id,
                 cantidad: item.cantidad,
+                unidadMedida: item.unidadMedida, // <-- agregá esto
             }))
         );
         if (props.onGuardado) props.onGuardado();
@@ -81,106 +62,78 @@ export default function TabComposicionEdicion(props: {
 
     return (
         <div>
-            {/* 1. Filtro por subcategoría */}
-            <label class="font-medium">Filtrar por categoría:</label>
-            <select
-                value={subcategoriaId()}
-                onInput={(e) => setSubcategoriaId(e.currentTarget.value)}
-                class="border p-1 rounded mb-2 w-full"
+            {/* Botón para agregar por proveedor */}
+            <button
+                class="bg-blue-600 text-white px-2 py-1 rounded flex items-center gap-1 mb-2"
+                onClick={() => setModalAgregarPorProveedor(true)}
             >
-                <option value="">Todas</option>
-                <For each={subcategorias() ?? []}>
-                    {(cat) => <option value={cat.id}>{cat.nombre}</option>}
-                </For>
-            </select>
+                <span class="text-lg font-bold">+</span> Agregar por proveedor
+            </button>
 
-            {/* 2. Buscador */}
-            <label class="font-medium">Buscar materia prima:</label>
-            <input
-                type="text"
-                class="border p-1 rounded w-full mb-2"
-                placeholder="Buscar por nombre o SKU"
-                value={busqueda()}
-                onInput={(e) => setBusqueda(e.currentTarget.value)}
-                autocomplete="off"
-            />
-
-            {/* 3. Resultados autocompletado */}
-            <Show when={busqueda().length >= 2 && resultadosBusqueda()}>
-                <div class="border rounded bg-white max-h-48 overflow-y-auto z-10 relative">
-                    <For each={resultadosBusqueda()?.data ?? []}>
-                        {(mp) => (
-                            <div
-                                class="p-2 hover:bg-gray-100 cursor-pointer"
-                                onClick={() => {
-                                    setMateriaPrimaSeleccionada(mp);
-                                    setBusqueda(`${mp.sku} - ${mp.nombre}`);
-                                }}
-                            >
-                                {mp.sku} - {mp.nombre}
-                            </div>
-                        )}
-                    </For>
-                </div>
+            <Show when={modalAgregarPorProveedor()}>
+                <ModalAgregarPorProveedor
+                    onAgregar={(items) => {
+                        setComposicion([
+                            ...composicion(),
+                            ...(Array.isArray(items) ? items : [items]), // Asegura que siempre sea array
+                        ]);
+                        setModalAgregarPorProveedor(false);
+                        }}
+                    onCerrar={() => setModalAgregarPorProveedor(false)}
+                />
             </Show>
 
-            {/* 4. Si seleccionó una materia prima, muestro unidad y cantidad */}
-            <Show when={materiaPrimaSeleccionada()}>
-                <div class="mt-3 border p-2 rounded bg-gray-50">
-                    <div>
-                        <strong>{materiaPrimaSeleccionada()!.nombre}</strong> | Unidad: <b>{materiaPrimaSeleccionada()!.unidadMedida}</b>
-                    </div>
-                    <div class="mt-2 flex gap-2 items-center">
-                        <input
-                            class="border p-1 rounded w-32"
-                            type="number"
-                            min="0"
-                            placeholder="Cantidad"
-                            value={cantidad()}
-                            onInput={(e) => setCantidad(e.currentTarget.value)}
-                        />
-                        <button
-                            class="bg-blue-500 text-white px-2 py-1 rounded"
-                            onClick={agregarMateriaPrima}
-                        >
-                            Agregar
-                        </button>
-                        <button
-                            class="bg-gray-300 px-2 py-1 rounded ml-2"
-                            onClick={() => setMateriaPrimaSeleccionada(null)}
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            </Show>
-
-            {/* 5. Listado de composición actual */}
+            {/* Listado de composición actual */}
             <Show when={composicion().length > 0}>
                 <div class="mt-6">
                     <h3 class="font-bold mb-2">Composición del producto:</h3>
-                    <For each={composicion()}>
-                        {(item, i) => (
-                            <div class="flex items-center gap-2 mb-1">
-                                <span>
-                                    {item.materiaPrima.sku} - {item.materiaPrima.nombre} ({item.cantidad} {item.materiaPrima.unidadMedida})
-                                </span>
-                                <button
-                                    class="ml-2 text-red-500 hover:underline"
-                                    onClick={() => eliminarMateriaPrima(i())}
-                                >
-                                    Quitar
-                                </button>
-                            </div>
-                        )}
-                    </For>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse rounded-lg shadow-sm">
+                            <thead>
+                                <tr class="bg-gray-100 text-gray-700 text-sm sticky top-0">
+                                    <th class="px-3 py-2 text-left">SKU</th>
+                                    <th class="px-3 py-2 text-left">Descripción</th>
+                                    <th class="px-3 py-2 text-center">Cantidad</th>
+                                    <th class="px-3 py-2 text-center">Unidad</th>
+                                    <th class="px-3 py-2 text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <For each={composicion()}>
+                                    {(item, i) => (
+                                        <tr class="odd:bg-white even:bg-gray-50 group hover:bg-red-50 transition text-xs">
+                                            <td class="px-3 py-2 font-mono">{item.materiaPrima.sku}</td>
+                                            <td class="px-3 py-2">{item.materiaPrima.nombre}</td>
+                                            <td class="px-3 py-2 text-center">{item.cantidad}</td>
+                                            <td class="px-3 py-2 text-center">{item.unidadMedida}</td>
+                                            <td class="px-3 py-2 text-center">
+                                                <button
+                                                    class="text-red-600 font-semibold opacity-70 hover:opacity-100 transition group-hover:underline group-hover:opacity-100"
+                                                    onClick={() => eliminarMateriaPrima(i())}
+                                                    title="Quitar"
+                                                >
+                                                    Quitar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </For>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="text-right mt-4">
+                <div class="text-right mt-4 flex gap-2 justify-end">
                     <button
-                        class="bg-green-600 text-white px-4 py-1 rounded"
+                        class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 transition"
                         onClick={guardarComposicion}
                     >
                         Guardar composición
+                    </button>
+                    <button
+                        class="bg-gray-200 text-gray-800 px-4 py-1 rounded hover:bg-gray-300 transition"
+                        onClick={props.onGuardado}
+                    >
+                        Cancelar
                     </button>
                 </div>
             </Show>

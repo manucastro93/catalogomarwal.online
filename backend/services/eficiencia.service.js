@@ -1,18 +1,15 @@
 // backend/services/eficiencia.service.js
 import { Op } from 'sequelize';
-import { PedidoDux, Factura, DetalleFactura, Producto } from '../models/index.js'; // Asegúrate de que las rutas a tus modelos sean correctas
+import { PedidoDux, Factura, Producto } from '../models/index.js';
 import {
   // 📦 Helpers
-  formatFecha,
   toFloat,
   toFixed,
 
   // 🔍 DB Queries
   obtenerFacturasConDetallesEnRango,
-  obtenerPedidosPorNro,
   obtenerDetallesPedidosPorId,
   obtenerCategoriasValidasDB,
-  obtenerProductosPorSkusYCategoria, // Agregado para cargarYProcesarDatosCategoria
 
   // 🧱 Mapeos
   mapearDetallesPedidosPorPedido,
@@ -114,11 +111,11 @@ export async function cargarYProcesarDatosCliente(desde, hasta, clienteFiltro) {
   const {
     detallesFacturasPorPedido,
     primeraFacturaPorPedido,
-    ultimaFacturaPorPedido, // NUEVO: Obtener la última factura por pedido del procesamiento
+    ultimaFacturaPorPedido, // Obtener la última factura por pedido del procesamiento
     fechasFacturasArrayPorPedido,
     cantidadesFacturadasPorItemEnPedido,
     valorFacturadoPorItemEnPedido,
-    fechaUltimaFacturaPorItem, // NUEVO: Obtener la última fecha de factura por ítem
+    fechaUltimaFacturaPorItem, // Obtener la última fecha de factura por ítem
   } = procesarFacturasParaMapeo(facturasCompletas); 
 
   return {
@@ -132,11 +129,11 @@ export async function cargarYProcesarDatosCliente(desde, hasta, clienteFiltro) {
     facturasCompletas, // Este contendrá el histórico completo de los pedidos filtrados
     detallesFacturasPorPedido,
     primeraFacturaPorPedido,
-    ultimaFacturaPorPedido, // NUEVO: Devolver también la última factura por pedido
+    ultimaFacturaPorPedido, // Devolver también la última factura por pedido
     fechasFacturasArrayPorPedido,
     cantidadesFacturadasPorItemEnPedido,
     valorFacturadoPorItemEnPedido,
-    fechaUltimaFacturaPorItem, // NUEVO: Devolver la última fecha de factura por ítem
+    fechaUltimaFacturaPorItem, // Devolver la última fecha de factura por ítem
   };
 }
 
@@ -419,15 +416,12 @@ export const obtenerEvolucionEficienciaMensualGeneral = async (desde, hasta, cli
   if (!datos) return [];
 
   // CAMBIO: Pasar los nuevos mapas de datos al reporte, incluyendo detallesPedidosPorPedido
-  const { facturasCompletas, pedidosPorNro, cantidadesPedidasPorItemEnPedido, detallesFacturasPorPedido, ultimaFacturaPorPedido, detallesPedidosPorPedido } = datos; 
+  const { facturasCompletas, pedidosPorNro, detallesPedidosPorPedido } = datos; 
 
   return generarReporteEvolucionMensual({
     facturas: facturasCompletas,
     pedidosPorNro,
-    cantidadesPedidasPorItemEnPedido,
-    detallesFacturasPorPedido, 
-    ultimaFacturaPorPedido, 
-    detallesPedidosPorPedido // ¡NUEVO PARÁMETRO!
+    detallesPedidosPorPedido
   });
 };
 

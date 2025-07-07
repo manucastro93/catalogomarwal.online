@@ -18,11 +18,11 @@ export default function ModalDetalleOrdenTrabajo(props: { orden: any; onCerrar: 
 
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 border border-gray-300 flex flex-col">
-        <h2 class="text-xl font-bold mb-2">Detalle de Orden de Trabajo</h2>
+      <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-10 border border-gray-300 flex flex-col">
+        <h2 class="text-2xl font-bold mb-4">Detalle de Orden de Trabajo</h2>
         <button
           onClick={props.onCerrar}
-          class="absolute top-2 right-2 text-gray-500 hover:text-red-600 text-lg"
+          class="absolute top-4 right-4 text-gray-500 hover:text-red-600 text-2xl"
           title="Cerrar"
         >
           ×
@@ -36,9 +36,10 @@ export default function ModalDetalleOrdenTrabajo(props: { orden: any; onCerrar: 
           <table class="w-full border text-sm">
             <thead class="bg-gray-100">
               <tr>
-                <th class="p-2">Producto</th>
+                <th class="p-2">SKU</th>
+                <th class="p-2">Descripción</th>
                 <th class="p-2">Cantidad</th>
-                <th class="p-2 text-right">Precio Unitario</th>
+                <th class="p-2 text-right">Precio Venta</th>
                 <th class="p-2 text-right">Subtotal</th>
               </tr>
             </thead>
@@ -46,8 +47,10 @@ export default function ModalDetalleOrdenTrabajo(props: { orden: any; onCerrar: 
               <For each={orden.productos}>
                 {(item) => (
                   <tr>
-                    <td class="p-2">{item.producto?.nombre ?? '-'}</td>
+                    <td class="p-2">{item.producto?.sku ?? '-'}</td>
+                    <td class="p-2 truncate max-w-xs">{item.producto?.nombre ?? '-'}</td>
                     <td class="p-2">{item.cantidad}</td>
+
                     <td class="p-2 text-right">
                       {item.producto?.precioUnitario
                         ? formatearPrecio(item.producto.precioUnitario)
@@ -62,7 +65,7 @@ export default function ModalDetalleOrdenTrabajo(props: { orden: any; onCerrar: 
                 )}
               </For>
               <tr>
-                <td class="p-2 font-bold" colSpan={3}>Total</td>
+                <td class="p-2 font-bold" colSpan={4}>Total</td>
                 <td class="p-2 text-right font-bold">
                   {formatearPrecio(total())}
                 </td>
