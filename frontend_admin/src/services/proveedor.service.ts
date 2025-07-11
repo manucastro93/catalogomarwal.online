@@ -2,7 +2,9 @@ import api from './api';
 import type { Proveedor } from '@/types/proveedor';
 
 export const obtenerProveedores = async (params: any) => {
+  console.log("params: ",params)
   const { data } = await api.get('/proveedores', { params });
+  console.log("data: ",data)
   return data;
 };
 

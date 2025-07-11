@@ -16,7 +16,7 @@ export default function ModalAgregarPorProveedor(props: {
   const [mostrarOpcionesProveedor, setMostrarOpcionesProveedor] = createSignal(false);
 
   // Para filtrar lista proveedores
-  const [proveedores] = createResource(() => ({}), () => obtenerProveedores({}));
+  const [proveedores] = createResource(() => ({}), () => obtenerProveedores({ limit: 10000, page: 1 }));
   const proveedoresFiltrados = () => {
     const val = proveedorInput().toLowerCase();
     return (proveedores()?.data ?? []).filter(
@@ -118,9 +118,15 @@ export default function ModalAgregarPorProveedor(props: {
             value={proveedorInput()}
             onInput={(e) => {
               setProveedorInput(e.currentTarget.value);
-              setMostrarOpcionesProveedor(true);
-              setProveedorSeleccionado(null);
-              setSeleccionadas({});
+              if (e.currentTarget.value.trim() === "") {
+                setMostrarOpcionesProveedor(false);
+                setProveedorSeleccionado(null);
+                setSeleccionadas({});
+              } else {
+                setMostrarOpcionesProveedor(true);
+                setProveedorSeleccionado(null);
+                setSeleccionadas({});
+              }
             }}
             onFocus={() => setMostrarOpcionesProveedor(true)}
             autocomplete="off"
