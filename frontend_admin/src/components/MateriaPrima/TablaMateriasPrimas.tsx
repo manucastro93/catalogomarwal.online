@@ -17,7 +17,7 @@ export default function TablaMateriasPrimas(props: {
       <table class="w-full text-sm border-collapse">
         <thead class="bg-gray-100 sticky top-0">
           <tr>
-            {["sku", "nombre","costoDux", "stock", "valorizado"].map((col) => (
+            {["sku", "nombre", "proveedor", "costoDux", "stock", "valorizado"].map((col) => (
               <th
                 class="text-left p-3 border-b cursor-pointer"
                 onClick={() => props.onOrdenar(col)}
@@ -44,6 +44,7 @@ export default function TablaMateriasPrimas(props: {
                 <tr class="hover:bg-gray-50 border-b">
                   <td class="p-3">{p.sku}</td>
                   <td class="p-3">{p.nombre}</td>
+                  <td class="p-3">{p.Proveedor?.nombre}</td>
                   <td class="p-3">{formatearPrecio(p.costoDux)}</td>
                   <td class="p-3">{formatearMiles(p.stock)}</td>
                   <td class="p-3">{formatearPrecio(p.costoDux * p.stock)}</td>

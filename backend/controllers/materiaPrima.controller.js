@@ -1,4 +1,4 @@
-import { MateriaPrima, Subcategoria } from '../models/index.js';
+import { MateriaPrima, Subcategoria, Proveedor } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize';
 
 export const obtenerMateriasPrimas = async (req, res, next) => {
@@ -15,11 +15,17 @@ export const obtenerMateriasPrimas = async (req, res, next) => {
         const offset = (page - 1) * limit;
         const where = {};
         const include = [
-            {
-                model: Subcategoria,
-                as: 'Subcategoria',
-                required: false,
-            }
+        {
+            model: Subcategoria,
+            as: 'Subcategoria',
+            required: false,
+        },
+        {
+            model: Proveedor,
+            as: 'Proveedor',
+            required: false,
+            attributes: ['id', 'nombre'],
+        },
         ];
 
         if (buscar) {

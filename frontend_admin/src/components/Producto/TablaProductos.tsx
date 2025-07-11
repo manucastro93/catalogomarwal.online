@@ -23,6 +23,7 @@ export default function TablaProductos(props: {
               "sku",
               "nombre",
               "costoDux",
+              "costoSistema",
               "precioUnitario",
               "precioPorBulto",
               "activo",
@@ -80,6 +81,7 @@ export default function TablaProductos(props: {
                       ? formatearPrecio(p.costoDux)
                       : "—"}
                   </td>
+                  <td class="p-3">XX</td>
                   <td class="p-3">{formatearPrecio(p.precioUnitario)}</td>
                   <td class="p-3">
                     {p.precioPorBulto != null
@@ -101,8 +103,14 @@ export default function TablaProductos(props: {
                         >
                           Editar
                         </button>
+                        <button
+                          class="text-yellow-600 hover:underline"
+                          
+                        >
+                          Sync
+                        </button>
                     </ConPermiso>
-                    <ConPermiso modulo="productos" accion="editar">
+                    <ConPermiso modulo="productos" accion="eliminar">
                     <button
                           class="text-red-600 hover:underline"
                           onClick={() => props.onEliminar(p.id)}
