@@ -141,7 +141,7 @@ export default function ModalNuevoProducto(props: {
   return (
     <Show when={props.abierto}>
       <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded shadow w-full max-w-2xl">
+        <div class="bg-white p-8 rounded shadow-xl w-full max-w-6xl h-[90vh] overflow-y-auto relative">
           <ModalMensaje
             mensaje={mensajeError()}
             cerrar={() => setMensajeError("")}

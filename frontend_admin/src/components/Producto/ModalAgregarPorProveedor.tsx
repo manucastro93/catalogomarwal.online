@@ -3,6 +3,7 @@ import { obtenerProveedores } from "@/services/proveedor.service";
 import { obtenerMateriasPrimas } from "@/services/materiaPrima.service";
 import type { MateriaPrima } from "@/types/materiaPrima";
 import type { Proveedor } from "@/types/proveedor";
+import { formatearPrecio } from "@/utils/formato";
 
 const UNIDADES = ["KG", "MT", "UN"];
 
@@ -10,12 +11,10 @@ export default function ModalAgregarPorProveedor(props: {
   onAgregar: (items: { materiaPrima: MateriaPrima; cantidad: number; unidadMedida: string }) => void;
   onCerrar: () => void;
 }) {
-  // Proveedor input/autocomplete
   const [proveedorInput, setProveedorInput] = createSignal("");
   const [proveedorSeleccionado, setProveedorSeleccionado] = createSignal<Proveedor | null>(null);
   const [mostrarOpcionesProveedor, setMostrarOpcionesProveedor] = createSignal(false);
 
-  // Para filtrar lista proveedores
   const [proveedores] = createResource(() => ({}), () => obtenerProveedores({ limit: 10000, page: 1 }));
   const proveedoresFiltrados = () => {
     const val = proveedorInput().toLowerCase();
@@ -24,11 +23,12 @@ export default function ModalAgregarPorProveedor(props: {
     );
   };
 
-  // Selección de materias primas
-  const [seleccionadas, setSeleccionadas] = createSignal<{ [id: number]: { cantidad: number, unidadMedida: string } }>({});
+  const [seleccionadas, setSeleccionadas] = createSignal<{
+    [id: number]: { cantidad: number; unidadMedida: string; rinde?: number }
+  }>({});
+
   const [busqueda, setBusqueda] = createSignal("");
 
-  // Materias primas de ese proveedor
   const [materiasPrimas] = createResource(
     () => proveedorSeleccionado() ? ({
       proveedorId: proveedorSeleccionado()!.id,
@@ -37,12 +37,15 @@ export default function ModalAgregarPorProveedor(props: {
     obtenerMateriasPrimas
   );
 
-  // Elegir materia prima (checkbox)
   const toggleSeleccion = (mp: MateriaPrima, checked: boolean) => {
     setSeleccionadas((prev) => {
       const nuevo = { ...prev };
       if (checked) {
-        nuevo[mp.id] = { cantidad: 1, unidadMedida: mp.unidadMedida || UNIDADES[0] };
+        nuevo[mp.id] = {
+          cantidad: 1,
+          unidadMedida: mp.unidadMedida || UNIDADES[0],
+          rinde: undefined,
+        };
       } else {
         delete nuevo[mp.id];
       }
@@ -50,13 +53,16 @@ export default function ModalAgregarPorProveedor(props: {
     });
   };
 
-  // Cambia cantidad/unidad
-  const cambiarCantidad = (mpId: number, cantidad: number) => {
+  const cambiarCantidad = (mpId: number, raw: string) => {
+    const valor = raw.replace(",", "."); // por si escribe con coma
+    const cantidad = parseFloat(valor);
+    if (isNaN(cantidad)) return;
     setSeleccionadas((prev) => ({
       ...prev,
       [mpId]: { ...prev[mpId], cantidad }
     }));
   };
+
   const cambiarUnidad = (mpId: number, unidadMedida: string) => {
     setSeleccionadas((prev) => ({
       ...prev,
@@ -64,7 +70,21 @@ export default function ModalAgregarPorProveedor(props: {
     }));
   };
 
-  // Agregar seleccionados
+  const cambiarRinde = (mpId: number, raw: string) => {
+    const rinde = parseFloat(raw);
+    if (isNaN(rinde) || rinde <= 0) return;
+    setSeleccionadas((prev) => {
+      return {
+        ...prev,
+        [mpId]: {
+          ...prev[mpId],
+          rinde,
+          cantidad: 1 / rinde,
+        },
+      };
+    });
+  };
+
   const handleAgregar = () => {
     if (!materiasPrimas()) return;
     const items = materiasPrimas().data
@@ -77,7 +97,6 @@ export default function ModalAgregarPorProveedor(props: {
     props.onAgregar(items);
   };
 
-  // Cuando cambio proveedor, limpio búsqueda y seleccionadas
   const handleElegirProveedor = (proveedor: Proveedor) => {
     setProveedorSeleccionado(proveedor);
     setProveedorInput(proveedor.nombre);
@@ -86,7 +105,6 @@ export default function ModalAgregarPorProveedor(props: {
     setSeleccionadas({});
   };
 
-  // Seleccionar/Deseleccionar todos
   const toggleSeleccionarTodos = (checked: boolean) => {
     if (!materiasPrimas()) return;
     if (checked) {
@@ -95,6 +113,7 @@ export default function ModalAgregarPorProveedor(props: {
         nuevas[mp.id] = {
           cantidad: nuevas[mp.id]?.cantidad || 1,
           unidadMedida: nuevas[mp.id]?.unidadMedida || mp.unidadMedida || UNIDADES[0],
+          rinde: nuevas[mp.id]?.rinde,
         };
       });
       setSeleccionadas(nuevas);
@@ -103,12 +122,19 @@ export default function ModalAgregarPorProveedor(props: {
     }
   };
 
+  const calcularTotalGeneral = () => {
+    return (materiasPrimas()?.data || []).reduce((acc: number, mp: MateriaPrima) => {
+      const sel = seleccionadas()[mp.id];
+      if (!sel) return acc;
+      return acc + (mp.costoDux || 0) * sel.cantidad;
+    }, 0);
+  };
+
   return (
     <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-      <div class="bg-white p-6 rounded shadow-lg w-full max-w-2xl relative">
+      <div class="bg-white p-8 rounded shadow-xl w-full max-w-6xl h-[90vh] overflow-y-auto relative">
         <h2 class="text-xl font-bold mb-4">Agregar materias primas por proveedor</h2>
 
-        {/* Input autocompletado de proveedor */}
         <label class="block font-medium mb-2">Proveedor:</label>
         <div class="relative mb-4">
           <input
@@ -147,9 +173,7 @@ export default function ModalAgregarPorProveedor(props: {
           </Show>
         </div>
 
-        {/* Solo si seleccionaste proveedor */}
         <Show when={proveedorSeleccionado()}>
-          {/* Buscador de materia prima dentro del proveedor */}
           <input
             class="border p-2 rounded w-full mb-2"
             placeholder="Buscar materia prima..."
@@ -157,7 +181,6 @@ export default function ModalAgregarPorProveedor(props: {
             onInput={(e) => setBusqueda(e.currentTarget.value)}
           />
 
-          {/* Tabla de materias primas */}
           <div class="overflow-y-auto max-h-64 border rounded mb-3">
             <table class="w-full text-sm">
               <thead>
@@ -174,8 +197,11 @@ export default function ModalAgregarPorProveedor(props: {
                   </th>
                   <th>SKU</th>
                   <th>Nombre</th>
+                  <th>Costo</th>
                   <th>Unidad</th>
+                  <th>Rinde</th>
                   <th>Cantidad</th>
+                  <th>Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -191,6 +217,7 @@ export default function ModalAgregarPorProveedor(props: {
                       </td>
                       <td>{mp.sku}</td>
                       <td>{mp.nombre}</td>
+                      <td>{formatearPrecio(mp.costoDux)}</td>
                       <td>
                         <select
                           class="border rounded p-1"
@@ -206,28 +233,44 @@ export default function ModalAgregarPorProveedor(props: {
                       <td>
                         <input
                           type="number"
-                          min="0"
+                          min="1"
+                          step="1"
                           class="border p-1 rounded w-20"
-                          value={seleccionadas()[mp.id]?.cantidad || ""}
+                          value={seleccionadas()[mp.id]?.rinde ?? ""}
                           disabled={!seleccionadas()[mp.id]}
-                          onInput={(e) =>
-                            cambiarCantidad(mp.id, Number(e.currentTarget.value))
-                          }
+                          onInput={(e) => cambiarRinde(mp.id, e.currentTarget.value)}
                         />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          class="border p-1 rounded w-24"
+                          value={seleccionadas()[mp.id]?.cantidad?.toString() ?? ""}
+                          disabled={!seleccionadas()[mp.id]}
+                          onInput={(e) => cambiarCantidad(mp.id, e.currentTarget.value)}
+                        />
+                      </td>
+                      <td>
+                        {seleccionadas()[mp.id]
+                          ? formatearPrecio((mp.costoDux || 0) * (seleccionadas()[mp.id].cantidad || 0))
+                          : "-"}
                       </td>
                     </tr>
                   )}
                 </For>
               </tbody>
+              <tfoot>
+                <tr class="font-bold bg-gray-100">
+                  <td colspan="7" class="text-right pr-2">Total general:</td>
+                  <td>{formatearPrecio(calcularTotalGeneral())}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </Show>
-        {/* Acciones */}
+
         <div class="flex justify-end gap-2 mt-4">
-          <button
-            class="bg-gray-300 px-4 py-2 rounded"
-            onClick={props.onCerrar}
-          >
+          <button class="bg-gray-300 px-4 py-2 rounded" onClick={props.onCerrar}>
             Cancelar
           </button>
           <button
