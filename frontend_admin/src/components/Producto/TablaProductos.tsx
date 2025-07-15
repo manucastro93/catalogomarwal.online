@@ -81,7 +81,11 @@ export default function TablaProductos(props: {
                       ? formatearPrecio(p.costoDux)
                       : "—"}
                   </td>
-                  <td class="p-3">XX</td>
+                  <td class="p-3">
+                    {p.costoSistema != null
+                      ? formatearPrecio(p.costoSistema)
+                      : "—"}
+                  </td>
                   <td class="p-3">{formatearPrecio(p.precioUnitario)}</td>
                   <td class="p-3">
                     {p.precioPorBulto != null

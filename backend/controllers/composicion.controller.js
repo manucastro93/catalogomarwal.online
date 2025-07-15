@@ -76,30 +76,42 @@ export const eliminarComposicion = async (req, res, next) => {
 export const guardarComposicion = async (req, res, next) => {
   try {
     const productoId = parseInt(req.params.id, 10);
-    const { composicion } = req.body; // [{ materiaPrimaId, cantidad }]
+    const { composicion } = req.body; // [{ materiaPrimaId, cantidad, unidadMedida }]
 
-    // Elimina la composición anterior (soft delete si tenés paranoid, o destroy físico)
+    // Elimina la composición anterior
     await ComposicionProductoMateriaPrima.destroy({ where: { productoId } });
 
-    // Crea la nueva composición
+    // Crear nuevas composiciones
     await Promise.all(
-      composicion.map(async (c) => 
-        ComposicionProductoMateriaPrima.create({ 
-          productoId, 
-          materiaPrimaId: c.materiaPrimaId, 
+      composicion.map((c) =>
+        ComposicionProductoMateriaPrima.create({
+          productoId,
+          materiaPrimaId: c.materiaPrimaId,
           cantidad: c.cantidad,
-          unidad: c.unidadMedida || null
+          unidad: c.unidadMedida || null,
         })
       )
     );
 
-    // Opcional: incluir info de la materia prima
-    const resultado = await ComposicionProductoMateriaPrima.findAll({
+    // Obtener las materias primas con su costo
+    const composicionesConMateriaPrima = await ComposicionProductoMateriaPrima.findAll({
       where: { productoId },
-      include: [{ model: MateriaPrima, as: 'MateriaPrima' }]
+      include: [{ model: MateriaPrima, as: "MateriaPrima" }],
     });
 
-    res.json(resultado);
+    // Calcular el total del costo
+    const costoSistema = composicionesConMateriaPrima.reduce((acc, item) => {
+      const costo = item.MateriaPrima?.costoDux || 0;
+      return acc + costo * item.cantidad;
+    }, 0);
+
+    // Actualizar el producto con el costoSistema
+    await Producto.update(
+      { costoSistema },
+      { where: { id: productoId } }
+    );
+
+    res.json(composicionesConMateriaPrima);
   } catch (error) {
     next(error);
   }
