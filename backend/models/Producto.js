@@ -75,6 +75,11 @@ export default (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: 0,
     },
+    costoSistema: {
+      type: DataTypes.DECIMAL(10, 0),
+      allowNull: true,
+      defaultValue: 0,
+    },
     costoDux: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,

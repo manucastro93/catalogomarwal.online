@@ -17,6 +17,7 @@ export interface Producto {
   precioPorBulto?: number | null;
   unidadPorBulto?: number | null;
   costoMP?: number | null;
+  costoSistema?: number | null;
   categoriaId: number;
   subcategoriaId?: number | null;
   createdAt: string;
