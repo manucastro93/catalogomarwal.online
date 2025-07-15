@@ -3,6 +3,7 @@ import { guardarComposicionProducto } from "@/services/composicion.service";
 import type { MateriaPrima } from "@/types/materiaPrima";
 import type { ProductoComposicion } from "@/types/composicion";
 import ModalAgregarPorProveedor from "@/components/Producto/ModalAgregarPorProveedor";
+import { formatearPrecio } from "@/utils/formato";
 
 export default function TabComposicionEdicion(props: {
     productoId: number;
@@ -85,57 +86,79 @@ export default function TabComposicionEdicion(props: {
 
             {/* Listado de composición actual */}
             <Show when={composicion().length > 0}>
-                <div class="mt-6">
-                    <h3 class="font-bold mb-2">Composición del producto:</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full border-collapse rounded-lg shadow-sm">
-                            <thead>
-                                <tr class="bg-gray-100 text-gray-700 text-sm sticky top-0">
-                                    <th class="px-3 py-2 text-left">SKU</th>
-                                    <th class="px-3 py-2 text-left">Descripción</th>
-                                    <th class="px-3 py-2 text-center">Cantidad</th>
-                                    <th class="px-3 py-2 text-center">Unidad</th>
-                                    <th class="px-3 py-2 text-center"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <For each={composicion()}>
-                                    {(item, i) => (
-                                        <tr class="odd:bg-white even:bg-gray-50 group hover:bg-red-50 transition text-xs">
-                                            <td class="px-3 py-2 font-mono">{item.materiaPrima.sku}</td>
-                                            <td class="px-3 py-2">{item.materiaPrima.nombre}</td>
-                                            <td class="px-3 py-2 text-center">{item.cantidad}</td>
-                                            <td class="px-3 py-2 text-center">{item.unidadMedida}</td>
-                                            <td class="px-3 py-2 text-center">
-                                                <button
-                                                    class="text-red-600 font-semibold opacity-70 hover:opacity-100 transition group-hover:underline group-hover:opacity-100"
-                                                    onClick={() => eliminarMateriaPrima(i())}
-                                                    title="Quitar"
-                                                >
-                                                    Quitar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </For>
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="mt-6">
+                <h3 class="font-bold mb-2 text-lg">Composición del producto:</h3>
+                <div class="overflow-x-auto">
+                <table class="w-full text-sm border-collapse rounded-lg shadow-sm">
+                    <thead>
+                    <tr class="bg-gray-100 text-gray-700 sticky top-0">
+                        <th class="px-3 py-2 text-left">SKU</th>
+                        <th class="px-3 py-2 text-left">Descripción</th>
+                        <th class="px-3 py-2 text-left">Proveedor</th>
+                        <th class="px-3 py-2 text-center">Cantidad</th>
+                        <th class="px-3 py-2 text-center">Unidad</th>
+                        <th class="px-3 py-2 text-center">Costo Unitario</th>
+                        <th class="px-3 py-2 text-center">Total</th>
+                        <th class="px-3 py-2 text-center"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <For each={composicion()}>
+                        {(item, i) => (
+                        <tr class="odd:bg-white even:bg-gray-50 group hover:bg-red-50 transition text-xs">
+                            <td class="px-3 py-2 font-mono">{item.materiaPrima.sku}</td>
+                            <td class="px-3 py-2">{item.materiaPrima.nombre}</td>
+                            <td class="px-3 py-2">{item.materiaPrima.Proveedor?.nombre || "-"}</td>
+                            <td class="px-3 py-2 text-center">{item.cantidad}</td>
+                            <td class="px-3 py-2 text-center">{item.unidadMedida}</td>
+                            <td class="px-3 py-2 text-center">{formatearPrecio(item.materiaPrima.costoDux)}</td>
+                            <td class="px-3 py-2 text-center">
+                            {formatearPrecio((item.materiaPrima.costoDux || 0) * item.cantidad)}
+                            </td>
+                            <td class="px-3 py-2 text-center">
+                            <button
+                                class="text-red-600 font-semibold opacity-70 hover:opacity-100 transition group-hover:underline group-hover:opacity-100"
+                                onClick={() => eliminarMateriaPrima(i())}
+                                title="Quitar"
+                            >
+                                Quitar
+                            </button>
+                            </td>
+                        </tr>
+                        )}
+                    </For>
+                    </tbody>
+                    <tfoot>
+                    <tr class="font-bold bg-gray-100 text-sm">
+                        <td colspan="5" class="text-right pr-4">Total composición:</td>
+                        <td class="text-center">
+                        {formatearPrecio(
+                            composicion().reduce((acc, item) => {
+                            return acc + (item.materiaPrima.costoDux || 0) * item.cantidad;
+                            }, 0)
+                        )}
+                        </td>
+                        <td></td>
+                    </tr>
+                    </tfoot>
+                </table>
                 </div>
-                <div class="text-right mt-4 flex gap-2 justify-end">
-                    <button
-                        class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 transition"
-                        onClick={guardarComposicion}
-                    >
-                        Guardar composición
-                    </button>
-                    <button
-                        class="bg-gray-200 text-gray-800 px-4 py-1 rounded hover:bg-gray-300 transition"
-                        onClick={props.onGuardado}
-                    >
-                        Cancelar
-                    </button>
-                </div>
+            </div>
+
+            <div class="text-right mt-4 flex gap-2 justify-end">
+                <button
+                class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 transition"
+                onClick={guardarComposicion}
+                >
+                Guardar composición
+                </button>
+                <button
+                class="bg-gray-200 text-gray-800 px-4 py-1 rounded hover:bg-gray-300 transition"
+                onClick={props.onGuardado}
+                >
+                Cancelar
+                </button>
+            </div>
             </Show>
         </div>
     );
