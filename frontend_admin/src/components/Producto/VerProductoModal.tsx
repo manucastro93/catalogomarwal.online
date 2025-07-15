@@ -14,7 +14,7 @@ export default function VerProductoModal(props: {
   return (
     <Show when={props.producto}>
       <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded shadow max-w-3xl w-full">
+        <div class="bg-white p-8 rounded shadow-xl w-full max-w-6xl h-[90vh] overflow-y-auto relative">
           <h2 class="text-xl font-bold mb-4">
             {props.producto?.nombre || 'Producto'}
           </h2>

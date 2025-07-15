@@ -5,7 +5,7 @@ export interface MateriaPrima {
   descripcion?: string | null;
   activo: boolean;
   costoDux: number;
-  unidadMedida?: 'KG' | 'MT' | 'UN' | null;
+  unidadMedida?: 'KG' | 'MT' | 'UN' | 'LT' | null;
   largo?: number | null;
   ancho?: number | null;
   alto?: number | null;
@@ -19,7 +19,6 @@ export interface MateriaPrima {
     id: number;
     nombre: string;
   } | null;
-  /** 👇 NUEVO: Relación con proveedor */
   proveedorId?: number | null;
   Proveedor?: {
     id: number;

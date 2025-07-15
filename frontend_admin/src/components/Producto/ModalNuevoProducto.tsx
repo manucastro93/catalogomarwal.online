@@ -1,6 +1,7 @@
 import { createEffect, createSignal, createResource, For, Show } from 'solid-js';
 import { crearProductoConImagenes, actualizarProductoConImagenes, eliminarImagenProducto, actualizarOrdenImagenes } from '@/services/producto.service';
 import { obtenerCategorias } from '@/services/categoria.service';
+import { obtenerComposicionesPorProducto } from "@/services/composicion.service";
 import { productoSchema } from '@/validations/producto.schema';
 import { formatearPrecio } from '@/utils/formato';
 import ModalMensaje from '../Layout/ModalMensaje';
@@ -23,6 +24,7 @@ export default function ModalNuevoProducto(props: {
   const [precioPorBulto, setPrecioPorBulto] = createSignal("");
   const [unidadPorBulto, setUnidadPorBulto] = createSignal("");
   const [categoriaId, setCategoriaId] = createSignal("");
+  const [composiciones] = createResource(() => props.producto?.id, obtenerComposicionesPorProducto);
 
   const [imagenesSeleccionadas, setImagenesSeleccionadas] = createSignal<
     {
@@ -508,7 +510,17 @@ export default function ModalNuevoProducto(props: {
           </Show>
 
           <Show when={tab() === "composicion" && !!props.producto}>
-            <TabComposicionEdicion productoId={props.producto!.id} />
+            <TabComposicionEdicion
+              productoId={props.producto!.id}
+              composicionInicial={
+                composiciones()
+                  ?.filter(c => !!c.MateriaPrima)
+                  .map((c) => ({
+                    ...c,
+                    MateriaPrima: c.MateriaPrima!,
+                  }))
+              }
+            />
           </Show>
 
           <div class="text-right mt-6">

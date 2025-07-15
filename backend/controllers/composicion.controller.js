@@ -1,20 +1,32 @@
-import { ComposicionProductoMateriaPrima, MateriaPrima, Producto } from '../models/index.js';
+import { ComposicionProductoMateriaPrima, MateriaPrima, Producto, Proveedor } from '../models/index.js';
 
 // Listar todas las composiciones de un producto
 export const listarComposicionesPorProducto = async (req, res, next) => {
   try {
     const { productoId } = req.params;
+
     const composiciones = await ComposicionProductoMateriaPrima.findAll({
       where: { productoId },
       include: [
-        { model: MateriaPrima, as: 'MateriaPrima' }
-      ]
+        {
+          model: MateriaPrima,
+          as: 'MateriaPrima',
+          include: [
+            {
+              model: Proveedor,
+              as: 'Proveedor',
+            },
+          ],
+        },
+      ],
     });
+
     res.json(composiciones);
   } catch (error) {
     next(error);
   }
 };
+
 
 // Agregar una composición a un producto
 export const agregarComposicion = async (req, res, next) => {
@@ -76,7 +88,7 @@ export const guardarComposicion = async (req, res, next) => {
           productoId, 
           materiaPrimaId: c.materiaPrimaId, 
           cantidad: c.cantidad,
-          unidad: c.unidad || null
+          unidad: c.unidadMedida || null
         })
       )
     );
