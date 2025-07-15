@@ -5,7 +5,7 @@ import type { MateriaPrima } from "@/types/materiaPrima";
 import type { Proveedor } from "@/types/proveedor";
 import { formatearPrecio } from "@/utils/formato";
 
-const UNIDADES = ["KG", "MT", "UN"];
+const UNIDADES = ["KG", "MT", "UN", "LT"];
 
 export default function ModalAgregarPorProveedor(props: {
   onAgregar: (items: { materiaPrima: MateriaPrima; cantidad: number; unidadMedida: string }) => void;

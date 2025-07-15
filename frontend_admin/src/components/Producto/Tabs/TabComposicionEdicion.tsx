@@ -130,7 +130,7 @@ export default function TabComposicionEdicion(props: {
                     </tbody>
                     <tfoot>
                     <tr class="font-bold bg-gray-100 text-sm">
-                        <td colspan="5" class="text-right pr-4">Total composición:</td>
+                        <td colspan="6" class="text-right pr-4">Total composición:</td>
                         <td class="text-center">
                         {formatearPrecio(
                             composicion().reduce((acc, item) => {
