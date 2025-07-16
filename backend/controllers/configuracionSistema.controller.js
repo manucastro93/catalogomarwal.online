@@ -1,5 +1,5 @@
 import { ConfiguracionSistema, Producto, MateriaPrima, ComposicionProductoMateriaPrima } from '../models/index.js';
-import { obtenerConfiguracionPorClave } from "../utils/configuracion.utils.js";
+import { utilObtenerConfiguracionPorClave } from "../utils/configuracion.utils.js";
 import { Op } from "sequelize";
 
 export const listarConfiguraciones = async (req, res, next) => {
@@ -62,8 +62,8 @@ export const editarConfiguracion = async (req, res, next) => {
         }, 0);
 
         // 🔄 Volver a obtener los valores actualizados
-        const merma = await obtenerConfiguracionPorClave("merma_global");
-        const valorHora = await obtenerConfiguracionPorClave("valor_hora");
+        const merma = await utilObtenerConfiguracionPorClave("merma_global");
+        const valorHora = await utilObtenerConfiguracionPorClave("valor_hora");
 
         const porcentajeMerma = Number(merma?.valor || 0);
         const valorHoraNumero = Number(valorHora?.valor || 0);
