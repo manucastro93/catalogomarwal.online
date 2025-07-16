@@ -12,3 +12,4 @@ export { default as MessageCircle } from 'lucide-solid/icons/message-circle';
 export { default as TrendingUp } from 'lucide-solid/icons/trending-up';
 export { default as BarChart3 } from 'lucide-solid/icons/bar-chart-3';
 export { default as Database } from 'lucide-solid/icons/database';
+import { default as Settings } from 'lucide-solid/icons/settings';

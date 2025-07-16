@@ -28,6 +28,7 @@ import MateriaPrimaRoutes from './materiaPrima.routes.js';
 import composicionRoutes from './composicion.routes.js';
 import ordenTrabajoRoutes from './ordenTrabajo.routes.js';
 import proveedorRoutes from './proveedor.routes.js';
+import ConfiguracionSistema from './configuracionSistema.routes.js';
 
 const router = express.Router();
 
@@ -59,5 +60,6 @@ router.use("/materias-primas", MateriaPrimaRoutes);
 router.use("/composiciones", composicionRoutes);
 router.use("/ordenes-trabajo", ordenTrabajoRoutes);
 router.use('/proveedores', proveedorRoutes);
+router.use('/configuraciones', ConfiguracionSistema);
 
 export default router;

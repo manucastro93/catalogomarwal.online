@@ -96,7 +96,8 @@ export const {
   ComposicionProductoMateriaPrima,
   OrdenTrabajo,
   DetalleOrdenTrabajo,
-  ReporteProduccionEncabezado
+  ReporteProduccionEncabezado,
+  ConfiguracionSistema
 } = db;
 
 export { sequelize, Sequelize };

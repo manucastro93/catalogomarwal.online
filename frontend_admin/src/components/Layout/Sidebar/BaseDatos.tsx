@@ -83,9 +83,6 @@ export default function BaseDatos(props: { expandido: boolean }) {
               <ConPermiso modulo="BaseDatos_Produccion_Operarios" accion="ver">
                 <SidebarSubLink href="/BaseDatos/Operarios" texto="Operarios" activo={esActivo('/BaseDatos/Operarios')} />
               </ConPermiso>
-              <ConPermiso modulo="BaseDatos_Produccion_Configuracion" accion="ver">
-                <SidebarSubLink href="/BaseDatos/Configuracion" texto="Configuración" activo={esActivo('/BaseDatos/Configuracion')} />
-              </ConPermiso>
             </div>
           </Show>
 
