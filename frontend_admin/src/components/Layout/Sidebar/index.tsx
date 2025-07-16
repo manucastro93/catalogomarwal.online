@@ -8,6 +8,7 @@ import Produccion from "./Produccion";
 import Bot from "./Bot";
 import Informes from "./Informes";
 import BaseDatos from "./BaseDatos";
+import Configuracion from "./Configuracion";
 import { Home } from "@/icons";
 import theme from "@/styles/sidebarTheme";
 
@@ -55,6 +56,9 @@ export default function Sidebar(props: {
 
         <SeccionTitulo texto="BASE DE DATOS" mostrar={props.expandido} classExtra="mt-4" />
         <BaseDatos expandido={props.expandido} />
+        
+         <SeccionTitulo texto="CONFIGURACIÓN" mostrar={props.expandido} classExtra="mt-4" />
+        <Configuracion expandido={props.expandido} />
       </nav>
     </aside>
   );

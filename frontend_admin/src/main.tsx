@@ -48,6 +48,8 @@ const Vendedores = lazy(() => import("./pages/Vendedores"));
 const ConversacionesBot = lazy(() => import("./pages/ConversacionesBot"));
 const Facturas = lazy(() => import("./pages/Facturas"));
 const ProductosPedidosPendientes = lazy(() => import("./pages/ProductosPedidosPendientes"));
+const ConfiguracionGeneral = lazy(() => import('./pages/Pagina/ConfiguracionGeneral'));
+
 
 // ✅ Restaurar sesión si existe
 checkLocalStorage();
@@ -315,45 +317,18 @@ render(
 
       {/* Página / Configuración general */}
       <Route
-        path="/Pagina/logo"
+        path="/Pagina/configuracion-general"
         component={() => (
           <ProtectedRoute>
             <Layout>
-              <Logo />
+              <ConfiguracionGeneral />
             </Layout>
           </ProtectedRoute>
         )}
       />
-      <Route
-        path="/Pagina/banners"
-        component={() => (
-          <ProtectedRoute>
-            <Layout>
-              <Banners />
-            </Layout>
-          </ProtectedRoute>
-        )}
-      />
-      <Route
-        path="/Pagina/roles-usuarios"
-        component={() => (
-          <ProtectedRoute>
-            <Layout>
-              <RolesUsuarios />
-            </Layout>
-          </ProtectedRoute>
-        )}
-      />
-      <Route
-        path="/Pagina/estados-pedidos"
-        component={() => (
-          <ProtectedRoute>
-            <Layout>
-              <EstadosPedidos />
-            </Layout>
-          </ProtectedRoute>
-        )}
-      />
+
+
+
     </Router>
   ),
   document.getElementById("root") as HTMLElement

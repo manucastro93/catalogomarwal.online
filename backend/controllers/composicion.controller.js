@@ -1,4 +1,5 @@
 import { ComposicionProductoMateriaPrima, MateriaPrima, Producto, Proveedor } from '../models/index.js';
+import { obtenerConfiguracionPorClave } from "../utils/configuracion.utils.js";
 
 // Listar todas las composiciones de un producto
 export const listarComposicionesPorProducto = async (req, res, next) => {
@@ -76,7 +77,9 @@ export const eliminarComposicion = async (req, res, next) => {
 export const guardarComposicion = async (req, res, next) => {
   try {
     const productoId = parseInt(req.params.id, 10);
-    const { composicion } = req.body; // [{ materiaPrimaId, cantidad, unidadMedida }]
+    const { composicion, tiempoProduccionSegundos } = req.body;
+    const tiempoProduccion = parseInt(tiempoProduccionSegundos || 0, 10);
+
 
     // Elimina la composición anterior
     await ComposicionProductoMateriaPrima.destroy({ where: { productoId } });
@@ -100,14 +103,30 @@ export const guardarComposicion = async (req, res, next) => {
     });
 
     // Calcular el total del costo
-    const costoSistema = composicionesConMateriaPrima.reduce((acc, item) => {
+    const subtotal = composicionesConMateriaPrima.reduce((acc, item) => {
       const costo = item.MateriaPrima?.costoDux || 0;
       return acc + costo * item.cantidad;
     }, 0);
 
-    // Actualizar el producto con el costoSistema
+    const merma = await obtenerConfiguracionPorClave("merma_global");
+    const valorHora = await obtenerConfiguracionPorClave("valor_hora");
+
+    const porcentajeMerma = Number(merma?.valor || 0);
+    const valorHoraNumero = Number(valorHora?.valor || 0);
+    const valorPorSegundo = valorHoraNumero / 3600;
+
+    const costoTiempo = tiempoProduccion * valorPorSegundo;
+    const base = subtotal + costoTiempo;
+    const costoMerma = base * (porcentajeMerma / 100);
+
+    const costoSistema = base + costoMerma;
+
+    // Actualizar el producto
     await Producto.update(
-      { costoSistema },
+      {
+        costoSistema,
+        tiempoProduccionSegundos: tiempoProduccion,
+      },
       { where: { id: productoId } }
     );
 

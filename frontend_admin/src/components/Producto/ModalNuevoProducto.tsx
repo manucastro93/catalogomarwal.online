@@ -187,9 +187,10 @@ export default function ModalNuevoProducto(props: {
           <Show when={tab() === "datos"}>
             <div class="space-y-3">
               <div>
+                <label for="sku" class="block text-sm text-gray-600 mb-1 font-medium">SKU *</label>
                 <input
+                  id="sku"
                   class="w-full border p-2 rounded"
-                  placeholder="SKU *"
                   value={sku()}
                   onInput={(e) => setSku(e.currentTarget.value)}
                 />
@@ -198,9 +199,10 @@ export default function ModalNuevoProducto(props: {
                 </Show>
               </div>
               <div>
+                <label for="nombre" class="block text-sm text-gray-600 mb-1 font-medium">Nombre</label>
                 <input
+                  id="nombre"
                   class="w-full border p-2 rounded"
-                  placeholder="Nombre"
                   value={nombre()}
                   onInput={(e) => setNombre(e.currentTarget.value)}
                 />
@@ -209,21 +211,22 @@ export default function ModalNuevoProducto(props: {
                 </Show>
               </div>
               <div>
+                <label for="descripcion" class="block text-sm text-gray-600 mb-1 font-medium">Descripción</label>
                 <textarea
+                  id="descripcion"
                   class="w-full border p-2 rounded"
-                  placeholder="Descripción"
                   value={descripcion()}
                   onInput={(e) => setDescripcion(e.currentTarget.value)}
                 />
                 <Show when={errores().descripcion}>
-                  <p class="text-red-600 text-sm mt-1">
-                    {errores().descripcion}
-                  </p>
+                  <p class="text-red-600 text-sm mt-1">{errores().descripcion}</p>
                 </Show>
               </div>
+
               <Show when={props.producto?.id}>
-                <span class="block">Activo</span>
+                <label for="activo" class="block text-sm text-gray-600 mb-1 font-medium">Activo</label>
                 <select
+                  id="activo"
                   class="w-full border p-2 rounded"
                   value={activo()}
                   onInput={(e) => setActivo(e.currentTarget.value)}
@@ -232,9 +235,12 @@ export default function ModalNuevoProducto(props: {
                   <option value="No">No</option>
                 </select>
               </Show>
+
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
+                  <label for="precioUnitario" class="block text-sm text-gray-600 mb-1 font-medium">Precio unitario</label>
                   <input
+                    id="precioUnitario"
                     class="border p-2 rounded w-full"
                     type="text"
                     inputmode="numeric"
@@ -245,7 +251,6 @@ export default function ModalNuevoProducto(props: {
                         e.preventDefault();
                       }
                     }}
-                    placeholder="Precio unitario"
                     value={formatearPrecio(precioUnitario())}
                     onInput={(e) => {
                       const raw = e.currentTarget.value.replace(/[^0-9]/g, '');
@@ -253,13 +258,14 @@ export default function ModalNuevoProducto(props: {
                     }}
                   />
                   <Show when={errores().precioUnitario}>
-                    <p class="text-red-600 text-sm mt-1">
-                      {errores().precioUnitario}
-                    </p>
+                    <p class="text-red-600 text-sm mt-1">{errores().precioUnitario}</p>
                   </Show>
                 </div>
+
                 <div>
+                  <label for="unidadPorBulto" class="block text-sm text-gray-600 mb-1 font-medium">Unidades por bulto</label>
                   <input
+                    id="unidadPorBulto"
                     class="border p-2 rounded w-full"
                     type="number"
                     onKeyDown={(e) => {
@@ -269,7 +275,6 @@ export default function ModalNuevoProducto(props: {
                         e.preventDefault();
                       }
                     }}
-                    placeholder="Unidades por bulto"
                     value={unidadPorBulto()}
                     onInput={(e) => {
                       const value = e.currentTarget.value;
@@ -284,13 +289,14 @@ export default function ModalNuevoProducto(props: {
                     }}
                   />
                   <Show when={errores().unidadPorBulto}>
-                    <p class="text-red-600 text-sm mt-1">
-                      {errores().unidadPorBulto}
-                    </p>
+                    <p class="text-red-600 text-sm mt-1">{errores().unidadPorBulto}</p>
                   </Show>
                 </div>
+
                 <div>
+                  <label for="precioPorBulto" class="block text-sm text-gray-600 mb-1 font-medium">Precio por bulto</label>
                   <input
+                    id="precioPorBulto"
                     class="border p-2 rounded w-full"
                     type="text"
                     inputmode="numeric"
@@ -301,7 +307,6 @@ export default function ModalNuevoProducto(props: {
                         e.preventDefault();
                       }
                     }}
-                    placeholder="Precio por bulto"
                     value={formatearPrecio(precioPorBulto())}
                     onInput={(e) => {
                       const raw = e.currentTarget.value.replace(/[^0-9]/g, '');
@@ -309,15 +314,15 @@ export default function ModalNuevoProducto(props: {
                     }}
                   />
                   <Show when={errores().precioPorBulto}>
-                    <p class="text-red-600 text-sm mt-1">
-                      {errores().precioPorBulto}
-                    </p>
+                    <p class="text-red-600 text-sm mt-1">{errores().precioPorBulto}</p>
                   </Show>
                 </div>
               </div>
+
               <div>
-                <span class="block">Categoría</span>
+                <label for="categoriaId" class="block text-sm text-gray-600 mb-1 font-medium">Categoría</label>
                 <select
+                  id="categoriaId"
                   class="w-full border p-2 rounded"
                   value={categoriaId()}
                   onInput={(e) => setCategoriaId(e.currentTarget.value)}
@@ -328,9 +333,7 @@ export default function ModalNuevoProducto(props: {
                   </For>
                 </select>
                 <Show when={errores().categoriaId}>
-                  <p class="text-red-600 text-sm mt-1">
-                    {errores().categoriaId}
-                  </p>
+                  <p class="text-red-600 text-sm mt-1">{errores().categoriaId}</p>
                 </Show>
               </div>
             </div>
@@ -520,6 +523,9 @@ export default function ModalNuevoProducto(props: {
                     MateriaPrima: c.MateriaPrima!,
                   }))
               }
+              tiempoProduccionInicial={
+                props.producto!.tiempoProduccionSegundos ?? undefined
+              }
             />
           </Show>
 
@@ -530,12 +536,14 @@ export default function ModalNuevoProducto(props: {
             >
               Cancelar
             </button>
-            <button
-              onClick={handleGuardar}
-              class="bg-blue-600 text-white px-4 py-1 rounded ml-2 cursor-pointer"
-            >
-              Guardar
-            </button>
+            <Show when={tab() !== "composicion"}>
+              <button
+                onClick={handleGuardar}
+                class="bg-blue-600 text-white px-4 py-1 rounded ml-2 cursor-pointer"
+              >
+                Guardar
+              </button>
+            </Show>
           </div>
         </div>
       </div>

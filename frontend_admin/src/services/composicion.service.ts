@@ -28,8 +28,12 @@ export const eliminarComposicion = async (id: number) => {
 // POST /productos/:id/composicion
 export const guardarComposicionProducto = async (
   productoId: number,
-  composicion: { materiaPrimaId: number; cantidad: number; unidadMedida: string }[]
+  data: {
+    composicion: { materiaPrimaId: number; cantidad: number; unidadMedida: string }[];
+    tiempoProduccionSegundos: number;
+  }
 ) => {
-  return api.post(`/composiciones/${productoId}/composicion`, { composicion });
+  return api.post(`/composiciones/${productoId}/composicion`, data);
 };
+
 
