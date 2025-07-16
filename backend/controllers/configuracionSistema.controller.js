@@ -1,4 +1,5 @@
 import { ConfiguracionSistema, Producto, MateriaPrima, ComposicionProductoMateriaPrima } from '../models/index.js';
+import { obtenerConfiguracionPorClave } from "../utils/configuracion.utils.js";
 import { Op } from "sequelize";
 
 export const listarConfiguraciones = async (req, res, next) => {
