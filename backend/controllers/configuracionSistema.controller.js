@@ -1,4 +1,5 @@
 import { ConfiguracionSistema } from '../models/index.js';
+import { Op } from "sequelize";
 
 export const listarConfiguraciones = async (req, res, next) => {
   try {
@@ -38,6 +39,43 @@ export const editarConfiguracion = async (req, res, next) => {
     configuracion.valor = valor;
     configuracion.descripcion = descripcion;
     await configuracion.save();
+    if (configuracion.clave === "valor_hora" || configuracion.clave === "merma_global") {
+      // 🔁 Traer todos los productos que tengan tiempoProduccionSegundos definido
+      const productos = await Producto.findAll({
+        where: {
+          tiempoProduccionSegundos: { [Op.gt]: 0 }
+        }
+      });
+
+      for (const producto of productos) {
+        const composiciones = await ComposicionProductoMateriaPrima.findAll({
+          where: { productoId: producto.id },
+          include: [{ model: MateriaPrima, as: "MateriaPrima" }],
+        });
+
+        if (!composiciones.length) continue;
+
+        const subtotal = composiciones.reduce((acc, item) => {
+          const costo = item.MateriaPrima?.costoDux || 0;
+          return acc + costo * item.cantidad;
+        }, 0);
+
+        // 🔄 Volver a obtener los valores actualizados
+        const merma = await obtenerConfiguracionPorClave("merma_global");
+        const valorHora = await obtenerConfiguracionPorClave("valor_hora");
+
+        const porcentajeMerma = Number(merma?.valor || 0);
+        const valorHoraNumero = Number(valorHora?.valor || 0);
+        const valorPorSegundo = valorHoraNumero / 3600;
+
+        const costoMerma = (subtotal + producto.tiempoProduccionSegundos * valorPorSegundo) * (porcentajeMerma / 100);
+        const costoTiempo = producto.tiempoProduccionSegundos * valorPorSegundo;
+
+        const costoSistema = subtotal + costoTiempo + costoMerma;
+
+        await producto.update({ costoSistema });
+      }
+    }
 
     res.json(configuracion);
   } catch (error) {
