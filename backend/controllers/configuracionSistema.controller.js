@@ -1,4 +1,4 @@
-import { ConfiguracionSistema } from '../models/index.js';
+import { ConfiguracionSistema, Producto } from '../models/index.js';
 import { Op } from "sequelize";
 
 export const listarConfiguraciones = async (req, res, next) => {
