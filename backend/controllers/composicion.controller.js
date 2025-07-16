@@ -1,5 +1,5 @@
 import { ComposicionProductoMateriaPrima, MateriaPrima, Producto, Proveedor } from '../models/index.js';
-import { obtenerConfiguracionPorClave } from "../utils/configuracion.utils.js";
+import { utilObtenerConfiguracionPorClave } from "../utils/configuracion.utils.js";
 
 // Listar todas las composiciones de un producto
 export const listarComposicionesPorProducto = async (req, res, next) => {
@@ -108,8 +108,8 @@ export const guardarComposicion = async (req, res, next) => {
       return acc + costo * item.cantidad;
     }, 0);
 
-    const merma = await obtenerConfiguracionPorClave("merma_global");
-    const valorHora = await obtenerConfiguracionPorClave("valor_hora");
+    const merma = await utilObtenerConfiguracionPorClave("merma_global");
+    const valorHora = await utilObtenerConfiguracionPorClave("valor_hora");
 
     const porcentajeMerma = Number(merma?.valor || 0);
     const valorHoraNumero = Number(valorHora?.valor || 0);
