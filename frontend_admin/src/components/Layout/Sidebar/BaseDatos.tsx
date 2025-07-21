@@ -52,6 +52,9 @@ export default function BaseDatos(props: { expandido: boolean }) {
 
           <Show when={ventasOpen()}>
             <div class="flex flex-col">
+              <ConPermiso modulo="BaseDatos_Ventas_Clientes" accion="ver">
+                <SidebarSubLink href="/BaseDatos/Clientes" texto="Clientes" activo={esActivo('/BaseDatos/Clientes')} />
+              </ConPermiso>
               <ConPermiso modulo="BaseDatos_Ventas_Productos" accion="ver">
                 <SidebarSubLink href="/BaseDatos/Productos" texto="Productos" activo={esActivo('/BaseDatos/Productos')} />
               </ConPermiso>

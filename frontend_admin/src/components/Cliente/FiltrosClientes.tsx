@@ -17,6 +17,8 @@ export default function FiltrosClientes(props: {
   onSeleccionProvincia: (id: number | '') => void;
   onSeleccionLocalidad: (id: number | '') => void;
   onSeleccionVendedor: (id: number | '') => void;
+  mostrarClientesDux: boolean;
+  onToggleClientesDux: (v: boolean) => void;
 }) {
   return (
     <div class="flex gap-4 mb-4 flex-wrap">
@@ -32,6 +34,15 @@ export default function FiltrosClientes(props: {
           </For>
         </select>
       </Show>
+      <div class="flex items-center gap-2">
+        <input
+          id="solo-dux"
+          type="checkbox"
+          checked={props.mostrarClientesDux}
+          onChange={(e) => props.onToggleClientesDux(e.currentTarget.checked)}
+        />
+        <label for="solo-dux" class="text-sm">Solo clientes Dux</label>
+      </div>
 
       <input
         type="text"

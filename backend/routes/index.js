@@ -2,6 +2,7 @@
 import express from 'express';
 import productoRoutes from './producto.routes.js';
 import clienteRoutes from './cliente.routes.js';
+import clienteDuxRoutes from './clienteDux.routes.js';
 import pedidoRoutes from './pedido.routes.js';
 import publicRoutes from './public.routes.js';
 import usuarioRoutes from './usuario.routes.js';
@@ -34,6 +35,7 @@ const router = express.Router();
 
 router.use('/productos', productoRoutes);
 router.use('/clientes', clienteRoutes);
+router.use('/clientesDux', clienteDuxRoutes);
 router.use('/pedidos', pedidoRoutes);
 router.use('/public', publicRoutes);
 router.use('/usuarios', usuarioRoutes);

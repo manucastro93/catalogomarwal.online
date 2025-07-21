@@ -285,6 +285,16 @@ render(
         )}
       />
       <Route
+        path="/BaseDatos/Clientes"
+        component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <Clientes />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      />
+      <Route
         path="/BaseDatos/Categorias"
         component={() => (
           <ProtectedRoute>

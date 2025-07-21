@@ -1,6 +1,7 @@
 import { createSignal, createResource, createMemo, Show } from 'solid-js';
 import * as XLSX from 'xlsx';
 import { obtenerClientes } from '@/services/cliente.service';
+import { obtenerClientesDux } from '@/services/clienteDux.service';
 import { obtenerProvincias, obtenerLocalidades } from '@/services/ubicacion.service';
 import { obtenerUsuariosPorRolPorId } from '@/services/usuario.service';
 import { useAuth } from '@/store/auth';
@@ -34,6 +35,7 @@ export default function Clientes() {
   const [clienteAEliminar, setClienteAEliminar] = createSignal<Cliente | null>(null);
   const [modalConfirmar, setModalConfirmar] = createSignal(false);
   const [mostrarMapa, setMostrarMapa] = createSignal(false);
+  const [soloClientesDux, setSoloClientesDux] = createSignal(false);
 
   const [vendedores] = createResource(async () => {
     if (usuario()?.rolUsuarioId && [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(usuario()!.rolUsuarioId as typeof ROLES_USUARIOS.SUPREMO | typeof ROLES_USUARIOS.ADMINISTRADOR)) {
@@ -41,7 +43,7 @@ export default function Clientes() {
     }
     return [];
   });
-  
+
 
   const [provincias] = createResource(obtenerProvincias);
   const [localidades] = createResource(
@@ -58,9 +60,12 @@ export default function Clientes() {
     provinciaId: provinciaSeleccionada() || undefined,
     localidadId: localidadSeleccionada() || undefined,
     vendedorId: vendedorIdSeleccionado() || undefined,
+    soloClientesDux: soloClientesDux() || undefined,
   }));
 
-  const [respuesta, { refetch }] = createResource(fetchParams, obtenerClientes);
+  const [respuesta, { refetch }] = createResource(fetchParams, (params) =>
+    soloClientesDux() ? obtenerClientesDux(params) : obtenerClientes(params)
+  );
 
   const cambiarOrden = (col: string) => {
     if (orden() === col) {
@@ -75,7 +80,7 @@ export default function Clientes() {
     [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(
       usuario()?.rolUsuarioId as typeof ROLES_USUARIOS.SUPREMO | typeof ROLES_USUARIOS.ADMINISTRADOR
     );
-  
+
   const exportarExcel = () => {
     const clientes = respuesta()?.data || [];
     const filas = clientes.map((c: Cliente) => ({
@@ -105,7 +110,7 @@ export default function Clientes() {
           >
             Ver mapa de clientes
           </button>
-          
+
         </div>
       </div>
 
@@ -135,17 +140,23 @@ export default function Clientes() {
           setVendedorIdSeleccionado(id);
           setPagina(1);
         }}
+        mostrarClientesDux={soloClientesDux()}
+        onToggleClientesDux={(v) => {
+          setSoloClientesDux(v);
+          setPagina(1);
+        }}
       />
 
       <Show when={!respuesta.loading} fallback={<Loader />}>
         <TablaClientes
           clientes={respuesta()?.data ?? []}
-          puedeEditar={puedeEditar()}          
+          puedeEditar={puedeEditar()}
+          mostrarClientesDux={soloClientesDux()}
           onVer={setVerCliente}
           onEditar={(c) => {
             setClienteSeleccionado(c);
             setModalAbierto(true);
-          }}    
+          }}
           onOrdenar={cambiarOrden}
         />
       </Show>
