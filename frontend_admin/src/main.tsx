@@ -49,6 +49,7 @@ const ConversacionesBot = lazy(() => import("./pages/ConversacionesBot"));
 const Facturas = lazy(() => import("./pages/Facturas"));
 const ProductosPedidosPendientes = lazy(() => import("./pages/ProductosPedidosPendientes"));
 const ConfiguracionGeneral = lazy(() => import('./pages/Pagina/ConfiguracionGeneral'));
+const InformeClientesDux = lazy(() => import('./pages/Informes/InformeClientesDux'));
 
 
 // ✅ Restaurar sesión si existe
@@ -260,7 +261,16 @@ render(
           </ProtectedRoute>
         )}
       />
-
+      <Route
+        path="/Informes/InformeClientesDux"
+        component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <InformeClientesDux />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      />
       {/* Bot */}
       <Route
         path="/Bot/ConversacionesBot"

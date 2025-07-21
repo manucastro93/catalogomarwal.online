@@ -30,3 +30,20 @@ export interface ClienteDux {
   updatedAt?: string;
   deletedAt?: string | null;
 }
+
+export interface ClienteDuxPorMes {
+  mes: string; // "2025-07"
+  cantidad: number;
+}
+
+export interface ClienteDuxPorDia {
+  fecha: string; // "2025-07-21"
+  cantidad: number;
+}
+
+export interface FiltrosClientesDux {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  vendedor?: string;
+  listaPrecio?: string;
+}

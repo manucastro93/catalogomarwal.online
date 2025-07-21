@@ -152,6 +152,8 @@ export default function Clientes() {
           clientes={respuesta()?.data ?? []}
           puedeEditar={puedeEditar()}
           mostrarClientesDux={soloClientesDux()}
+          ordenActual={orden()}
+          direccion={direccion()}
           onVer={setVerCliente}
           onEditar={(c) => {
             setClienteSeleccionado(c);

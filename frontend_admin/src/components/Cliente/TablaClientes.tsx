@@ -1,6 +1,7 @@
 import { For, Show } from 'solid-js';
 import type { Cliente } from '@/types/cliente';
 import type { ClienteDux } from '@/types/clienteDux';
+import { formatearFechaCorta } from '@/utils/formato';
 
 export default function TablaClientes(props: {
   clientes: Cliente[];
@@ -9,7 +10,18 @@ export default function TablaClientes(props: {
   onEditar: (c: Cliente) => void;
   onOrdenar: (col: string) => void;
   mostrarClientesDux: boolean;
+  ordenActual: string;
+  direccion: 'asc' | 'desc';
 }) {
+  const renderHeader = (col: string, label: string) => {
+  const flecha = props.ordenActual === col
+    ? props.direccion === 'asc'
+      ? '⬆️'
+      : '⬇️'
+    : '';
+  return `${label} ${flecha}`;
+};
+
   return (
     <div class="overflow-auto border rounded-lg">
       <Show
@@ -18,12 +30,24 @@ export default function TablaClientes(props: {
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-100 sticky top-0">
               <tr>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('nombre')}>Nombre</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('email')}>Email</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('provincia')}>Provincia</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('localidad')}>Localidad</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('vendedor')}>Vendedor</th>
-                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('createdAt')}>Creado</th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('nombre')}>
+                  {renderHeader('nombre', 'Nombre')}
+                </th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('email')}>
+                  {renderHeader('email', 'Email')}
+                </th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('provincia')}>
+                  {renderHeader('provincia', 'Provincia')}
+                </th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('localidad')}>
+                  {renderHeader('localidad', 'Localidad')}
+                </th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('vendedor')}>
+                  {renderHeader('vendedor', 'Vendedor')}
+                </th>
+                <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('createdAt')}>
+                  {renderHeader('createdAt', 'Creado')}
+                </th>
                 <th class="text-left p-3 border-b">Acciones</th>
               </tr>
             </thead>
@@ -39,7 +63,7 @@ export default function TablaClientes(props: {
                       <td class="p-3">{c.provincia?.nombre}</td>
                       <td class="p-3">{c.localidad?.nombre}</td>
                       <td class="p-3">{c.vendedor?.nombre}</td>
-                      <td class="p-3">{new Date(c.createdAt).toLocaleDateString()}</td>
+                      <td class="p-3">{formatearFechaCorta(c.createdAt)}</td>
                       <td class="p-3 flex gap-2">
                         <button class="text-blue-600 hover:underline" onClick={() => props.onVer(c)}>Ver</button>
                         <Show when={props.puedeEditar}>
@@ -58,13 +82,27 @@ export default function TablaClientes(props: {
         <table class="w-full text-sm border-collapse">
           <thead class="bg-blue-100 sticky top-0">
             <tr>
-              <th class="text-left p-3 border-b">Cliente</th>
-              <th class="text-left p-3 border-b">CUIT</th>
-              <th class="text-left p-3 border-b">Vendedor</th>
-              <th class="text-left p-3 border-b">Categoría Fiscal</th>
-              <th class="text-left p-3 border-b">Provincia</th>
-              <th class="text-left p-3 border-b">Localidad</th>
-              <th class="text-left p-3 border-b">Creado</th>
+              <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('cliente')}>
+                {renderHeader('cliente', 'Cliente')}
+              </th>
+              <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('cuitCuil')}>
+                {renderHeader('cuitCuil', 'CUIT')}
+              </th>
+              <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('vendedor')}>
+                {renderHeader('vendedor', 'Vendedor')}
+              </th>
+              <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('categoriaFiscal')}>
+                {renderHeader('categoriaFiscal', 'Categoría Fiscal')}
+              </th>
+              <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('provincia')}>
+                {renderHeader('provincia', 'Provincia')}
+              </th>
+              <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('localidad')}>
+                {renderHeader('localidad', 'Localidad')}
+              </th>
+              <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('fechaCreacion')}>
+                {renderHeader('fechaCreacion', 'Creado')}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -80,7 +118,7 @@ export default function TablaClientes(props: {
                     <td class="p-3">{c.categoriaFiscal}</td>
                     <td class="p-3">{c.provincia}</td>
                     <td class="p-3">{c.localidad}</td>
-                    <td class="p-3">{new Date(c.fechaCreacion || c.createdAt).toLocaleDateString()}</td>
+                    <td class="p-3">{formatearFechaCorta(c.fechaCreacion)}</td>
                   </tr>
                 )}
               </For>
