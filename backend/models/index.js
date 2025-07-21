@@ -97,7 +97,8 @@ export const {
   OrdenTrabajo,
   DetalleOrdenTrabajo,
   ReporteProduccionEncabezado,
-  ConfiguracionSistema
+  ConfiguracionSistema,
+  ClienteDux
 } = db;
 
 export { sequelize, Sequelize };
