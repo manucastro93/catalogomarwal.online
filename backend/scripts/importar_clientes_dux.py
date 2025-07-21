@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
+from playwright.async_api import async_playwright
 
 # 📦 Cargar variables de entorno
 load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
