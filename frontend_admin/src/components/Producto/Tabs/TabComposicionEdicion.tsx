@@ -12,6 +12,7 @@ export default function TabComposicionEdicion(props: {
     composicionInicial?: ProductoComposicion[];
     onGuardado?: () => void;
     tiempoProduccionInicial?: number;
+    incluirTiempoEnCosto: boolean;
 }) {
     const [materiaPrimaSeleccionada, setMateriaPrimaSeleccionada] = createSignal<MateriaPrima | null>(null);
     const [cantidad, setCantidad] = createSignal<string>("");
@@ -22,6 +23,7 @@ export default function TabComposicionEdicion(props: {
     const [tiempoProduccion, setTiempoProduccion] = createSignal<string>("");
     const [valorHora, setValorHora] = createSignal<number>(0);
     const [mermaPorcentaje, setMermaPorcentaje] = createSignal<number>(0);
+    const [incluirTiempo, setIncluirTiempo] = createSignal(true);
 
     onMount(async () => {
         if (props.composicionInicial?.length) {
@@ -62,6 +64,7 @@ export default function TabComposicionEdicion(props: {
                 unidadMedida: item.unidadMedida,
             })),
             tiempoProduccionSegundos: Number(tiempoProduccion()),
+            incluirTiempoEnCosto: incluirTiempo(),
         });
         setMensaje("Composición guardada correctamente");
         setMostrarMensaje(true);
@@ -76,6 +79,7 @@ export default function TabComposicionEdicion(props: {
     };
 
     const costoTiempoProduccion = () => {
+        if (!incluirTiempo()) return 0;
         const segundos = Number(tiempoProduccion());
         const valorPorSegundo = valorHora() / 3600;
         return segundos * valorPorSegundo;
@@ -114,7 +118,7 @@ export default function TabComposicionEdicion(props: {
 
             <Show when={composicion().length > 0}>
                 <div class="mt-6">
-                    <div class="flex items-center gap-2 mb-4">
+                    <div class="flex items-center gap-4 mb-4">
                         <div class="flex items-center">
                             <label for="tiempoProduccion" class="text-sm text-gray-600 font-medium mr-2">
                                 Tiempo de producción
@@ -129,12 +133,16 @@ export default function TabComposicionEdicion(props: {
                             />
                         </div>
                         <span class="text-gray-500 text-sm">segundos</span>
-                        <Show when={tiempoProduccion()}>
-                            <span class="text-sm text-gray-600 ml-4">
-                                Costo tiempo: {formatearPrecio(costoTiempoProduccion())}
-                            </span>
-                        </Show>
+                        <label class="flex items-center gap-2 text-sm text-gray-600">
+                            <input
+                                type="checkbox"
+                                checked={incluirTiempo()}
+                                onChange={(e) => setIncluirTiempo(e.currentTarget.checked)}
+                            />
+                            Incluir en costo
+                        </label>
                     </div>
+
 
                     <h3 class="font-bold mb-2 text-lg">Composición del producto:</h3>
                     <div class="overflow-x-auto">

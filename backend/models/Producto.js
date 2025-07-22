@@ -80,6 +80,11 @@ export default (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: 0,
     },
+    incluirTiempoEnCosto: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
     costoSistema: {
       type: DataTypes.DECIMAL(10, 0),
       allowNull: true,

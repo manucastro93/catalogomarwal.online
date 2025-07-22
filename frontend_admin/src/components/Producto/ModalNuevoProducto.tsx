@@ -526,6 +526,9 @@ export default function ModalNuevoProducto(props: {
               tiempoProduccionInicial={
                 props.producto!.tiempoProduccionSegundos ?? undefined
               }
+              incluirTiempoEnCosto={
+                props.producto!.incluirTiempoEnCosto ?? undefined
+              }
             />
           </Show>
 

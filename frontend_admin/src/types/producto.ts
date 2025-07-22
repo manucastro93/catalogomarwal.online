@@ -18,6 +18,7 @@ export interface Producto {
   unidadPorBulto?: number | null;
   costoMP?: number | null;
   tiempoProduccionSegundos?: number | null;
+  incluirTiempoEnCosto: boolean;
   costoSistema?: number | null;
   categoriaId: number;
   subcategoriaId?: number | null;

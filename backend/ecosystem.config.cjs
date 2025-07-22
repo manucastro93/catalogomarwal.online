@@ -19,7 +19,7 @@ module.exports = {
       name: 'sync_dux_12hs',
       script: './sincronizarPedidosFacturasDux.js',
       cwd: __dirname,
-      cron_restart: '0 8-16 * * *', // Cada hora de 8 a 16hs
+      cron_restart: '0 8-16 * * *',
       out_file: './logs/sync_dux_12hs-out.log',
       error_file: './logs/sync_dux_12hs-error.log',
       merge_logs: true,
@@ -32,7 +32,7 @@ module.exports = {
       name: 'sync_dux_18hs',
       script: './sincronizarProductosDux.js',
       cwd: __dirname,
-      cron_restart: '0 18 * * *', // Una vez a las 18hs
+      cron_restart: '0 18 * * *',
       out_file: './logs/sync_dux_18hs-out.log',
       error_file: './logs/sync_dux_18hs-error.log',
       merge_logs: true,
@@ -40,6 +40,17 @@ module.exports = {
       env: {
         NODE_ENV: 'production'
       }
+    },
+    {
+      name: 'importar_clientes_dux',
+      script: './scripts/importar_clientes_dux.py',
+      interpreter: './venv/bin/python',
+      cwd: __dirname,
+      cron_restart: '0 11,17 * * *', // todos los días a las 11 y 17 hs
+      out_file: './logs/importar_clientes_dux-out.log',
+      error_file: './logs/importar_clientes_dux-error.log',
+      merge_logs: true,
+      time: true,
     }
   ],
 };

@@ -1,6 +1,6 @@
 import { createSignal, Show } from 'solid-js';
 import type { Producto } from '@/types/producto';
-import TabDetalles from './Tabs/TabDetalles';
+import TabDetalles from './Tabs/TabDatos';
 import TabEstadisticas from './Tabs/TabEstadisticas';
 import TabImagenes from './Tabs/TabImagenes';
 import TabComposicion from './Tabs/TabComposicion';

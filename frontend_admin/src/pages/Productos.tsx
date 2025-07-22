@@ -145,16 +145,18 @@ export default function Productos() {
         </button>
       </div>
 
-      <ModalNuevoProducto
-        abierto={modalAbierto()}
-        producto={productoSeleccionado()}
-        onCerrar={(mensajeExito?: string) => {
-          setModalAbierto(false);
-          refetch();
-          if (mensajeExito) setMensaje(mensajeExito);
-        }}
-      />
-
+      <Show when={modalAbierto()} keyed>
+        <ModalNuevoProducto
+          abierto={modalAbierto()}
+          producto={productoSeleccionado()}
+          onCerrar={(mensajeExito?: string) => {
+            setModalAbierto(false);
+            refetch();
+            if (mensajeExito) setMensaje(mensajeExito);
+          }}
+        />
+      </Show>
+      
       <VerProductoModal
         producto={verProducto()}
         onCerrar={() => setVerProducto(null)}
