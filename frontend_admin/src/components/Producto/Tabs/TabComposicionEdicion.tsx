@@ -212,7 +212,7 @@ export default function TabComposicionEdicion(props: {
                         </table>
                     </div>
                 </div>
-
+                </Show>
                 <div class="text-right mt-4 flex gap-2 justify-end">
                     <button
                         class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 transition"
@@ -221,7 +221,7 @@ export default function TabComposicionEdicion(props: {
                         Guardar composición
                     </button>
                 </div>
-            </Show>
+            
             <Show when={mostrarMensaje()}>
                 <ModalMensaje mensaje={mensaje()} cerrar={() => setMostrarMensaje(false)} />
             </Show>
