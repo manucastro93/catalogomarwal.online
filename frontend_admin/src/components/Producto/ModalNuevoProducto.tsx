@@ -537,7 +537,7 @@ export default function ModalNuevoProducto(props: {
               onClick={() => props.onCerrar()}
               class="bg-gray-300 px-4 py-1 rounded cursor-pointer"
             >
-              Cancelar
+              Cerrar
             </button>
             <Show when={tab() !== "composicion"}>
               <button

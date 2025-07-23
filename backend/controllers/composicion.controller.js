@@ -114,8 +114,9 @@ export const guardarComposicion = async (req, res, next) => {
     const porcentajeMerma = Number(merma?.valor || 0);
     const valorHoraNumero = Number(valorHora?.valor || 0);
     const valorPorSegundo = valorHoraNumero / 3600;
-
-    const costoTiempo = tiempoProduccion * valorPorSegundo;
+    const costoTiempo = 0;
+    if(incluirTiempoEnCosto)
+      costoTiempo = tiempoProduccion * valorPorSegundo;
     const base = subtotal + costoTiempo;
     const costoMerma = base * (porcentajeMerma / 100);
 
