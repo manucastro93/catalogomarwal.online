@@ -40,6 +40,7 @@ export default function TabComposicionEdicion(props: {
 
         if (props.tiempoProduccionInicial != null) {
             setTiempoProduccion(props.tiempoProduccionInicial.toString());
+            setIncluirTiempo(props.incluirTiempoEnCosto);
         }
 
         const configValorHora = await obtenerConfiguracionPorClave("valor_hora");
