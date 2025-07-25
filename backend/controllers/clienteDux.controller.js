@@ -79,8 +79,8 @@ export const obtenerInformeClientesDux = async (req, res) => {
     if (listaPrecio) where.listaPrecioPorDefecto = listaPrecio;
     if (vendedor) where.vendedor = vendedor;
 
-    // 📊 Clientes por mes (NO se afectan por filtros)
-    const porMes = await ClienteDux.findAll({
+    // 🔷 Todos los clientes por mes (para barras azules)
+    const porMesGeneral = await ClienteDux.findAll({
       attributes: [
         [Sequelize.fn('DATE_FORMAT', Sequelize.col('fechaCreacion'), '%Y-%m'), 'mes'],
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
@@ -90,12 +90,39 @@ export const obtenerInformeClientesDux = async (req, res) => {
       raw: true,
     });
 
+    // 🔶 Clientes por mes del vendedor seleccionado (para barras naranjas)
+    let porMesVendedor = [];
+    if (vendedor) {
+      porMesVendedor = await ClienteDux.findAll({
+        attributes: [
+          [Sequelize.fn('DATE_FORMAT', Sequelize.col('fechaCreacion'), '%Y-%m'), 'mes'],
+          [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
+        ],
+        where: { vendedor },
+        group: [Sequelize.literal("DATE_FORMAT(fechaCreacion, '%Y-%m')")],
+        order: [[Sequelize.literal("mes"), 'ASC']],
+        raw: true,
+      });
+    }
+
+    // 🧠 Combinar resultados
+    const mapaGeneral = Object.fromEntries(porMesGeneral.map((d) => [d.mes, { mes: d.mes, total: Number(d.cantidad) }]));
+    for (const d of porMesVendedor) {
+      if (!mapaGeneral[d.mes]) {
+        mapaGeneral[d.mes] = { mes: d.mes, total: 0 };
+      }
+      mapaGeneral[d.mes].vendedor = Number(d.cantidad);
+    }
+
+    const porMesFinal = Object.values(mapaGeneral).sort((a, b) => a.mes.localeCompare(b.mes));
+
+
     // 📈 Clientes por día
     let porDia = [];
     let desde = fechaDesde;
     let hasta = fechaHasta;
     if (!fechaDesde || !fechaHasta) {
-      desde = dayjs().startOf("month").format("YYYY-MM-DD");
+      desde = dayjs().startOf("year").format("YYYY-MM-DD");
       hasta = dayjs().format("YYYY-MM-DD");
     }
 
@@ -125,11 +152,12 @@ export const obtenerInformeClientesDux = async (req, res) => {
     });
 
     res.json({
-      porMes,
+      porMes: porMesFinal,
       porDia,
       detalle,
       totalPaginas: Math.ceil(count / limit),
     });
+
   } catch (error) {
     console.error('❌ Error en informe de clientes Dux:', error);
     res.status(500).json({ message: 'Error al obtener informe de clientes Dux' });
@@ -156,7 +184,6 @@ export const obtenerListasPrecioClientesDux = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener listas de precio' });
   }
 };
-
 
 export const reporteEjecutivoClientesDux = async (req, res) => {
   try {

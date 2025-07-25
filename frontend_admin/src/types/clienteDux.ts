@@ -32,8 +32,9 @@ export interface ClienteDux {
 }
 
 export interface ClienteDuxPorMes {
-  mes: string; // "2025-07"
-  cantidad: number;
+  mes: string;       // "2025-07"
+  total: number;     // total de clientes en ese mes
+  vendedor?: number; // clientes creados por el vendedor seleccionado (opcional)
 }
 
 export interface ClienteDuxPorDia {

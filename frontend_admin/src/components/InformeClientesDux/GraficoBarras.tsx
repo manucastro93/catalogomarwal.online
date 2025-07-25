@@ -7,34 +7,44 @@ import {
   LinearScale,
   Tooltip,
   Legend,
+  Filler
 } from "chart.js";
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
 
 export default function GraficoBarras(props: {
-  data: { mes: string; cantidad: number }[];
+  data: { mes: string; total: number; vendedor?: number }[];
 }) {
-  // 🔍 Filtrar outliers (meses con carga histórica masiva)
   const datosFiltrados = createMemo(() => {
-    const valores = props.data.map((d) => d.cantidad);
-    const valoresOrdenados = [...valores].sort((a, b) => a - b);
-    const mediana = valoresOrdenados.length > 0
-      ? valoresOrdenados[Math.floor(valoresOrdenados.length / 2)]
-      : 0;
+    const valores = props.data.map((d) => d.total);
+    const ordenados = [...valores].sort((a, b) => a - b);
+    const mediana = ordenados.length > 0 ? ordenados[Math.floor(ordenados.length / 2)] : 0;
 
-    return props.data.filter((d) => d.cantidad <= mediana * 2);
+    return props.data.filter((d) => d.total <= mediana * 2);
   });
 
-  const chartData = createMemo(() => ({
-    labels: datosFiltrados().map((d) => d.mes),
-    datasets: [
-      {
-        label: "Clientes creados",
-        data: datosFiltrados().map((d) => d.cantidad),
-        backgroundColor: "#2563eb",
-      },
-    ],
-  }));
+  const chartData = createMemo(() => {
+    const labels = datosFiltrados().map((d) => d.mes);
+
+    const datasetTotal = {
+      label: "Total",
+      data: datosFiltrados().map((d) => d.total),
+      backgroundColor: "#2563eb",
+    };
+
+    const contieneVendedor = datosFiltrados().some((d) => typeof d.vendedor === "number");
+
+    const datasetVendedor = {
+      label: "Vendedor seleccionado",
+      data: datosFiltrados().map((d) => d.vendedor ?? 0),
+      backgroundColor: "#f97316",
+    };
+
+    return {
+      labels,
+      datasets: contieneVendedor ? [datasetTotal, datasetVendedor] : [datasetTotal],
+    };
+  });
 
   return (
     <Show when={datosFiltrados().length}>
@@ -45,7 +55,7 @@ export default function GraficoBarras(props: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-              legend: { display: false },
+              legend: { display: true },
             },
             scales: {
               y: { beginAtZero: true },
@@ -56,3 +66,4 @@ export default function GraficoBarras(props: {
     </Show>
   );
 }
+
