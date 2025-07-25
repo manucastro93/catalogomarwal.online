@@ -122,7 +122,7 @@ export const obtenerInformeClientesDux = async (req, res) => {
     let desde = fechaDesde;
     let hasta = fechaHasta;
     if (!fechaDesde || !fechaHasta) {
-      desde = dayjs().startOf("year").format("YYYY-MM-DD");
+      desde = dayjs().startOf("year").format("YYYY-MM-DD")
       hasta = dayjs().format("YYYY-MM-DD");
     }
 

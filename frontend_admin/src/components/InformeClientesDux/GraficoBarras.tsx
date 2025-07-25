@@ -10,7 +10,7 @@ import {
   Filler
 } from "chart.js";
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, Filler);
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, Filler)
 
 export default function GraficoBarras(props: {
   data: { mes: string; total: number; vendedor?: number }[];
