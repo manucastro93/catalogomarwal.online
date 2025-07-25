@@ -122,7 +122,7 @@ export const guardarComposicion = async (req, res, next) => {
 
     const costoSistema = base + costoMerma;
 
-    // Actualizar el producto
+    // Actualizar el product
     await Producto.update(
       {
         costoSistema,
