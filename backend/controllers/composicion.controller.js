@@ -81,7 +81,7 @@ export const guardarComposicion = async (req, res, next) => {
     const tiempoProduccion = parseInt(tiempoProduccionSegundos || 0, 10);
 
 
-    // Elimina la composición anterior
+    // Elimina la composición anterio
     await ComposicionProductoMateriaPrima.destroy({ where: { productoId } });
 
     // Crear nuevas composiciones
