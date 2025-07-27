@@ -9,7 +9,7 @@ export default function TablaClientes(props: {
   onPaginaChange: (nueva: number) => void;
 }) {
   return (
-    <div class="overflow-auto border rounded-lg mt-6">
+    <div class="overflow-auto border rounded-lg mt-15">
       <table class="w-full text-sm border-collapse">
         <thead class="bg-gray-100 sticky top-0">
           <tr>
