@@ -141,8 +141,11 @@ def procesar_excel(ruta_archivo):
 
     with engine.begin() as conn:
         for _, row in df.iterrows():
-            insert_stmt = mysql_insert(clientes_table).values(row.to_dict())
-            update_stmt = insert_stmt.on_duplicate_key_update({k: insert_stmt.inserted[k] for k in row.keys() if k != 'id'})
+            row_data = row.where(pd.notnull(row), None).to_dict()  # 👈 reemplaza NaN por None
+            insert_stmt = mysql_insert(clientes_table).values(row_data)
+            update_stmt = insert_stmt.on_duplicate_key_update({
+                k: insert_stmt.inserted[k] for k in row_data.keys() if k != 'id'
+            })
             conn.execute(update_stmt)
 
     print("✅ Clientes importados (actualizados si existían)")
