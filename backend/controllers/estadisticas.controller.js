@@ -1,6 +1,7 @@
-import { Pedido, DetallePedido, Producto, Cliente, Usuario, Categoria, ImagenProducto, LogCliente } from '../models/index.js';
+import { Pedido, DetallePedido, Producto, Cliente, Usuario, Categoria, ImagenProducto, LogCliente, PedidoDux, PersonalDux } from '../models/index.js';
 import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
-import { Op, fn, col, literal } from 'sequelize';
+import { Op, fn, col, literal, Sequelize } from 'sequelize';
+import sequelize from '../config/database.js';
 import dayjs from 'dayjs';
 import cache from '../utils/cache.js';
 
@@ -316,3 +317,69 @@ export const obtenerVentasPorCategoria = async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+export const obtenerPedidosPorMesConVendedor = async (req, res) => {
+  try {
+    const { desde, hasta, vendedor } = req.query;
+
+    const whereFecha = {};
+    if (desde && hasta) {
+      whereFecha.fecha = {
+        [Op.between]: [new Date(desde + "T00:00:00"), new Date(hasta + "T23:59:59")],
+      };
+    }
+
+    let idVendedor = null;
+    if (vendedor) {
+      const encontrado = await PersonalDux.findOne({
+        where: {
+          [Op.and]: [
+            Sequelize.where(
+              Sequelize.fn(
+                "CONCAT",
+                Sequelize.col("apellido_razon_social"),
+                ", ",
+                Sequelize.col("nombre")
+              ),
+              vendedor
+            ),
+          ],
+        },
+      });
+
+      if (encontrado) {
+        idVendedor = encontrado.id_personal;
+      }
+    }
+
+    const resultados = await PedidoDux.findAll({
+      attributes: [
+        [Sequelize.fn("DATE_FORMAT", Sequelize.col("fecha"), "%Y-%m"), "mes"],
+        [Sequelize.fn("COUNT", Sequelize.col("PedidoDux.id")), "totalPedidos"],
+        [
+          Sequelize.literal(`SUM(
+            EXISTS (
+              SELECT 1 FROM Facturas f
+              WHERE f.nro_pedido = PedidoDux.id
+              ${idVendedor ? `AND f.id_vendedor = ${idVendedor}` : ""}
+            )
+          )`),
+          "pedidosVendedor",
+        ],
+      ],
+      where: whereFecha,
+      group: ["mes"],
+      order: [["mes", "ASC"]],
+      raw: true,
+    });
+
+
+
+    res.json(resultados);
+  } catch (error) {
+    console.error("❌ Error en obtenerPedidosPorMesConVendedor:", error);
+    res.status(500).json({ error: "Error al obtener los pedidos" });
+  }
+};
+
+

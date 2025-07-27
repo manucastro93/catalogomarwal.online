@@ -109,7 +109,6 @@ export const obtenerPedidos = async (req, res, next) => {
   }
 };
 
-
 export const actualizarEstadoPedido = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -638,7 +637,6 @@ if (estadosTexto.length > 0) {
   }
 };
 
-
 export const obtenerDetallesPedidoDux = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -723,7 +721,6 @@ export const obtenerProductosPedidosPendientes = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const obtenerPedidosPendientesPorProducto = async (req, res, next) => {
   try {

@@ -5,7 +5,8 @@ import {
     compararRangos,
     obtenerRankingEstadisticas,
     obtenerEstadisticasProducto,
-    obtenerVentasPorCategoria
+    obtenerVentasPorCategoria,
+    obtenerPedidosPorMesConVendedor
 } from '../controllers/estadisticas.controller.js';
 import { verificarToken } from '../middlewares/authMiddleware.js';
 
@@ -16,6 +17,7 @@ router.get('/por-fecha', obtenerEstadisticasPorFecha);
 router.get('/comparar-rangos', compararRangos);
 router.get('/ranking', obtenerRankingEstadisticas);
 router.get('/ventas-por-categoria', obtenerVentasPorCategoria);
+router.get('/pedidos-por-mes', verificarToken, obtenerPedidosPorMesConVendedor);
 router.get('/producto/:id', verificarToken, obtenerEstadisticasProducto);
 
 export default router;

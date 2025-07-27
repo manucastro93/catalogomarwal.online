@@ -3,7 +3,9 @@ import os
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy.dialects.mysql import insert as mysql_insert
+from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 
@@ -78,7 +80,6 @@ async def run():
 
         download = await download_info.value
 
-        # Guardar con nombre limpio
         hoy = datetime.now().strftime("%Y-%m-%d")
         xls_original = Path(__file__).parent / "descargas" / f"clientes_dux_{hoy}.xls"
         await download.save_as(xls_original)
@@ -94,61 +95,37 @@ async def run():
 def convertir_a_xlsx(path_xls: Path) -> Path:
     print(f"🔁 Convirtiendo {path_xls.name} a .xlsx...")
 
-    import pandas as pd
-    from openpyxl import Workbook
-
-    # Leer el archivo original desde la hoja 0 y header en fila 4 (índice 3)
     df = pd.read_excel(path_xls, header=3, engine="xlrd", sheet_name=0)
 
-    # 🔐 Sanitizar nombres de columnas
     columnas_limpias = []
     for c in df.columns:
         nombre = str(c)
-        nombre = nombre.encode("ascii", "ignore").decode(errors="ignore")  # Remover caracteres raros
-        nombre = nombre.replace("\x1e", "")  # Remover separadores invisibles
-        nombre = nombre.replace("\n", " ").replace("\r", "").strip()
+        nombre = nombre.encode("ascii", "ignore").decode(errors="ignore").replace("\x1e", "").replace("\n", " ").replace("\r", "").strip()
         if not nombre:
             nombre = "columna_sin_nombre"
         columnas_limpias.append(nombre)
 
     df.columns = columnas_limpias
 
-    # Crear nuevo workbook y worksheet con nombre seguro
+    from openpyxl import Workbook
     wb = Workbook()
     ws = wb.active
     ws.title = "ClientesDux"
-
-    # Escribir encabezados
     ws.append(df.columns.tolist())
 
-    # Escribir filas
     for row in df.itertuples(index=False, name=None):
-        # Limpieza adicional de valores (por si hay caracteres raros en celdas)
-        row_limpia = []
-        for val in row:
-            if isinstance(val, str):
-                val = val.encode("utf-8", "ignore").decode(errors="ignore").replace("\x1e", "")
-            row_limpia.append(val)
-        ws.append(row_limpia)
+        ws.append([val.encode("utf-8", "ignore").decode(errors="ignore").replace("\x1e", "") if isinstance(val, str) else val for val in row])
 
-    # Guardar como .xlsx
     path_xlsx = path_xls.with_suffix(".xlsx")
     wb.save(path_xlsx)
-
-    print(f"✅ Archivo convertido: {path_xlsx.name}")
-
-    # Eliminar el .xls original
     path_xls.unlink(missing_ok=True)
+    print(f"✅ Archivo convertido: {path_xlsx.name}")
     return path_xlsx
 
 def procesar_excel(ruta_archivo):
     print(f"📖 Leyendo Excel sin encabezado, desde fila 0: {ruta_archivo}")
     df = pd.read_excel(ruta_archivo, header=None)
 
-    print("🧪 Primeras filas:")
-    print(df.head())
-
-    # Armado de columnas, ajustar según estructura real
     df.columns = [
         "id", "fechaCreacion", "cliente", "categoriaFiscal", "tipoDocumento", "numeroDocumento",
         "cuitCuil", "cobrador", "tipoCliente", "personaContacto", "noEditable",
@@ -156,20 +133,30 @@ def procesar_excel(ruta_archivo):
         "habilitado", "nombreFantasia", "codigo", "correoElectronico", "vendedor",
         "provincia", "localidad", "barrio", "domicilio", "telefono", "celular", "zona", "condicionPago"
     ]
-
-    # Limitar a columnas necesarias (en caso de más columnas extra)
     df = df.iloc[:, :27]
-
-    # 🔧 Convertir fecha
     df['fechaCreacion'] = pd.to_datetime(df['fechaCreacion'], format="%d/%m/%Y", errors="coerce")
-    # 🔧 Convertir habilitado
     df["habilitado"] = df["habilitado"].map(lambda x: 1 if str(x).strip().upper() == "S" else 0)
 
-    print("🛠 Conectando a la base de datos...")
+    print("🛠 Insertando con ON DUPLICATE KEY UPDATE...")
     engine = create_engine(DATABASE_URL)
-    with engine.connect() as conn:
-        df.to_sql("ClientesDux", con=conn, if_exists="append", index=False)
-    print("✅ Clientes importados correctamente.")
+    metadata = MetaData(bind=engine)
+    table = Table("ClientesDux", metadata, autoload_with=engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    try:
+        for _, row in df.iterrows():
+            insert_stmt = mysql_insert(table).values(row.to_dict())
+            update_stmt = insert_stmt.on_duplicate_key_update({col: insert_stmt.inserted[col] for col in row.keys() if col != "id"})
+            session.execute(update_stmt)
+        session.commit()
+        print("✅ Datos insertados o actualizados correctamente.")
+    except Exception as e:
+        session.rollback()
+        print(f"❌ Error al insertar o actualizar: {e}")
+        guardar_log(f"❌ Error insert/update: {e}")
+    finally:
+        session.close()
 
 def guardar_log(mensaje: str):
     with open(Path(__file__).parent / "import_log.txt", "a") as f:

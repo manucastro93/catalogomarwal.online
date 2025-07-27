@@ -50,3 +50,15 @@ export const obtenerVentasPorCategoria = async () => {
   const { data } = await api.get('/estadisticas/ventas-por-categoria');
   return data;
 };
+
+export const obtenerPedidosPorMesConVendedor = async (
+  desde: string,
+  hasta: string,
+  vendedor?: string
+) => {
+  const { data } = await api.get('/estadisticas/pedidos-por-mes', {
+    params: { desde, hasta, vendedor },
+  });
+  console.log(data)
+  return data as { mes: string; totalPedidos: number; pedidosVendedor: number }[];
+};

@@ -1,15 +1,19 @@
-import { createResource, createSignal, Show } from "solid-js";
+import { createMemo, createResource, createSignal, Show } from "solid-js";
 import FiltrosClientesDux from "@/components/InformeClientesDux/FiltrosClientesDux";
 import GraficoBarras from "@/components/InformeClientesDux/GraficoBarras";
 import GraficoLineas from "@/components/InformeClientesDux/GraficoLineas";
 import TablaClientesDux from "@/components/InformeClientesDux/TablaClientes";
 import ReporteEjecutivoClientesDux from "@/components/InformeClientesDux/ReporteEjecutivoClientesDux";
+import GraficoPedidosPorMes from "@/components/InformeClientesDux/GraficoPedidosPorMes";
+import dayjs from "dayjs";
 
 import {
   obtenerInformeClientesDux,
   obtenerListasPrecioClientesDux,
 } from "@/services/clienteDux.service";
+import { obtenerPedidosPorMesConVendedor } from "@/services/estadisticas.service";
 import { obtenerPersonalDux } from "@/services/personalDux.service";
+
 import type { ClienteDux } from "@/types/clienteDux";
 import type { VendedorOption } from "@/types/vendedor";
 
@@ -23,7 +27,20 @@ export default function InformeClientesDux() {
   const [vendedores] = createResource(obtenerPersonalDux);
   const [listasPrecio] = createResource(obtenerListasPrecioClientesDux);
 
-  // 🚦 Siempre pasar page, aunque sea 1
+  const filtrosPedidos = createMemo(() => {
+    const hoy = dayjs().format("YYYY-MM-DD");
+    return {
+      desde: fechaDesde() || "2023-11-01",
+      hasta: fechaHasta() || hoy,
+      vendedor: vendedor() || undefined,
+    };
+  });
+
+  const [graficoPedidosData] = createResource(filtrosPedidos, ({ desde, hasta, vendedor }) => {
+    console.log("📦 Refetch pedidos con:", { desde, hasta, vendedor });
+    return obtenerPedidosPorMesConVendedor(desde, hasta, vendedor);
+  });
+
   const fetchParams = () => ({
     fechaDesde: fechaDesde() || undefined,
     fechaHasta: fechaHasta() || undefined,
@@ -34,10 +51,9 @@ export default function InformeClientesDux() {
 
   const [datos, { refetch }] = createResource(fetchParams, obtenerInformeClientesDux);
 
-  // Cuando se aplican filtros, volver a la página 1 y refrescar
   const onAplicarFiltros = () => {
     setPagina(1);
-    refetch();
+    refetch(); // el gráfico ya se reactiva solo por las señales
   };
 
   return (
@@ -62,17 +78,18 @@ export default function InformeClientesDux() {
 
       <ReporteEjecutivoClientesDux />
 
-      {/* 📊 Gráfico de barras: SIEMPRE datos totales */}
       <Show when={datos()?.porMes}>
         <GraficoBarras data={datos()!.porMes} />
       </Show>
 
-      {/* 📈 Gráfico de líneas: datos filtrados */}
-      <Show when={datos()?.porDia}>
-        <GraficoLineas data={datos()!.porDia} />
+      <Show when={graficoPedidosData()}>
+        <GraficoPedidosPorMes data={graficoPedidosData()!} />
       </Show>
 
-      {/* 📋 Tabla detalle paginada */}
+      {/* <Show when={datos()?.porDia}>
+        <GraficoLineas data={datos()!.porDia} />
+      </Show> */}
+
       <Show when={datos()?.detalle}>
         <TablaClientesDux
           clientes={datos()!.detalle as ClienteDux[]}
