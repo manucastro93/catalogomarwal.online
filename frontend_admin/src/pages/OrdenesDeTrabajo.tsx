@@ -12,7 +12,7 @@ import type { Planta } from "@/types/planta";
 export default function OrdenesDeTrabajoPage() {
   const [pagina, setPagina] = createSignal(1);
   const [orden, setOrden] = createSignal("id"); // por defecto Nro de orden
-  const [direccion, setDireccion] = createSignal<"asc" | "desc">("asc");
+  const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
 
   const [desde, setDesde] = createSignal("");
   const [hasta, setHasta] = createSignal("");
