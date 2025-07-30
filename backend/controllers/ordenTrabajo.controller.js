@@ -14,16 +14,18 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
     const where = {};
 
     // Filtros por fecha
-    if (req.query.desde && req.query.hasta) {
+    const esFechaValida = (fechaStr) => !isNaN(Date.parse(fechaStr));
+
+    if (esFechaValida(req.query.desde) && esFechaValida(req.query.hasta)) {
       where.fecha = {
         [Op.between]: [
           new Date(req.query.desde + "T00:00:00"),
           new Date(req.query.hasta + "T23:59:59"),
         ],
       };
-    } else if (req.query.desde) {
-      where.fecha = { [Op.gte]: new Date(req.query.desde) };
-    } else if (req.query.hasta) {
+    } else if (esFechaValida(req.query.desde)) {
+      where.fecha = { [Op.gte]: new Date(req.query.desde + "T00:00:00") };
+    } else if (esFechaValida(req.query.hasta)) {
       where.fecha = { [Op.lte]: new Date(req.query.hasta + "T23:59:59") };
     }
 
@@ -42,7 +44,7 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
       where.estado = req.query.estado;
     }
 
-    // Armado del ordenamiento (incluye casos anidados)
+    // Ordenamiento
     let order = [];
 
     if (ordenarPor === "planta.nombre") {
@@ -53,36 +55,46 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
       order = [[ordenarPor, direccion]];
     }
 
-    // Consulta principal con include y paginado
-    const { count, rows } = await OrdenTrabajo.findAndCountAll({
+    // COUNT (ignora eliminados lógicos)
+    const total = await OrdenTrabajo.count({
+      where,
+      paranoid: true,
+    });
+
+    // FINDALL (ignora eliminados lógicos)
+    const rows = await OrdenTrabajo.findAll({
       where,
       include: [
         {
           model: DetalleOrdenTrabajo,
           as: "productos",
-          include: [{ model: Producto, as: "producto" }],
+          include: [{ model: Producto, as: "producto", required: false }],
+          required: false,
         },
         {
           model: Usuario,
           as: "usuario",
           attributes: ["id", "nombre", "email"],
+          required: false,
         },
         {
           model: Planta,
           as: "planta",
           attributes: ["id", "nombre", "direccion"],
+          required: false,
         },
       ],
       order,
       limit,
       offset,
+      paranoid: true,
     });
 
-    const totalPaginas = Math.ceil(count / limit);
+    const totalPaginas = Math.ceil(total / limit);
 
     res.json({
       data: rows,
-      total: count,
+      total,
       pagina,
       totalPaginas,
     });

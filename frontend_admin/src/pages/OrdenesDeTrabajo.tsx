@@ -1,4 +1,4 @@
-import { createSignal, createResource, Show, createEffect } from "solid-js";
+import { createSignal, createResource, Show, createEffect, createMemo } from "solid-js";
 import { obtenerOrdenesTrabajo, eliminarOrdenTrabajo } from "@/services/ordenTrabajo.service";
 import { obtenerPlantas } from "@/services/planta.service";
 import FiltrosOrdenesTrabajo from "@/components/OrdenTrabajo/FiltrosOrdenesTrabajo";
@@ -22,13 +22,14 @@ export default function OrdenesDeTrabajoPage() {
   // Plantas
   const [plantas] = createResource(obtenerPlantas);
   const [plantasCargadas, setPlantasCargadas] = createSignal<Planta[]>([]);
+
   createEffect(() => {
     const p = plantas();
     if (Array.isArray(p)) setPlantasCargadas(p);
   });
 
   // Fetch OTs
-  const fetchParams = () => ({
+  const fetchParams = createMemo(() => ({
     page: pagina(),
     limit: 10,
     orden: orden(),
@@ -37,7 +38,7 @@ export default function OrdenesDeTrabajoPage() {
     hasta: hasta() || undefined,
     turno: turno() || undefined,
     plantaId: plantaId() ? Number(plantaId()) : undefined,
-  });
+  }));
 
   const [respuesta, { refetch }] = createResource(fetchParams, obtenerOrdenesTrabajo);
 

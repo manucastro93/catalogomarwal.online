@@ -3,6 +3,7 @@ import type { CrearOrdenTrabajo } from "@/types/ordenTrabajo";
 
 export const obtenerOrdenesTrabajo = async (params: any) => {
   const { data } = await api.get("/ordenes-trabajo", { params });
+  console.log(data)
   return data;
 };
 
