@@ -21,11 +21,10 @@ export default function OrdenesDeTrabajoPage() {
 
   // Plantas
   const [plantas] = createResource(obtenerPlantas);
-  const [plantasCargadas, setPlantasCargadas] = createSignal<Planta[]>([]);
+  console.log("antes del resourse: ", plantas());
 
   createEffect(() => {
-    const p = plantas();
-    if (Array.isArray(p)) setPlantasCargadas(p);
+    console.log("despues del resourse: ", plantas());
   });
 
   // Fetch OTs
@@ -72,12 +71,12 @@ export default function OrdenesDeTrabajoPage() {
         desde={desde()}
         hasta={hasta()}
         turno={turno()}
-        plantaId={plantaId()}
+        plantaId={plantaId()?.toString() ?? ""}
         setDesde={setDesde}
         setHasta={setHasta}
         setTurno={setTurno}
         setPlantaId={setPlantaId}
-        plantas={plantasCargadas()}
+        plantas={plantas}
         setPagina={setPagina}
       />
 

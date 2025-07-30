@@ -1,4 +1,4 @@
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 import InputFecha from "@/components/Layout/InputFecha";
 import type { Planta } from "@/types/planta";
 
@@ -11,7 +11,7 @@ interface Props {
   setHasta: (v: string) => void;
   setTurno: (v: string) => void;
   setPlantaId: (v: string) => void;
-  plantas: Planta[];
+  plantas: () => Planta[] | undefined;
   setPagina: (v: number) => void;
 }
 
@@ -62,7 +62,7 @@ export default function FiltrosOrdenesTrabajo({
       </select>
 
       <select
-        value={plantaId.toString()}
+        value={plantaId}
         onChange={(e) => {
           setPlantaId(e.currentTarget.value);
           setPagina(1);
@@ -70,9 +70,11 @@ export default function FiltrosOrdenesTrabajo({
         class="border rounded px-3 py-2 h-10 w-full"
       >
         <option value="">Planta</option>
-        <For each={plantas}>
-          {(p) => <option value={p.id.toString()}>{p.nombre}</option>}
-        </For>
+        <Show when={plantas()}>
+      <For each={plantas()}>
+        {(p) => <option value={p.id}>{p.nombre}</option>}
+      </For>
+    </Show>
       </select>
     </div>
   );
