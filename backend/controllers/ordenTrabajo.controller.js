@@ -11,15 +11,34 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
     const offset = (pagina - 1) * limit;
     const where = {};
 
-    // Filtrar órdenes pendientes: fecha >= hoy y (opcional) estado = 'pendiente'
-    if (req.query.desde) {
+    if (req.query.desde && req.query.hasta) {
+      where.fecha = {
+        [Op.between]: [
+          new Date(req.query.desde + "T00:00:00"),
+          new Date(req.query.hasta + "T23:59:59"),
+        ],
+      };
+    } else if (req.query.desde) {
       where.fecha = { [Op.gte]: new Date(req.query.desde) };
+    } else if (req.query.hasta) {
+      where.fecha = { [Op.lte]: new Date(req.query.hasta + "T23:59:59") };
     }
+
+    if (req.query.turno) {
+      where.turno = req.query.turno;
+    }
+
+    if (req.query.plantaId) {
+      const id = Number(req.query.plantaId);
+      if (!isNaN(id)) {
+        where.plantaId = id;
+      }
+    }
+
     if (req.query.estado) {
       where.estado = req.query.estado;
     }
 
-    // ...el resto igual que antes
     const { count, rows } = await OrdenTrabajo.findAndCountAll({
       where,
       include: [

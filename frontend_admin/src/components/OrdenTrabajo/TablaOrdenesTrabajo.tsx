@@ -21,7 +21,7 @@ export default function TablaOrdenesTrabajo({
 }: Props) {
   const th = (label: string, col: string) => (
     <th class="p-2 cursor-pointer select-none" onClick={() => onOrdenar(col)}>
-      {label} {orden === col ? (direccion === "asc" ? "▲" : "▼") : null}
+      {label} {orden === col ? (direccion === "desc" ? "▲" : "▼") : null}
     </th>
   );
 
