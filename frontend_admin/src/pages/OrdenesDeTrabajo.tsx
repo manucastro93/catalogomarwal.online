@@ -92,7 +92,7 @@ export default function OrdenesDeTrabajoPage() {
               setDireccion(direccion() === "asc" ? "desc" : "asc");
             } else {
               setOrden(col);
-              setDireccion("asc");
+              setDireccion("desc");
             }
             setPagina(1);
             refetch();
