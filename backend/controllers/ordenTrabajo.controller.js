@@ -6,11 +6,14 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
   try {
     const pagina = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const offset = (pagina - 1) * limit;
+
     const ordenarPor = req.query.orden || "id";
     const direccion = req.query.direccion === "desc" ? "DESC" : "ASC";
-    const offset = (pagina - 1) * limit;
+
     const where = {};
 
+    // Filtros por fecha
     if (req.query.desde && req.query.hasta) {
       where.fecha = {
         [Op.between]: [
@@ -39,18 +42,38 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
       where.estado = req.query.estado;
     }
 
+    // Armado del ordenamiento (incluye casos anidados)
+    let order = [];
+
+    if (ordenarPor === "planta.nombre") {
+      order = [[{ model: Planta, as: "planta" }, "nombre", direccion]];
+    } else if (ordenarPor === "usuario.nombre") {
+      order = [[{ model: Usuario, as: "usuario" }, "nombre", direccion]];
+    } else {
+      order = [[ordenarPor, direccion]];
+    }
+
+    // Consulta principal con include y paginado
     const { count, rows } = await OrdenTrabajo.findAndCountAll({
       where,
       include: [
         {
           model: DetalleOrdenTrabajo,
           as: "productos",
-          include: [{ model: Producto, as: "producto" }]
+          include: [{ model: Producto, as: "producto" }],
         },
-        { model: Usuario, as: "usuario", attributes: ["id", "nombre", "email"] },
-        { model: Planta, as: "planta", attributes: ["id", "nombre", "direccion"] }
+        {
+          model: Usuario,
+          as: "usuario",
+          attributes: ["id", "nombre", "email"],
+        },
+        {
+          model: Planta,
+          as: "planta",
+          attributes: ["id", "nombre", "direccion"],
+        },
       ],
-      order: [[ordenarPor, direccion]],
+      order,
       limit,
       offset,
     });

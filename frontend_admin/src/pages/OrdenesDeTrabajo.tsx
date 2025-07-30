@@ -100,7 +100,7 @@ export default function OrdenesDeTrabajoPage() {
         />
 
         <Show when={respuesta()?.totalPaginas > 1}>
-          <div class="flex justify-end mt-4 gap-2">
+          <div class="flex justify-center mt-6 gap-2">
             <button
               disabled={pagina() <= 1}
               onClick={() => {
