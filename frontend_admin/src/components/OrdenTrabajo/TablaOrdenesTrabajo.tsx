@@ -30,7 +30,7 @@ export default function TablaOrdenesTrabajo({
       <table class="w-full text-sm border-collapse hidden md:table">
         <thead class="bg-gray-100 sticky top-0">
           <tr>
-            <th class="p-2">Número</th>
+            {th("Número", "id")}
             {th("Fecha", "fecha")}
             {th("Turno", "turno")}
             {th("Planta", "planta.nombre")}

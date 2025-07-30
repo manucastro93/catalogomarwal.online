@@ -6,6 +6,8 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
   try {
     const pagina = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+    const ordenarPor = req.query.orden || "id";
+    const direccion = req.query.direccion === "desc" ? "DESC" : "ASC";
     const offset = (pagina - 1) * limit;
     const where = {};
 
@@ -29,7 +31,7 @@ export const obtenerOrdenesTrabajo = async (req, res, next) => {
         { model: Usuario, as: "usuario", attributes: ["id", "nombre", "email"] },
         { model: Planta, as: "planta", attributes: ["id", "nombre", "direccion"] }
       ],
-      order: [["fecha", "ASC"]],
+      order: [[ordenarPor, direccion]],
       limit,
       offset,
     });
