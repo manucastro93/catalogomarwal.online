@@ -21,7 +21,7 @@ export default (sequelize, DataTypes) => {
 
   Material.associate = (models) => {
     Material.belongsTo(models.Rubro, { foreignKey: 'rubroId', as: 'rubro' });
-    Material.hasMany(models.Pieza, { foreignKey: 'material', as: 'piezas' });
+    Material.hasMany(models.Pieza, { foreignKey: 'materialId', as: 'piezas' });
   };
 
   return Material;
