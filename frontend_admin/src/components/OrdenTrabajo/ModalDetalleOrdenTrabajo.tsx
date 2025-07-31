@@ -1,5 +1,5 @@
 import { For, Show } from 'solid-js';
-import { formatearPrecio } from '@/utils/formato';
+import { formatearPrecio, formatearFechaCorta } from "@/utils/formato";
 
 export default function ModalDetalleOrdenTrabajo(props: { orden: any; onCerrar: () => void }) {
   const orden = props.orden;
@@ -27,7 +27,7 @@ export default function ModalDetalleOrdenTrabajo(props: { orden: any; onCerrar: 
         >
           ×
         </button>
-        <div class="mb-3"><b>Fecha:</b> {orden.fecha}</div>
+        <div class="mb-3"><b>Fecha:</b> {formatearFechaCorta(orden.fecha)}</div>
         <div class="mb-3"><b>Planta:</b> {orden.planta?.nombre ?? '-'}</div>
         <div class="mb-3"><b>Turno:</b> {orden.turno}</div>
         <div class="mb-3"><b>Notas:</b> {orden.nota ?? '-'}</div>

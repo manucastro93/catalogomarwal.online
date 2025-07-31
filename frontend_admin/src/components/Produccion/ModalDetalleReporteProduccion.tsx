@@ -1,6 +1,6 @@
 import { For } from "solid-js";
 import type { ReporteProduccionEncabezado } from "@/types/produccion";
-import { formatearPrecio } from "@/utils/formato";
+import { formatearPrecio, formatearFechaCorta } from "@/utils/formato";
 
 export default function ModalDetalleReporteProduccion(props: {
   reporte: ReporteProduccionEncabezado;
@@ -31,7 +31,7 @@ export default function ModalDetalleReporteProduccion(props: {
         </button>
         <h2 class="text-2xl font-bold mb-6 border-b pb-2">Detalle del Reporte de Producción</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 mb-5 text-base">
-          <div><b>Fecha:</b> {new Date(reporte.fecha).toLocaleDateString()}</div>
+          <div><b>Fecha:</b> {formatearFechaCorta(reporte.fecha)}</div>
           <div><b>Planta:</b> {reporte.planta?.nombre ?? reporte.plantaId}</div>
           <div><b>Turno:</b> <span class="capitalize">{reporte.turno}</span></div>
           <div><b>Usuario:</b> {reporte.usuario?.nombre}</div>
