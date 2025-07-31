@@ -24,7 +24,7 @@ export default function ModalAgregarPorProveedor(props: {
   };
 
   const [seleccionadas, setSeleccionadas] = createSignal<{
-    [id: number]: { cantidad: number; unidadMedida: string; rinde?: number }
+    [id: number]: { cantidad: number | string; unidadMedida: string }
   }>({});
 
   const [busqueda, setBusqueda] = createSignal("");
@@ -44,23 +44,12 @@ export default function ModalAgregarPorProveedor(props: {
         nuevo[mp.id] = {
           cantidad: 1,
           unidadMedida: mp.unidadMedida || UNIDADES[0],
-          rinde: undefined,
         };
       } else {
         delete nuevo[mp.id];
       }
       return nuevo;
     });
-  };
-
-  const cambiarCantidad = (mpId: number, raw: string) => {
-    const valor = raw.replace(",", "."); // por si escribe con coma
-    const cantidad = parseFloat(valor);
-    if (isNaN(cantidad)) return;
-    setSeleccionadas((prev) => ({
-      ...prev,
-      [mpId]: { ...prev[mpId], cantidad }
-    }));
   };
 
   const cambiarUnidad = (mpId: number, unidadMedida: string) => {
@@ -70,20 +59,30 @@ export default function ModalAgregarPorProveedor(props: {
     }));
   };
 
-  const cambiarRinde = (mpId: number, raw: string) => {
-    const rinde = parseFloat(raw);
-    if (isNaN(rinde) || rinde <= 0) return;
-    setSeleccionadas((prev) => {
+  // Input solo de cantidad
+const cambiarCantidad = (mpId: number, raw: string) => {
+  // Permitimos "," o "." y números
+  let valor = raw.replace(",", ".");
+  // Solo aceptamos números, punto, y una coma (ya reemplazada)
+  valor = valor.replace(/[^0-9.]/g, "");
+  setSeleccionadas((prev) => {
+    const anterior = prev[mpId] || {};
+    // Si termina en punto, coma o está vacío, no parseamos, dejamos escribir
+    if (/(\.|,)$/.test(raw) || valor === "") {
       return {
         ...prev,
-        [mpId]: {
-          ...prev[mpId],
-          rinde,
-          cantidad: 1 / rinde,
-        },
+        [mpId]: { ...anterior, cantidad: raw }
       };
-    });
-  };
+    }
+    const cantidad = parseFloat(valor);
+    // Si es número válido (positivo), lo guardamos como string, sino dejamos lo que está
+    return {
+      ...prev,
+      [mpId]: { ...anterior, cantidad: !isNaN(cantidad) && cantidad > 0 ? valor : raw }
+    };
+  });
+};
+
 
   const handleAgregar = () => {
     if (!materiasPrimas()) return;
@@ -113,7 +112,6 @@ export default function ModalAgregarPorProveedor(props: {
         nuevas[mp.id] = {
           cantidad: nuevas[mp.id]?.cantidad || 1,
           unidadMedida: nuevas[mp.id]?.unidadMedida || mp.unidadMedida || UNIDADES[0],
-          rinde: nuevas[mp.id]?.rinde,
         };
       });
       setSeleccionadas(nuevas);
@@ -126,7 +124,7 @@ export default function ModalAgregarPorProveedor(props: {
     return (materiasPrimas()?.data || []).reduce((acc: number, mp: MateriaPrima) => {
       const sel = seleccionadas()[mp.id];
       if (!sel) return acc;
-      return acc + (mp.costoDux || 0) * sel.cantidad;
+      return acc + (mp.costoDux || 0) * Number(sel.cantidad);
     }, 0);
   };
 
@@ -199,7 +197,6 @@ export default function ModalAgregarPorProveedor(props: {
                   <th>Nombre</th>
                   <th>Costo</th>
                   <th>Unidad</th>
-                  <th>Rinde</th>
                   <th>Cantidad</th>
                   <th>Total</th>
                 </tr>
@@ -232,27 +229,16 @@ export default function ModalAgregarPorProveedor(props: {
                       </td>
                       <td>
                         <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          class="border p-1 rounded w-20"
-                          value={seleccionadas()[mp.id]?.rinde ?? ""}
-                          disabled={!seleccionadas()[mp.id]}
-                          onInput={(e) => cambiarRinde(mp.id, e.currentTarget.value)}
-                        />
-                      </td>
-                      <td>
-                        <input
                           type="text"
                           class="border p-1 rounded w-24"
-                          value={seleccionadas()[mp.id]?.cantidad?.toString() ?? ""}
+                          value={seleccionadas()[mp.id]?.cantidad ?? ""}
                           disabled={!seleccionadas()[mp.id]}
                           onInput={(e) => cambiarCantidad(mp.id, e.currentTarget.value)}
                         />
                       </td>
                       <td>
                         {seleccionadas()[mp.id]
-                          ? formatearPrecio((mp.costoDux || 0) * (seleccionadas()[mp.id].cantidad || 0))
+                          ? formatearPrecio((mp.costoDux || 0) * Number(seleccionadas()[mp.id].cantidad || 0))
                           : "-"}
                       </td>
                     </tr>
@@ -261,7 +247,7 @@ export default function ModalAgregarPorProveedor(props: {
               </tbody>
               <tfoot>
                 <tr class="font-bold bg-gray-100">
-                  <td colspan="7" class="text-right pr-2">Total general:</td>
+                  <td colspan="6" class="text-right pr-2">Total general:</td>
                   <td>{formatearPrecio(calcularTotalGeneral())}</td>
                 </tr>
               </tfoot>
