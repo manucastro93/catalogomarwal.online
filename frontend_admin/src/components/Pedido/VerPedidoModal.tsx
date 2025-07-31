@@ -1,6 +1,6 @@
 import { Show, For, createSignal } from "solid-js";
 import type { Pedido, PedidoLocal, PedidoDux, PedidoDuxItem, DetallePedido } from "@/types/pedido";
-import { formatearPrecio } from "@/utils/formato";
+import { formatearPrecio, formatearFechaCorta } from "@/utils/formato";
 import ModalMensaje from '../Layout/ModalMensaje';
 
 export default function VerPedidoModal(props: {
@@ -84,7 +84,7 @@ export default function VerPedidoModal(props: {
             </div>
             <div>
               <strong>Fecha:</strong>{" "}
-              {new Date(esDux ? (props.pedido as PedidoDux).fecha : (props.pedido as PedidoLocal).createdAt).toLocaleString()}
+              {formatearFechaCorta(esDux ? (props.pedido as PedidoDux).fecha : (props.pedido as PedidoLocal).createdAt)}
             </div>
 
             <div>

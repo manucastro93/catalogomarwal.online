@@ -1,3 +1,4 @@
+import { formatearFechaCorta } from "@/utils/formato";
 import type { Usuario } from "../../../../types/usuario";
 
 export default function TabDetallesVendedor(props: { usuario: Usuario }) { 
@@ -18,7 +19,7 @@ export default function TabDetallesVendedor(props: { usuario: Usuario }) {
         <span class="font-bold">Link: </span>{usuario.link || "-"}
       </div>
       <div>
-        <span class="font-bold">Fecha de alta: </span>{new Date(usuario.createdAt).toLocaleDateString()}
+        <span class="font-bold">Fecha de alta: </span>{formatearFechaCorta(usuario.createdAt)}
       </div>
     </div>
   );

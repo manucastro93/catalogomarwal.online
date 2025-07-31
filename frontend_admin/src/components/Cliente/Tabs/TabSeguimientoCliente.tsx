@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js';
 import type { Cliente } from '@/types/cliente';
 import { editarCliente } from '@/services/cliente.service';
+import { formatearFechaCorta } from '@/utils/formato';
 
 export default function TabSeguimientoCliente(props: { cliente: Cliente }) {
   const [activo, setActivo] = createSignal(!props.cliente.seguimiento);
@@ -41,7 +42,7 @@ export default function TabSeguimientoCliente(props: { cliente: Cliente }) {
       </div>
 
       <div class="text-sm text-gray-600">
-        Último mensaje automático: {props.cliente.ultimoMensajeAutomatico ? new Date(props.cliente.ultimoMensajeAutomatico).toLocaleString() : 'Nunca'}
+        Último mensaje automático: {props.cliente.ultimoMensajeAutomatico ? formatearFechaCorta(props.cliente.ultimoMensajeAutomatico) : 'Nunca'}
       </div>
 
       <button

@@ -12,6 +12,7 @@ import FiltrosClientes from '@/components/Cliente/FiltrosClientes';
 import Loader from '@/components/Layout/Loader';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 import type { Cliente } from '@/types/cliente';
+import { formatearFechaCorta } from '@/utils/formato';
 
 export default function Clientes() {
   const { usuario } = useAuth();
@@ -90,7 +91,7 @@ export default function Clientes() {
       Dirección: c.direccion,
       Provincia: c.provincia?.nombre,
       Localidad: c.localidad?.nombre,
-      "Fecha de creación": new Date(c.createdAt).toLocaleDateString(),
+      "Fecha de creación": formatearFechaCorta(c.createdAt),
     }));
 
     const ws = XLSX.utils.json_to_sheet(filas);

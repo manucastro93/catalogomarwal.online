@@ -1,6 +1,6 @@
 import { For } from 'solid-js';
 import type { FacturaDux } from '@/types/factura';
-import { formatearPrecio } from "@/utils/formato";
+import { formatearFechaCorta, formatearPrecio } from "@/utils/formato";
 
 interface Props {
   facturas: FacturaDux[];
@@ -31,7 +31,7 @@ export default function TablaFacturas({ facturas, orden, direccion, onOrdenar }:
             {f => (
               <tr class="border-b hover:bg-gray-50">
                 <td class="px-4 py-2">{f.id}</td>
-                <td class="px-4 py-2">{new Date(f.fecha_comp).toLocaleDateString()}</td>
+                <td class="px-4 py-2">{formatearFechaCorta(f.fecha_comp)}</td>
                 <td class="px-4 py-2">{f.apellido_razon_soc} {f.nombre}</td>
                 <td class="px-4 py-2">{f.personal}</td>
                 <td class="px-4 py-2">{f.tipo_comp} {f.letra_comp} {f.nro_comp}</td>

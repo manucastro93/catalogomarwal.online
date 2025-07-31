@@ -1,7 +1,7 @@
 import { createSignal, createResource, For, Show } from 'solid-js';
 import { obtenerEstadisticasCliente } from '@/services/estadisticas.service';
 import { obtenerPedidoPorId } from '@/services/pedido.service';
-import { formatearPrecio } from '@/utils/formato';
+import { formatearPrecio, formatearFechaCorta } from '@/utils/formato';
 import VerPedidoModal from '@/components/Pedido/VerPedidoModal';
 
 export default function TabEstadisticasCliente(props: { clienteId: number }) {
@@ -41,7 +41,7 @@ export default function TabEstadisticasCliente(props: { clienteId: number }) {
                       onClick={() => setPedidoSeleccionado(p.id)}
                     >
                       Pedido #{p.id} — {formatearPrecio(p.total)} —{" "}
-                      {new Date(p.createdAt).toLocaleDateString()}
+                      {formatearFechaCorta(p.createdAt)}
                     </li>
                   )}
                 </For>
@@ -86,7 +86,7 @@ export default function TabEstadisticasCliente(props: { clienteId: number }) {
                 <For each={datos().logs}>
                   {(log) => (
                     <li>
-                      [{new Date(log.createdAt).toLocaleString()}]{" "}
+                      [{formatearFechaCorta(log.createdAt)}]{" "}
                       <strong>{log.ubicacion}</strong>
                       {log.busqueda ? ` — ${log.busqueda}` : ""}
                     </li>

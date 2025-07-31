@@ -183,11 +183,11 @@ export default function ModalOrdenTrabajo(props: { onCerrar: () => void }) {
                   <div class="border rounded p-2 bg-white text-sm">
                     <div><strong>SKU:</strong> {item.producto.sku}</div>
                     <div><strong>Producto:</strong> {item.producto.nombre}</div>
-                    <div><strong>Precio unitario:</strong> $ {item.producto.precioUnitario?.toLocaleString("es-AR") ?? "-"}</div>
+                    <div><strong>Precio unitario:</strong> {formatearPrecio(item.producto.precioUnitario) ?? "-"}</div>
                     <div>
                       <strong>Subtotal:</strong>{" "}
                       {item.cantidad && item.producto.precioUnitario
-                        ? `$ ${(item.cantidad * item.producto.precioUnitario).toLocaleString("es-AR")}`
+                        ? ` ${formatearPrecio(item.cantidad * item.producto.precioUnitario)}`
                         : "-"}
                     </div>
                     <div class="flex justify-between items-center mt-2">
@@ -220,7 +220,7 @@ export default function ModalOrdenTrabajo(props: { onCerrar: () => void }) {
               <div class="flex justify-end mt-2">
                 <span class="font-bold text-lg">
                   Total: ${" "}
-                  {totalOrden().toLocaleString("es-AR")}
+                  {formatearPrecio(totalOrden())}
                 </span>
               </div>
             </div>
@@ -288,7 +288,7 @@ export default function ModalOrdenTrabajo(props: { onCerrar: () => void }) {
               <div class="flex justify-end mt-2">
                 <span class="font-bold text-lg">
                   Total: ${" "}
-                  {totalOrden().toLocaleString("es-AR")}
+                  {formatearPrecio(totalOrden())}
                 </span>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { obtenerConversacionesAgrupadas } from "@/services/conversacionBot.servi
 import api from "@/services/api";
 import Loader from "@/components/Layout/Loader";
 import type { ConversacionAgrupada } from "@/types/conversacionBot";
+import { formatearFechaCorta } from "@/utils/formato";
 
 export default function ConversacionesBot() {
   const [busqueda, setBusqueda] = createSignal("");
@@ -57,9 +58,7 @@ export default function ConversacionesBot() {
                     : c.telefono}
                 </div>
                 <div class="text-[11px] text-right text-gray-500">
-                  {new Date(
-                    c.historial.at(-1)?.createdAt || ""
-                  ).toLocaleString()}
+                  {formatearFechaCorta(c.historial.at(-1)?.createdAt || "")}
                 </div>
               </div>
             )}
@@ -113,7 +112,7 @@ function Historial(props: {
           {(msg: ConversacionAgrupada["historial"][0]) => (
             <div>
               <div class="text-xs text-gray-600">
-                {new Date(msg.createdAt).toLocaleString()}
+                {formatearFechaCorta(msg.createdAt)}
               </div>
               <div class="bg-gray-200 rounded p-2 my-1">
                 🧍 {msg.mensajeCliente}

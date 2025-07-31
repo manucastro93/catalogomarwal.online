@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Cliente } from "@/types/cliente";
 import { obtenerClientesConVentas } from "@/services/cliente.service";
+import { formatearPrecio } from "@/utils/formato";
 
 interface Props {
   abierto: boolean;
@@ -56,9 +57,7 @@ export default function ModalMapaClientes(props: Props) {
         })
           .addTo(nuevoMapa)
           .bindPopup(
-            `<strong>${cliente.nombre}</strong><br>Compró por: $${total.toLocaleString(
-              "es-AR"
-            )}`
+            `<strong>${cliente.nombre}</strong><br>Compró por: ${formatearPrecio(total)}`
           );
 
         marcadores.push(circulo);

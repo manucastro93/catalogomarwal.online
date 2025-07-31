@@ -1,4 +1,5 @@
 import type { Cliente } from '@/types/cliente';
+import { formatearFechaCorta } from '@/utils/formato';
 
 export default function TabDetallesCliente(props: { cliente: Cliente }) {
   const { cliente } = props;
@@ -43,7 +44,7 @@ export default function TabDetallesCliente(props: { cliente: Cliente }) {
       </div>
       <div class="col-span-2">
         <p class="font-semibold text-gray-700 text-lg">Creado el</p>
-        <p>{new Date(cliente.createdAt || '').toLocaleString()}</p>
+        <p>{formatearFechaCorta(cliente.createdAt || '')}</p>
       </div>
     </div>
   );

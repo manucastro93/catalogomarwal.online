@@ -1,5 +1,6 @@
 import { Show } from 'solid-js';
 import type { ConversacionBot } from '@/types/conversacionBot';
+import { formatearFechaCorta } from '@/utils/formato';
 
 interface Props {
   conversacion: ConversacionBot | null;
@@ -33,7 +34,7 @@ export default function DetalleConversacionModal(props: Props) {
                 <strong>📤 Derivar:</strong> {conversacion().derivar ? 'Sí' : 'No'}
               </div>
               <div>
-                <strong>🕒 Fecha:</strong> {new Date(conversacion().createdAt).toLocaleString()}
+                <strong>🕒 Fecha:</strong> {formatearFechaCorta(conversacion().createdAt)}
               </div>
             </div>
           </div>

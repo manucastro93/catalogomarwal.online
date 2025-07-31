@@ -1,4 +1,5 @@
 import type { Proveedor } from '@/types/proveedor';
+import { formatearFechaCorta } from '@/utils/formato';
 
 export default function TabDatosProveedor(props: { proveedor: Proveedor }) {
   const { proveedor } = props;
@@ -39,7 +40,7 @@ export default function TabDatosProveedor(props: { proveedor: Proveedor }) {
       </div>
       <div class="col-span-2">
         <p class="font-semibold text-gray-700 text-lg">Creado el</p>
-        <p>{new Date(proveedor.createdAt || '').toLocaleString()}</p>
+        <p>{formatearFechaCorta(proveedor.createdAt || '')}</p>
       </div>
     </div>
   );

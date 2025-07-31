@@ -9,6 +9,7 @@ import FiltrosProveedores from '@/components/Proveedor/FiltrosProveedores';
 import Loader from '@/components/Layout/Loader';
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
 import type { Proveedor } from '@/types/proveedor';
+import { formatearFechaCorta } from '@/utils/formato';
 
 export default function Proveedores() {
   const { usuario } = useAuth();
@@ -66,7 +67,7 @@ export default function Proveedores() {
       Provincia: p.provincia,
       Localidad: p.localidad,
       "Dirección": p.domicilio,
-      "Fecha de creación": new Date(p.createdAt).toLocaleDateString(),
+      "Fecha de creación": formatearFechaCorta(p.createdAt),
     }));
 
     const ws = XLSX.utils.json_to_sheet(filas);

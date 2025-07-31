@@ -57,14 +57,14 @@ export default function ModalOrdenesPendientes(props: { onCerrar: () => void }) 
                   <td class="p-3">{orden.usuario?.nombre ?? '-'}</td>
                   <td class="p-3 text-right">$
                     {orden.productos
-                      ? orden.productos.reduce(
+                      ? formatearPrecio(orden.productos.reduce(
                           (acc: any, item: any) =>
                             acc +
                             (item.cantidad && item.producto?.precioUnitario
                               ? item.cantidad * item.producto.precioUnitario
                               : 0),
                           0
-                        ).toLocaleString("es-AR")
+                        ))
                       : "-"}
                   </td>
                   <td class="p-3 text-center">

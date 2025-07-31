@@ -1,5 +1,6 @@
 import { Show, For } from 'solid-js';
 import { ConversacionBot } from '@/types/conversacionBot';
+import { formatearFechaCorta } from "@/utils/formato";
 
 interface Props {
   conversaciones: ConversacionBot[];
@@ -23,7 +24,7 @@ export default function TablaConversacionesBot({ conversaciones, onOrdenar }: Pr
           <Show when={conversaciones.length} fallback={<tr><td colspan="5" class="text-center py-4">No hay conversaciones</td></tr>}>
             <For each={conversaciones}>{(c) => (
               <tr>
-                <td class="px-4 py-2">{new Date(c.createdAt).toLocaleString()}</td>
+                <td class="px-4 py-2">{formatearFechaCorta(c.createdAt)}</td>
                 <td class="px-4 py-2 font-semibold">{c.telefono}</td>
                 <td class="px-4 py-2 whitespace-pre-wrap">{c.mensajeCliente}</td>
                 <td class="px-4 py-2 whitespace-pre-wrap">{c.respuestaBot}</td>

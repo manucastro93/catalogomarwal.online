@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js";
-import { formatearPrecio } from "@/utils/formato";
+import { formatearPrecio, formatearFechaCorta } from "@/utils/formato";
 import type { PedidoLocal } from "@/types/pedido";
 
 export default function TablaPedidosLocal(props: {
@@ -47,7 +47,7 @@ export default function TablaPedidosLocal(props: {
                   <td class="p-3">{p.usuario?.nombre || "—"}</td>
                   <td class="p-3">{p.estadoPedido?.nombre || "—"}</td>
                   <td class="p-3">{formatearPrecio(p.total)}</td>
-                  <td class="p-3">{new Date(p.createdAt).toLocaleString()}</td>
+                  <td class="p-3">{formatearFechaCorta(p.createdAt)}</td>
                   <td class="p-3 flex gap-2">
                     <button class="text-blue-600 hover:underline" onClick={() => props.onVer(p)}>
                       Ver
