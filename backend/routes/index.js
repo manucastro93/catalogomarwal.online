@@ -30,6 +30,12 @@ import composicionRoutes from './composicion.routes.js';
 import ordenTrabajoRoutes from './ordenTrabajo.routes.js';
 import proveedorRoutes from './proveedor.routes.js';
 import ConfiguracionSistema from './configuracionSistema.routes.js';
+import rubroRoutes from './rubro.routes.js';
+import categoriaPiezaRoutes from './categoriaPieza.routes.js';
+import materialRoutes from './material.routes.js';
+import maquinaRoutes from './maquina.routes.js';
+import operarioRoutes from './operario.routes.js';
+import piezaRoutes from './pieza.routes.js';
 
 const router = express.Router();
 
@@ -63,5 +69,11 @@ router.use("/composiciones", composicionRoutes);
 router.use("/ordenes-trabajo", ordenTrabajoRoutes);
 router.use('/proveedores', proveedorRoutes);
 router.use('/configuraciones', ConfiguracionSistema);
+router.use('/rubros', rubroRoutes);
+router.use('/categorias-piezas', categoriaPiezaRoutes);
+router.use('/materiales', materialRoutes);
+router.use('/maquinas', maquinaRoutes);
+router.use('/operarios', operarioRoutes);
+router.use('/piezas', piezaRoutes);
 
 export default router;

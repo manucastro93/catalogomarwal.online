@@ -4,9 +4,10 @@ import RolesUsuariosPage from './RolesUsuarios';
 import EstadosPedidosPage from './EstadosPedidos';
 import LogoPage from './Logo';
 import BannersPage from './Banners';
+import InyeccionPage from './Inyeccion';
 
 export default function ConfiguracionGeneral() {
-  const [tab, setTab] = createSignal<'sistema' | 'logo' | 'banners' | 'roles' | 'estados'>('sistema');
+  const [tab, setTab] = createSignal<'sistema' | 'logo' | 'banners' | 'roles' | 'estados' | 'inyeccion'>('sistema');
 
   const tabs = [
     { id: 'sistema', label: 'Sistema' },
@@ -14,6 +15,7 @@ export default function ConfiguracionGeneral() {
     { id: 'banners', label: 'Banners' },
     { id: 'roles', label: 'Roles de usuario' },
     { id: 'estados', label: 'Estados de pedido' },
+    { id: 'inyeccion', label: 'Inyección' },
   ];
 
   return (
@@ -39,6 +41,7 @@ export default function ConfiguracionGeneral() {
         {tab() === 'banners' && <BannersPage />}
         {tab() === 'roles' && <RolesUsuariosPage />}
         {tab() === 'estados' && <EstadosPedidosPage />}
+        {tab() === 'inyeccion' && <InyeccionPage />}
       </div>
     </div>
   );

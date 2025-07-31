@@ -98,7 +98,13 @@ export const {
   DetalleOrdenTrabajo,
   ReporteProduccionEncabezado,
   ConfiguracionSistema,
-  ClienteDux
+  ClienteDux,
+  Rubro,
+  Material,
+  Pieza,
+  Maquina,
+  CategoriaPieza,
+  Operario
 } = db;
 
 export { sequelize, Sequelize };
