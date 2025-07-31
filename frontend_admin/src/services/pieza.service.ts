@@ -1,10 +1,11 @@
 import api from './api';
 import type { Pieza } from '@/types/pieza';
 
-export const obtenerPiezas = async () => {
-  const { data } = await api.get('/piezas', { params: { limit: 100 } });
-  return data.data;
+export const obtenerPiezas = async (params :any) => {
+  const { data } = await api.get('/piezas', { params });
+  return data;
 };
+
 
 export const crearPieza = async (pieza: Partial<Pieza>) => {
   const { data } = await api.post('/piezas', pieza);
@@ -18,5 +19,10 @@ export const editarPieza = async (id: number, pieza: Partial<Pieza>) => {
 
 export const eliminarPieza = async (id: number) => {
   const { data } = await api.delete(`/piezas/${id}`);
+  return data;
+};
+
+export const obtenerPiezaPorId = async (id: number) => {
+  const { data } = await api.get(`/piezas/${id}`);
   return data;
 };

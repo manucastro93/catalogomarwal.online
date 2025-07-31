@@ -6,19 +6,19 @@ export interface Pieza {
   id: number;
   codigo: string;
   descripcion?: string;
-  categoria: number;       // FK a CategoriaPieza
+  categoria: number;
   pzsXSeg?: number;
   cicloXSeg?: number;
   ciclosXTurno?: number;
   cavidades?: number;
   peso?: number;
-  material?: number;       // FK a Material
+  material?: number;
   colada?: string;
   rubroId: number;
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string | null;
-  rubro?: Rubro;                   // include opcional
-  materialObj?: Material;          // include opcional
-  categoriaPieza?: CategoriaPieza; // include opcional
+  rubro?: Rubro;
+  materialObj?: Material;
+  categoriaPieza?: CategoriaPieza;
 }

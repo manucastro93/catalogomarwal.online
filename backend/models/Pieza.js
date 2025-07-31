@@ -14,11 +14,11 @@ export default (sequelize, DataTypes) => {
       references: { model: 'CategoriasPiezas', key: 'id' }
     },
     pzsXSeg: {
-      type: DataTypes.DECIMAL(10,3),
+      type: DataTypes.DECIMAL(10,2),
       allowNull: true,
     },
     cicloXSeg: {
-      type: DataTypes.DECIMAL(10,3),
+      type: DataTypes.DECIMAL(10,2),
       allowNull: true,
     },
     ciclosXTurno: {
@@ -30,10 +30,10 @@ export default (sequelize, DataTypes) => {
       allowNull: true,
     },
     peso: {
-      type: DataTypes.DECIMAL(10,3),
+      type: DataTypes.DECIMAL(10,2),
       allowNull: true,
     },
-    material: {
+    materialId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: true,
       references: { model: 'Materiales', key: 'id' }

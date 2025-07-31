@@ -33,6 +33,7 @@ const Operarios = lazy(() => import("./pages/Operarios"));
 const PedidoRapido = lazy(() => import("./pages/PedidoRapido"));
 const Pedidos = lazy(() => import("./pages/Pedidos"));
 const Productos = lazy(() => import("./pages/Productos"));
+const Piezas = lazy(() => import("./pages/Piezas"));
 const MateriasPrimas = lazy(() => import("./pages/MateriasPrimas"));
 const ProduccionDiaria = lazy(() => import("./pages/ProduccionDiaria"));
 const OrdenesDeTrabajo = lazy(() => import("./pages/OrdenesDeTrabajo"));
@@ -324,6 +325,7 @@ render(
           </ProtectedRoute>
         )}
       />
+
       <Route
         path="/BaseDatos/Operarios"
         component={() => (
@@ -335,6 +337,16 @@ render(
         )}
       />
 
+      <Route
+        path="/BaseDatos/Inyeccion/Piezas"
+        component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <Piezas />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      />
       {/* Página / Configuración general */}
       <Route
         path="/Pagina/configuracion-general"
