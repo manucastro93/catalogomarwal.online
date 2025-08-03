@@ -91,7 +91,7 @@ export default function Piezas() {
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-2xl font-bold">Piezas</h1>
                 <button
-                    class="px-4 py-2 bg-blue-500 text-white rounded"
+                    class="bg-green-600 text-white px-3 py-1 rounded text-sm"
                     onClick={() => {
                         setPiezaSeleccionada(null);
                         setModalAbierto(true);

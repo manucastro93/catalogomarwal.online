@@ -231,10 +231,10 @@ export default function ModalNuevaPieza(props: {
                         />
                     </div>
 
-                    <div class="col-span-2 flex justify-end gap-2 mt-4">
+                    <div class="flex justify-end gap-2 mt-6">
                         <button
                             type="button"
-                            class="px-4 py-2 bg-gray-200 rounded"
+                            class="px-4 py-2 border rounded text-sm"
                             onClick={() => props.onCerrar()}
                             disabled={cargando()}
                         >
@@ -242,7 +242,7 @@ export default function ModalNuevaPieza(props: {
                         </button>
                         <button
                             type="submit"
-                            class="bg-blue-600 text-white px-4 py-1 rounded ml-2 cursor-pointer"
+                            class="bg-green-600 text-white px-4 py-2 rounded text-sm"
                             disabled={cargando()}
                         >
                             {props.pieza ? 'Guardar cambios' : 'Guardar'}

@@ -1,60 +1,36 @@
 import { createSignal, createResource, createMemo, Show } from 'solid-js';
-import { obtenerUsuariosOperarios, eliminarUsuario } from '@/services/usuario.service';
-import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
-import TablaOperarios from '@/components/Usuario/Operario/TablaOperarios';
-import FiltrosOperarios from '@/components/Usuario/Operario/FiltrosOperarios';
-import ModalNuevoOperario from '@/components/Usuario/Operario/ModalNuevoOperario';
-import VerOperarioModal from '@/components/Usuario/Operario/VerOperarioModal';
+import { obtenerOperarios, eliminarOperario } from '@/services/operario.service';
+import TablaOperarios from '@/components/Operario/TablaOperarios';
+import FiltrosOperarios from '@/components/Operario/FiltrosOperarios';
+import ModalNuevoOperario from '@/components/Operario/ModalNuevoOperario';
+import VerOperarioModal from '@/components/Operario/VerOperarioModal';
 import ModalConfirmacion from '@/components/Layout/ModalConfirmacion';
 import ModalMensaje from '@/components/Layout/ModalMensaje';
-import { useAuth } from '@/store/auth';
 
 export default function Operarios() {
-  const { usuario } = useAuth();
-
   const [busqueda, setBusqueda] = createSignal("");
   const [orden, setOrden] = createSignal("nombre");
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("asc");
 
-  const [operarioSeleccionado, setOperarioSeleccionado] =
-    createSignal<any>(null);
+  const [operarioSeleccionado, setOperarioSeleccionado] = createSignal<any>(null);
   const [modalVerAbierto, setModalVerAbierto] = createSignal(false);
   const [modalNuevoAbierto, setModalNuevoAbierto] = createSignal(false);
   const [modalConfirmarAbierto, setModalConfirmarAbierto] = createSignal(false);
   const [idEliminar, setIdEliminar] = createSignal<number | null>(null);
   const [mensajeExito, setMensajeExito] = createSignal("");
 
-  const cerrarModalMensaje = () => {
-    setMensajeExito("");
-  };
+  const cerrarModalMensaje = () => setMensajeExito("");
 
-  const [operarios, { refetch }] = createResource(() =>
-    obtenerUsuariosOperarios()
-  );
-  
+  const [operarios, { refetch }] = createResource(() => obtenerOperarios());
 
   const operariosFiltrados = createMemo(() => {
     const texto = busqueda().toLowerCase().trim();
     return (operarios() || []).filter(
-      (v) =>
-        v.nombre.toLowerCase().includes(texto) ||
-        v.email.toLowerCase().includes(texto)
+      (v: any) =>
+        v.nombre?.toLowerCase().includes(texto) ||
+        v.email?.toLowerCase().includes(texto)
     );
   });
-
-  const puedeEliminar = () =>
-    [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(
-      usuario()?.rolUsuarioId as
-        | (typeof ROLES_USUARIOS)["SUPREMO"]
-        | (typeof ROLES_USUARIOS)["ADMINISTRADOR"]
-    );
-
-  const puedeEditar = () =>
-    [ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(
-      usuario()?.rolUsuarioId as
-        | (typeof ROLES_USUARIOS)["SUPREMO"]
-        | (typeof ROLES_USUARIOS)["ADMINISTRADOR"]
-    );
 
   const cambiarOrden = (col: string) => {
     if (orden() === col) {
@@ -73,7 +49,7 @@ export default function Operarios() {
   const eliminar = async () => {
     if (!idEliminar()) return;
     try {
-      await eliminarUsuario(idEliminar()!, "Operarios");
+      await eliminarOperario(idEliminar()!);
       setMensajeExito("Operario eliminado correctamente");
       setModalConfirmarAbierto(false);
       setIdEliminar(null);
@@ -104,8 +80,6 @@ export default function Operarios() {
           operarios={operariosFiltrados()}
           orden={orden()}
           direccion={direccion()}
-          puedeEditar={puedeEditar()}
-          puedeEliminar={puedeEliminar()}
           onOrdenar={cambiarOrden}
           onVer={(v) => {
             setOperarioSeleccionado(() => v);
@@ -115,34 +89,36 @@ export default function Operarios() {
             setOperarioSeleccionado(() => v);
             setModalNuevoAbierto(true);
           }}
-          onEliminar={(id) => confirmarEliminar(id)}
+          onEliminar={confirmarEliminar}
         />
       </Show>
 
-      <VerOperarioModal
-        abierto={modalVerAbierto()}
-        usuario={operarioSeleccionado()}
-        onCerrar={() => setModalVerAbierto(false)}
-      />
+      <Show when={modalVerAbierto()} keyed>
+        <VerOperarioModal
+          abierto={modalVerAbierto()}
+          operario={operarioSeleccionado()}
+          onCerrar={() => setModalVerAbierto(false)}
+        />
+      </Show>
 
-      <ModalNuevoOperario
-        abierto={modalNuevoAbierto()}
-        usuario={operarioSeleccionado()}
-        cerrar={() => {
-          setModalNuevoAbierto(false);
-          refetch();
-        }}
-        onExito={(mensaje: string) => setMensajeExito(mensaje)}
-      />
+      <Show when={modalNuevoAbierto()} keyed>
+        <ModalNuevoOperario
+          abierto={modalNuevoAbierto()}
+          operario={operarioSeleccionado()}
+          cerrar={() => {
+            setModalNuevoAbierto(false);
+            refetch();
+          }}
+          onExito={setMensajeExito}
+        />
+      </Show>
 
       <ModalMensaje mensaje={mensajeExito()} cerrar={cerrarModalMensaje} />
 
       <ModalConfirmacion
         abierto={modalConfirmarAbierto()}
         mensaje="¿Seguro que querés eliminar este operario?"
-        onConfirmar={async () => {
-          await eliminar();
-        }}
+        onConfirmar={eliminar}
         onCancelar={() => setModalConfirmarAbierto(false)}
       />
     </div>

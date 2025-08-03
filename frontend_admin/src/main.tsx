@@ -21,30 +21,21 @@ import { checkLocalStorage } from "./store/auth";
 //import Proveedores from "./pages/Proveedores";
 
 // ⚡ Lazy load para páginas protegidas
-const Administradores = lazy(() => import("./pages/Administradores"));
-const Banners = lazy(() => import("./pages/Pagina/Banners"));
 const Categorias = lazy(() => import("./pages/Categorias"));
 const Clientes = lazy(() => import("./pages/Clientes"));
 const Proveedores = lazy(() => import("./pages/Proveedores"));
-const Estadisticas = lazy(() => import("./pages/Estadisticas"));
 const Inicio = lazy(() => import("./pages/Inicio"));
-const LogsCliente = lazy(() => import("./pages/LogsCliente"));
 const Operarios = lazy(() => import("./pages/Operarios"));
-const PedidoRapido = lazy(() => import("./pages/PedidoRapido"));
 const Pedidos = lazy(() => import("./pages/Pedidos"));
 const Productos = lazy(() => import("./pages/Productos"));
 const Piezas = lazy(() => import("./pages/Piezas"));
 const MateriasPrimas = lazy(() => import("./pages/MateriasPrimas"));
 const ProduccionDiaria = lazy(() => import("./pages/ProduccionDiaria"));
+const ProduccionDiariaInyeccion = lazy(() => import("./pages/ProduccionDiariaInyeccion"));
 const OrdenesDeTrabajo = lazy(() => import("./pages/OrdenesDeTrabajo"));
-const ResumenProduccion = lazy(
-  () => import("./pages/Graficos/ResumenProduccion")
-);
+const ResumenProduccion = lazy(() => import("./pages/Graficos/ResumenProduccion"));
 const ResumenVentas = lazy(() => import("./pages/Graficos/ResumenVentas"));
 const Eficiencia = lazy(() => import("./pages/Graficos/Eficiencia"));
-const RolesUsuarios = lazy(() => import("./pages/Pagina/RolesUsuarios"));
-const EstadosPedidos = lazy(() => import("./pages/Pagina/EstadosPedidos"));
-const Logo = lazy(() => import("./pages/Pagina/Logo"));
 const Vendedores = lazy(() => import("./pages/Vendedores"));
 const ConversacionesBot = lazy(() => import("./pages/ConversacionesBot"));
 const Facturas = lazy(() => import("./pages/Facturas"));
@@ -175,7 +166,7 @@ render(
         component={() => (
           <ProtectedRoute>
             <Layout>
-              <ResumenProduccion />
+              <ProduccionDiariaInyeccion />
             </Layout>
           </ProtectedRoute>
         )}

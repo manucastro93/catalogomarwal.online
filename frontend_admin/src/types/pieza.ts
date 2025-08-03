@@ -6,7 +6,7 @@ export interface Pieza {
   id: number;
   codigo: string;
   descripcion?: string;
-  categoria: number;
+  categoriaPiezaId: number;
   pzsXSeg?: number;
   cicloXSeg?: number;
   ciclosXTurno?: number;

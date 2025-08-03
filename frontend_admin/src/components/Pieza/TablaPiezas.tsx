@@ -16,9 +16,9 @@ export default function TablaPiezas(props: {
     props.orden === col ? " underline text-primary" : "";
 
   return (
-    <div class="overflow-x-auto">
-      <table class="min-w-full border rounded shadow text-sm bg-white">
-        <thead>
+    <div class="overflow-auto border rounded-lg">
+      <table class="w-full text-sm border-collapse hidden md:table">
+        <thead class="bg-gray-100 sticky top-0">
           <tr class="bg-gray-100">
             <th class={thStyle + activeStyle('codigo')}
               onClick={() => props.onOrdenar('codigo')}

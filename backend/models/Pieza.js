@@ -8,7 +8,7 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    categoria: {
+    categoriaPiezaId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       references: { model: 'CategoriasPiezas', key: 'id' }
@@ -54,7 +54,7 @@ export default (sequelize, DataTypes) => {
   });
 
   Pieza.associate = (models) => {
-    Pieza.belongsTo(models.CategoriaPieza, { foreignKey: 'categoria', as: 'categoriaPieza' });
+    Pieza.belongsTo(models.CategoriaPieza, { foreignKey: 'categoriaPiezaId', as: 'categoriaPieza' });
     Pieza.belongsTo(models.Material, { foreignKey: 'materialId', as: 'materialObj' });
     Pieza.belongsTo(models.Rubro, { foreignKey: 'rubroId', as: 'rubro' });
   };

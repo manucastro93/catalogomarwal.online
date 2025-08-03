@@ -7,7 +7,7 @@ import { useAuth } from '@/store/auth';
 import type { Producto } from '@/types/producto';
 import type { CrearReporteProduccionEncabezado } from '@/types/produccion';
 import type { OrdenTrabajo } from '@/types/ordenTrabajo';
-import SelectorOTPendienteModal from '@/components/Produccion/SelectorOTPendienteModal';
+import SelectorOTPendienteModal from '@/components/Produccion/ProduccionDiaria/SelectorOTPendienteModal';
 
 export default function ModalNuevoReporte(props: { onCerrar: () => void }) {
   const [busqueda, setBusqueda] = createSignal("");

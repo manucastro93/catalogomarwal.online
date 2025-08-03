@@ -21,7 +21,7 @@ export default (sequelize, DataTypes) => {
 
   CategoriaPieza.associate = (models) => {
     CategoriaPieza.belongsTo(models.Rubro, { foreignKey: 'rubroId', as: 'rubro' });
-    CategoriaPieza.hasMany(models.Pieza, { foreignKey: 'categoria', as: 'piezas' });
+    CategoriaPieza.hasMany(models.Pieza, { foreignKey: 'categoriaPiezaId', as: 'piezas' });
   };
 
   return CategoriaPieza;

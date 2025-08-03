@@ -6,6 +6,12 @@ export const obtenerMaquinas = async () => {
   return data.data;
 };
 
+export const buscarMaquinasPorTexto = async (texto: string) => {
+  if (!texto) return [];
+  const { data } = await api.get('/maquinas', { params: { search: texto, limit: 100 } });
+  return data.data; // Ajustá según la estructura de tu backend
+};
+
 export const crearMaquina = async (maquina: Partial<Maquina>) => {
   const { data } = await api.post('/maquinas', maquina);
   return data;
