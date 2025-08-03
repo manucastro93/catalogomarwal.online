@@ -314,16 +314,18 @@ export async function sincronizarProductosDesdeDux() {
       const sku = String(item.cod_item).trim();
       const nombreCategoria = limpiarNombreCategoria(item.rubro?.nombre || '');
       const categoriaId = categoriasMap[nombreCategoria] || 11;
-      const precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL, NOMBRE_LISTA_ALTERNATIVA) || 0;
-
+      let precio = obtenerPrecioLista(item.precios, NOMBRE_LISTA_GENERAL, NOMBRE_LISTA_ALTERNATIVA) || 0;
+      const proveedorId = await guardarProveedorDesdeDux(item.proveedor);
       if (categoriaId === 12) {
-        const proveedorId = await guardarProveedorDesdeDux(item.proveedor);
         const existente = await MateriaPrima.findOne({ where: { sku } });
+        if(precio <= 0)
+          precio = parseFloat(item.costo || '0')
         const data = {
           nombre: item.item,
           sku,
           stock: calcularStock(item),
           activo: true,
+          costoDux: precio,
           categoria: item.sub_rubro?.nombre || '',
           proveedorId,
         };
