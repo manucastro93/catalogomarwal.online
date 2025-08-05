@@ -25,6 +25,7 @@ export default function ModalNuevoProducto(props: {
   const [unidadPorBulto, setUnidadPorBulto] = createSignal("");
   const [categoriaId, setCategoriaId] = createSignal("");
   const [composiciones] = createResource(() => props.producto?.id, obtenerComposicionesPorProducto);
+  const [comentarioComposicion, setComentarioComposicion] = createSignal("");
 
   const [imagenesSeleccionadas, setImagenesSeleccionadas] = createSignal<
     {
@@ -51,6 +52,7 @@ export default function ModalNuevoProducto(props: {
         setPrecioPorBulto(props.producto.precioPorBulto?.toString() || "");
         setUnidadPorBulto(props.producto.unidadPorBulto?.toString() || "");
         setCategoriaId(props.producto.categoriaId?.toString() || "");
+        setComentarioComposicion(props.producto.comentarioComposicion || "");
 
         const imagenes = Array.isArray(props.producto.Imagenes)
           ? props.producto.Imagenes
@@ -528,6 +530,9 @@ export default function ModalNuevoProducto(props: {
               }
               incluirTiempoEnCosto={
                 props.producto!.incluirTiempoEnCosto ?? undefined
+              }
+              comentarioComposicionInicial={
+                props.producto!.comentarioComposicion ?? ""
               }
             />
           </Show>

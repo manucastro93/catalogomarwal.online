@@ -13,6 +13,7 @@ export default function TabComposicionEdicion(props: {
     onGuardado?: () => void;
     tiempoProduccionInicial?: number;
     incluirTiempoEnCosto: boolean;
+    comentarioComposicionInicial: string;
 }) {
     const [materiaPrimaSeleccionada, setMateriaPrimaSeleccionada] = createSignal<MateriaPrima | null>(null);
     const [cantidad, setCantidad] = createSignal<string>("");
@@ -24,6 +25,7 @@ export default function TabComposicionEdicion(props: {
     const [valorHora, setValorHora] = createSignal<number>(0);
     const [mermaPorcentaje, setMermaPorcentaje] = createSignal<number>(0);
     const [incluirTiempo, setIncluirTiempo] = createSignal(true);
+    const [comentarioComposicion, setComentarioComposicion] = createSignal("");
 
     onMount(async () => {
         if (props.composicionInicial?.length) {
@@ -41,6 +43,10 @@ export default function TabComposicionEdicion(props: {
         if (props.tiempoProduccionInicial != null) {
             setTiempoProduccion(props.tiempoProduccionInicial.toString());
             setIncluirTiempo(props.incluirTiempoEnCosto);
+        }
+
+        if (props.comentarioComposicionInicial) {
+        setComentarioComposicion(props.comentarioComposicionInicial);
         }
 
         const configValorHora = await obtenerConfiguracionPorClave("valor_hora");
@@ -66,6 +72,7 @@ export default function TabComposicionEdicion(props: {
             })),
             tiempoProduccionSegundos: Number(tiempoProduccion()),
             incluirTiempoEnCosto: incluirTiempo(),
+            comentarioComposicion: comentarioComposicion()
         });
         setMensaje("Composición guardada correctamente");
         setMostrarMensaje(true);
@@ -214,8 +221,17 @@ export default function TabComposicionEdicion(props: {
                     </div>
                 </div>
             </Show>
-            
-            <div class="text-right mt-4 flex gap-2 justify-end">
+
+            <div class="mt-4">
+                <textarea
+                    class="border p-2 rounded w-full h-15 text-sm"
+                    placeholder="Comentario general sobre esta composición..."
+                    value={comentarioComposicion()}
+                    onInput={(e) => setComentarioComposicion(e.currentTarget.value)}
+                />
+            </div>
+
+            <div class="text-right mt-4 flex gap-2 justify-center">
                 <button
                     class="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 transition"
                     onClick={guardarComposicion}

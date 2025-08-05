@@ -30,7 +30,7 @@ export const guardarComposicionProducto = async (
   productoId: number,
   data: {
     composicion: { materiaPrimaId: number; cantidad: number; unidadMedida: string }[];
-    tiempoProduccionSegundos: number; incluirTiempoEnCosto: boolean;
+    tiempoProduccionSegundos: number; incluirTiempoEnCosto: boolean; comentarioComposicion: string
   }
 ) => {
   return api.post(`/composiciones/${productoId}/composicion`, data);

@@ -77,7 +77,7 @@ export const eliminarComposicion = async (req, res, next) => {
 export const guardarComposicion = async (req, res, next) => {
   try {
     const productoId = parseInt(req.params.id, 10);
-    const { composicion, tiempoProduccionSegundos, incluirTiempoEnCosto } = req.body;
+    const { composicion, tiempoProduccionSegundos, incluirTiempoEnCosto, comentarioComposicion } = req.body;
     const tiempoProduccion = parseInt(tiempoProduccionSegundos || 0, 10);
 
 
@@ -128,6 +128,7 @@ export const guardarComposicion = async (req, res, next) => {
         costoSistema,
         tiempoProduccionSegundos: tiempoProduccion,
         incluirTiempoEnCosto: incluirTiempoEnCosto,
+        comentarioComposicion: comentarioComposicion
       },
       { where: { id: productoId } }
     );

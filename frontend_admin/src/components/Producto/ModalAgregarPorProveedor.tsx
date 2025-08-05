@@ -15,7 +15,7 @@ export default function ModalAgregarPorProveedor(props: {
   const [proveedorSeleccionado, setProveedorSeleccionado] = createSignal<Proveedor | null>(null);
   const [mostrarOpcionesProveedor, setMostrarOpcionesProveedor] = createSignal(false);
 
-  const [proveedores] = createResource(() => ({}), () => obtenerProveedores({ limit: 10000, page: 1 }));
+  const [proveedores] = createResource(() => ({}), () => obtenerProveedores({ limit: 100000, page: 1 }));
   const proveedoresFiltrados = () => {
     const val = proveedorInput().toLowerCase();
     return (proveedores()?.data ?? []).filter(
@@ -33,6 +33,8 @@ export default function ModalAgregarPorProveedor(props: {
     () => proveedorSeleccionado() ? ({
       proveedorId: proveedorSeleccionado()!.id,
       buscar: busqueda() || undefined,
+      limit: 10000,
+      page: 1,
     }) : undefined,
     obtenerMateriasPrimas
   );
@@ -60,28 +62,28 @@ export default function ModalAgregarPorProveedor(props: {
   };
 
   // Input solo de cantidad
-const cambiarCantidad = (mpId: number, raw: string) => {
-  // Permitimos "," o "." y números
-  let valor = raw.replace(",", ".");
-  // Solo aceptamos números, punto, y una coma (ya reemplazada)
-  valor = valor.replace(/[^0-9.]/g, "");
-  setSeleccionadas((prev) => {
-    const anterior = prev[mpId] || {};
-    // Si termina en punto, coma o está vacío, no parseamos, dejamos escribir
-    if (/(\.|,)$/.test(raw) || valor === "") {
+  const cambiarCantidad = (mpId: number, raw: string) => {
+    // Permitimos "," o "." y números
+    let valor = raw.replace(",", ".");
+    // Solo aceptamos números, punto, y una coma (ya reemplazada)
+    valor = valor.replace(/[^0-9.]/g, "");
+    setSeleccionadas((prev) => {
+      const anterior = prev[mpId] || {};
+      // Si termina en punto, coma o está vacío, no parseamos, dejamos escribir
+      if (/(\.|,)$/.test(raw) || valor === "") {
+        return {
+          ...prev,
+          [mpId]: { ...anterior, cantidad: raw }
+        };
+      }
+      const cantidad = parseFloat(valor);
+      // Si es número válido (positivo), lo guardamos como string, sino dejamos lo que está
       return {
         ...prev,
-        [mpId]: { ...anterior, cantidad: raw }
+        [mpId]: { ...anterior, cantidad: !isNaN(cantidad) && cantidad > 0 ? valor : raw }
       };
-    }
-    const cantidad = parseFloat(valor);
-    // Si es número válido (positivo), lo guardamos como string, sino dejamos lo que está
-    return {
-      ...prev,
-      [mpId]: { ...anterior, cantidad: !isNaN(cantidad) && cantidad > 0 ? valor : raw }
-    };
-  });
-};
+    });
+  };
 
 
   const handleAgregar = () => {
@@ -179,11 +181,11 @@ const cambiarCantidad = (mpId: number, raw: string) => {
             onInput={(e) => setBusqueda(e.currentTarget.value)}
           />
 
-          <div class="overflow-y-auto max-h-64 border rounded mb-3">
-            <table class="w-full text-sm">
-              <thead>
+          <div class="overflow-y-auto max-h-[250px] sm:max-h-[300px] md:max-h-[350px] lg:max-h-[350px] border rounded mb-3">
+            <table class="w-full text-sm border-collapse">
+              <thead class="bg-gray-100 sticky top-0">
                 <tr>
-                  <th>
+                  <th class="text-left p-3 border-b">
                     <input
                       type="checkbox"
                       checked={
@@ -193,66 +195,78 @@ const cambiarCantidad = (mpId: number, raw: string) => {
                       onChange={(e) => toggleSeleccionarTodos(e.currentTarget.checked)}
                     />
                   </th>
-                  <th>SKU</th>
-                  <th>Nombre</th>
-                  <th>Costo</th>
-                  <th>Unidad</th>
-                  <th>Cantidad</th>
-                  <th>Total</th>
+                  <th class="text-left p-3 border-b">SKU</th>
+                  <th class="text-left p-3 border-b">Nombre</th>
+                  <th class="text-left p-3 border-b">Costo</th>
+                  <th class="text-left p-3 border-b">Unidad</th>
+                  <th class="text-left p-3 border-b">Cantidad</th>
+                  <th class="text-left p-3 border-b">Total</th>
                 </tr>
               </thead>
               <tbody>
-                <For each={materiasPrimas()?.data || []}>
-                  {(mp: MateriaPrima) => (
+                <Show
+                  when={materiasPrimas()?.data.length > 0}
+                  fallback={
                     <tr>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={!!seleccionadas()[mp.id]}
-                          onChange={(e) => toggleSeleccion(mp, e.currentTarget.checked)}
-                        />
-                      </td>
-                      <td>{mp.sku}</td>
-                      <td>{mp.nombre}</td>
-                      <td>{formatearPrecio(mp.costoDux)}</td>
-                      <td>
-                        <select
-                          class="border rounded p-1"
-                          disabled={!seleccionadas()[mp.id]}
-                          value={seleccionadas()[mp.id]?.unidadMedida || mp.unidadMedida || UNIDADES[0]}
-                          onInput={(e) => cambiarUnidad(mp.id, e.currentTarget.value)}
-                        >
-                          {UNIDADES.map((u) => (
-                            <option value={u}>{u}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          class="border p-1 rounded w-24"
-                          value={seleccionadas()[mp.id]?.cantidad ?? ""}
-                          disabled={!seleccionadas()[mp.id]}
-                          onInput={(e) => cambiarCantidad(mp.id, e.currentTarget.value)}
-                        />
-                      </td>
-                      <td>
-                        {seleccionadas()[mp.id]
-                          ? formatearPrecio((mp.costoDux || 0) * Number(seleccionadas()[mp.id].cantidad || 0))
-                          : "-"}
+                      <td colspan="7" class="text-center p-4 text-gray-500">
+                        No se encontraron productos
                       </td>
                     </tr>
-                  )}
-                </For>
+                  }
+                >
+                  <For each={materiasPrimas()?.data || []}>
+                    {(mp: MateriaPrima) => (
+                      <tr class="hover:bg-gray-50 border-b">
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={!!seleccionadas()[mp.id]}
+                            onChange={(e) => toggleSeleccion(mp, e.currentTarget.checked)}
+                          />
+                        </td>
+                        <td class="p-3">{mp.sku}</td>
+                        <td class="p-3">{mp.nombre}</td>
+                        <td class="p-3">{formatearPrecio(mp.costoDux)}</td>
+                        <td class="p-3">
+                          <select
+                            class="border rounded p-1"
+                            disabled={!seleccionadas()[mp.id]}
+                            value={seleccionadas()[mp.id]?.unidadMedida || mp.unidadMedida || UNIDADES[0]}
+                            onInput={(e) => cambiarUnidad(mp.id, e.currentTarget.value)}
+                          >
+                            {UNIDADES.map((u) => (
+                              <option value={u}>{u}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td class="p-3">
+                          <input
+                            type="text"
+                            class="border p-1 rounded w-24"
+                            value={seleccionadas()[mp.id]?.cantidad ?? ""}
+                            disabled={!seleccionadas()[mp.id]}
+                            onInput={(e) => cambiarCantidad(mp.id, e.currentTarget.value)}
+                          />
+                        </td>
+                        <td class="p-3">
+                          {seleccionadas()[mp.id]
+                            ? formatearPrecio((mp.costoDux || 0) * Number(seleccionadas()[mp.id].cantidad || 0))
+                            : "-"}
+                        </td>
+                      </tr>
+                    )}
+                  </For>
+                </Show>
               </tbody>
-              <tfoot>
-                <tr class="font-bold bg-gray-100">
-                  <td colspan="6" class="text-right pr-2">Total general:</td>
-                  <td>{formatearPrecio(calcularTotalGeneral())}</td>
-                </tr>
-              </tfoot>
-            </table>
+              </table>
           </div>
+
+          <Show when={Object.keys(seleccionadas()).length > 0}>
+            <div class="text-right font-bold mt-2">
+              Total: {formatearPrecio(calcularTotalGeneral())}
+            </div>
+          </Show>
+
         </Show>
 
         <div class="flex justify-end gap-2 mt-4">

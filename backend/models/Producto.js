@@ -95,6 +95,10 @@ export default (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: 0,
     },
+    comentarioComposicion: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    }
   }, {
     tableName: 'Productos',
     timestamps: true,

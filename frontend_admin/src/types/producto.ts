@@ -25,7 +25,7 @@ export interface Producto {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
-
+  comentarioComposicion?: string;
   stock?: number;
   marcaId?: number | null;
   costoDux?: number | null;
