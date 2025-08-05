@@ -1,45 +1,29 @@
 import { createMemo, createResource, createSignal, Show } from "solid-js";
 import FiltrosClientesDux from "@/components/InformeClientesDux/FiltrosClientesDux";
-import GraficoBarras from "@/components/InformeClientesDux/GraficoBarras";
-import GraficoLineas from "@/components/InformeClientesDux/GraficoLineas";
-import TablaClientesDux from "@/components/InformeClientesDux/TablaClientes";
-import ReporteEjecutivoClientesDux from "@/components/InformeClientesDux/ReporteEjecutivoClientesDux";
-import GraficoPedidosPorMes from "@/components/InformeClientesDux/GraficoPedidosPorMes";
+import TablaClientesUltimaCompra from "@/components/InformeClientesUltimaCompra/TablaClientesUltimaCompra";
+import ReporteEjecutivoUltimaCompra from "@/components/InformeClientesUltimaCompra/ReporteEjecutivoUltimaCompra";
 import dayjs from "dayjs";
 
 import {
-  obtenerInformeClientesDux,
+  obtenerInformeClientesUltimaCompra,
   obtenerListasPrecioClientesDux,
 } from "@/services/clienteDux.service";
-import { obtenerPedidosPorMesConVendedor } from "@/services/estadisticas.service";
 import { obtenerPersonalDux } from "@/services/personalDux.service";
 
-import type { ClienteDux } from "@/types/clienteDux";
+import type { ClienteDuxConUltimaCompra } from "@/types/clienteDux";
 import type { VendedorOption } from "@/types/vendedor";
 
-export default function InformeClientesDux() {
+export default function InformeClientesUltimaCompra() {
   const [fechaDesde, setFechaDesde] = createSignal<string | null>(null);
   const [fechaHasta, setFechaHasta] = createSignal<string | null>(null);
   const [vendedor, setVendedor] = createSignal("");
   const [listaPrecio, setListaPrecio] = createSignal("");
   const [pagina, setPagina] = createSignal(1);
+  const [orden, setOrden] = createSignal<keyof ClienteDuxConUltimaCompra>('fechaUltimaCompra');
+  const [direccion, setDireccion] = createSignal<'ASC' | 'DESC'>('ASC');
 
   const [vendedores] = createResource(obtenerPersonalDux);
   const [listasPrecio] = createResource(obtenerListasPrecioClientesDux);
-
-  const filtrosPedidos = createMemo(() => {
-    const hoy = dayjs().format("YYYY-MM-DD");
-    return {
-      desde: fechaDesde() || "2023-11-01",
-      hasta: fechaHasta() || hoy,
-      vendedor: vendedor() || undefined,
-    };
-  });
-
-  const [graficoPedidosData] = createResource(filtrosPedidos, ({ desde, hasta, vendedor }) => {
-    console.log("📦 Refetch pedidos con:", { desde, hasta, vendedor });
-    return obtenerPedidosPorMesConVendedor(desde, hasta, vendedor);
-  });
 
   const fetchParams = () => ({
     fechaDesde: fechaDesde() || undefined,
@@ -47,18 +31,20 @@ export default function InformeClientesDux() {
     vendedor: vendedor() || undefined,
     listaPrecio: listaPrecio() || undefined,
     page: pagina(),
+    orden: orden(),
+    direccion: direccion(),
   });
 
-  const [datos, { refetch }] = createResource(fetchParams, obtenerInformeClientesDux);
+  const [datos, { refetch }] = createResource(fetchParams, obtenerInformeClientesUltimaCompra);
 
   const onAplicarFiltros = () => {
     setPagina(1);
-    refetch(); // el gráfico ya se reactiva solo por las señales
+    refetch();
   };
 
   return (
     <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4">Informe de Clientes Dux</h1>
+      <h1 class="text-2xl font-bold mb-4">Informe de Última Compra por Cliente</h1>
 
       <Show when={vendedores() && listasPrecio()}>
         <FiltrosClientesDux
@@ -76,25 +62,24 @@ export default function InformeClientesDux() {
         />
       </Show>
 
-      <ReporteEjecutivoClientesDux />
-
-      <Show when={datos()?.porMes}>
-        <GraficoBarras data={datos()!.porMes} />
-      </Show>
-
-      <Show when={graficoPedidosData()}>
-        <GraficoPedidosPorMes data={graficoPedidosData()!} />
-      </Show>
-
-      {/* <Show when={datos()?.porDia}>
-        <GraficoLineas data={datos()!.porDia} />
-      </Show> */}
+      <ReporteEjecutivoUltimaCompra />
 
       <Show when={datos()?.detalle}>
-        <TablaClientesDux
-          clientes={datos()!.detalle as ClienteDux[]}
+        <TablaClientesUltimaCompra
+          clientes={datos()!.detalle as ClienteDuxConUltimaCompra[]}
           pagina={pagina()}
           totalPaginas={datos()!.totalPaginas}
+          orden={orden()}
+          direccion={direccion()}
+          onOrdenar={(col) => {
+            if (orden() === col) {
+              setDireccion(direccion() === 'ASC' ? 'DESC' : 'ASC');
+            } else {
+              setOrden(col);
+              setDireccion('ASC');
+            }
+            refetch();
+          }}
           onPaginaChange={(nueva) => {
             setPagina(nueva);
             refetch();

@@ -3,7 +3,9 @@ import {
   listarClientesDux,
   obtenerInformeClientesDux,
   obtenerListasPrecioClientesDux,
-  reporteEjecutivoClientesDux
+  reporteEjecutivoClientesDux,
+  obtenerInformeClientesUltimaCompra,
+  reporteEjecutivoUltimaCompra
 } from '../controllers/clienteDux.controller.js';
 
 const router = express.Router();
@@ -12,5 +14,7 @@ router.get('/', listarClientesDux);
 router.get('/informes', obtenerInformeClientesDux);
 router.get('/listas-precio', obtenerListasPrecioClientesDux);
 router.get('/reporte-ejecutivo', reporteEjecutivoClientesDux);
+router.get('/informe-ultima-compra', obtenerInformeClientesUltimaCompra);
+router.get('/reporte-ejecutivo-ultima-compra', reporteEjecutivoUltimaCompra);
 
 export default router;

@@ -8,6 +8,7 @@ export default function Informes(props: { expandido: boolean }) {
   const location = useLocation();
   const [open, setOpen] = createSignal(location.pathname.startsWith('/Informes'));
   const [prodOpen, setProdOpen] = createSignal(false);
+  const [ventasOpen, setVentasOpen] = createSignal(false);
   const esActivo = (path: string) => location.pathname === path;
 
   return (
@@ -65,15 +66,35 @@ export default function Informes(props: { expandido: boolean }) {
             </div>
           </Show>
 
+          {/* Submenú Ventas */}
+          <button
+            onClick={() => setVentasOpen(!ventasOpen())}
+            class={`${theme.paddingSubitem} text-left ${theme.textoSubitem}`}
+          >
+            Ventas
+            <Show when={ventasOpen()}>
+              <ChevronUp class="inline ml-2" size={14} />
+            </Show>
+            <Show when={!ventasOpen()}>
+              <ChevronDown class="inline ml-2" size={14} />
+            </Show>
+          </button>
+
+          <Show when={ventasOpen()}>
+            <div class="flex flex-col">
+              <ConPermiso modulo="Informes_Ventas_UltimaCompra" accion="ver">
+                <SidebarSubLink href="/Informes/Ventas/InformeClientesUltimaCompra" texto="Última Compra" activo={esActivo('/Informes/Ventas/InformeClientesUltimaCompra')} />
+              </ConPermiso>
+              <ConPermiso modulo="Informes_ClientesNuevos" accion="ver">
+                <SidebarSubLink href="/Informes/InformeClientesDux" texto="Clientes Nuevos" activo={esActivo('/Informes/ClientesNuevos')} />
+              </ConPermiso>
+            </div>
+          </Show>
+
           <ConPermiso modulo="Informes_ProductosPedidosPendientes" accion="ver">
             <SidebarLink href="/Informes/ProductosPedidosPendientes" texto="Productos Pedidos pendientes" activo={esActivo('/Informes/ProductosPedidosPendientes')} />
           </ConPermiso>
-          <ConPermiso modulo="Informes_Ventas" accion="ver">
-            <SidebarLink href="/Informes/Ventas" texto="Ventas" activo={esActivo('/Informes/Ventas')} />
-          </ConPermiso>
-          <ConPermiso modulo="Informes_ClientesDux" accion="ver">
-            <SidebarLink href="/Informes/InformeClientesDux" texto="ClientesDux" activo={esActivo('/Informes/ClientesDux')} />
-          </ConPermiso>
+
         </div>
       </Show>
     </div>

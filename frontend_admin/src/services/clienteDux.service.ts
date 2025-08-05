@@ -37,3 +37,18 @@ export const obtenerReporteEjecutivoClientesDux = async (): Promise<string> => {
   const { data } = await api.get('/clientesDux/reporte-ejecutivo');
   return data.reporte;
 };
+
+export const obtenerInformeClientesUltimaCompra = async (
+  params: FiltrosClientesDux & { page?: number }
+): Promise<{
+  detalle: (ClienteDux & { fechaUltimaCompra: string })[];
+  totalPaginas: number;
+}> => {
+  const { data } = await api.get('/clientesDux/informe-ultima-compra', { params });
+  return data;
+};
+
+export const obtenerReporteEjecutivoUltimaCompra = async (): Promise<string> => {
+  const { data } = await api.get('/clientesDux/reporte-ejecutivo-ultima-compra');
+  return data.reporte;
+};

@@ -779,3 +779,37 @@ export const obtenerPedidosPendientesPorProducto = async (req, res, next) => {
     next(error);
   }
 };
+
+export const obtenerPedidoPorClienteYFecha = async (req, res) => {
+  const { cliente, fecha } = req.query;
+
+  try {
+    const pedido = await PedidoDux.findOne({
+      where: {
+        cliente,
+        fecha: new Date(fecha)
+      },
+      include: [
+        {
+          model: DetallePedidoDux,
+          as: 'items',
+          required: false,
+        }
+      ]
+    });
+
+    if (!pedido) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
+
+    if (pedido) {
+      pedido.dataValues.detalles = pedido.dataValues.items;
+      delete pedido.dataValues.items;
+    }
+    
+    res.json(pedido);
+  } catch (err) {
+    console.error('❌ Error al buscar pedido:', err);
+    res.status(500).json({ message: 'Error al buscar pedido' });
+  }
+};

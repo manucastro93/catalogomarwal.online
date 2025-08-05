@@ -1,6 +1,6 @@
 import api from './api';
 import qs from "qs";
-import type { Pedido, PedidoPayload, RespuestaPaginadaPedidos } from '@/types/pedido';
+import type { Pedido, PedidoPayload, RespuestaPaginadaPedidos, PedidoDux } from '@/types/pedido';
 import type { FiltrosPedidos } from 'types/filtro'; 
 import type { ProductoPendiente } from "@/types/producto";
 
@@ -80,3 +80,13 @@ export async function obtenerPedidosPendientesPorProducto(
   });
   return data;
 }
+
+export const obtenerPedidoPorClienteYFecha = async (
+  cliente: string,
+  fecha: string
+): Promise<PedidoDux | null> => {
+  const { data } = await api.get('/pedidos/buscar-por-cliente-y-fecha', {
+    params: { cliente, fecha },
+  });
+  return data;
+};

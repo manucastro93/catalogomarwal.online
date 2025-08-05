@@ -41,7 +41,8 @@ const ConversacionesBot = lazy(() => import("./pages/ConversacionesBot"));
 const Facturas = lazy(() => import("./pages/Facturas"));
 const ProductosPedidosPendientes = lazy(() => import("./pages/ProductosPedidosPendientes"));
 const ConfiguracionGeneral = lazy(() => import('./pages/Pagina/ConfiguracionGeneral'));
-const InformeClientesDux = lazy(() => import('./pages/Informes/InformeClientesDux'));
+const InformeClientesDux = lazy(() => import('./pages/Informes/Ventas/InformeClientesDux'));
+const InformeClientesUltimaCompra = lazy(() => import('./pages/Informes/Ventas/InformeClientesUltimaCompra'));
 
 
 // ✅ Restaurar sesión si existe
@@ -244,11 +245,11 @@ render(
         )}
       />
       <Route
-        path="/Informes/Ventas"
+        path="/Informes/Ventas/InformeClientesUltimaCompra"
         component={() => (
           <ProtectedRoute>
             <Layout>
-              <ResumenVentas />
+              <InformeClientesUltimaCompra />
             </Layout>
           </ProtectedRoute>
         )}

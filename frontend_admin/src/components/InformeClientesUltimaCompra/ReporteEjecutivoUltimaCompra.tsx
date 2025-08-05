@@ -1,9 +1,9 @@
 import { createResource, createSignal, Show } from "solid-js";
-import { obtenerReporteEjecutivoClientesDux } from "@/services/clienteDux.service";
+import { obtenerReporteEjecutivoUltimaCompra } from "@/services/clienteDux.service";
 import { Copy } from "lucide-solid";
 
-export default function ReporteEjecutivoClientesDux() {
-  const [reporte] = createResource(obtenerReporteEjecutivoClientesDux);
+export default function ReporteEjecutivoUltimaCompra() {
+  const [reporte] = createResource(obtenerReporteEjecutivoUltimaCompra);
   const [abierto, setAbierto] = createSignal(false);
   const [copiado, setCopiado] = createSignal(false);
 
@@ -21,7 +21,7 @@ export default function ReporteEjecutivoClientesDux() {
         class={`w-full flex items-center justify-between px-4 py-3 rounded-xl shadow bg-blue-50 hover:bg-blue-100 transition mb-4`}
         onClick={() => setAbierto((v) => !v)}
       >
-        <span class="text-lg font-semibold text-blue-900">Reporte ejecutivo de clientes nuevos</span>
+        <span class="text-lg font-semibold text-blue-900">Reporte ejecutivo de última compra</span>
         <span class={`ml-2 transition-transform ${abierto() ? "rotate-180" : ""}`}>
           ▼
         </span>

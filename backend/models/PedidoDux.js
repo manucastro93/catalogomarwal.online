@@ -38,12 +38,18 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.JSON,
       allowNull: true,
     }
-    }, {
+  }, {
     tableName: 'PedidosDux',
     timestamps: true,
     paranoid: true
   });
-    
-  
+
+  PedidoDux.associate = (models) => {
+    PedidoDux.hasMany(models.DetallePedidoDux, {
+      foreignKey: 'pedidoDuxId',
+      as: 'items',
+    });
+  };
+
   return PedidoDux;
 };

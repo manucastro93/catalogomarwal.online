@@ -1,7 +1,7 @@
 export interface ClienteDux {
   id: number;
   fechaCreacion?: string;
-  cliente?: string;
+  cliente: string;
   categoriaFiscal?: string;
   tipoDocumento?: string;
   numeroDocumento?: string;
@@ -48,3 +48,6 @@ export interface FiltrosClientesDux {
   vendedor?: string;
   listaPrecio?: string;
 }
+
+export type ClienteDuxConUltimaCompra = ClienteDux & { fechaUltimaCompra: string };
+

@@ -1,6 +1,7 @@
-import { ClienteDux } from '../models/index.js';
+import { ClienteDux, PedidoDux } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize';
 import dayjs from "dayjs";
+import { formatearFechaCorta } from '../utils/fecha.js'
 
 export const listarClientesDux = async (req, res) => {
   try {
@@ -363,5 +364,125 @@ export const reporteEjecutivoClientesDux = async (req, res) => {
   } catch (error) {
     console.error('❌ Error en reporte ejecutivo de clientes Dux:', error);
     res.status(500).json({ message: 'Error al generar reporte ejecutivo de clientes Dux' });
+  }
+};
+
+export const obtenerInformeClientesUltimaCompra = async (req, res) => {
+  try {
+    const {
+      fechaDesde,
+      fechaHasta,
+      listaPrecio,
+      vendedor,
+      page = 1,
+      limit = 20,
+      orden = 'fechaUltimaCompra',
+      direccion = 'ASC',
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+
+    // Subconsulta: fecha última compra por cliente
+    const subquery = await PedidoDux.findAll({
+      attributes: [
+        'cliente',
+        [Sequelize.fn('MAX', Sequelize.col('fecha')), 'fechaUltimaCompra'],
+      ],
+      group: ['cliente'],
+      raw: true,
+    });
+
+    const clienteFechaMap = Object.fromEntries(
+      subquery.map((p) => [p.cliente, p.fechaUltimaCompra])
+    );
+
+    const where = {
+      cliente: { [Op.in]: Object.keys(clienteFechaMap) },
+    };
+    if (listaPrecio) where.listaPrecioPorDefecto = listaPrecio;
+    if (vendedor) where.vendedor = vendedor;
+
+    const clientes = await ClienteDux.findAll({
+      where,
+      raw: true,
+    });
+
+    // Enriquecer y filtrar por fechaUltimaCompra
+    let clientesFiltrados = clientes.map((c) => ({
+      ...c,
+      fechaUltimaCompra: clienteFechaMap[c.cliente],
+    })).filter((c) => {
+      if (!c.fechaUltimaCompra) return false;
+      if (fechaDesde && dayjs(c.fechaUltimaCompra).isBefore(dayjs(fechaDesde))) return false;
+      if (fechaHasta && dayjs(c.fechaUltimaCompra).isAfter(dayjs(fechaHasta))) return false;
+      return true;
+    });
+
+    // 🔽 Ordenar por cualquier campo
+    clientesFiltrados.sort((a, b) => {
+      const dir = direccion.toUpperCase() === 'ASC' ? 1 : -1;
+      const valA = a[orden];
+      const valB = b[orden];
+
+      if (!valA && !valB) return 0;
+      if (!valA) return -1 * dir;
+      if (!valB) return 1 * dir;
+
+      if (orden === 'fechaUltimaCompra') {
+        return (new Date(valA).getTime() - new Date(valB).getTime()) * dir;
+      }
+
+      return valA.toString().localeCompare(valB.toString()) * dir;
+    });
+
+    const total = clientesFiltrados.length;
+    const totalPaginas = Math.ceil(total / limit);
+    const detalle = clientesFiltrados.slice(offset, offset + Number(limit));
+
+    res.json({ detalle, totalPaginas });
+  } catch (error) {
+    console.error('❌ Error en informe de última compra:', error);
+    res.status(500).json({ message: 'Error al obtener informe de última compra' });
+  }
+};
+
+export const reporteEjecutivoUltimaCompra = async (req, res) => {
+  try {
+    const hoy = dayjs().format('YYYY-MM-DD');
+    const inicioMes = dayjs().startOf('month').format('YYYY-MM-DD');
+
+    // Total de clientes con al menos un pedido
+    const totalClientes = await PedidoDux.aggregate('cliente', 'count', { distinct: true });
+
+    // Clientes que compraron este mes
+    const clientesMes = await PedidoDux.aggregate('cliente', 'count', {
+      distinct: true,
+      where: {
+        fecha: { [Op.gte]: new Date(inicioMes + 'T00:00:00') },
+      },
+    });
+
+    // Día con más pedidos
+    const topDia = await PedidoDux.findAll({
+      attributes: [
+        [Sequelize.fn('DATE', Sequelize.col('fecha')), 'fecha'],
+        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
+      ],
+      group: [Sequelize.literal('DATE(fecha)')],
+      order: [[Sequelize.literal('cantidad'), 'DESC']],
+      limit: 1,
+      raw: true,
+    });
+
+    const reporte =
+      `Reporte Ejecutivo - Última Compra (${formatearFechaCorta(hoy)})\n\n` +
+      `• Total de clientes con al menos una compra: ${totalClientes}\n` +
+      `• Clientes que realizaron compras este mes: ${clientesMes}\n` +
+      `• Día con más compras: ${topDia[0]?.fecha || '—'} (${topDia[0]?.cantidad || 0} pedidos)\n`;
+
+    res.json({ reporte });
+  } catch (error) {
+    console.error('❌ Error en reporte ejecutivo última compra:', error);
+    res.status(500).json({ message: 'Error al generar reporte ejecutivo de última compra' });
   }
 };
