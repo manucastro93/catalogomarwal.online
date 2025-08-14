@@ -39,7 +39,8 @@ export default function RolesUsuarios() {
       </div>
 
       <Show when={roles()}>
-        <table class="w-full table-auto border">
+        <div class="overflow-auto border rounded-lg">
+          <table class="w-full text-sm border-collapse">
           <thead>
             <tr class="bg-gray-100 text-left">
               <th class="p-2">ID</th>
@@ -74,6 +75,7 @@ export default function RolesUsuarios() {
             </For>
           </tbody>
         </table>
+        </div>
       </Show>
 
       <Show when={modalAbierto()}>

@@ -49,5 +49,19 @@ export interface FiltrosClientesDux {
   listaPrecio?: string;
 }
 
+export interface ClienteDuxPorMesMonetizado {
+  mes: string;              // "YYYY-MM"
+  total: number;            // cantidad general
+  vendedor?: number;        // cantidad del vendedor (si se filtró)
+  montoTotal: number;       // $ sum(PedidosDux.total) general
+  montoVendedor?: number;   // $ sum(PedidosDux.total) del vendedor (si se filtró)
+}
+
+export interface ClienteDuxPorDiaMonetizado {
+  fecha: string;    // "YYYY-MM-DD"
+  cantidad: number; // clientes nuevos
+  monto: number;    // $ sum(PedidosDux.total) ese día (con filtros)
+}
+
 export type ClienteDuxConUltimaCompra = ClienteDux & { fechaUltimaCompra: string };
 

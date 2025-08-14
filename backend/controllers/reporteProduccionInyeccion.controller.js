@@ -25,7 +25,9 @@ export const obtenerReportesProduccion = async (req, res, next) => {
       include: [
         {
           model: ReportesProduccionesInyeccion,
-          as: "Detalles", // Alias del hasMany en el modelo
+          as: "Detalles",
+          separate: true,
+          order: [["id", "ASC"]], 
           include: [
             { model: Operario, as: "Operario" },
             { model: Maquina, as: "Maquina" },

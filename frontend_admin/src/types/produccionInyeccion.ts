@@ -1,3 +1,8 @@
+import { Pieza } from "@/types/pieza";
+import { Maquina } from "@/types/maquina";
+import { Operario } from "@/types/operario";
+import { Usuario } from "@/types/usuario";
+
 export interface ReporteProduccionInyeccionDetalle {
   id: number;
   reporteProduccionInyeccionEncabezadoId: number;
@@ -10,19 +15,9 @@ export interface ReporteProduccionInyeccionDetalle {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
-
-  // Anidados si hacés include
-  Operario?: {
-    id: number;
-    nombre: string;
-    // Otros campos relevantes...
-  };
-  Maquina?: {
-    id: number;
-    nombre: string;
-    // Otros campos...
-  };
-  Pieza?: import("@/types/pieza").Pieza;
+  Operario?: Operario;
+  Maquina?: Maquina;
+  Pieza?: Pieza;
 }
 export interface ReporteProduccionInyeccionEncabezado {
   id: number;
@@ -33,14 +28,7 @@ export interface ReporteProduccionInyeccionEncabezado {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
-
-  Usuario?: {
-    id: number;
-    nombre: string;
-    email: string;
-  };
-
-  // Array de detalles
+  Usuario?: Usuario;
   Detalles: ReporteProduccionInyeccionDetalle[];
 }
 export interface CrearReporteProduccionInyeccionEncabezado {

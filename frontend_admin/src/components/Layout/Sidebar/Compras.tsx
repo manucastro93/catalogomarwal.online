@@ -8,8 +8,8 @@ export default function Compras(props: { usuario: any; expandido: boolean }) {
   const location = useLocation();
   const [open, setOpen] = createSignal(
     location.pathname.startsWith('/Proveedores') ||
-    location.pathname.startsWith('/MateriasPrimas') ||
-    location.pathname.startsWith('/ProductosCostos')
+    location.pathname.startsWith('/MateriasPrimas') // ||
+    //location.pathname.startsWith('/ProductosCostos')
   );
 
   const esActivo = (path: string) => location.pathname === path;
@@ -41,11 +41,12 @@ export default function Compras(props: { usuario: any; expandido: boolean }) {
             <SidebarLink href="/Proveedores" texto="Proveedores" activo={esActivo('/Proveedores')} />
           </ConPermiso>
           <ConPermiso modulo="Compras_ListaPrecios" accion="ver">
-            <SidebarLink href="/MateriasPrimas" texto="Lista precio proveedores" activo={esActivo('/MateriasPrimas')} />
+            <SidebarLink href="/MateriasPrimas" texto="Materias Primas" activo={esActivo('/MateriasPrimas')} />
           </ConPermiso>
+          {/** 
           <ConPermiso modulo="Compras_ProductosCostos" accion="ver">
             <SidebarLink href="/ProductosCostos" texto="Productos costos" activo={esActivo('/ProductosCostos')} />
-          </ConPermiso>
+          </ConPermiso>*/}
         </div>
       </Show>
     </div>

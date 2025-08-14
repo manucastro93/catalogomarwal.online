@@ -99,8 +99,8 @@ export default function ConfiguracionSistemaPage() {
         Agregar configuración
       </button>
 
-      <div class="overflow-x-auto">
-        <table class="w-full border border-gray-200 rounded text-sm">
+      <div class="overflow-auto border rounded-lg">
+          <table class="w-full text-sm border-collapse">
           <thead class="bg-gray-100">
             <tr>
               <th class="px-3 py-2 text-left">Clave</th>

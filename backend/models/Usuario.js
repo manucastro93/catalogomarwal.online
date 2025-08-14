@@ -29,6 +29,10 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    personalDuxId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
     deletedAt: DataTypes.DATE,
@@ -49,11 +53,9 @@ export default (sequelize, DataTypes) => {
     Usuario.hasMany(models.Pedido, { foreignKey: 'usuarioId' });
     Usuario.hasMany(models.Cliente, { foreignKey: 'vendedorId' });
     Usuario.hasMany(models.LogAuditoria, { foreignKey: 'usuarioId' });
-
-    Usuario.belongsTo(models.RolUsuario, {
-      foreignKey: 'rolUsuarioId',
-      as: 'rolUsuario',
-    });
+    
+    Usuario.belongsTo(models.RolUsuario, {foreignKey: 'rolUsuarioId',as: 'rolUsuario',});
+    Usuario.belongsTo(models.PersonalDux, {foreignKey: 'personalDuxId',as: 'personalDux',});
   };
 
   return Usuario;

@@ -6,7 +6,8 @@ import {
   eliminarUsuario,
   obtenerUsuariosPorRolId,
   cambiarContrasena,
-  obtenerUsuariosOperarios
+  obtenerUsuariosOperarios,
+  obtenerUsuarios
 } from '../controllers/usuario.controller.js';
 
 import { validarUsuario } from '../validaciones/usuario.validation.js';
@@ -19,6 +20,7 @@ const router = express.Router();
 router.use(verificarToken);
 
 // Obtener usuarios por rol
+router.get('/', obtenerUsuarios);
 router.get('/operarios', checkPermiso(null, 'ver'), obtenerUsuariosOperarios);
 router.get('/rol/:rol', checkPermiso(null, 'ver'), obtenerUsuariosPorRol);
 router.get('/rol-id/:id', checkPermiso(null, 'ver'), obtenerUsuariosPorRolId);
@@ -34,7 +36,6 @@ router.post(
 // Editar usuario
 router.put(
   '/:id',
-  checkPermiso(null, 'editar'),
   validarUsuario,
   actualizarUsuario
 );

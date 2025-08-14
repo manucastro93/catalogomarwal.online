@@ -25,6 +25,7 @@ export const obtenerInformeClientesDux = async (
   totalPaginas: number;
 }> => {
   const { data } = await api.get('/clientesDux/informes', { params });
+  console.log(data)
   return data;
 };
 

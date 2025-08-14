@@ -59,6 +59,5 @@ export const obtenerPedidosPorMesConVendedor = async (
   const { data } = await api.get('/estadisticas/pedidos-por-mes', {
     params: { desde, hasta, vendedor },
   });
-  console.log(data)
   return data as { mes: string; totalPedidos: number; pedidosVendedor: number }[];
 };

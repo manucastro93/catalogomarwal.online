@@ -1,4 +1,11 @@
-import type { PermisoUsuario } from './permisoUsuario';
+import type { PermisoUsuario } from "./permisoUsuario";
+
+export type PersonalDux = {
+  id: number;
+  id_personal: number;
+  nombre: string;
+  apellido_razon_social: string;
+};
 
 export interface Usuario {
   id: number;
@@ -12,8 +19,9 @@ export interface Usuario {
   updatedAt: string;
   deletedAt?: string | null;
 
+  personalDuxId: number | null;
+  personalDux?: PersonalDux | null;
+
   permisos?: PermisoUsuario[];
-  rolUsuario?: {
-    nombre: string;
-  };
+  rolUsuario?: { nombre: string };
 }

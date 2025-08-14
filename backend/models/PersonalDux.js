@@ -1,5 +1,10 @@
 export default (sequelize, DataTypes) => {
   const PersonalDux = sequelize.define('PersonalDux', {
+    id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        primaryKey: true,
+        autoIncrement: true,
+    },
     id_personal: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -28,7 +33,7 @@ export default (sequelize, DataTypes) => {
   });
 
   PersonalDux.associate = (models) => {
-    // No hay asociaciones definidas con solo esta información
+    PersonalDux.hasMany(models.Usuario, {foreignKey: 'personalDuxId',as: 'usuarios',});
   };
 
   return PersonalDux;

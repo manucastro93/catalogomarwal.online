@@ -1,7 +1,48 @@
-import { ClienteDux, PedidoDux } from '../models/index.js';
+import { ClienteDux, PedidoDux, PersonalDux } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize';
 import dayjs from "dayjs";
 import { formatearFechaCorta } from '../utils/fecha.js'
+
+export const reporteEjecutivoUltimaCompra = async (req, res) => {
+  try {
+    const hoy = dayjs().format('YYYY-MM-DD');
+    const inicioMes = dayjs().startOf('month').format('YYYY-MM-DD');
+
+    // Total de clientes con al menos un pedido
+    const totalClientes = await PedidoDux.aggregate('cliente', 'count', { distinct: true });
+
+    // Clientes que compraron este mes
+    const clientesMes = await PedidoDux.aggregate('cliente', 'count', {
+      distinct: true,
+      where: {
+        fecha: { [Op.gte]: new Date(inicioMes + 'T00:00:00') },
+      },
+    });
+
+    // Día con más pedidos
+    const topDia = await PedidoDux.findAll({
+      attributes: [
+        [Sequelize.fn('DATE', Sequelize.col('fecha')), 'fecha'],
+        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
+      ],
+      group: [Sequelize.literal('DATE(fecha)')],
+      order: [[Sequelize.literal('cantidad'), 'DESC']],
+      limit: 1,
+      raw: true,
+    });
+
+    const reporte =
+      `Reporte Ejecutivo - Última Compra (${formatearFechaCorta(hoy)})\n\n` +
+      `• Total de clientes con al menos una compra: ${totalClientes}\n` +
+      `• Clientes que realizaron compras este mes: ${clientesMes}\n` +
+      `• Día con más compras: ${topDia[0]?.fecha || '—'} (${topDia[0]?.cantidad || 0} pedidos)\n`;
+
+    res.json({ reporte });
+  } catch (error) {
+    console.error('❌ Error en reporte ejecutivo última compra:', error);
+    res.status(500).json({ message: 'Error al generar reporte ejecutivo de última compra' });
+  }
+};
 
 export const listarClientesDux = async (req, res) => {
   try {
@@ -53,13 +94,16 @@ export const listarClientesDux = async (req, res) => {
   }
 };
 
+const PEDIDO_FECHA_COL = 'fecha';
+const PEDIDO_TOTAL_COL = 'total';
+
 export const obtenerInformeClientesDux = async (req, res) => {
   try {
     const {
       fechaDesde,
       fechaHasta,
       listaPrecio,
-      vendedor,
+      vendedor, // "APELLIDO, NOMBRE" (para mapear a PersonalDux.id_personal)
       page = 1,
       limit = 10,
     } = req.query;
@@ -67,31 +111,40 @@ export const obtenerInformeClientesDux = async (req, res) => {
     const offset = (page - 1) * limit;
     const where = {};
 
-    // Filtros comunes para tabla y porDia
     if (fechaDesde && fechaHasta) {
       where.fechaCreacion = {
         [Op.between]: [new Date(fechaDesde + 'T00:00:00'), new Date(fechaHasta + 'T23:59:59')],
       };
-    } else {
-      // Si no recibe rango, usar de principio de mes hasta hoy SOLO para porDia
-      // (no afecta la tabla ni porMes)
     }
-
     if (listaPrecio) where.listaPrecioPorDefecto = listaPrecio;
     if (vendedor) where.vendedor = vendedor;
 
-    // 🔷 Todos los clientes por mes (para barras azules)
+    // Mapear vendedor ("APELLIDO, NOMBRE") -> id_personal (para usar en Facturas.id_vendedor)
+    let idVendedor = null;
+    if (vendedor) {
+      const encontrado = await PersonalDux.findOne({
+        attributes: ['id_personal'],
+        where: Sequelize.where(
+          Sequelize.fn('CONCAT', Sequelize.col('apellido_razon_social'), ', ', Sequelize.col('nombre')),
+          vendedor
+        ),
+        raw: true,
+      });
+      idVendedor = encontrado?.id_personal ?? null;
+    }
+
+    // 🔷 Clientes por mes (general)
     const porMesGeneral = await ClienteDux.findAll({
       attributes: [
         [Sequelize.fn('DATE_FORMAT', Sequelize.col('fechaCreacion'), '%Y-%m'), 'mes'],
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
       ],
       group: [Sequelize.literal("DATE_FORMAT(fechaCreacion, '%Y-%m')")],
-      order: [[Sequelize.literal("mes"), 'ASC']],
+      order: [[Sequelize.literal('mes'), 'ASC']],
       raw: true,
     });
 
-    // 🔶 Clientes por mes del vendedor seleccionado (para barras naranjas)
+    // 🔶 Clientes por mes (vendedor)
     let porMesVendedor = [];
     if (vendedor) {
       porMesVendedor = await ClienteDux.findAll({
@@ -101,50 +154,192 @@ export const obtenerInformeClientesDux = async (req, res) => {
         ],
         where: { vendedor },
         group: [Sequelize.literal("DATE_FORMAT(fechaCreacion, '%Y-%m')")],
-        order: [[Sequelize.literal("mes"), 'ASC']],
+        order: [[Sequelize.literal('mes'), 'ASC']],
         raw: true,
       });
     }
 
-    // 🧠 Combinar resultados
-    const mapaGeneral = Object.fromEntries(porMesGeneral.map((d) => [d.mes, { mes: d.mes, total: Number(d.cantidad) }]));
+    // Rango para consultas sobre PedidosDux
+    const wherePedidosMes = {};
+    if (fechaDesde && fechaHasta) {
+      wherePedidosMes[PEDIDO_FECHA_COL] = {
+        [Op.between]: [new Date(fechaDesde + 'T00:00:00'), new Date(fechaHasta + 'T23:59:59')],
+      };
+    }
+
+    // 💵 Monto de pedidos por mes (general)
+    const montosPorMesGeneral = await PedidoDux.findAll({
+      attributes: [
+        [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
+        [Sequelize.fn('SUM', Sequelize.col(PEDIDO_TOTAL_COL)), 'monto'],
+      ],
+      where: wherePedidosMes,
+      group: [Sequelize.literal(`DATE_FORMAT(${PEDIDO_FECHA_COL}, '%Y-%m')`)],
+      order: [[Sequelize.literal('mes'), 'ASC']],
+      raw: true,
+    });
+
+    // 💵 Monto de pedidos por mes (vendedor) usando EXISTS con Facturas.id_vendedor
+    let montosPorMesVendedor = [];
+    if (idVendedor) {
+      montosPorMesVendedor = await PedidoDux.findAll({
+        attributes: [
+          [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
+          [
+            Sequelize.literal(
+              `SUM(CASE WHEN EXISTS (
+                 SELECT 1 FROM Facturas f
+                 WHERE f.nro_pedido = PedidoDux.id
+                   AND f.id_vendedor = ${idVendedor}
+               ) THEN PedidoDux.${PEDIDO_TOTAL_COL} ELSE 0 END)`
+            ),
+            'monto',
+          ],
+        ],
+        where: wherePedidosMes,
+        group: ['mes'],
+        order: [['mes', 'ASC']],
+        raw: true,
+      });
+    }
+
+    // 🧮 Cantidad de pedidos por mes (general)
+    const pedidosPorMesGeneral = await PedidoDux.findAll({
+      attributes: [
+        [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
+        [Sequelize.fn('COUNT', Sequelize.col('PedidoDux.id')), 'pedidosTotal'],
+      ],
+      where: wherePedidosMes,
+      group: [Sequelize.literal(`DATE_FORMAT(${PEDIDO_FECHA_COL}, '%Y-%m')`)],
+      order: [[Sequelize.literal('mes'), 'ASC']],
+      raw: true,
+    });
+
+    // 🧮 Cantidad de pedidos por mes (vendedor) — EXISTS con Facturas.id_vendedor
+    let pedidosPorMesVendedor = [];
+    if (idVendedor) {
+      pedidosPorMesVendedor = await PedidoDux.findAll({
+        attributes: [
+          [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
+          [
+            Sequelize.literal(
+              `SUM(
+                 EXISTS (
+                   SELECT 1 FROM Facturas f
+                   WHERE f.nro_pedido = PedidoDux.id
+                     AND f.id_vendedor = ${idVendedor}
+                 )
+               )`
+            ),
+            'pedidosVendedor',
+          ],
+        ],
+        where: wherePedidosMes,
+        group: ['mes'],
+        order: [['mes', 'ASC']],
+        raw: true,
+      });
+    }
+
+    // 🧠 Merge porMes
+    const mapaGeneral = Object.fromEntries(
+      porMesGeneral.map((d) => [
+        d.mes,
+        {
+          mes: d.mes,
+          total: Number(d.cantidad),
+          vendedor: 0,
+          montoTotal: 0,
+          montoVendedor: 0,
+          pedidosTotal: 0,
+          pedidosVendedor: 0,
+        },
+      ])
+    );
+
     for (const d of porMesVendedor) {
-      if (!mapaGeneral[d.mes]) {
-        mapaGeneral[d.mes] = { mes: d.mes, total: 0 };
-      }
-      mapaGeneral[d.mes].vendedor = Number(d.cantidad);
+      if (!mapaGeneral[d.mes]) mapaGeneral[d.mes] = { mes: d.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
+      mapaGeneral[d.mes].vendedor = Number(d.cantidad || 0);
+    }
+    for (const m of montosPorMesGeneral) {
+      if (!mapaGeneral[m.mes]) mapaGeneral[m.mes] = { mes: m.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
+      mapaGeneral[m.mes].montoTotal = Number(m.monto || 0);
+    }
+    for (const m of montosPorMesVendedor) {
+      if (!mapaGeneral[m.mes]) mapaGeneral[m.mes] = { mes: m.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
+      mapaGeneral[m.mes].montoVendedor = Number(m.monto || 0);
+    }
+    for (const p of pedidosPorMesGeneral) {
+      if (!mapaGeneral[p.mes]) mapaGeneral[p.mes] = { mes: p.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
+      mapaGeneral[p.mes].pedidosTotal = Number(p.pedidosTotal || 0);
+    }
+    for (const p of pedidosPorMesVendedor) {
+      if (!mapaGeneral[p.mes]) mapaGeneral[p.mes] = { mes: p.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
+      mapaGeneral[p.mes].pedidosVendedor = Number(p.pedidosVendedor || 0);
     }
 
     const porMesFinal = Object.values(mapaGeneral).sort((a, b) => a.mes.localeCompare(b.mes));
 
-
-    // 📈 Clientes por día
-    let porDia = [];
+    // 📈 Por día (clientes + monto)
     let desde = fechaDesde;
     let hasta = fechaHasta;
     if (!fechaDesde || !fechaHasta) {
-      desde = dayjs().startOf("year").format("YYYY-MM-DD");
-      hasta = dayjs().format("YYYY-MM-DD");
+      desde = dayjs().startOf('year').format('YYYY-MM-DD');
+      hasta = dayjs().format('YYYY-MM-DD');
     }
 
-    porDia = await ClienteDux.findAll({
+    const porDia = await ClienteDux.findAll({
       attributes: [
         [Sequelize.fn('DATE', Sequelize.col('fechaCreacion')), 'fecha'],
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
       ],
       where: {
         ...where,
-        // Para porDia, usar el rango calculado
         fechaCreacion: {
           [Op.between]: [new Date(desde + 'T00:00:00'), new Date(hasta + 'T23:59:59')],
         },
       },
-      group: [Sequelize.literal("DATE(fechaCreacion)")],
-      order: [[Sequelize.literal("fecha"), 'ASC']],
+      group: [Sequelize.literal('DATE(fechaCreacion)')],
+      order: [[Sequelize.literal('fecha'), 'ASC']],
       raw: true,
     });
 
-    // 📋 Tabla de detalle paginada (con los filtros comunes)
+    // Monto por día (si hay vendedor, sumar solo pedidos con factura del id_vendedor)
+    const wherePedidosDia = {
+      [PEDIDO_FECHA_COL]: {
+        [Op.between]: [new Date(desde + 'T00:00:00'), new Date(hasta + 'T23:59:59')],
+      },
+    };
+
+    const montoExpr = idVendedor
+      ? `SUM(CASE WHEN EXISTS (
+            SELECT 1 FROM Facturas f
+            WHERE f.nro_pedido = PedidoDux.id
+              AND f.id_vendedor = ${idVendedor}
+          ) THEN PedidoDux.${PEDIDO_TOTAL_COL} ELSE 0 END)`
+      : `SUM(PedidoDux.${PEDIDO_TOTAL_COL})`;
+
+    const montosPorDia = await PedidoDux.findAll({
+      attributes: [
+        [Sequelize.fn('DATE', Sequelize.col(PEDIDO_FECHA_COL)), 'fecha'],
+        [Sequelize.literal(montoExpr), 'monto'],
+      ],
+      where: wherePedidosDia,
+      group: [Sequelize.literal(`DATE(${PEDIDO_FECHA_COL})`)],
+      order: [[Sequelize.literal('fecha'), 'ASC']],
+      raw: true,
+    });
+
+    const mapaDia = Object.fromEntries(
+      porDia.map((d) => [d.fecha, { fecha: d.fecha, cantidad: Number(d.cantidad), monto: 0 }])
+    );
+    for (const m of montosPorDia) {
+      if (!mapaDia[m.fecha]) mapaDia[m.fecha] = { fecha: m.fecha, cantidad: 0, monto: 0 };
+      mapaDia[m.fecha].monto = Number(m.monto || 0);
+    }
+    const porDiaFinal = Object.values(mapaDia).sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+    // 📋 Tabla de detalle
     const { rows: detalle, count } = await ClienteDux.findAndCountAll({
       where,
       limit: Number(limit),
@@ -153,12 +348,11 @@ export const obtenerInformeClientesDux = async (req, res) => {
     });
 
     res.json({
-      porMes: porMesFinal,
-      porDia,
+      porMes: porMesFinal, // { mes, total, vendedor, montoTotal, montoVendedor, pedidosTotal, pedidosVendedor }
+      porDia: porDiaFinal, // { fecha, cantidad, monto }
       detalle,
       totalPaginas: Math.ceil(count / limit),
     });
-
   } catch (error) {
     console.error('❌ Error en informe de clientes Dux:', error);
     res.status(500).json({ message: 'Error al obtener informe de clientes Dux' });
@@ -443,46 +637,5 @@ export const obtenerInformeClientesUltimaCompra = async (req, res) => {
   } catch (error) {
     console.error('❌ Error en informe de última compra:', error);
     res.status(500).json({ message: 'Error al obtener informe de última compra' });
-  }
-};
-
-export const reporteEjecutivoUltimaCompra = async (req, res) => {
-  try {
-    const hoy = dayjs().format('YYYY-MM-DD');
-    const inicioMes = dayjs().startOf('month').format('YYYY-MM-DD');
-
-    // Total de clientes con al menos un pedido
-    const totalClientes = await PedidoDux.aggregate('cliente', 'count', { distinct: true });
-
-    // Clientes que compraron este mes
-    const clientesMes = await PedidoDux.aggregate('cliente', 'count', {
-      distinct: true,
-      where: {
-        fecha: { [Op.gte]: new Date(inicioMes + 'T00:00:00') },
-      },
-    });
-
-    // Día con más pedidos
-    const topDia = await PedidoDux.findAll({
-      attributes: [
-        [Sequelize.fn('DATE', Sequelize.col('fecha')), 'fecha'],
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
-      ],
-      group: [Sequelize.literal('DATE(fecha)')],
-      order: [[Sequelize.literal('cantidad'), 'DESC']],
-      limit: 1,
-      raw: true,
-    });
-
-    const reporte =
-      `Reporte Ejecutivo - Última Compra (${formatearFechaCorta(hoy)})\n\n` +
-      `• Total de clientes con al menos una compra: ${totalClientes}\n` +
-      `• Clientes que realizaron compras este mes: ${clientesMes}\n` +
-      `• Día con más compras: ${topDia[0]?.fecha || '—'} (${topDia[0]?.cantidad || 0} pedidos)\n`;
-
-    res.json({ reporte });
-  } catch (error) {
-    console.error('❌ Error en reporte ejecutivo última compra:', error);
-    res.status(500).json({ message: 'Error al generar reporte ejecutivo de última compra' });
   }
 };

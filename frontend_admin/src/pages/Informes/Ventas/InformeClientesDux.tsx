@@ -6,16 +6,15 @@ import TablaClientesDux from "@/components/InformeClientesDux/TablaClientes";
 import ReporteEjecutivoClientesDux from "@/components/InformeClientesDux/ReporteEjecutivoClientesDux";
 import GraficoPedidosPorMes from "@/components/InformeClientesDux/GraficoPedidosPorMes";
 import dayjs from "dayjs";
-
 import {
   obtenerInformeClientesDux,
   obtenerListasPrecioClientesDux,
 } from "@/services/clienteDux.service";
 import { obtenerPedidosPorMesConVendedor } from "@/services/estadisticas.service";
 import { obtenerPersonalDux } from "@/services/personalDux.service";
-
-import type { ClienteDux } from "@/types/clienteDux";
-import type { VendedorOption } from "@/types/vendedor";
+import type { ClienteDux, ClienteDuxPorMesMonetizado } from "@/types/clienteDux";
+import type { Vendedor } from "@/types/vendedor";
+import { PersonalDux } from "@/types/usuario";
 
 export default function InformeClientesDux() {
   const [fechaDesde, setFechaDesde] = createSignal<string | null>(null);
@@ -37,7 +36,6 @@ export default function InformeClientesDux() {
   });
 
   const [graficoPedidosData] = createResource(filtrosPedidos, ({ desde, hasta, vendedor }) => {
-    console.log("📦 Refetch pedidos con:", { desde, hasta, vendedor });
     return obtenerPedidosPorMesConVendedor(desde, hasta, vendedor);
   });
 
@@ -66,7 +64,7 @@ export default function InformeClientesDux() {
           fechaHasta={fechaHasta()}
           vendedor={vendedor()}
           listaPrecio={listaPrecio()}
-          vendedores={vendedores() as VendedorOption[]}
+          vendedores={vendedores() as PersonalDux[]}
           listasPrecio={listasPrecio() as string[]}
           onFechaDesde={setFechaDesde}
           onFechaHasta={setFechaHasta}
@@ -79,14 +77,17 @@ export default function InformeClientesDux() {
       <ReporteEjecutivoClientesDux />
 
       <Show when={datos()?.porMes}>
-        <GraficoBarras data={datos()!.porMes} />
+        <GraficoBarras
+          data={datos()!.porMes as ClienteDuxPorMesMonetizado[]}
+          mostrarMontos
+        />
       </Show>
-
+      {/*
       <Show when={graficoPedidosData()}>
         <GraficoPedidosPorMes data={graficoPedidosData()!} />
       </Show>
 
-      {/* <Show when={datos()?.porDia}>
+       <Show when={datos()?.porDia}>
         <GraficoLineas data={datos()!.porDia} />
       </Show> */}
 

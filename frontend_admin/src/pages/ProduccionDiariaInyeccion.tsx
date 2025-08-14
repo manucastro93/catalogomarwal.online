@@ -17,8 +17,7 @@ export default function ProduccionDiariaInyeccion() {
   const [direccion, setDireccion] = createSignal<"asc" | "desc">("desc");
   const [mensaje, setMensaje] = createSignal("");
   const [modalAbierto, setModalAbierto] = createSignal(false);
-  const [reporteAEliminar, setReporteAEliminar] =
-    createSignal<ReporteProduccionInyeccionEncabezado | null>(null);
+  const [reporteAEliminar, setReporteAEliminar] = createSignal<ReporteProduccionInyeccionEncabezado | null>(null);
   const [reporteParaVerDetalle, setReporteParaVerDetalle] = createSignal<ReporteProduccionInyeccionEncabezado | null>(null);
 
   // Filtros

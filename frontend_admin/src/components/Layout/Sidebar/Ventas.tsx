@@ -11,7 +11,7 @@ export default function Ventas(props: { usuario: any; expandido: boolean }) {
     location.pathname.startsWith('/Pedidos') ||
     location.pathname.startsWith('/Facturas') ||
     location.pathname.startsWith('/ServicioComercial') || // si lo renombras así
-    location.pathname.startsWith('/Stock')
+    location.pathname.startsWith('/BaseDatos/Productos')
   );
 
   const esActivo = (path: string) => location.pathname === path;
@@ -51,7 +51,7 @@ export default function Ventas(props: { usuario: any; expandido: boolean }) {
             <SidebarLink href="/ServicioComercial" texto="Servicio comercial" activo={esActivo('/ServicioComercial')} />
           </ConPermiso>
           <ConPermiso modulo="Ventas_Stock" accion="ver">
-            <SidebarLink href="/Stock" texto="Stock" activo={esActivo('/Stock')} />
+            <SidebarLink href="/BaseDatos/Productos" texto="Stock" activo={esActivo('/Stock')} />
           </ConPermiso>
         </div>
       </Show>

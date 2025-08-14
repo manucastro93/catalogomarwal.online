@@ -1,7 +1,7 @@
 import api from './api';
-import type { VendedorOption } from "@/types/vendedor";
+import type { PersonalDux } from "@/types/usuario";
 
-export const obtenerPersonalDux = async (): Promise<VendedorOption[]> => {
+export const obtenerPersonalDux = async (): Promise<PersonalDux[]> => {
   try {
     const response = await api.get('/personalDux');
     return response.data;

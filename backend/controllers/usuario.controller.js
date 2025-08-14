@@ -1,6 +1,6 @@
-import { Usuario, RolUsuario } from '../models/index.js';
+import { Usuario, RolUsuario, PersonalDux } from '../models/index.js';
 import bcrypt from 'bcryptjs';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import { nanoid } from 'nanoid';
 import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
 import { puedeActualizarUsuario } from '../utils/puedeActualizarUsuario.js';
@@ -63,6 +63,72 @@ export const crearUsuario = async (req, res, next) => {
     res.status(201).json(usuario);
   } catch (error) {
     console.error('❌ Error en crearUsuario:', error);
+    next(error);
+  }
+};
+
+export const obtenerUsuarios = async (req, res, next) => {
+  try {
+    const {
+      q,
+      rolId,
+      sortBy = "id",
+      sortDir = "ASC",
+    } = req.query;
+
+    // WHERE
+    const where = {};
+    if (q) {
+      const ql = String(q).toLowerCase();
+      where[Op.or] = [
+        Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("Usuario.nombre")), {
+          [Op.like]: `%${ql}%`,
+        }),
+        Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("Usuario.email")), {
+          [Op.like]: `%${ql}%`,
+        }),
+      ];
+    }
+    
+        // 👇 solo filtra si rolId trae un número válido
+    const hasRol =
+      rolId !== undefined &&
+      rolId !== null &&
+      String(rolId).trim() !== "" &&
+      !Number.isNaN(Number(rolId));
+
+    if (hasRol) {
+      where.rolUsuarioId = Number(rolId);
+    }
+
+    // ORDER
+    const dir = String(sortDir).toUpperCase() === "DESC" ? "DESC" : "ASC";
+    let order = [["id", "ASC"]]; // default
+
+    switch (sortBy) {
+      case "nombre":
+      case "email":
+      case "telefono":
+      case "id":
+        order = [[sortBy, dir]];
+        break;
+      case "rol":
+        // orden por nombre del rol incluido
+        order = [[{ model: RolUsuario, as: "rolUsuario" }, "nombre", dir]];
+        break;
+    }
+
+    const usuarios = await Usuario.findAll({
+      where,
+      order,
+      include: [
+        { model: RolUsuario, as: "rolUsuario", attributes: ["id", "nombre"] },
+        { model: PersonalDux, as: "personalDux", attributes: ["id_personal", "nombre", "apellido_razon_social"] },
+      ],
+    });
+
+    res.json(usuarios);
+  } catch (error) {
     next(error);
   }
 };
@@ -154,7 +220,7 @@ export const actualizarUsuario = async (req, res, next) => {
     const usuario = await Usuario.findByPk(id);
     if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado' });
     const datosAntes = usuario.toJSON();
-    
+
     const puede = puedeActualizarUsuario({
       usuarioLogueado: req.usuario,
       usuarioObjetivo: usuario,

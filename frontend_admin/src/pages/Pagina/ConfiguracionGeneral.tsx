@@ -5,12 +5,14 @@ import EstadosPedidosPage from './EstadosPedidos';
 import LogoPage from './Logo';
 import BannersPage from './Banners';
 import InyeccionPage from './Inyeccion';
+import UsuariosPage from './Usuarios';
 
 export default function ConfiguracionGeneral() {
-  const [tab, setTab] = createSignal<'sistema' | 'logo' | 'banners' | 'roles' | 'estados' | 'inyeccion'>('sistema');
+  const [tab, setTab] = createSignal<'sistema' | 'logo' | 'banners' | 'roles' | 'estados' | 'inyeccion' | 'usuarios'>('sistema');
 
   const tabs = [
     { id: 'sistema', label: 'Sistema' },
+    { id: 'usuarios', label: 'Usuarios' },
     { id: 'logo', label: 'Logo' },
     { id: 'banners', label: 'Banners' },
     { id: 'roles', label: 'Roles de usuario' },
@@ -42,6 +44,7 @@ export default function ConfiguracionGeneral() {
         {tab() === 'roles' && <RolesUsuariosPage />}
         {tab() === 'estados' && <EstadosPedidosPage />}
         {tab() === 'inyeccion' && <InyeccionPage />}
+        {tab() === 'usuarios' && <UsuariosPage />}
       </div>
     </div>
   );
