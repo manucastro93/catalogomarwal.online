@@ -35,8 +35,14 @@ export const obtenerPedidosInicio = async (vendedorId?: number): Promise<{ pendi
   const { data } = await api.get('/pedidos/inicio', {
     params: vendedorId ? { vendedorId } : {},
   });
+  console.log(data)
   return data;
 };
+
+export async function obtenerPedidoDuxPorId(id: number) {
+  const res = await api.get<PedidoDux>(`/pedidos/pedido-dux/${id}`);
+  return res.data;
+}
 
 /*export const enviarPedidoADux = async (id: number): Promise<{ message: string }> => {
   const { data } = await api.post(`/pedidos/${id}/enviar-a-dux`);

@@ -123,6 +123,10 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      vendedorId: { 
+        type: DataTypes.INTEGER, 
+        allowNull: true 
+      },
     },
     {
       sequelize,
@@ -134,8 +138,11 @@ export default (sequelize, DataTypes) => {
   );
 
   ClienteDux.associate = (models) => {
-    // Si más adelante se relaciona con PersonalDux, por ejemplo:
-    // ClientesDux.belongsTo(models.PersonalDux, { foreignKey: 'vendedorId', as: 'Vendedor' });
+    ClienteDux.belongsTo(models.PersonalDux, {
+      foreignKey: 'vendedorId',
+      targetKey: 'id_personal',
+      as: 'Vendedor',
+    });
   };
 
   return ClienteDux;

@@ -49,7 +49,8 @@ export interface PedidoDux {
   estado_facturacion: string;
   observaciones: string;
   detalles: PedidoDuxItem[];
-
+  vendedorId?: number | null;
+  origen_vendedor?: 'FACTURA' | 'CLIENTE' | null;
   nombre_vendedor?: string;
   apellido_vendedor?: string;
 }

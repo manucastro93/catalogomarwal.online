@@ -47,7 +47,7 @@ export default function Inicio() {
       <Show when={usuario()?.rolUsuarioId === ROLES_USUARIOS.VENDEDOR}>
         <div class="flex justify-end gap-4">
           <button
-            onClick={() => navigate("/pedido-rapido")}
+            onClick={() => navigate("/Pedidos/Pedido-Rapido")}
             class="bg-purple-600 text-white px-5 py-2 rounded text-base hover:bg-purple-700 transition"
           >
             Crear Pedido Rápido

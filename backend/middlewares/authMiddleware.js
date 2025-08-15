@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Usuario, PermisosUsuario, Modulo } from '../models/index.js';
+import PersonalDux from '../models/PersonalDux.js';
 
 export const verificarToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -32,6 +33,7 @@ export const verificarToken = async (req, res, next) => {
       nombre: usuario.nombre,
       email: usuario.email,
       rolUsuarioId: usuario.rolUsuarioId,
+      personalDuxId: usuario.personalDuxId,
       permisos: permisosPlano
     };
     next();

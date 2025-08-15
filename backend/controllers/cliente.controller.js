@@ -1,9 +1,10 @@
-import { Cliente, Provincia, Localidad, Usuario, Pedido, DetallePedido, Producto, LogCliente, IpCliente, HistorialCliente, MensajeAutomatico } from '../models/index.js';
+import { Cliente, Provincia, Localidad, Usuario, Pedido, DetallePedido, Producto, LogCliente, IpCliente, HistorialCliente, MensajeAutomatico, ClienteDux } from '../models/index.js';
 import { Op, fn, col, literal } from 'sequelize';
 import { validationResult } from 'express-validator';
 import { registrarHistorialCliente } from '../utils/registrarHistorialCliente.js';
 import { crearAuditoria } from '../utils/auditoria.js';
 import { crearClienteConGeocodificacion, actualizarClienteExistenteConGeocodificacion } from '../helpers/clientes.js';
+import { resolverIdVendedor } from '../helpers/resolverIdVendedor.js';
 
 export const listarClientes = async (req, res) => {
   try {
@@ -15,8 +16,8 @@ export const listarClientes = async (req, res) => {
       buscar = '',
       provinciaId,
       localidadId,
-      vendedorId,
     } = req.query;
+    const idVendedor = await resolverIdVendedor(req);
 
     const offset = (page - 1) * limit;
     const where = {};
@@ -28,13 +29,9 @@ export const listarClientes = async (req, res) => {
       ];
     }
 
-    if (req.usuario?.rol === 'vendedor') {
-      where.vendedorId = req.usuario.id;
-    }
-
     if (provinciaId) where.provinciaId = provinciaId;
     if (localidadId) where.localidadId = localidadId;
-    if (vendedorId) where.vendedorId = vendedorId;
+    if (idVendedor) where.vendedorId = idVendedor;
 
     const { count, rows } = await Cliente.findAndCountAll({
       where,

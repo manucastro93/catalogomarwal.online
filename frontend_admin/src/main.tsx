@@ -44,7 +44,7 @@ const ProductosPedidosPendientes = lazy(() => import("./pages/ProductosPedidosPe
 const ConfiguracionGeneral = lazy(() => import('./pages/Pagina/ConfiguracionGeneral'));
 const InformeClientesDux = lazy(() => import('./pages/Informes/Ventas/InformeClientesDux'));
 const InformeClientesUltimaCompra = lazy(() => import('./pages/Informes/Ventas/InformeClientesUltimaCompra'));
-
+const PedidoRapido = lazy(() => import('./pages/PedidoRapido'))
 
 // ✅ Restaurar sesión si existe
 checkLocalStorage();
@@ -67,7 +67,16 @@ render(
           </ProtectedRoute>
         )}
       />
-
+      <Route
+        path="/Pedidos/Pedido-Rapido"
+        component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <PedidoRapido />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      />
       {/* Ventas */}
       <Route
         path="/Pedidos"

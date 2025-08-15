@@ -1,13 +1,14 @@
 import sequelize from '../config/database.js';
-import { Pedido, DetallePedido, Producto, Cliente, Usuario, Notificacion, EstadoPedido, PedidoDux, DetallePedidoDux, PersonalDux } from '../models/index.js';
+import { Pedido, DetallePedido, Producto, Cliente, Usuario, Notificacion, EstadoPedido, PedidoDux, DetallePedidoDux, PersonalDux, ClienteDux, Factura } from '../models/index.js';
 import { ESTADOS_PEDIDO, ESTADOS_DUX } from '../constants/estadosPedidos.js';
 import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
 import { DATOS_EMPRESA_DUX } from '../constants/datosEmpresaDux.js';
-import { QueryTypes, Op } from 'sequelize';
+import { QueryTypes, Op, Sequelize } from 'sequelize';
 import { enviarEmailPedido } from "../utils/notificaciones/email.js";
 import { enviarWhatsappPedido } from "../utils/notificaciones/whatsapp.js";
 import { crearClienteConGeocodificacion } from '../helpers/clientes.js';
 import { crearAuditoria } from '../utils/auditoria.js';
+import { resolverIdVendedor } from '../helpers/resolverIdVendedor.js';
 
 export const obtenerPedidos = async (req, res, next) => {
   try {
@@ -199,7 +200,7 @@ export const actualizarEstadoPedido = async (req, res, next) => {
         await enviarWhatsappCambioEstadoPedido({ cliente, pedido, estadoNombre });
         await enviarEmailCambioEstado({ cliente, pedido, estadoNombre, vendedor });
       }
-      
+
     } catch (notiError) {
       console.warn("❌ Error al enviar WhatsApp/email en cambio de estado:", notiError.message);
     }
@@ -314,8 +315,8 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
     // Envío por email y WhatsApp
     await enviarEmailPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
     await enviarWhatsappPedido({ cliente: clienteFinal, pedido, carrito, vendedor });
-    
-    
+
+
     await crearAuditoria({
       tabla: 'pedidos',
       accion: 'crea pedido desde panel',
@@ -326,7 +327,7 @@ export const crearPedidoDesdePanel = async (req, res, next) => {
       datosDespues: { clienteId: clienteFinal.id, total },
       ip: req.ip,
     });
-    
+
     res.status(201).json({ message: 'Pedido creado correctamente', pedidoId: pedido.id });
   } catch (err) {
     console.error('❌ Error al crear pedido desde panel:', err);
@@ -450,6 +451,127 @@ export const obtenerPedidosInicio = async (req, res, next) => {
   }
 };
 
+export const obtenerPedidosDuxInicio = async (req, res, next) => {
+  try {
+    const idVendedor = await resolverIdVendedor(req);
+    // Nota: unimos por cliente por nombre (p.cliente = c.cliente).
+    // Si tenés un código único mejor (p.ej. p.codigo_cliente ↔ c.codigo), cambiá el JOIN.
+    // helper base (igual que antes pero con join a PersonalDux para traer nombre)
+    const baseFromJoin = `
+  FROM PedidosDux p
+  LEFT JOIN (
+    SELECT f.nro_pedido, MAX(f.id_vendedor) AS id_vendedor
+    FROM Facturas f
+    GROUP BY f.nro_pedido
+  ) fx ON fx.nro_pedido = p.nro_pedido
+  LEFT JOIN ClientesDux c ON c.cliente = p.cliente
+  LEFT JOIN PersonalDux pd ON pd.id_personal = COALESCE(fx.id_vendedor, c.vendedorId)
+  WHERE (:idVendedor IS NULL OR COALESCE(fx.id_vendedor, c.vendedorId) = :idVendedor)
+`;
+
+    // columnas comunes que queremos devolver al front
+    const selectCols = `
+  SELECT DISTINCT
+    p.*,
+    COALESCE(fx.id_vendedor, c.vendedorId) AS vendedorId,
+    CASE
+      WHEN fx.id_vendedor IS NOT NULL THEN 'FACTURA'
+      WHEN c.vendedorId IS NOT NULL THEN 'CLIENTE'
+      ELSE NULL
+    END AS origen_vendedor,
+    pd.nombre AS nombre_vendedor,
+    pd.apellido_razon_social AS apellido_vendedor
+`;
+
+    const [pendientes] = await sequelize.query(
+      `
+  ${selectCols}
+  ${baseFromJoin}
+    AND p.estado_facturacion IN ('PENDIENTE','FACTURADO_PARCIAL')
+  ORDER BY p.fecha DESC, p.nro_pedido DESC
+  LIMIT 5
+  `,
+      { replacements: { idVendedor } }
+    );
+
+    const [confirmados] = await sequelize.query(
+      `
+  ${selectCols}
+  ${baseFromJoin}
+    AND p.estado_facturacion IN ('FACTURADO','CERRADO')
+  ORDER BY p.fecha DESC, p.nro_pedido DESC
+  LIMIT 5
+  `,
+      { replacements: { idVendedor } }
+    );
+
+    res.json({ pendientes, confirmados });
+
+  } catch (error) {
+    console.error('❌ Error al obtener pedidos Dux de inicio:', error);
+    next(error);
+  }
+};
+
+export const obtenerPedidoDuxPorId = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ message: 'ID inválido' });
+
+    const pedido = await PedidoDux.findByPk(id);
+    if (!pedido) return res.status(404).json({ message: 'Pedido Dux no encontrado' });
+
+    const [detalles, clienteDux, vendedorPorFactura] = await Promise.all([
+      DetallePedidoDux.findAll({
+        where: { pedidoDuxId: id },        // <-- FIX
+        order: [['id', 'ASC']],
+      }),
+      ClienteDux.findOne({
+        where: { cliente: pedido.cliente },
+        paranoid: false,
+      }),
+      Factura.findOne({
+        where: { nro_pedido: pedido.nro_pedido },
+        attributes: [[Sequelize.fn('MAX', Sequelize.col('id_vendedor')), 'id_vendedor']],
+        raw: true,
+      }),
+    ]);
+
+    const vendedorIdResuelto =
+      vendedorPorFactura?.id_vendedor ||
+      clienteDux?.vendedorId ||
+      null;
+
+    let nombre_vendedor = null;
+    let apellido_vendedor = null;
+    if (vendedorIdResuelto) {
+      const vendedor = await PersonalDux.findOne({
+        where: { id_personal: vendedorIdResuelto },
+        attributes: ['nombre', 'apellido_razon_social', 'id_personal'],
+        paranoid: false,
+      });
+      if (vendedor) {
+        nombre_vendedor = vendedor.nombre || null;
+        apellido_vendedor = vendedor.apellido_razon_social || null;
+      }
+    }
+
+    const data = {
+      ...pedido.toJSON(),
+      tipo: 'dux',
+      clienteDux: clienteDux ? clienteDux.toJSON() : null,
+      detalles: detalles.map(d => d.toJSON()),
+      nombre_vendedor,
+      apellido_vendedor,
+    };
+
+    return res.json(data);
+  } catch (error) {
+    console.error('❌ Error en obtenerPedidoDuxPorId:', error);
+    next(error);
+  }
+};
+
 export const enviarPedidoADux = async (req, res, next) => {
   const API_KEY = process.env.DUX_API_KEY;
   try {
@@ -548,28 +670,28 @@ export const listarPedidosDux = async (req, res, next) => {
     }
 
     // ✅ Estados: puede venir como array o string
-let estadoQuery = req.query.estado;
-const estadoIds = Array.isArray(estadoQuery)
-  ? estadoQuery
-  : estadoQuery
-  ? [estadoQuery]
-  : [];
-const estadosTexto = estadoIds
-  .map((id) =>
-    Object.entries(ESTADOS_DUX).find(([_, val]) => Number(id) === Number(val))?.[0]
-  )
-  .filter(Boolean);
-if (estadosTexto.length > 0) {
-  const estadoPlaceholders = estadosTexto.map((_, i) => `:estado${i}`).join(", ");
-  filtros.push(`UPPER(p.estado_facturacion) IN (${estadoPlaceholders})`);
-  estadosTexto.forEach((estadoNombre, i) => {
-    replacements[`estado${i}`] = estadoNombre.toUpperCase();
-  });
-}
- else {
-  // Filtro por defecto si no hay estados
-  filtros.push("p.estado_facturacion IN ('FACTURADO_PARCIAL', 'PENDIENTE')");
-}
+    let estadoQuery = req.query.estado;
+    const estadoIds = Array.isArray(estadoQuery)
+      ? estadoQuery
+      : estadoQuery
+        ? [estadoQuery]
+        : [];
+    const estadosTexto = estadoIds
+      .map((id) =>
+        Object.entries(ESTADOS_DUX).find(([_, val]) => Number(id) === Number(val))?.[0]
+      )
+      .filter(Boolean);
+    if (estadosTexto.length > 0) {
+      const estadoPlaceholders = estadosTexto.map((_, i) => `:estado${i}`).join(", ");
+      filtros.push(`UPPER(p.estado_facturacion) IN (${estadoPlaceholders})`);
+      estadosTexto.forEach((estadoNombre, i) => {
+        replacements[`estado${i}`] = estadoNombre.toUpperCase();
+      });
+    }
+    else {
+      // Filtro por defecto si no hay estados
+      filtros.push("p.estado_facturacion IN ('FACTURADO_PARCIAL', 'PENDIENTE')");
+    }
 
     // 📌 Filtro por vendedor
     if (vendedorId) {
@@ -806,7 +928,7 @@ export const obtenerPedidoPorClienteYFecha = async (req, res) => {
       pedido.dataValues.detalles = pedido.dataValues.items;
       delete pedido.dataValues.items;
     }
-    
+
     res.json(pedido);
   } catch (err) {
     console.error('❌ Error al buscar pedido:', err);

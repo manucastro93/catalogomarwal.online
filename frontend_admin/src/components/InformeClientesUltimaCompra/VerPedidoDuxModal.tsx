@@ -64,7 +64,7 @@ export default function VerPedidoDuxModal(props: {
 
           <div id="contenido-a-imprimir" class="space-y-4">
             <div><strong>Cliente:</strong> {props.pedido!.cliente || "—"}</div>
-            <div><strong>Vendedor:</strong> {props.pedido!.personal || "—"}</div>
+            <div><strong>Vendedor:</strong> {props.pedido!.nombre_vendedor} {props.pedido!.apellido_vendedor}</div>
             <div><strong>Estado:</strong> {props.pedido!.estado_facturacion || "—"}</div>
             <div><strong>Observaciones:</strong> {props.pedido!.observaciones || "—"}</div>
             <div><strong>Fecha:</strong> {formatearFechaCorta(props.pedido!.fecha)}</div>
