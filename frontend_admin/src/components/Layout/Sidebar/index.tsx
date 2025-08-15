@@ -5,12 +5,14 @@ import Logo from "./Logo";
 import Ventas from "./Ventas";
 import Compras from "./Compras";
 import Produccion from "./Produccion";
+import Finanzas from "./Finanzas";
 import Bot from "./Bot";
 import Informes from "./Informes";
 import BaseDatos from "./BaseDatos";
 import Configuracion from "./Configuracion";
 import { Home } from "@/icons";
 import theme from "@/styles/sidebarTheme";
+import ConPermiso from '@/components/Layout/ConPermiso';
 
 export default function Sidebar(props: {
   expandido: boolean;
@@ -46,19 +48,33 @@ export default function Sidebar(props: {
         />
 
         <SeccionTitulo texto="GESTIÓN" mostrar={props.expandido} classExtra="mt-4" />
-        <Ventas usuario={usuario()} expandido={props.expandido} />
-        <Compras usuario={usuario()} expandido={props.expandido} />
-        <Produccion usuario={usuario()} expandido={props.expandido} />
-        <Bot usuario={usuario()} expandido={props.expandido} />
-
-        <SeccionTitulo texto="ANÁLISIS" mostrar={props.expandido} classExtra="mt-4" />
-        <Informes expandido={props.expandido} />
-
-        <SeccionTitulo texto="BASE DE DATOS" mostrar={props.expandido} classExtra="mt-4" />
-        <BaseDatos expandido={props.expandido} />
-        
-         <SeccionTitulo texto="CONFIGURACIÓN" mostrar={props.expandido} classExtra="mt-4" />
-        <Configuracion expandido={props.expandido} />
+          <ConPermiso modulo="Ventas" accion="ver">
+            <Ventas usuario={usuario()} expandido={props.expandido} />
+          </ConPermiso>
+          <ConPermiso modulo="Compras" accion="ver">
+            <Compras usuario={usuario()} expandido={props.expandido} />
+          </ConPermiso>
+          <ConPermiso modulo="Produccion" accion="ver">
+            <Produccion usuario={usuario()} expandido={props.expandido} />
+          </ConPermiso>
+          <ConPermiso modulo="Finanzas" accion="ver">
+            <Finanzas usuario={usuario()} expandido={props.expandido} />
+          </ConPermiso>
+          <ConPermiso modulo="Bot" accion="ver">
+            <Bot usuario={usuario()} expandido={props.expandido} />
+          </ConPermiso>
+          <ConPermiso modulo="Informes" accion="ver">
+            <SeccionTitulo texto="ANÁLISIS" mostrar={props.expandido} classExtra="mt-4" />
+              <Informes expandido={props.expandido} />
+          </ConPermiso>
+          <ConPermiso modulo="Bases de Datos" accion="ver">
+            <SeccionTitulo texto="BASE DE DATOS" mostrar={props.expandido} classExtra="mt-4" />
+              <BaseDatos expandido={props.expandido} />
+          </ConPermiso>
+          <ConPermiso modulo="Configuracion" accion="ver">
+            <SeccionTitulo texto="CONFIGURACIÓN" mostrar={props.expandido} classExtra="mt-4" />
+              <Configuracion expandido={props.expandido} />
+          </ConPermiso>
       </nav>
     </aside>
   );

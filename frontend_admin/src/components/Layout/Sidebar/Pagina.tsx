@@ -10,8 +10,6 @@ export default function Pagina(props: { usuario: any; expandido: boolean }) {
   const [open, setOpen] = createSignal(location.pathname.startsWith('/pagina'));
   const esActivo = (path: string) => location.pathname === path;
 
-  if (![ROLES_USUARIOS.SUPREMO, ROLES_USUARIOS.ADMINISTRADOR].includes(props.usuario?.rolUsuarioId)) return null;
-
   return (
     <div class="text-sm font-medium tracking-wide">
       <button

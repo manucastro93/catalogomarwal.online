@@ -9,6 +9,7 @@ import ResumenInicioMensual from '@/components/Inicio/ResumenInicioMensual';
 import InformeSemanalVivo from "@/components/Inicio/InformeSemanalVivo";
 import PedidosPendientes from "@/components/Inicio/PedidosPendientes";
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
+import ConPermiso from '@/components/Layout/ConPermiso';
 
 export default function Inicio() {
   const { usuario } = useAuth();
@@ -77,7 +78,9 @@ export default function Inicio() {
         </Show>
 
       </Show>
-      <InformeSemanalVivo />
+      <ConPermiso modulo="Produccion" accion="ver">
+        <InformeSemanalVivo />
+      </ConPermiso>
     </div>
   );
 }

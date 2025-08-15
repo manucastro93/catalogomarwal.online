@@ -1,4 +1,5 @@
 import type { Cliente } from './cliente.js';
+import type { ClienteDux } from './clienteDux.js';
 import type { Usuario } from './usuario.js';
 import type { EstadoPedido } from './estadoPedido.js';
 import type { Producto } from './producto';
@@ -18,6 +19,7 @@ export interface PedidoLocal {
   deletedAt?: string | null;
 
   cliente?: Cliente;
+  clienteDux?: ClienteDux;
   usuario?: Usuario;
   detalles?: DetallePedido[];
 
@@ -40,6 +42,7 @@ export interface PedidoDux {
   id: number;
   nro_pedido: number;
   cliente: string;
+  clienteDux: ClienteDux;
   personal: string;
   fecha: string;
   total: string;

@@ -1,7 +1,7 @@
 import { Show, createSignal } from 'solid-js';
 import { A, useLocation } from '@solidjs/router';
 import ConPermiso from '@/components/Layout/ConPermiso';
-import { Package, ChevronDown } from '@/icons'; // Podés cambiar el ícono si querés diferenciarlo
+import { ShoppingBag, ChevronDown } from '@/icons'; // Podés cambiar el ícono si querés diferenciarlo
 import theme from '@/styles/sidebarTheme';
 
 export default function Compras(props: { usuario: any; expandido: boolean }) {
@@ -24,7 +24,7 @@ export default function Compras(props: { usuario: any; expandido: boolean }) {
         style={{ color: theme.texto }}
       >
         <div class={theme.itemIconoWrapper}>
-          <Package size={18} />
+          <ShoppingBag size={18} />
         </div>
         <Show when={props.expandido}>
           <span class={theme.itemTexto}>Compras</span>

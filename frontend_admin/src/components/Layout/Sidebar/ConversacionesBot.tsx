@@ -10,8 +10,6 @@ export default function ConversacionesBot(props: { usuario: any; expandido: bool
   const [open, setOpen] = createSignal(location.pathname.startsWith('/conversaciones'));
   const esActivo = (path: string) => location.pathname === path;
 
-  if (props.usuario?.rolUsuarioId !== ROLES_USUARIOS.SUPREMO) return null;
-
   return (
     <div class="text-sm font-medium tracking-wide">
       <button

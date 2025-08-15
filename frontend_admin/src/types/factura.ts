@@ -1,3 +1,5 @@
+import type { PersonalDux } from "./usuario";
+
 export interface DetalleFacturaDux {
   cod_item: string;
   item: string;
@@ -23,12 +25,18 @@ export interface DetallesCobroFacturaDux {
   detalles_mov_cobro: CobroFacturaDux[];
 }
 
+export interface EstadoFactura {
+  id: number;
+  nombre: string;
+}
+
 export interface FacturaDux {
   id: number;
   id_cliente: number;
   id_empresa: number;
   nro_pto_vta: string;
   id_personal: number;
+  id_vendedor?: number;
   nro_doc: number;
   tipo_comp: string;
   letra_comp: string;
@@ -42,16 +50,8 @@ export interface FacturaDux {
   anulada: string;
   anulada_boolean: boolean;
   fecha_registro: string;
-  personal: string;
-  detalles: {
-    cod_item: string;
-    item: string;
-    ctd: number;
-    precio_uni: number;
-  }[];
-}
-
-export interface EstadoFactura {
-  id: number;
-  nombre: string;
+  personal?: PersonalDux | null;
+  estado?: EstadoFactura;
+  detalles?: DetalleFacturaDux[];
+  monto_iva?: number;
 }

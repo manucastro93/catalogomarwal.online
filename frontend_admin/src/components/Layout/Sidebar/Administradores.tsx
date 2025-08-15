@@ -10,7 +10,6 @@ export default function Administradores(props: { usuario: any; expandido: boolea
   const esActivo = (path: string) => location.pathname === path;
 
   return (
-    <Show when={props.usuario?.rolUsuarioId === ROLES_USUARIOS.SUPREMO}>
       <ConPermiso modulo="Administradores" accion="ver">
         <A
           href="/Administradores"
@@ -27,6 +26,5 @@ export default function Administradores(props: { usuario: any; expandido: boolea
           </Show>
         </A>
       </ConPermiso>
-    </Show>
   );
 }

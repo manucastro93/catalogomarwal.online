@@ -31,9 +31,7 @@ export const crearPedidoDesdePanel = async (
   return data;
 };
 
-export const obtenerPedidosInicio = async (
-  vendedorId?: number
-): Promise<{ pendientes: Pedido[]; confirmados: Pedido[] }> => {
+export const obtenerPedidosInicio = async (vendedorId?: number): Promise<{ pendientes: Pedido[]; confirmados: Pedido[] }> => {
   const { data } = await api.get('/pedidos/inicio', {
     params: vendedorId ? { vendedorId } : {},
   });

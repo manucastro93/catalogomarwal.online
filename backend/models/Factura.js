@@ -42,8 +42,9 @@ export default (sequelize, DataTypes) => {
       as: 'detalles'
     });
     Factura.belongsTo(models.PersonalDux, {
-      foreignKey: "id_vendedor",
-      as: "personal",
+      foreignKey: 'id_vendedor',
+      targetKey: 'id_personal',
+      as: 'personal',
     });
   };
 

@@ -34,21 +34,20 @@ export default function Informes(props: { expandido: boolean }) {
 
       <Show when={open() && props.expandido}>
         <div class="flex flex-col mt-1">
-
-          {/* Submenú Producción */}
-          <button
-            onClick={() => setProdOpen(!prodOpen())}
-            class={`${theme.paddingSubitem} text-left ${theme.textoSubitem}`}
-          >
-            Producción
-            <Show when={prodOpen()}>
-              <ChevronUp class="inline ml-2" size={14} />
-            </Show>
-            <Show when={!prodOpen()}>
-              <ChevronDown class="inline ml-2" size={14} />
-            </Show>
-          </button>
-
+          <ConPermiso modulo="Informes_Produccion" accion="ver">
+            <button
+              onClick={() => setProdOpen(!prodOpen())}
+              class={`${theme.paddingSubitem} text-left ${theme.textoSubitem}`}
+            >
+              Producción
+              <Show when={prodOpen()}>
+                <ChevronUp class="inline ml-2" size={14} />
+              </Show>
+              <Show when={!prodOpen()}>
+                <ChevronDown class="inline ml-2" size={14} />
+              </Show>
+            </button>
+          </ConPermiso>
           <Show when={prodOpen()}>
             <div class="flex flex-col">
               <ConPermiso modulo="Informes_Produccion_Diaria" accion="ver">

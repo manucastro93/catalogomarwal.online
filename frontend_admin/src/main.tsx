@@ -28,6 +28,7 @@ const Inicio = lazy(() => import("./pages/Inicio"));
 const Operarios = lazy(() => import("./pages/Operarios"));
 const Pedidos = lazy(() => import("./pages/Pedidos"));
 const Productos = lazy(() => import("./pages/Productos"));
+const Stock = lazy(() => import("./pages/Stock"));
 const Piezas = lazy(() => import("./pages/Piezas"));
 const MateriasPrimas = lazy(() => import("./pages/MateriasPrimas"));
 const ProduccionDiaria = lazy(() => import("./pages/ProduccionDiaria"));
@@ -103,7 +104,7 @@ render(
         component={() => (
           <ProtectedRoute>
             <Layout>
-              <ResumenVentas />
+              <Stock />
             </Layout>
           </ProtectedRoute>
         )}

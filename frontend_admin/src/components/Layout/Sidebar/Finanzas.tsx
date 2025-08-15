@@ -1,10 +1,10 @@
 import { Show, createSignal } from 'solid-js';
 import { A, useLocation } from '@solidjs/router';
 import ConPermiso from '@/components/Layout/ConPermiso';
-import { Layers, ChevronDown } from '@/icons';
+import { Receipt, ChevronDown } from '@/icons';
 import theme from '@/styles/sidebarTheme';
 
-export default function Produccion(props: { usuario: any; expandido: boolean }) {
+export default function Finanzas(props: { usuario: any; expandido: boolean }) {
   const location = useLocation();
   const [open, setOpen] = createSignal(
     location.pathname.startsWith('/Produccion')
@@ -22,10 +22,10 @@ export default function Produccion(props: { usuario: any; expandido: boolean }) 
         style={{ color: theme.texto }}
       >
         <div class={theme.itemIconoWrapper}>
-          <Layers size={18} />
+          <Receipt size={18} />
         </div>
         <Show when={props.expandido}>
-          <span class={theme.itemTexto}>Producción</span>
+          <span class={theme.itemTexto}>Finanzas</span>
           <ChevronDown
             size={18}
             class={`ml-auto transition-transform duration-200 ${open() ? 'rotate-180' : ''}`}

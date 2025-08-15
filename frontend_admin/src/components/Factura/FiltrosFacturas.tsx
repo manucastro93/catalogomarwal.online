@@ -1,5 +1,5 @@
 import { For, Show } from "solid-js";
-import type { Usuario } from "@/types/usuario";
+import type { PersonalDux } from "@/types/usuario";
 import type { EstadoFactura } from "@/types/factura";
 
 export default function FiltrosFacturas(props: {
@@ -7,7 +7,7 @@ export default function FiltrosFacturas(props: {
   vendedorId: number | undefined;
   estadoId?: number;
   esVendedor: boolean;
-  vendedores: Usuario[];
+  vendedores: PersonalDux[];
   estados: EstadoFactura[];
   fechaDesde: string;
   fechaHasta: string;
@@ -39,7 +39,7 @@ export default function FiltrosFacturas(props: {
         >
           <option value="">Todos los vendedores</option>
           <For each={props.vendedores}>
-            {(v) => <option value={v.id}>{v.nombre}</option>}
+            {(v) => <option value={v.id_personal}>{v.nombre} {v.apellido_razon_social}</option>}
           </For>
         </select>
       </Show>

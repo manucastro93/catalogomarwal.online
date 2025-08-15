@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { Factura, EstadoFactura, PersonalDux } from '../models/index.js';
+import { Factura, EstadoFactura, PersonalDux, DetalleFactura } from '../models/index.js';
 
 export const listarFacturas = async (req, res, next) => {
   try {
@@ -10,6 +10,7 @@ export const listarFacturas = async (req, res, next) => {
       estadoFacturaId,
       pagina = 1,
       limit = 50,
+      vendedorId
     } = req.query;
 
     const offset = (parseInt(pagina) - 1) * parseInt(limit);
@@ -34,13 +35,16 @@ export const listarFacturas = async (req, res, next) => {
       where.estadoFacturaId = estadoFacturaId;
     }
 
+    if (vendedorId) {
+      where.id_vendedor = vendedorId;
+    }
+
     const { count, rows } = await Factura.findAndCountAll({
       where,
       include: [
         {
           model: PersonalDux,
-          as: "personal",
-          attributes: ["nombre", "apellido_razon_social"],
+          as: "personal"
         },
         {
           model: EstadoFactura,
@@ -67,3 +71,39 @@ export const listarFacturas = async (req, res, next) => {
   }
 };
 
+export const obtenerDetallesFactura = async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+
+    const detalles = await DetalleFactura.findAll({
+      where: { facturaId: id },
+      attributes: [
+        'codItem',
+        'descripcion',
+        'cantidad',
+        'precioUnitario',
+        'descuento',
+        'costo',
+        // 'subtotal' // opcional si querés devolverlo
+      ],
+      order: [['codItem', 'ASC']],
+    });
+
+    // Mapear al shape de DetalleFacturaDux (snake_case) que usás en el front
+    const payload = detalles.map((d) => ({
+      cod_item: d.codItem,
+      item: d.descripcion,
+      ctd: d.cantidad,
+      precio_uni: d.precioUnitario,
+      porc_desc: d.descuento ?? 0,
+      porc_iva: 0,              // si no tenés IVA por ítem, devuelvo 0
+      comentarios: null,
+      costo: d.costo ?? null,
+    }));
+
+    res.json(payload);
+  } catch (error) {
+    console.error('❌ Error al obtener detalles de factura:', error);
+    next(error);
+  }
+};

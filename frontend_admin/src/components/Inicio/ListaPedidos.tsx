@@ -24,7 +24,7 @@ import {
     const pedidosFiltrados = createMemo(() => {
       const b = busqueda().toLowerCase();
       return props.pedidos.filter((p) =>
-        p.cliente?.nombre?.toLowerCase().includes(b)
+        p.clienteDux?.cliente?.toLowerCase().includes(b)
       );
     });
   
