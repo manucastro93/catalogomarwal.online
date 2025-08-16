@@ -10,9 +10,7 @@ interface Props {
 }
 
 export default function ConPermiso(props: Props) {
-  const { permisos, usuario } = useAuth();
-  console.log("usuario: ", usuario)
-  console.log("permisos: ", permisos)
+  const { permisos } = useAuth();
   const tiene = () =>
     props.modulo && props.accion
       ? tienePermiso(permisos(), props.modulo, props.accion)
