@@ -454,56 +454,55 @@ export const obtenerPedidosInicio = async (req, res, next) => {
 export const obtenerPedidosDuxInicio = async (req, res, next) => {
   try {
     const idVendedor = await resolverIdVendedor(req);
-    // Nota: unimos por cliente por nombre (p.cliente = c.cliente).
-    // Si tenés un código único mejor (p.ej. p.codigo_cliente ↔ c.codigo), cambiá el JOIN.
-    // helper base (igual que antes pero con join a PersonalDux para traer nombre)
+    console.log("vendedor: ",idVendedor)
+
     const baseFromJoin = `
-  FROM PedidosDux p
-  LEFT JOIN (
-    SELECT f.nro_pedido, MAX(f.id_vendedor) AS id_vendedor
-    FROM Facturas f
-    GROUP BY f.nro_pedido
-  ) fx ON fx.nro_pedido = p.nro_pedido
-  LEFT JOIN ClientesDux c ON c.cliente = p.cliente
-  LEFT JOIN PersonalDux pd ON pd.id_personal = COALESCE(fx.id_vendedor, c.vendedorId)
-  WHERE (:idVendedor IS NULL OR COALESCE(fx.id_vendedor, c.vendedorId) = :idVendedor)
-`;
+      FROM PedidosDux p
+      LEFT JOIN (
+        SELECT f.nro_pedido, MAX(f.id_vendedor) AS id_vendedor
+        FROM Facturas f
+        GROUP BY f.nro_pedido
+      ) fx ON fx.nro_pedido = p.nro_pedido
+      LEFT JOIN ClientesDux c ON c.cliente = p.cliente
+      LEFT JOIN PersonalDux pd ON pd.id_personal = COALESCE(fx.id_vendedor, c.vendedorId)
+      WHERE (:idVendedor IS NULL OR COALESCE(fx.id_vendedor, c.vendedorId) = :idVendedor)
+    `;
 
     // columnas comunes que queremos devolver al front
     const selectCols = `
-  SELECT DISTINCT
-    p.*,
-    COALESCE(fx.id_vendedor, c.vendedorId) AS vendedorId,
-    CASE
-      WHEN fx.id_vendedor IS NOT NULL THEN 'FACTURA'
-      WHEN c.vendedorId IS NOT NULL THEN 'CLIENTE'
-      ELSE NULL
-    END AS origen_vendedor,
-    pd.nombre AS nombre_vendedor,
-    pd.apellido_razon_social AS apellido_vendedor
-`;
+      SELECT DISTINCT
+        p.*,
+        COALESCE(fx.id_vendedor, c.vendedorId) AS vendedorId,
+        CASE
+          WHEN fx.id_vendedor IS NOT NULL THEN 'FACTURA'
+          WHEN c.vendedorId IS NOT NULL THEN 'CLIENTE'
+          ELSE NULL
+        END AS origen_vendedor,
+        pd.nombre AS nombre_vendedor,
+        pd.apellido_razon_social AS apellido_vendedor
+    `;
 
     const [pendientes] = await sequelize.query(
       `
-  ${selectCols}
-  ${baseFromJoin}
-    AND p.estado_facturacion IN ('PENDIENTE','FACTURADO_PARCIAL')
-  ORDER BY p.fecha DESC, p.nro_pedido DESC
-  LIMIT 5
-  `,
-      { replacements: { idVendedor } }
+      ${selectCols}
+      ${baseFromJoin}
+          AND p.estado_facturacion IN ('PENDIENTE','FACTURADO_PARCIAL')
+        ORDER BY p.fecha DESC, p.nro_pedido DESC
+        LIMIT 5
+        `,
+            { replacements: { idVendedor } }
     );
 
     const [confirmados] = await sequelize.query(
       `
-  ${selectCols}
-  ${baseFromJoin}
-    AND p.estado_facturacion IN ('FACTURADO','CERRADO')
-  ORDER BY p.fecha DESC, p.nro_pedido DESC
-  LIMIT 5
-  `,
-      { replacements: { idVendedor } }
-    );
+      ${selectCols}
+      ${baseFromJoin}
+        AND p.estado_facturacion IN ('FACTURADO','CERRADO')
+      ORDER BY p.fecha DESC, p.nro_pedido DESC
+      LIMIT 5
+      `,
+          { replacements: { idVendedor } }
+        );
 
     res.json({ pendientes, confirmados });
 

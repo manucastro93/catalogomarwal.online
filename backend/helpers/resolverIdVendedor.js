@@ -7,7 +7,7 @@ export async function resolverIdVendedor(req) {
     if (!req.usuario.id) return null;
     const p = await PersonalDux.findOne({
       where: {
-        id_personal: req.usuario.personalDuxId
+        id: req.usuario.personalDuxId
       }
     });
     return p?.id_personal ?? null;
