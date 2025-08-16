@@ -3,7 +3,7 @@ import { ROLES_USUARIOS } from '../constants/rolesUsuarios.js';
 import { Op, fn, col, literal, QueryTypes, Sequelize } from 'sequelize';
 import sequelize from '../config/database.js';
 import dayjs from 'dayjs';
-import cache from '../utils/cache.js';
+//import cache from '../utils/cache.js';
 import { resolverIdVendedor } from '../helpers/resolverIdVendedor.js';
 
 export const obtenerResumenEstadisticas = async (req, res, next) => {
@@ -11,9 +11,9 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
     const inicioMes = dayjs().startOf('month').toDate();
     const finMes = dayjs().endOf('month').toDate();
 
-    const cacheKey = `resumenEstadisticas_${req.usuario?.id ?? 'anon'}_${dayjs().format('YYYY_MM')}`;
-    const cached = cache.get(cacheKey);
-    if (cached) return res.json(cached);
+    //const cacheKey = `resumenEstadisticas_${req.usuario?.id ?? 'anon'}_${dayjs().format('YYYY_MM')}`;
+    //const cached = cache.get(cacheKey);
+    //if (cached) return res.json(cached);
 
     // -------------------------
     // 1) LOCAL (Pedidos propios)
@@ -229,7 +229,7 @@ const vendedorTopDuxRows = await sequelize.query(
       mejoresClientesDux,
     };
 
-    cache.set(cacheKey, result, 60 * 10); // 10 minutos
+    //cache.set(cacheKey, result, 60 * 10); // 10 minutos
     res.json(result);
   } catch (error) {
     console.error('❌ Error en resumen de estadísticas:', error);
