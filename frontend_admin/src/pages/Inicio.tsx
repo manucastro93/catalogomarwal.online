@@ -65,6 +65,12 @@ export default function Inicio() {
       <Show when={![4, 5, 6, 7].includes(usuario()?.rolUsuarioId ?? -1)}>
         <div>
           <h1 class="text-2xl font-bold mb-2">Resumen del mes</h1>
+          <Show when={!resumen()}>
+            <div class="w-full flex justify-center items-center py-20 text-gray-600 text-sm">
+              <span class="inline-block h-2 w-2 rounded-full bg-gray-400 mr-2 animate-pulse" />
+              Cargando datos del mes…
+            </div>
+          </Show>
           <Show when={resumen()}>
             <ResumenInicioMensual resumen={resumen()} />
           </Show>

@@ -2,6 +2,7 @@ import api from './api';
 
 export const obtenerResumenDelMes = async () => {
   const { data } = await api.get('/estadisticas/resumen');
+  console.log(data)
   return data;
 };
 

@@ -35,7 +35,7 @@ export const obtenerPedidosInicio = async (vendedorId?: number): Promise<{ pendi
   const { data } = await api.get('/pedidos/inicio', {
     params: vendedorId ? { vendedorId } : {},
   });
-  console.log(data)
+
   return data;
 };
 
