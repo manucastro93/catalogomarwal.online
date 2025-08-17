@@ -18,10 +18,8 @@ export interface Usuario {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
-
   personalDuxId: number | null;
   personalDux?: PersonalDux | null;
-
   permisos?: PermisoUsuario[];
   rolUsuario?: { nombre: string };
 }

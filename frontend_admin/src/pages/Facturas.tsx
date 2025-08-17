@@ -31,7 +31,7 @@ export default function Facturas() {
     orden: orden(),
     direccion: direccion(),
     busqueda: busqueda(),
-    vendedorId: vendedorSeleccionado(),
+    personalDuxId: vendedorSeleccionado(),
     estadoId: estadoSeleccionado(),
     fechaDesde: fechaDesde(),
     fechaHasta: fechaHasta(),

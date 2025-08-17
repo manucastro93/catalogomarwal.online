@@ -454,7 +454,6 @@ export const obtenerPedidosInicio = async (req, res, next) => {
 export const obtenerPedidosDuxInicio = async (req, res, next) => {
   try {
     const idVendedor = await resolverIdVendedor(req);
-    console.log("vendedor: ",idVendedor)
 
     const baseFromJoin = `
       FROM PedidosDux p
@@ -653,101 +652,114 @@ export const listarPedidosDux = async (req, res, next) => {
       pagina = 1,
       limit = 50,
       busqueda = "",
-      vendedorId,
       desde,
       hasta,
     } = req.query;
 
-    const offset = (parseInt(pagina) - 1) * parseInt(limit);
-    const filtros = [];
-    const replacements = {};
+    const idVendedor = await resolverIdVendedor(req);
 
-    // 📌 Busqueda por cliente
-    if (busqueda) {
-      filtros.push("p.cliente LIKE :busqueda");
-      replacements.busqueda = `%${busqueda}%`;
-    }
+    const limitNum = parseInt(limit);
+    const offset = (parseInt(pagina) - 1) * limitNum;
 
-    // ✅ Estados: puede venir como array o string
+    // ---------------- Estados ----------------
+    // Puede venir ?estado=1&estado=2 ... (ids de ESTADOS_DUX) o nada -> default PENDIENTE/FACTURADO_PARCIAL
     let estadoQuery = req.query.estado;
-    const estadoIds = Array.isArray(estadoQuery)
-      ? estadoQuery
-      : estadoQuery
-        ? [estadoQuery]
-        : [];
+    const estadoIds = Array.isArray(estadoQuery) ? estadoQuery : estadoQuery ? [estadoQuery] : [];
+
     const estadosTexto = estadoIds
-      .map((id) =>
-        Object.entries(ESTADOS_DUX).find(([_, val]) => Number(id) === Number(val))?.[0]
-      )
-      .filter(Boolean);
-    if (estadosTexto.length > 0) {
-      const estadoPlaceholders = estadosTexto.map((_, i) => `:estado${i}`).join(", ");
-      filtros.push(`UPPER(p.estado_facturacion) IN (${estadoPlaceholders})`);
-      estadosTexto.forEach((estadoNombre, i) => {
-        replacements[`estado${i}`] = estadoNombre.toUpperCase();
-      });
-    }
-    else {
-      // Filtro por defecto si no hay estados
-      filtros.push("p.estado_facturacion IN ('FACTURADO_PARCIAL', 'PENDIENTE')");
+      .map((id) => Object.entries(ESTADOS_DUX).find(([_, val]) => Number(id) === Number(val))?.[0])
+      .filter(Boolean)
+      .map((s) => String(s).toUpperCase());
+
+    const usarEstados = estadosTexto.length
+      ? estadosTexto
+      : ['PENDIENTE', 'FACTURADO_PARCIAL']; // default
+
+    // ---------------- Filtros dinámicos ----------------
+    const filtros = [];
+    const params = { limit: limitNum, offset, estados: usarEstados, idVendedor: idVendedor ?? null };
+
+    if (busqueda) {
+      filtros.push("(p.cliente LIKE :busqueda OR CAST(p.nro_pedido AS CHAR) LIKE :busqueda)");
+      params.busqueda = `%${busqueda}%`;
     }
 
-    // 📌 Filtro por vendedor
-    if (vendedorId) {
-      filtros.push("f.id_vendedor = :vendedorId");
-      replacements.vendedorId = vendedorId;
-    }
-
-    // 📌 Filtro por fecha
     if (desde && hasta) {
       filtros.push("p.fecha BETWEEN :desde AND :hasta");
-      replacements.desde = desde;
-      replacements.hasta = hasta;
+      params.desde = desde;
+      params.hasta = hasta;
     }
 
-    const whereClause = filtros.length ? "WHERE " + filtros.join(" AND ") : "";
+    // Si llegó un vendedor resuelto, se filtra por él (vendedor de factura o del cliente)
+    if (idVendedor) {
+      filtros.push("t.vendedorId = :idVendedor");
+    }
 
+    const whereClause = filtros.length ? `WHERE ${filtros.join(" AND ")}` : "";
+
+    // ---------------- Subconsulta para vendedorId / origen ----------------
+    // fx: colapsa facturas por pedido (ignorando anuladas)
+    const subVendedor = `
+      SELECT
+        p2.id,
+        COALESCE(fx.id_vendedor, c.vendedorId) AS vendedorId,
+        CASE
+          WHEN fx.id_vendedor IS NOT NULL THEN 'FACTURA'
+          WHEN c.vendedorId IS NOT NULL THEN 'CLIENTE'
+          ELSE NULL
+        END AS origen_vendedor
+      FROM PedidosDux p2
+      LEFT JOIN (
+        SELECT f.nro_pedido, MAX(f.id_vendedor) AS id_vendedor
+        FROM Facturas f
+        WHERE (f.anulada_boolean IS NULL OR f.anulada_boolean = 0)
+        GROUP BY f.nro_pedido
+      ) fx ON fx.nro_pedido = p2.nro_pedido
+      LEFT JOIN ClientesDux c ON c.cliente = p2.cliente
+    `;
+
+    // ---------------- Data ----------------
     const data = await sequelize.query(
       `
-      SELECT p.*, MIN(pd.nombre) AS nombre_vendedor, MIN(pd.apellido_razon_social) AS apellido_vendedor
+      SELECT
+        p.*,
+        t.vendedorId,
+        t.origen_vendedor,
+        pd.nombre AS nombre_vendedor,
+        pd.apellido_razon_social AS apellido_vendedor
       FROM PedidosDux p
-      LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
-      LEFT JOIN PersonalDux pd ON pd.id_personal = f.id_vendedor
+      LEFT JOIN (${subVendedor}) t ON t.id = p.id
+      LEFT JOIN PersonalDux pd ON pd.id_personal = t.vendedorId
       ${whereClause}
-      GROUP BY p.id
-      ORDER BY p.fecha DESC
+        ${whereClause ? 'AND' : 'WHERE'} UPPER(p.estado_facturacion) IN (:estados)
+      ORDER BY p.fecha DESC, p.nro_pedido DESC
       LIMIT :limit OFFSET :offset
       `,
-      {
-        replacements: {
-          ...replacements,
-          limit: parseInt(limit),
-          offset,
-        },
-        type: QueryTypes.SELECT,
-      }
+      { type: QueryTypes.SELECT, replacements: params }
     );
 
-    const countRes = await sequelize.query(
+    // ---------------- Count ----------------
+    const countRow = await sequelize.query(
       `
-      SELECT COUNT(DISTINCT p.id) AS total
-      FROM PedidosDux p
-      LEFT JOIN Facturas f ON f.nro_pedido = p.nro_pedido AND f.anulada_boolean = false
-      LEFT JOIN PersonalDux pd ON pd.id_personal = f.id_vendedor
-      ${whereClause}
+      SELECT COUNT(*) AS total
+      FROM (
+        SELECT p.id
+        FROM PedidosDux p
+        LEFT JOIN (${subVendedor}) t ON t.id = p.id
+        ${whereClause}
+          ${whereClause ? 'AND' : 'WHERE'} UPPER(p.estado_facturacion) IN (:estados)
+        GROUP BY p.id
+      ) x
       `,
-      {
-        replacements,
-        type: QueryTypes.SELECT,
-      }
+      { type: QueryTypes.SELECT, replacements: params }
     );
 
-    const count = countRes[0].total;
+    const count = Number(countRow[0]?.total ?? 0);
 
     res.json({
       data,
       pagina: parseInt(pagina),
-      totalPaginas: Math.ceil(count / parseInt(limit)),
+      totalPaginas: Math.ceil(count / limitNum),
       totalItems: count,
       hasNextPage: offset + data.length < count,
       hasPrevPage: offset > 0,

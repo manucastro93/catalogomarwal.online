@@ -1,7 +1,6 @@
 import { For, Show, createSignal, createEffect, createMemo } from "solid-js";
-import type { Usuario } from "@/types/usuario";
+import type { Usuario, PersonalDux } from "@/types/usuario";
 import type { EstadoPedido } from "types/estadoPedido";
-import type { VendedorOption } from "@/types/vendedor";
 
 const ESTADOS_DUX = [
   { id: 1, nombre: "PENDIENTE" },
@@ -10,13 +9,20 @@ const ESTADOS_DUX = [
   { id: 4, nombre: "CERRADO" },
 ];
 
+// Type guards
+type Vend = Usuario | PersonalDux;
+const esUsuario = (v: Vend): v is Usuario =>
+  "email" in v || "personalDuxId" in (v as any);
+const esPersonalDux = (v: Vend): v is PersonalDux =>
+  "id_personal" in (v as any) && !("personalDuxId" in (v as any));
+
 export default function FiltrosPedidos(props: {
   busqueda: string;
   vendedorId: number | undefined;
   estado?: number[];
   esVendedor: boolean;
   vendedores: Usuario[];
-  vendedoresDux: VendedorOption[];
+  vendedoresDux: PersonalDux[];
   estados: EstadoPedido[];
   desde: string;
   hasta: string;
@@ -30,22 +36,34 @@ export default function FiltrosPedidos(props: {
 }) {
   const [estadoFiltrado, setEstadoFiltrado] = createSignal<number[] | undefined>(props.estado);
 
-const idsDuxPorDefecto = [1, 2];
+  const idsDuxPorDefecto = [1, 2];
 
-createEffect(() => {
-  if (props.mostrarPedidosDux && !estadoFiltrado()) {
-    setEstadoFiltrado(idsDuxPorDefecto);
-    props.onEstadoSeleccionado(idsDuxPorDefecto);
-  }
-});
-
-  const estadosDisponibles = createMemo(() => {
-    return props.mostrarPedidosDux ? ESTADOS_DUX : props.estados;
+  createEffect(() => {
+    if (props.mostrarPedidosDux && !estadoFiltrado()) {
+      setEstadoFiltrado(idsDuxPorDefecto);
+      props.onEstadoSeleccionado(idsDuxPorDefecto);
+    }
   });
 
-  const vendedoresDisponibles = createMemo(() =>
+  const estadosDisponibles = createMemo(() =>
+    props.mostrarPedidosDux ? ESTADOS_DUX : props.estados
+  );
+
+  // Union: devuelve (Usuario | PersonalDux)[]
+  const vendedoresDisponibles = createMemo<Vend[]>(() =>
     props.mostrarPedidosDux ? props.vendedoresDux : props.vendedores
   );
+
+  // Helpers de label y value
+  const vendedorValue = (v: Vend): number | undefined =>
+    esUsuario(v) ? v.personalDux?.id_personal ?? undefined : v.id_personal;
+
+  const vendedorLabel = (v: Vend): string =>
+    esUsuario(v)
+      ? v.personalDux
+        ? `${v.nombre} ${v.personalDux.apellido_razon_social}`
+        : v.nombre
+      : `${v.nombre}${v.apellido_razon_social ? ` ${v.apellido_razon_social}` : ""}`;
 
   return (
     <div class="flex flex-wrap items-center gap-2 mb-4">
@@ -81,13 +99,17 @@ createEffect(() => {
           }
         >
           <option value="">Todos los vendedores</option>
-          <For each={vendedoresDisponibles()}>
-            {(v) => (
-              <option value={v.id}>
-                {v.nombre}
-                {"apellido_razon_social" in v ? ` ${v.apellido_razon_social}` : ""}
-              </option>
-            )}
+          <For
+            each={vendedoresDisponibles().filter((v) => vendedorValue(v) != null)}
+          >
+            {(v) => {
+              const id = vendedorValue(v)!; // filtramos null antes
+              return (
+                <option value={id.toString()}>
+                  {vendedorLabel(v)}
+                </option>
+              );
+            }}
           </For>
         </select>
       </Show>

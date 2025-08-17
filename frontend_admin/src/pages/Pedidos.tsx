@@ -68,7 +68,7 @@ export default function Pedidos() {
           pagina: params.pagina,
           limit: 50,
           busqueda: params.busqueda,
-          vendedorId: params.vendedorId,
+          personalDuxId: params.vendedorId,
           estado: params.estado,
           desde: params.desde,
           hasta: params.hasta,

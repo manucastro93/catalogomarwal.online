@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { Factura, EstadoFactura, PersonalDux, DetalleFactura } from '../models/index.js';
+import { resolverIdVendedor } from '../helpers/resolverIdVendedor.js';
 
 export const listarFacturas = async (req, res, next) => {
   try {
@@ -10,8 +11,9 @@ export const listarFacturas = async (req, res, next) => {
       estadoFacturaId,
       pagina = 1,
       limit = 50,
-      vendedorId
     } = req.query;
+
+    const vendedorId = await resolverIdVendedor(req);
 
     const offset = (parseInt(pagina) - 1) * parseInt(limit);
 
@@ -34,7 +36,7 @@ export const listarFacturas = async (req, res, next) => {
     if (estadoFacturaId) {
       where.estadoFacturaId = estadoFacturaId;
     }
-
+    console.log("vendedor: ",vendedorId)
     if (vendedorId) {
       where.id_vendedor = vendedorId;
     }

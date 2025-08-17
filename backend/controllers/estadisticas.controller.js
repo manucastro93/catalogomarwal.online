@@ -146,27 +146,27 @@ export const obtenerResumenEstadisticas = async (req, res, next) => {
     const totalFacturadoDux = Number(duxAgg[0]?.total ?? 0);
 
     // Vendedor top DUX
-const vendedorTopDuxRows = await sequelize.query(
-  `
-  SELECT
-    t.vendedorId,
-    COUNT(*) AS cantidad,
-    COALESCE(SUM(t.total_num), 0) AS totalFacturado
-  FROM (
-    SELECT
-      COALESCE(fx.id_vendedor, c.vendedorId) AS vendedorId,
-      CAST(
-        REPLACE(REPLACE(REPLACE(REPLACE(p.total, 'AR$', ''), '$', ''), '.', ''), ',', '.')
-        AS DECIMAL(18,2)
-      ) AS total_num
-    ${baseFromJoin}
-  ) AS t
-  GROUP BY t.vendedorId
-  ORDER BY cantidad DESC
-  LIMIT 1
-  `,
-  { type: QueryTypes.SELECT, replacements: { inicioMes, finMes, idVendedor } }
-);
+    const vendedorTopDuxRows = await sequelize.query(
+      `
+      SELECT
+        t.vendedorId,
+        COUNT(*) AS cantidad,
+        COALESCE(SUM(t.total_num), 0) AS totalFacturado
+      FROM (
+        SELECT
+          COALESCE(fx.id_vendedor, c.vendedorId) AS vendedorId,
+          CAST(
+            REPLACE(REPLACE(REPLACE(REPLACE(p.total, 'AR$', ''), '$', ''), '.', ''), ',', '.')
+            AS DECIMAL(18,2)
+          ) AS total_num
+        ${baseFromJoin}
+      ) AS t
+      GROUP BY t.vendedorId
+      ORDER BY cantidad DESC
+      LIMIT 1
+      `,
+      { type: QueryTypes.SELECT, replacements: { inicioMes, finMes, idVendedor } }
+    );
 
     let vendedorTopDux = null;
     if (vendedorTopDuxRows.length && vendedorTopDuxRows[0].vendedorId) {
@@ -204,6 +204,140 @@ const vendedorTopDuxRows = await sequelize.query(
       { type: QueryTypes.SELECT, replacements: { inicioMes, finMes, idVendedor } }
     );
 
+    // ---------- Subquery para resolver vendedor por pedido (misma lógica que usamos en listados)
+    const subVendedor = `
+  SELECT
+    p2.id,
+    COALESCE(fx.id_vendedor, c.vendedorId) AS vendedorId
+  FROM PedidosDux p2
+  LEFT JOIN (
+    SELECT f.nro_pedido, MAX(f.id_vendedor) AS id_vendedor
+    FROM Facturas f
+    WHERE (f.anulada_boolean IS NULL OR f.anulada_boolean = 0)
+    GROUP BY f.nro_pedido
+  ) fx ON fx.nro_pedido = p2.nro_pedido
+  LEFT JOIN ClientesDux c ON c.cliente = p2.cliente
+`;
+
+    // ---------- Producto estrella DUX (por cantidad vendida)
+    const prodStarRows = await sequelize.query(
+      `
+  SELECT
+    d.codItem                                                     AS codItem,
+    COALESCE(prod.id, 0)                                          AS productoId,
+    ANY_VALUE(
+  COALESCE(
+    prod.nombre COLLATE utf8mb4_unicode_ci,
+    d.descripcion COLLATE utf8mb4_unicode_ci
+  )
+)                                                               AS nombre,
+    SUM(d.cantidad)                                               AS totalVendidas,
+    SUM(d.subtotal)                                               AS totalFacturado,
+    (
+      SELECT ip.url
+      FROM ImagenProductos ip
+      WHERE ip.productoId = prod.id
+      ORDER BY ip.id
+      LIMIT 1
+    )                                                             AS imagenUrl
+  FROM DetallePedidosDux d
+  JOIN PedidosDux p         ON p.id = d.pedidoDuxId
+  LEFT JOIN (${subVendedor}) t ON t.id = p.id
+  LEFT JOIN Productos prod  ON
+  LOWER(TRIM(prod.sku))   COLLATE utf8mb4_unicode_ci =
+  LOWER(TRIM(d.codItem))  COLLATE utf8mb4_unicode_ci
+  WHERE p.fecha BETWEEN :inicioMes AND :finMes
+    AND (:idVendedor IS NULL OR t.vendedorId = :idVendedor)
+  GROUP BY d.codItem, prod.id
+  ORDER BY totalVendidas DESC
+  LIMIT 1
+  `,
+      { type: QueryTypes.SELECT, replacements: { inicioMes, finMes, idVendedor } }
+    );
+
+    const productoEstrellaDux = prodStarRows.length
+      ? {
+        productoId: Number(prodStarRows[0].productoId || 0),
+        totalVendidas: Number(prodStarRows[0].totalVendidas || 0),
+        totalFacturado: Number(prodStarRows[0].totalFacturado || 0),
+        Producto: {
+          nombre: prodStarRows[0].nombre || null,
+          imagenUrl: prodStarRows[0].imagenUrl || null,
+        },
+      }
+      : null;
+
+    // ---------- Categoría top DUX (por facturación)
+    const catTopRows = await sequelize.query(
+      `
+  SELECT
+    cat.id              AS categoriaId,
+    cat.nombre          AS nombre,
+    SUM(d.subtotal)     AS totalFacturado
+  FROM DetallePedidosDux d
+  JOIN PedidosDux p          ON p.id = d.pedidoDuxId
+  LEFT JOIN (${subVendedor}) t ON t.id = p.id
+  JOIN Productos prod        ON
+  LOWER(TRIM(prod.sku))   COLLATE utf8mb4_unicode_ci =
+  LOWER(TRIM(d.codItem))  COLLATE utf8mb4_unicode_ci
+  JOIN Categorias cat        ON cat.id = prod.categoriaId
+  WHERE p.fecha BETWEEN :inicioMes AND :finMes
+    AND (:idVendedor IS NULL OR t.vendedorId = :idVendedor)
+  GROUP BY cat.id, cat.nombre
+  ORDER BY totalFacturado DESC
+  LIMIT 1
+  `,
+      { type: QueryTypes.SELECT, replacements: { inicioMes, finMes, idVendedor } }
+    );
+
+    const categoriaTopDux = catTopRows.length
+      ? { nombre: catTopRows[0].nombre }
+      : null;
+
+    // --- Normalización de vendedor top (unificamos LOCAL + DUX al shape esperado por el front)
+    const pickTop = (a, b) => {
+      if (!a) return b;
+      if (!b) return a;
+      // priorizamos por totalFacturado; empate → por cantidad
+      if (Number(b.totalFacturado) > Number(a.totalFacturado)) return b;
+      if (Number(b.totalFacturado) < Number(a.totalFacturado)) return a;
+      return Number(b.cantidad) > Number(a.cantidad) ? b : a;
+    };
+
+    const vendedorTopLocalNorm = vendedorTopLocal
+      ? {
+        usuarioId: vendedorTopLocal.usuarioId ?? null,
+        cantidad: Number(vendedorTopLocal.cantidad ?? 0),
+        totalFacturado: Number(vendedorTopLocal.totalFacturado ?? 0),
+        usuario: { nombre: vendedorTopLocal.usuario?.nombre ?? "—" },
+      }
+      : null;
+
+    const vendedorTopDuxNorm = vendedorTopDux
+      ? {
+        usuarioId: null, // no hay Usuario local asociado
+        cantidad: Number(vendedorTopDux.cantidad ?? 0),
+        totalFacturado: Number(vendedorTopDux.totalFacturado ?? 0),
+        usuario: {
+          nombre: [vendedorTopDux.apellido_razon_social, vendedorTopDux.nombre]
+            .filter(Boolean)
+            .join(", "),
+        },
+      }
+      : null;
+
+    const vendedorTop = pickTop(vendedorTopLocalNorm, vendedorTopDuxNorm);
+
+    // --- Unificamos "mejoresClientes" (tu front lo espera así)
+    const mejoresClientes =
+      (mejoresClientesLocal && mejoresClientesLocal.length)
+        ? mejoresClientesLocal
+        : (mejoresClientesDux || []).map((r) => ({
+          clienteId: 0, // Dux no tiene id local del cliente
+          totalGastado: Number(r.totalGastado ?? 0),
+          cliente: { nombre: r.nombre ?? "—" },
+        }));
+
     // -------------------------
     // 3) Armar respuesta combinada
     // -------------------------
@@ -212,21 +346,23 @@ const vendedorTopDuxRows = await sequelize.query(
       totalPedidos: Number(totalPedidosLocal) + Number(totalPedidosDux),
       totalFacturado: Number(totalFacturadoLocal || 0) + Number(totalFacturadoDux || 0),
 
-      // Totales por origen
+      // Totales por origen (si los usás en otro lado)
       totalPedidosLocal: Number(totalPedidosLocal || 0),
       totalPedidosDux: Number(totalPedidosDux || 0),
       totalFacturadoLocal: Number(totalFacturadoLocal || 0),
       totalFacturadoDux: Number(totalFacturadoDux || 0),
 
-      // KPI locales existentes
+      // KPI locales que ya tenías
       productoEstrella,
-      vendedorTopLocal,
       categoriaTop: categoriaTop?.producto?.Categoria ?? null,
-      mejoresClientesLocal,
 
-      // KPI Dux
-      vendedorTopDux,
-      mejoresClientesDux,
+      // KPI combinados y Dux
+      vendedorTop,
+      mejoresClientes,
+
+      // 👇 NUEVOS
+      productoEstrellaDux,
+      categoriaTopDux,
     };
 
     //cache.set(cacheKey, result, 60 * 10); // 10 minutos
@@ -381,7 +517,7 @@ export const obtenerRankingEstadisticas = async (req, res, next) => {
       limit: 10,
       raw: true,
     });
-    
+
 
     res.json({ productos, vendedores, clientes, categorias });
   } catch (error) {
@@ -397,7 +533,7 @@ export const obtenerEstadisticasProducto = async (req, res, next) => {
     const [ventas, unidadesVendidas, facturacion, visitas] = await Promise.all([
       Pedido.count({
         include: [{ model: DetallePedido, as: 'detalles', where: { productoId: id }, required: true }],
-      }),      
+      }),
       DetallePedido.sum('cantidad', { where: { productoId: id } }),
       DetallePedido.sum('subtotal', { where: { productoId: id } }),
       LogCliente.count({ where: { busqueda: `detalle:${id}` } }),

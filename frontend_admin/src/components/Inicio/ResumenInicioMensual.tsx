@@ -22,22 +22,22 @@ export default function ResumenInicioMensual(props: {
 
       <div class="bg-white p-4 rounded shadow">
         <h2 class="font-semibold text-gray-700">Producto estrella del mes</h2>
-        <Show when={resumen.productoEstrella} fallback={<p>Sin datos</p>}>
+        <Show when={resumen.productoEstrellaDux} fallback={<p>Sin datos</p>}>
           <div class="flex items-center gap-3">
             <img
               src={`${import.meta.env.VITE_BACKEND_URL}${
-                resumen.productoEstrella?.Producto?.imagenUrl
+                resumen.productoEstrellaDux?.Producto?.imagenUrl
               }`}
-              alt={resumen.productoEstrella?.Producto?.nombre}
+              alt={resumen.productoEstrellaDux?.Producto?.nombre}
               class="w-20 h-20 object-contain rounded"
             />
             <div>
               <p class="font-semibold">
-                {resumen.productoEstrella?.Producto?.nombre}
+                {resumen.productoEstrellaDux?.Producto?.nombre}
               </p>
               <p class="text-xs text-gray-500">
-                {resumen.productoEstrella?.totalVendidas} bultos —{" "}
-                {formatearPrecio(resumen.productoEstrella?.totalFacturado ?? 0)}
+                {resumen.productoEstrellaDux?.totalVendidas} bultos —{" "}
+                {formatearPrecio(resumen.productoEstrellaDux?.totalFacturado ?? 0)}
               </p>
             </div>
           </div>
@@ -63,12 +63,12 @@ export default function ResumenInicioMensual(props: {
         <h2 class="font-semibold text-gray-700">
           Categoría más vendida del mes
         </h2>
-        <p>{resumen.categoriaTop?.nombre ?? "Sin datos"}</p>
+        <p>{resumen.categoriaTopDux?.nombre ?? "Sin datos"}</p>
       </div>
 
       <div class="bg-white p-4 rounded shadow ">
         <h2 class="font-semibold text-gray-700 mb-2">Top 5 Clientes del mes</h2>
-        <ul class="list-disc list-inside">
+        <ul class="list-disc list-inside text-xs">
           <For each={resumen.mejoresClientes ?? []}>
             {(cliente) => (
               <li>

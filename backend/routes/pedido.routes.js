@@ -26,7 +26,7 @@ router.get('/buscar-por-cliente-y-fecha', obtenerPedidoPorClienteYFecha);
 //router.get('/inicio',verificarToken, obtenerPedidosInicio);
 router.get('/inicio',verificarToken, obtenerPedidosDuxInicio);
 router.get('/productos-pendientes', verificarToken, obtenerProductosPedidosPendientes);
-router.get('/dux', listarPedidosDux);
+router.get('/dux', verificarToken, listarPedidosDux);
 router.get('/dux/:id', obtenerDetallesPedidoDux);
 router.get('/pedido-dux/:id', obtenerPedidoDuxPorId);
 router.get('/productos-pendientes/:codItem', verificarToken, obtenerPedidosPendientesPorProducto);

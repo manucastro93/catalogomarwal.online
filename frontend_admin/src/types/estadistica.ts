@@ -10,8 +10,10 @@ export interface ResumenEstadisticas {
   totalPedidos: number;
   totalFacturado: number;
   productoEstrella: ProductoEstrella | null;
+  productoEstrellaDux: ProductoEstrella | null;
   vendedorTop: VendedorTop | null;
   categoriaTop: CategoriaTop | null;
+  categoriaTopDux: CategoriaTop | null;
   mejoresClientes: ClienteTop[];
 }
 
