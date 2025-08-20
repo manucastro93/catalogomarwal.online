@@ -1,5 +1,4 @@
-// backend/services/eficiencia.service.js
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import { PedidoDux, Factura, Producto } from '../models/index.js';
 import {
   // 📦 Helpers
@@ -51,72 +50,96 @@ dayjs.extend(customParseFormat);
  * @param {string} clienteFiltro - Filtro de cliente.
  * @returns {Promise<object | null>} Objeto con datos procesados o null si no hay datos.
  */
-export async function cargarYProcesarDatosCliente(desde, hasta, clienteFiltro) {
+export async function cargarYProcesarDatosCliente(desde, hasta, clienteFiltro, vendedorId) {
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
   const lowerCaseClienteFiltro = clienteFiltro?.toLowerCase();
 
-  // 1. Obtener los pedidos cuya fecha de pedido cae dentro del rango de fechas.
-  // Esto define el conjunto inicial de pedidos que potencialmente se analizarán.
-  const pedidosEnRangoDeFechas = await PedidoDux.findAll({
-    where: {
-      fecha: { [Op.between]: [fechaDesde, fechaHasta] }
-    },
-    attributes: ['id', 'nro_pedido', 'fecha', 'cliente']
-  });
+  const VENDEDOR_COALESCE = Sequelize.literal(`
+    COALESCE(
+      (SELECT MAX(f.id_vendedor) FROM Facturas f WHERE f.nro_pedido = PedidoDux.nro_pedido),
+      (SELECT MAX(c.vendedorId) FROM ClientesDux c WHERE c.cliente = PedidoDux.cliente)
+    )
+  `);
 
-  // 2. Aplicar el filtro de cliente a estos pedidos.
-  let pedidosFiltrados = pedidosEnRangoDeFechas;
-  if (lowerCaseClienteFiltro) {
-    pedidosFiltrados = pedidosEnRangoDeFechas.filter(p => p.cliente?.toLowerCase().includes(lowerCaseClienteFiltro));
-  } else {
+  // 1. Pedidos en rango + filtro opcional por vendedor
+  const where = {
+    fecha: { [Op.between]: [fechaDesde, fechaHasta] },
+  };
+
+  if (vendedorId) {
+    where[Op.and] = Sequelize.where(VENDEDOR_COALESCE, vendedorId);
   }
 
-  // Si no hay pedidos después de los filtros, no hay datos que procesar.
+  const pedidosEnRangoDeFechas = await PedidoDux.findAll({
+    where,
+    attributes: [
+      'id',
+      'nro_pedido',
+      'fecha',
+      'cliente',
+      [VENDEDOR_COALESCE, 'vendedorId'],
+      [
+        Sequelize.literal(`
+          CASE
+            WHEN (SELECT MAX(f.id_vendedor) FROM Facturas f WHERE f.nro_pedido = PedidoDux.nro_pedido) IS NOT NULL THEN 'FACTURA'
+            WHEN (SELECT MAX(c.vendedorId) FROM ClientesDux c WHERE c.cliente = PedidoDux.cliente) IS NOT NULL THEN 'CLIENTE'
+            ELSE NULL
+          END
+        `),
+        'origen_vendedor',
+      ],
+    ],
+  });
+
+  // 2. Filtro por cliente
+  let pedidosFiltrados = pedidosEnRangoDeFechas;
+  if (lowerCaseClienteFiltro) {
+    pedidosFiltrados = pedidosEnRangoDeFechas.filter(
+      p => p.cliente?.toLowerCase().includes(lowerCaseClienteFiltro)
+    );
+  }
+
   if (!pedidosFiltrados.length) {
     return null;
   }
 
-  // 3. Crear mapeos básicos de pedidos para facilitar el acceso.
+  // 3. Mapas básicos
   const pedidosPorId = new Map(pedidosFiltrados.map(p => [p.id, p]));
-  // Asegurarse de que nro_pedido se convierta a número para la clave del mapa, si es que no lo es ya.
-  const pedidosPorNro = new Map(pedidosFiltrados.map(p => [Number(p.nro_pedido), p])); 
-  const pedidoFechaMap = new Map(pedidosFiltrados.map(p => [Number(p.nro_pedido), p.fecha])); // Asegurarse de que la clave sea numérica
+  const pedidosPorNro = new Map(pedidosFiltrados.map(p => [Number(p.nro_pedido), p]));
+  const pedidoFechaMap = new Map(pedidosFiltrados.map(p => [Number(p.nro_pedido), p.fecha]));
 
-  // 4. Obtener los detalles de los pedidos filtrados.
+  // 4. Detalles de pedidos
   const detallesPedidos = await obtenerDetallesPedidosPorId([...pedidosPorId.keys()]);
 
-  // 5. Crear mapeos de detalles de pedidos y cantidades pedidas.
+  // 5. Mapear detalles
   const detallesPedidosPorPedido = mapearDetallesPedidosPorPedido(detallesPedidos);
   const cantidadesPedidasPorItemEnPedido = mapearCantidadPedidaPorItemEnPedido(detallesPedidos);
 
-  // 6. OBTENER TODAS LAS FACTURAS HISTÓRICAS DE LOS PEDIDOS FILTRADOS.
-  // Este es el CAMBIO CRÍTICO para resolver la inconsistencia de cantidad facturada.
-  // Se obtiene la lista de nro_pedido de los pedidos que pasaron todos los filtros.
-  // Aseguramos que nro_pedido se convierta a número para la búsqueda.
-  const nroPedidosParaFacturasHistoricas = [...new Set(pedidosFiltrados.map(p => Number(p.nro_pedido)))].filter(n => !isNaN(n));
+  // 6. Facturas históricas
+  const nroPedidosParaFacturasHistoricas = [...new Set(
+    pedidosFiltrados.map(p => Number(p.nro_pedido))
+  )].filter(n => !isNaN(n));
 
   let facturasCompletas = [];
   if (nroPedidosParaFacturasHistoricas.length > 0) {
-      // Llamamos a obtenerFacturasConDetallesEnRango pero le pasamos los nro_pedido
-      // y null para las fechas, para que traiga TODAS las facturas de esos pedidos.
-      facturasCompletas = await obtenerFacturasConDetallesEnRango(
-          null, // Ignorar fecha de inicio
-          null, // Ignorar fecha de fin
-          nroPedidosParaFacturasHistoricas // <--- Pasar la lista de números de pedido a la función de DB
-      );
+    facturasCompletas = await obtenerFacturasConDetallesEnRango(
+      null,
+      null,
+      nroPedidosParaFacturasHistoricas
+    );
   }
 
-  // 7. Procesar las facturas completas para generar los mapeos finales.
+  // 7. Procesar facturas
   const {
     detallesFacturasPorPedido,
     primeraFacturaPorPedido,
-    ultimaFacturaPorPedido, // Obtener la última factura por pedido del procesamiento
+    ultimaFacturaPorPedido,
     fechasFacturasArrayPorPedido,
     cantidadesFacturadasPorItemEnPedido,
     valorFacturadoPorItemEnPedido,
-    fechaUltimaFacturaPorItem, // Obtener la última fecha de factura por ítem
-  } = procesarFacturasParaMapeo(facturasCompletas); 
+    fechaUltimaFacturaPorItem,
+  } = procesarFacturasParaMapeo(facturasCompletas);
 
   return {
     pedidos: pedidosFiltrados,
@@ -126,14 +149,14 @@ export async function cargarYProcesarDatosCliente(desde, hasta, clienteFiltro) {
     detallesPedidos,
     detallesPedidosPorPedido,
     cantidadesPedidasPorItemEnPedido,
-    facturasCompletas, // Este contendrá el histórico completo de los pedidos filtrados
+    facturasCompletas,
     detallesFacturasPorPedido,
     primeraFacturaPorPedido,
-    ultimaFacturaPorPedido, // Devolver también la última factura por pedido
+    ultimaFacturaPorPedido,
     fechasFacturasArrayPorPedido,
     cantidadesFacturadasPorItemEnPedido,
     valorFacturadoPorItemEnPedido,
-    fechaUltimaFacturaPorItem, // Devolver la última fecha de factura por ítem
+    fechaUltimaFacturaPorItem,
   };
 }
 
@@ -427,10 +450,10 @@ export const obtenerEvolucionEficienciaMensualGeneral = async (desde, hasta, cli
 
 
 // --- Eficiencia por Cliente ---
-export const obtenerEficienciaPorCliente = async (desde, hasta, cliente) => {
+export const obtenerEficienciaPorCliente = async (desde, hasta, cliente, vendedorId) => {
   const fechaDesde = new Date(desde);
   const fechaHasta = new Date(hasta);
-  const datos = await cargarYProcesarDatosCliente(fechaDesde, fechaHasta, cliente);
+  const datos = await cargarYProcesarDatosCliente(fechaDesde, fechaHasta, cliente, vendedorId);
   if (!datos) return [];
   // CAMBIO: Ahora obtenemos 'ultimaFacturaPorPedido' de 'datos'
   const { pedidos, detallesPedidosPorPedido, detallesFacturasPorPedido, ultimaFacturaPorPedido } = datos; 

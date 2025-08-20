@@ -12,20 +12,21 @@ import {
     obtenerEvolucionEficienciaMensualController,
     buscarClientesFacturasController
 } from "../controllers/eficiencia.controller.js";
+import { verificarToken } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get("/resumen", obtenerResumenEficienciaController);
-router.get("/por-pedido", obtenerEficienciaPorPedidoController);
-router.get("/por-pedido/detalle", obtenerDetallePorPedidoController);
-router.get("/por-producto", obtenerEficienciaPorProductoController);
-router.get("/por-producto/detalle", obtenerDetallePorProductoController);
-router.get("/por-categoria", obtenerEficienciaPorCategoriaController);
-router.get("/por-categoria/detalle", obtenerDetallePorCategoriaController);
-router.get('/por-cliente', obtenerEficienciaPorClienteController);
-router.get("/por-cliente/detalle", obtenerDetallePorClienteController);
-router.get("/evolucion-fillrate-mensual", obtenerEvolucionEficienciaMensualController);
-router.get("/evolucion-fillrate-mensual-cliente", obtenerEficienciaPorClienteController);
-router.get("/clientes-sugeridos", buscarClientesFacturasController);
+router.get("/resumen",verificarToken, obtenerResumenEficienciaController);
+router.get("/por-pedido",verificarToken, obtenerEficienciaPorPedidoController);
+router.get("/por-pedido/detalle",verificarToken, obtenerDetallePorPedidoController);
+router.get("/por-producto",verificarToken, obtenerEficienciaPorProductoController);
+router.get("/por-producto/detalle",verificarToken, obtenerDetallePorProductoController);
+router.get("/por-categoria",verificarToken, obtenerEficienciaPorCategoriaController);
+router.get("/por-categoria/detalle",verificarToken, obtenerDetallePorCategoriaController);
+router.get('/por-cliente',verificarToken, obtenerEficienciaPorClienteController);
+router.get("/por-cliente/detalle",verificarToken, obtenerDetallePorClienteController);
+router.get("/evolucion-fillrate-mensual",verificarToken, obtenerEvolucionEficienciaMensualController);
+router.get("/evolucion-fillrate-mensual-cliente",verificarToken, obtenerEficienciaPorClienteController);
+router.get("/clientes-sugeridos",verificarToken, buscarClientesFacturasController);
 
 export default router;

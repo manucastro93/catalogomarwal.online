@@ -5,6 +5,9 @@ import GraficoLineas from "@/components/InformeClientesDux/GraficoLineas";
 import TablaClientesDux from "@/components/InformeClientesDux/TablaClientes";
 import ReporteEjecutivoClientesDux from "@/components/InformeClientesDux/ReporteEjecutivoClientesDux";
 import GraficoPedidosPorMes from "@/components/InformeClientesDux/GraficoPedidosPorMes";
+import GraficoClientes from "@/components/InformeClientesDux/GraficoClientes";
+import GraficoMontos from "@/components/InformeClientesDux/GraficoMontos";
+import GraficoPedidos from "@/components/InformeClientesDux/GraficoPedidos";
 import dayjs from "dayjs";
 import {
   obtenerInformeClientesDux,
@@ -77,12 +80,18 @@ export default function InformeClientesDux() {
       <ReporteEjecutivoClientesDux />
 
       <Show when={datos()?.porMes}>
+          <GraficoClientes data={datos()!.porMes as ClienteDuxPorMesMonetizado[]} />
+          <GraficoPedidos data={datos()!.porMes as ClienteDuxPorMesMonetizado[]} />
+          <GraficoMontos data={datos()!.porMes as ClienteDuxPorMesMonetizado[]} />
+      </Show>
+      {/*
+      <Show when={datos()?.porMes}>
         <GraficoBarras
           data={datos()!.porMes as ClienteDuxPorMesMonetizado[]}
           mostrarMontos
         />
       </Show>
-      {/*
+
       <Show when={graficoPedidosData()}>
         <GraficoPedidosPorMes data={graficoPedidosData()!} />
       </Show>

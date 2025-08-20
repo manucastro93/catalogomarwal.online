@@ -7,7 +7,7 @@ import theme from '@/styles/sidebarTheme';
 export default function Finanzas(props: { usuario: any; expandido: boolean }) {
   const location = useLocation();
   const [open, setOpen] = createSignal(
-    location.pathname.startsWith('/Produccion')
+    location.pathname.startsWith('/Finanzas')
   );
 
   const esActivo = (path: string) => location.pathname === path;
@@ -35,20 +35,8 @@ export default function Finanzas(props: { usuario: any; expandido: boolean }) {
 
       <Show when={open() && props.expandido}>
         <div class="mt-1 flex flex-col">
-          <ConPermiso modulo="Produccion_Metalurgica" accion="ver">
-            <SidebarLink href="/Produccion/Metalurgica" texto="Metalúrgica" activo={esActivo('/Produccion/Metalurgica')} />
-          </ConPermiso>
-          <ConPermiso modulo="Produccion_Inyeccion" accion="ver">
-            <SidebarLink href="/Produccion/Inyeccion" texto="Inyección" activo={esActivo('/Produccion/Inyeccion')} />
-          </ConPermiso>
-          <ConPermiso modulo="Produccion_Hojalateria" accion="ver">
-            <SidebarLink href="/Produccion/Hojalateria" texto="Hojalatería" activo={esActivo('/Produccion/Hojalateria')} />
-          </ConPermiso>
-          <ConPermiso modulo="Produccion_Diaria" accion="ver">
-            <SidebarLink href="/Produccion/ProduccionDiaria" texto="Producción diaria" activo={esActivo('/Produccion/ProduccionDiaria')} />
-          </ConPermiso>
-          <ConPermiso modulo="Produccion_OT" accion="ver">
-            <SidebarLink href="/Produccion/OrdenesDeTrabajo" texto="Órdenes de trabajo" activo={esActivo('/Produccion/OrdenesDeTrabajo')} />
+          <ConPermiso modulo="Finanzas" accion="ver">
+            <SidebarLink href="/Finanzas/" texto="-" activo={esActivo('/Finanzas/1')} />
           </ConPermiso>
         </div>
       </Show>

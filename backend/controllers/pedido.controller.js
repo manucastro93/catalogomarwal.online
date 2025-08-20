@@ -487,7 +487,6 @@ export const obtenerPedidosDuxInicio = async (req, res, next) => {
       ${baseFromJoin}
           AND p.estado_facturacion IN ('PENDIENTE','FACTURADO_PARCIAL')
         ORDER BY p.fecha DESC, p.nro_pedido DESC
-        LIMIT 5
         `,
             { replacements: { idVendedor } }
     );
@@ -497,8 +496,9 @@ export const obtenerPedidosDuxInicio = async (req, res, next) => {
       ${selectCols}
       ${baseFromJoin}
         AND p.estado_facturacion IN ('FACTURADO','CERRADO')
+        AND MONTH(p.fecha) = MONTH(CURRENT_DATE())
+    AND YEAR(p.fecha) = YEAR(CURRENT_DATE())
       ORDER BY p.fecha DESC, p.nro_pedido DESC
-      LIMIT 5
       `,
           { replacements: { idVendedor } }
         );

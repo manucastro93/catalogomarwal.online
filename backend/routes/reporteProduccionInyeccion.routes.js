@@ -10,6 +10,6 @@ const router = express.Router();
 
 router.get("/", verificarToken, obtenerReportesProduccion);
 router.post("/", verificarToken, crearReporteProduccion);
-router.delete("/reportes-produccion/:id", verificarToken, eliminarReporteProduccion);
+router.delete("/:id", verificarToken, eliminarReporteProduccion);
 
 export default router;

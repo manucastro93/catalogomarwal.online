@@ -100,7 +100,6 @@ export const crearReporteProduccion = async (req, res, next) => {
 export const eliminarReporteProduccion = async (req, res, next) => {
   try {
     const { id } = req.params;
-
     // Traer el encabezado y detalles antes de borrar (para auditar)
     const encabezado = await ReporteProduccionInyeccionEncabezado.findByPk(id, {
       include: [

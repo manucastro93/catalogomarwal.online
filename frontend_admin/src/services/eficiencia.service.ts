@@ -31,6 +31,7 @@ export async function fetchEficienciaPorCliente(params: {
   desde: string;
   hasta: string;
   cliente?: string;
+  personalDuxId?: string;
 }) {
   const { data } = await api.get("/eficiencia/por-cliente", { params });
   return data;

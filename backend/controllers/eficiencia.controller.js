@@ -10,6 +10,7 @@ import { generarResumenEjecutivo,
          obtenerDetallePorCategoria,
          buscarClientesDesdeFacturas,
        } from '../services/eficiencia.service.js';
+import { resolverIdVendedor } from '../helpers/resolverIdVendedor.js';
 
 // ✅ Helper para manejar errores de forma consistente
 const handleError = (res, error, message) => {
@@ -48,13 +49,16 @@ export const obtenerEvolucionEficienciaMensualController = async (req, res) => {
 export const obtenerEficienciaPorClienteController = async (req, res) => {
   try {
     let { desde, hasta, cliente } = req.query;
+    const vendedorId = await resolverIdVendedor(req);
 
     const hoy = new Date();
     const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
     if (!desde) desde = primerDiaMes.toISOString().split("T")[0];
     if (!hasta) hasta = hoy.toISOString().split("T")[0];
-    const resultado = await obtenerEficienciaPorCliente(desde, hasta, cliente);
+
+    const resultado = await obtenerEficienciaPorCliente(desde, hasta, cliente, vendedorId);
+
     res.json(resultado);
   } catch (error) {
     handleError(res, error, "calcular eficiencia por cliente");

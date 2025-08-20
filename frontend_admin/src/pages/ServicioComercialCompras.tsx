@@ -10,12 +10,12 @@ import {
   fetchEvolucionEficienciaMensual,
 } from "@/services/eficiencia.service";
 import { obtenerPersonalDux } from "@/services/personalDux.service";
-import FiltrosEficiencia from "@/components/Grafico/Eficiencia/FiltrosEficiencia";
-import ResumenTextoEficiencia from "@/components/Grafico/Eficiencia/ResumenTextoEficiencia";
-import TablaEficiencia from "@/components/Grafico/Eficiencia/TablaEficiencia";
-import GraficosEficiencia from "@/components/Grafico/Eficiencia/GraficosEficiencia";
-import ModalDetalleEficiencia from "@/components/Grafico/Eficiencia/ModalDetalleEficiencia";
-import ModalDetallePedido from "@/components/Grafico/Eficiencia/ModalDetallePedido";
+import FiltrosEficiencia from "@/components/ServicioComercialCompras/FiltrosEficiencia";
+import ResumenTextoEficiencia from "@/components/ServicioComercialCompras/ResumenTextoEficiencia";
+import TablaEficiencia from "@/components/ServicioComercialCompras/TablaEficiencia";
+import GraficosEficiencia from "@/components/ServicioComercialCompras/GraficosEficiencia";
+import ModalDetalleEficiencia from "@/components/ServicioComercialCompras/ModalDetalleEficiencia";
+import ModalDetallePedido from "@/components/ServicioComercialCompras/ModalDetallePedido";
 import { exportarDatosAExcel } from "@/utils/exportarDatosAExcel";
 import { formatearFechaCorta } from "@/utils/formato";
 import { ROLES_USUARIOS } from '@/constants/rolesUsuarios';
@@ -23,7 +23,7 @@ import { useAuth } from '@/store/auth';
 
 export type ModoEficiencia = "categoria" | "producto" | "cliente";
 
-export default function Eficiencia() {
+export default function ServicioComercialCompras() {
   const { usuario } = useAuth();
   const today = new Date();
   const primerDiaMes = new Date(today.getFullYear(), today.getMonth(), 1);

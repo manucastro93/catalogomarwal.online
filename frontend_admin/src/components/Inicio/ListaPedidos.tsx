@@ -119,7 +119,7 @@ export default function ListaPedidos(props: {
         </div>
       </div>
 
-      <ul class="space-y-3">
+      <ul class="space-y-3 overflow-auto max-h-[70vh]">
         <For each={pedidosOrdenados()}>
           {(p) => (
             <li

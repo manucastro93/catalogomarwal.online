@@ -1,6 +1,8 @@
 import { createSignal, createEffect, Show, createResource, For, createMemo } from "solid-js";
 import type { Usuario, PersonalDux } from "@/types/usuario";
+import type { RolUsuario } from "@/types/rolUsuario";
 import { obtenerPersonalDux } from "@/services/personalDux.service";
+import { obtenerRolesUsuario } from "@/services/rolUsuario.service";
 
 interface Props {
   abierto: boolean;
@@ -16,8 +18,10 @@ export default function ModalNuevoAdministrador(props: Props) {
 
   // manejar SIEMPRE como string en el select
   const [personalDuxSel, setPersonalDuxSel] = createSignal<string>("");
+  const [rolesSel, setRolesSel] = createSignal<string>("");
 
   const [personal] = createResource<PersonalDux[]>(obtenerPersonalDux);
+  const [roles] = createResource<RolUsuario[]>(obtenerRolesUsuario);
 
   // opciones normalizadas
   const opciones = createMemo(() =>
@@ -84,13 +88,15 @@ export default function ModalNuevoAdministrador(props: Props) {
           </h2>
 
           <div class="space-y-3">
+            <label class="block text-sm mb-1">Nombre y Apellido</label>
             <input
               type="text"
-              placeholder="Nombre *"
+              placeholder="Nombre y Apellido *"
               class="w-full border p-2 rounded"
               value={nombre()}
               onInput={(e) => setNombre(e.currentTarget.value)}
             />
+            <label class="block text-sm mb-1">Email</label>
             <input
               type="email"
               placeholder="Email *"
@@ -98,6 +104,7 @@ export default function ModalNuevoAdministrador(props: Props) {
               value={email()}
               onInput={(e) => setEmail(e.currentTarget.value)}
             />
+            <label class="block text-sm mb-1">Teléfono</label>
             <input
               type="tel"
               placeholder="Teléfono"
@@ -105,6 +112,23 @@ export default function ModalNuevoAdministrador(props: Props) {
               value={telefono()}
               onInput={(e) => setTelefono(e.currentTarget.value)}
             />
+
+            <div>
+              <label class="block text-sm mb-1">Rol Usuario</label>
+              <select
+                class="w-full border p-2 rounded"
+                value={rolesSel()}
+                onChange={(e) => setRolesSel(e.currentTarget.value)}
+              >
+                <option value="{props.administrador?.rolUsuarioId}">{props.administrador?.rolUsuario?.nombre}</option>
+
+                <For each={roles()}>
+                  {(o) => (
+                    <option value={o.id}>{o.nombre}</option>
+                  )}
+                </For>
+              </select>
+            </div>
 
             <div>
               <label class="block text-sm mb-1">Vincular a Personal Dux (opcional)</label>

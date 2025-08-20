@@ -22,7 +22,7 @@ export default function TablaClientes(props: {
   return `${label} ${flecha}`;
 };
 
-  return (
+return (
     <div class="overflow-auto border rounded-lg">
       <Show
         when={props.mostrarClientesDux}
@@ -94,6 +94,9 @@ export default function TablaClientes(props: {
               <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('categoriaFiscal')}>
                 {renderHeader('categoriaFiscal', 'Categoría Fiscal')}
               </th>
+              <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('domicilio')}>
+                {renderHeader('domicilio', 'Dirección')}
+              </th>
               <th class="text-left p-3 border-b cursor-pointer" onClick={() => props.onOrdenar('provincia')}>
                 {renderHeader('provincia', 'Provincia')}
               </th>
@@ -116,6 +119,7 @@ export default function TablaClientes(props: {
                     <td class="p-3">{c.cuitCuil}</td>
                     <td class="p-3">{c.vendedor}</td>
                     <td class="p-3">{c.categoriaFiscal}</td>
+                    <td class="p-3">{c.domicilio}</td>
                     <td class="p-3">{c.provincia}</td>
                     <td class="p-3">{c.localidad}</td>
                     <td class="p-3">{formatearFechaCorta(c.fechaCreacion)}</td>
