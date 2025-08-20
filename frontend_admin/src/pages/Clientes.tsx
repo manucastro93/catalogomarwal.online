@@ -6,7 +6,7 @@ import { obtenerProvincias, obtenerLocalidades } from '@/services/ubicacion.serv
 import { obtenerUsuariosPorRolPorId } from '@/services/usuario.service';
 import { useAuth } from '@/store/auth';
 import VerClienteModal from '@/components/Cliente/VerClienteModal';
-import ModalMapaClientes from '@/components/Cliente/ModalMapaClientes';
+import ModalMapaClientesDux from '@/components/Cliente/ModalMapaClientesDux';
 import TablaClientes from '@/components/Cliente/TablaClientes';
 import FiltrosClientes from '@/components/Cliente/FiltrosClientes';
 import Loader from '@/components/Layout/Loader';
@@ -192,7 +192,7 @@ export default function Clientes() {
         onCerrar={() => setVerCliente(null)}
       />
 
-      <ModalMapaClientes
+      <ModalMapaClientesDux
         abierto={mostrarMapa()}
         onCerrar={() => setMostrarMapa(false)}
       />

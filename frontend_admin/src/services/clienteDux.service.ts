@@ -53,3 +53,22 @@ export const obtenerReporteEjecutivoUltimaCompra = async (): Promise<string> => 
   const { data } = await api.get('/clientesDux/reporte-ejecutivo-ultima-compra');
   return data.reporte;
 };
+
+export async function obtenerClientesDuxGeocodificados(params?: {
+  provincia?: string; localidad?: string; vendedor?: string; limit?: number;
+}) {
+  const { data } = await api.get("/clientesDux/geo", { params });
+  return data;
+}
+
+export async function geocodificarClientesDux(params?: {
+  limit?: number; onlyMissing?: boolean; provincia?: string; localidad?: string;
+}) {
+  const { data } = await api.post("/clientesDux/geocode", params ?? {});
+  return data;
+}
+
+export async function obtenerClientesDuxGeo() {
+  const { data } = await api.get("/clientesDux/geo");
+  return data as any[];
+}

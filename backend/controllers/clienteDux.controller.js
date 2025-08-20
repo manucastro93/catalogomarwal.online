@@ -1,7 +1,10 @@
-import { ClienteDux, PedidoDux, PersonalDux } from '../models/index.js';
-import { Op, Sequelize } from 'sequelize';
+import { ClienteDux, PedidoDux, PersonalDux, sequelize } from '../models/index.js';
+import { Op, Sequelize, QueryTypes } from 'sequelize';
 import dayjs from "dayjs";
 import { formatearFechaCorta } from '../utils/fecha.js'
+import { geocodificarClienteDuxFila } from '../helpers/normalizarDireccion.js'
+import fetch from 'node-fetch';
+import pLimit from 'p-limit'; 
 
 export const reporteEjecutivoUltimaCompra = async (req, res) => {
   try {
@@ -637,5 +640,103 @@ export const obtenerInformeClientesUltimaCompra = async (req, res) => {
   } catch (error) {
     console.error('❌ Error en informe de última compra:', error);
     res.status(500).json({ message: 'Error al obtener informe de última compra' });
+  }
+};
+
+export const obtenerClientesDuxGeo = async (req, res) => {
+  try {
+    const filas = await sequelize.query(
+      `
+      /* Agregados por id_cliente desde Facturas */
+      WITH agg_fact AS (
+        SELECT 
+          f.id_cliente,
+          COALESCE(SUM(f.total), 0)                            AS volumenTotal,
+          MAX(f.fecha_comp)                                    AS fechaUltimaCompra,
+          COUNT(DISTINCT f.nro_pedido)                         AS totalPedidos
+        FROM Facturas f
+        GROUP BY f.id_cliente
+      ),
+      /* Último monto por id_cliente: tomamos la factura con fecha_comp máxima */
+      ult_fact AS (
+        SELECT x.id_cliente, f2.total AS montoUltimaCompra
+        FROM (
+          SELECT f.id_cliente, MAX(f.fecha_comp) AS max_fecha
+          FROM Facturas f
+          GROUP BY f.id_cliente
+        ) x
+        JOIN Facturas f2 
+          ON f2.id_cliente = x.id_cliente
+         AND f2.fecha_comp = x.max_fecha
+      )
+
+      SELECT
+        c.id,
+        c.cliente,
+        c.nombreFantasia,
+        c.domicilio,
+        c.localidad,
+        c.provincia,
+        c.latitud  AS lat,
+        c.longitud AS lng,
+        c.geoPrecision,
+        c.geoFuente,
+        c.geoActualizadoAt,
+        c.vendedorId,
+        CONCAT(pd.apellido_razon_social, ', ', pd.nombre) AS vendedorNombre,
+
+        COALESCE(af.volumenTotal, 0)   AS volumenTotal,
+        COALESCE(af.totalPedidos, 0)   AS totalPedidos,
+        af.fechaUltimaCompra           AS fechaUltimaCompra,
+        uf.montoUltimaCompra           AS montoUltimaCompra
+
+      FROM ClientesDux c
+      LEFT JOIN agg_fact af ON af.id_cliente = c.id          -- 🔑 clave robusta
+      LEFT JOIN ult_fact uf ON uf.id_cliente = c.id
+      LEFT JOIN PersonalDux pd ON pd.id_personal = c.vendedorId
+      /* sin WHERE para no filtrar clientes */
+      ORDER BY c.id
+      `,
+      { type: QueryTypes.SELECT }
+    );
+
+    res.json(filas);
+  } catch (err) {
+    console.error("❌ Error en obtenerClientesDuxGeo:", err);
+    res.status(500).json({ error: "Error al obtener datos geográficos de clientes Dux" });
+  }
+};
+
+export const geocodificarBatchClientesDux = async (req, res) => {
+  try {
+    const { limit = 500, onlyMissing = true, provincia, localidad } = req.body || {};
+    const where = {};
+    if (provincia) where.provincia = provincia;
+    if (localidad) where.localidad = localidad;
+    if (onlyMissing) where.latitud = { [Op.is]: null };
+
+    const clientes = await ClienteDux.findAll({ where, limit: Number(limit) });
+
+    const limitConcurrente = pLimit(2); // evitar rate-limit de Nominatim
+    const tareas = clientes.map((c) => limitConcurrente(async () => {
+      if(c.geoActualizadoAt == null){
+        console.log("geolocalizando a: ", c.cliente)
+        const r = await geocodificarClienteDuxFila(c);
+        await c.update({
+          latitud: r.lat,
+          longitud: r.lon,
+          geoPrecision: r.precision,
+          geoFuente: r.fuente,
+          geoActualizadoAt: new Date(),
+        });
+        return { id: c.id, precision: r.precision };
+      }
+    }));
+
+    const resultados = await Promise.all(tareas);
+    res.json({ procesados: resultados.length, detalles: resultados });
+  } catch (error) {
+    console.error('❌ Error en geocodificarBatchClientesDux:', error);
+    res.status(500).json({ message: 'Error al geocodificar clientes Dux' });
   }
 };

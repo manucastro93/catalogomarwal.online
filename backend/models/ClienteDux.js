@@ -111,6 +111,26 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: true,
       },
+            latitud: {
+        type: DataTypes.DECIMAL(10,7),
+        allowNull: true,
+      },
+      longitud: {
+        type: DataTypes.DECIMAL(10,7),
+        allowNull: true,
+      },
+      geoPrecision: {
+        type: DataTypes.ENUM('direccion','localidad','provincia','ninguno'),
+        allowNull: true,
+      },
+      geoFuente: {
+        type: DataTypes.ENUM('google','nominatim'),
+        allowNull: true,
+      },
+      geoActualizadoAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
