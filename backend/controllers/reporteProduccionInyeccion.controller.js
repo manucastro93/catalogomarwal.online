@@ -76,6 +76,7 @@ export const crearReporteProduccion = async (req, res, next) => {
         horaDesde: d.horaDesde,
         horaHasta: d.horaHasta,
         cantidad: d.cantidad,
+        fallados: d.fallados,
       })
     ));
 

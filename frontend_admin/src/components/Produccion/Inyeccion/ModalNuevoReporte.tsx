@@ -23,6 +23,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
       horaDesde?: string;
       horaHasta?: string;
       cantidad?: number;
+      fallados?: number;
     }[]
   >([]);
   const [mensaje, setMensaje] = createSignal("");
@@ -101,6 +102,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
         horaDesde: item.horaDesde!,
         horaHasta: item.horaHasta!,
         cantidad: item.cantidad as number,
+        fallados: item.fallados as number,
       })),
     };
     await guardarReporteProduccionInyeccionEncabezado(payload);
@@ -181,6 +183,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                   <th class="p-2 w-[90px]">Hora desde</th>
                   <th class="p-2 w-[90px]">Hora hasta</th>
                   <th class="p-2 w-[100px]">Cantidad</th>
+                  <th class="p-2 w-[100px]">Fallados</th>
                   <th class="p-2 w-[80px] text-right">Acciones</th>
                 </tr>
               </thead>
@@ -311,6 +314,25 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                               cambiarCampo(
                                 item.pieza.id,
                                 "cantidad",
+                                isNaN(numero) ? undefined : numero
+                              );
+                            }}
+                          />
+                        </td>
+                        {/* FALLADOS */}
+                        <td class="p-2">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0"
+                            value={item.fallados ?? ""}
+                            class="border p-1 w-full text-right"
+                            onChange={(e) => {
+                              const valor = e.currentTarget.value;
+                              const numero = parseInt(valor);
+                              cambiarCampo(
+                                item.pieza.id,
+                                "fallados",
                                 isNaN(numero) ? undefined : numero
                               );
                             }}

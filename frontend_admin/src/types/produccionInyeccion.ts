@@ -12,6 +12,7 @@ export interface ReporteProduccionInyeccionDetalle {
   horaDesde: string; // formato "HH:mm:ss"
   horaHasta: string; // formato "HH:mm:ss"
   cantidad: number;
+  fallados?: number;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -43,6 +44,7 @@ export interface CrearReporteProduccionInyeccionEncabezado {
     horaDesde: string; // "HH:mm"
     horaHasta: string; // "HH:mm"
     cantidad: number;
+    fallados: number;
   }[];
 }
 export interface ProduccionInyeccionParams {
