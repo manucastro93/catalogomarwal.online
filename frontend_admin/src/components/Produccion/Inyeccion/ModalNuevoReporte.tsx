@@ -156,15 +156,15 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
             <table class="w-full text-base text-left border table-fixed">
               <thead class="bg-gray-100">
                 <tr>
-                  <th class="p-2 w-[120px]">Código</th>
+                  <th class="p-2 w-[100px]">Código</th>
                   <th class="p-2">Pieza</th>
                   <th class="p-2">Operario</th>
                   <th class="p-2">Máquina</th>
-                  <th class="p-2 w-[120px]">Hora desde</th>
-                  <th class="p-2 w-[120px]">Hora hasta</th>
-                  <th class="p-2 w-[100px]">Cantidad</th>
-                  <th class="p-2 w-[100px]">Fallados</th>
-                  <th class="p-2 w-[80px] text-right">Acciones</th>
+                  <th class="p-2 w-[100px]">Hora desde</th>
+                  <th class="p-2 w-[100px]">Hora hasta</th>
+                  <th class="p-2 w-[80px]">Cantidad</th>
+                  <th class="p-2 w-[80px]">Fallados</th>
+                  <th class="p-2 w-[60px] text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -173,7 +173,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                     // OPERARIOS
                     const [operarios] = createResource(
                       () => (items[i()].operarioInput ?? "").trim(),
-                      (texto) => texto ? buscarOperariosPorTexto(texto, 10) : Promise.resolve([])
+                      (texto) => texto ? buscarOperariosPorTexto(texto, 1) : Promise.resolve([])
                     );
                     // MÁQUINAS
                     const [maquinas] = createResource(
@@ -281,7 +281,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                         <td class="p-2">
                           <input
                             type="time"
-                            class="border w-full text-base h-11 px-3 py-2 rounded"
+                            class="border p-1 w-full text-right"
                             value={items[i()].horaDesde ?? ""}
                             onChange={(e) => setItems(i(), "horaDesde", e.currentTarget.value)}
                           />
@@ -290,7 +290,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                         <td class="p-2">
                           <input
                             type="time"
-                            class="border w-full text-base h-11 px-3 py-2 rounded"
+                            class="border p-1 w-full text-right"
                             value={items[i()].horaHasta ?? ""}
                             onChange={(e) => setItems(i(), "horaHasta", e.currentTarget.value)}
                           />
