@@ -1,31 +1,37 @@
-import { createSignal, Show, For, createResource } from 'solid-js';
-import { buscarPiezasPorTexto } from '@/services/pieza.service';
-import { buscarOperariosPorTexto } from '@/services/operario.service';
-import { buscarMaquinasPorTexto } from '@/services/maquina.service';
-import { guardarReporteProduccionInyeccionEncabezado } from '@/services/produccionInyeccion.service';
-import { useAuth } from '@/store/auth';
-import type { Pieza } from '@/types/pieza';
-import type { Operario } from '@/types/operario';
-import type { Maquina } from '@/types/maquina';
-import type { CrearReporteProduccionInyeccionEncabezado } from '@/types/produccionInyeccion';
+import { createSignal, Show, For, createResource } from "solid-js";
+import { createStore } from "solid-js/store";
+import { buscarPiezasPorTexto } from "@/services/pieza.service";
+import { buscarOperariosPorTexto } from "@/services/operario.service";
+import { buscarMaquinasPorTexto } from "@/services/maquina.service";
+import { guardarReporteProduccionInyeccionEncabezado } from "@/services/produccionInyeccion.service";
+import { useAuth } from "@/store/auth";
+import type { Pieza } from "@/types/pieza";
+import type { Operario } from "@/types/operario";
+import type { Maquina } from "@/types/maquina";
+import type { CrearReporteProduccionInyeccionEncabezado } from "@/types/produccionInyeccion";
+
+type ItemRow = {
+  uid: number;               // 🔑 identidad estable por fila
+  pieza: Pieza;
+  operario?: Operario;
+  operarioInput?: string;
+  maquina?: Maquina;
+  maquinaInput?: string;
+  horaDesde?: string;
+  horaHasta?: string;
+  cantidad?: number;
+  fallados?: number;
+};
+
+let UID = 1;
 
 export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void }) {
   const [busqueda, setBusqueda] = createSignal("");
   const [piezas] = createResource(busqueda, buscarPiezasPorTexto);
 
-  type ItemRow = {
-    pieza: Pieza;
-    operario?: Operario;
-    operarioInput?: string;
-    maquina?: Maquina;
-    maquinaInput?: string;
-    horaDesde?: string;
-    horaHasta?: string;
-    cantidad?: number;
-    fallados?: number;
-  };
+  // ✅ Usamos store para no reemplazar objetos y evitar perder foco
+  const [items, setItems] = createStore<ItemRow[]>([]);
 
-  const [items, setItems] = createSignal<ItemRow[]>([]);
   const [mensaje, setMensaje] = createSignal("");
   const { usuario } = useAuth();
 
@@ -34,48 +40,38 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
   const hoy = new Date().toISOString().split("T")[0];
   const [fecha, setFecha] = createSignal(hoy);
 
-  // --- helpers inmutables para no perder foco en inputs ---
-  const updateItem = (piezaId: number, patch: Partial<ItemRow>) => {
-    setItems(prev => prev.map(it => it.pieza.id === piezaId ? { ...it, ...patch } : it));
-  };
-
   const agregarItem = (pieza: Pieza) => {
-    // 🔒 Evitar duplicados por código/pieza.id
-    const yaExiste = items().some((it) => it.pieza.id === pieza.id);
-    if (yaExiste) {
-      // Si preferís, en vez de avisar, podés sumar cantidad:
-      // setItems(prev => prev.map(it => it.pieza.id === pieza.id ? ({ ...it, cantidad: (it.cantidad ?? 0) + 1 }) : it));
-      //setMensaje(`La pieza ${pieza.codigo} ya está cargada en la planilla.`);
-      //setBusqueda("");
-      //return;
-    }
-
-    const ultimo = items().length > 0 ? items()[items().length - 1] : undefined;
+    // ✅ PERMITIDO repetir la misma pieza varias veces
+    const ultimo = items.length > 0 ? items[items.length - 1] : undefined;
     const horaDesde = ultimo?.horaHasta && ultimo.horaHasta !== "" ? ultimo.horaHasta : "";
-    setItems([...items(), { pieza, horaDesde }]);
+    setItems(items.length, {
+      uid: UID++,
+      pieza,
+      horaDesde,
+    });
     setBusqueda("");
   };
 
-  const eliminarItem = (piezaId: number) => {
-    setItems(prev => prev.filter(it => it.pieza.id !== piezaId));
+  const eliminarItem = (uid: number) => {
+    const idx = items.findIndex((it) => it.uid === uid);
+    if (idx >= 0) setItems((arr) => arr.toSpliced(idx, 1));
   };
 
   const guardarReporte = async () => {
     const usuarioId = usuario()?.id;
     if (!usuarioId) return setMensaje("Error: usuario no identificado.");
-
     if (!fecha()) return setMensaje("Seleccioná una fecha.");
     if (!turno()) return setMensaje("Seleccioná un turno.");
+    if (items.length === 0) return setMensaje("Agregá al menos un detalle al reporte.");
 
-    if (items().length === 0) return setMensaje("Agregá al menos un detalle al reporte");
-
-    const faltantes = items().some(it =>
-      !it.operario?.id ||
-      !it.maquina?.id ||
-      typeof it.cantidad !== "number" ||
-      (it.cantidad ?? 0) < 1 ||
-      !it.horaDesde ||
-      !it.horaHasta
+    const faltantes = items.some(
+      (it) =>
+        !it.operario?.id ||
+        !it.maquina?.id ||
+        typeof it.cantidad !== "number" ||
+        (it.cantidad ?? 0) < 1 ||
+        !it.horaDesde ||
+        !it.horaHasta
     );
     if (faltantes) return setMensaje("Todos los campos de cada detalle son obligatorios.");
 
@@ -84,7 +80,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
       turno: turno() as "mañana" | "tarde" | "noche",
       usuarioId,
       nota: nota() || undefined,
-      detalles: items().map((it) => ({
+      detalles: items.map((it) => ({
         operarioId: it.operario!.id,
         maquinaId: it.maquina!.id,
         piezaId: it.pieza.id,
@@ -157,7 +153,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
           </Show>
         </div>
 
-        <Show when={items().length > 0}>
+        <Show when={items.length > 0}>
           <div class="overflow-x-auto mb-4 min-h-[360px] md:min-h-[380px] overflow-visible">
             <table class="w-full text-base text-left border table-fixed">
               <thead class="bg-gray-100">
@@ -174,19 +170,23 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                 </tr>
               </thead>
               <tbody>
-                <For each={items()}>
-                  {(item) => {
+                <For each={items}>
+                  {(item, i) => {
+                    // 🔎 Autocomplete Operarios (no borra el input al tipear)
                     const [operarios] = createResource(
-                      () => (item.operarioInput ?? "").trim(),
+                      () => (items[i()].operarioInput ?? "").trim(),
                       (texto) => texto ? buscarOperariosPorTexto(texto, 10) : Promise.resolve([])
                     );
+                    // 🔎 Autocomplete Máquinas
                     const [maquinas] = createResource(
-                      () => (item.maquinaInput ?? "").trim(),
+                      () => (items[i()].maquinaInput ?? "").trim(),
                       (texto) => texto ? buscarMaquinasPorTexto(texto) : Promise.resolve([])
                     );
 
-                    const mostrarOps = () => (item.operarioInput ?? "").length > 0 && (operarios()?.length ?? 0) > 0;
-                    const mostrarMaq = () => (item.maquinaInput ?? "").length > 0 && (maquinas()?.length ?? 0) > 0;
+                    const mostrarOps = () =>
+                      (items[i()].operarioInput ?? "").length > 0 && (operarios()?.length ?? 0) > 0;
+                    const mostrarMaq = () =>
+                      (items[i()].maquinaInput ?? "").length > 0 && (maquinas()?.length ?? 0) > 0;
 
                     return (
                       <tr class="border-t relative align-top">
@@ -199,13 +199,11 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                             type="text"
                             placeholder="Buscar operario..."
                             class="border p-1 w-full text-sm"
-                            value={item.operarioInput ?? ""}
+                            value={items[i()].operarioInput ?? ""}
                             onInput={(e) => {
                               const v = e.currentTarget.value;
-                              // mantener el input controlado por operarioInput, sin limpiar ni forzar cambios de foco
-                              updateItem(item.pieza.id, { operarioInput: v });
-                              // Si venía uno seleccionado y el usuario vuelve a tipear, des-seleccionamos
-                              if (item.operario) updateItem(item.pieza.id, { operario: undefined });
+                              setItems(i(), "operarioInput", v);          // ✅ mutación sin reemplazar el row
+                              if (items[i()].operario) setItems(i(), "operario", undefined);
                             }}
                             autocomplete="off"
                           />
@@ -216,8 +214,8 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                                   <div
                                     class="px-2 py-1 hover:bg-gray-200 cursor-pointer"
                                     onClick={() => {
-                                      // Al elegir, fijamos ambos: entidad y texto visible. NO limpiamos operarioInput.
-                                      updateItem(item.pieza.id, { operario: op, operarioInput: op.nombre });
+                                      // ✅ selecciona pero NO limpia el texto; mantiene foco
+                                      setItems(i(), { operario: op, operarioInput: op.nombre });
                                     }}
                                   >
                                     {op.nombre}
@@ -228,17 +226,17 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                           </Show>
                         </td>
 
-                        {/* MAQUINA */}
+                        {/* MÁQUINA */}
                         <td class="p-2 relative align-top">
                           <input
                             type="text"
                             placeholder="Buscar máquina..."
                             class="border p-1 w-full text-sm"
-                            value={item.maquinaInput ?? ""}
+                            value={items[i()].maquinaInput ?? ""}
                             onInput={(e) => {
                               const v = e.currentTarget.value;
-                              updateItem(item.pieza.id, { maquinaInput: v });
-                              if (item.maquina) updateItem(item.pieza.id, { maquina: undefined });
+                              setItems(i(), "maquinaInput", v);
+                              if (items[i()].maquina) setItems(i(), "maquina", undefined);
                             }}
                             autocomplete="off"
                           />
@@ -249,7 +247,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                                   <div
                                     class="px-2 py-1 hover:bg-gray-200 cursor-pointer"
                                     onClick={() => {
-                                      updateItem(item.pieza.id, { maquina: m, maquinaInput: m.nombre });
+                                      setItems(i(), { maquina: m, maquinaInput: m.nombre });
                                     }}
                                   >
                                     {m.nombre}
@@ -265,8 +263,8 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                           <input
                             type="time"
                             class="border p-1 w-full text-sm"
-                            value={item.horaDesde ?? ""}
-                            onChange={(e) => updateItem(item.pieza.id, { horaDesde: e.currentTarget.value })}
+                            value={items[i()].horaDesde ?? ""}
+                            onChange={(e) => setItems(i(), "horaDesde", e.currentTarget.value)}
                           />
                         </td>
                         {/* HORA HASTA */}
@@ -274,8 +272,8 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                           <input
                             type="time"
                             class="border p-1 w-full text-sm"
-                            value={item.horaHasta ?? ""}
-                            onChange={(e) => updateItem(item.pieza.id, { horaHasta: e.currentTarget.value })}
+                            value={items[i()].horaHasta ?? ""}
+                            onChange={(e) => setItems(i(), "horaHasta", e.currentTarget.value)}
                           />
                         </td>
                         {/* CANTIDAD */}
@@ -284,11 +282,11 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                             type="number"
                             min="1"
                             step="1"
-                            value={item.cantidad ?? ""}
+                            value={items[i()].cantidad ?? ""}
                             class="border p-1 w-full text-right"
                             onChange={(e) => {
-                              const numero = parseInt(e.currentTarget.value);
-                              updateItem(item.pieza.id, { cantidad: Number.isFinite(numero) ? numero : undefined });
+                              const n = parseInt(e.currentTarget.value);
+                              setItems(i(), "cantidad", Number.isFinite(n) ? n : undefined);
                             }}
                           />
                         </td>
@@ -298,11 +296,11 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                             type="number"
                             min="0"
                             step="1"
-                            value={item.fallados ?? ""}
+                            value={items[i()].fallados ?? ""}
                             class="border p-1 w-full text-right"
                             onChange={(e) => {
-                              const numero = parseInt(e.currentTarget.value);
-                              updateItem(item.pieza.id, { fallados: Number.isFinite(numero) ? numero : undefined });
+                              const n = parseInt(e.currentTarget.value);
+                              setItems(i(), "fallados", Number.isFinite(n) ? n : undefined);
                             }}
                           />
                         </td>
@@ -310,7 +308,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                         {/* ACCIONES */}
                         <td class="p-2 text-right">
                           <button
-                            onClick={() => eliminarItem(item.pieza.id)}
+                            onClick={() => eliminarItem(item.uid)}
                             class="text-red-600 text-sm hover:underline"
                           >
                             Eliminar
