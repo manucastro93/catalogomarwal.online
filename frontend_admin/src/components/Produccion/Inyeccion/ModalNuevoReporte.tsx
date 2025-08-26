@@ -11,12 +11,17 @@ import type { Maquina } from "@/types/maquina";
 import type { CrearReporteProduccionInyeccionEncabezado } from "@/types/produccionInyeccion";
 
 type ItemRow = {
-  uid: number;               // 🔑 identidad estable por fila
+  uid: number;
   pieza: Pieza;
+
   operario?: Operario;
   operarioInput?: string;
+  opOpen?: boolean;       // 👈 controla apertura del dropdown Operario
+
   maquina?: Maquina;
   maquinaInput?: string;
+  maqOpen?: boolean;      // 👈 controla apertura del dropdown Máquina
+
   horaDesde?: string;
   horaHasta?: string;
   cantidad?: number;
@@ -29,9 +34,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
   const [busqueda, setBusqueda] = createSignal("");
   const [piezas] = createResource(busqueda, buscarPiezasPorTexto);
 
-  // ✅ Usamos store para no reemplazar objetos y evitar perder foco
   const [items, setItems] = createStore<ItemRow[]>([]);
-
   const [mensaje, setMensaje] = createSignal("");
   const { usuario } = useAuth();
 
@@ -41,14 +44,9 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
   const [fecha, setFecha] = createSignal(hoy);
 
   const agregarItem = (pieza: Pieza) => {
-    // ✅ PERMITIDO repetir la misma pieza varias veces
     const ultimo = items.length > 0 ? items[items.length - 1] : undefined;
     const horaDesde = ultimo?.horaHasta && ultimo.horaHasta !== "" ? ultimo.horaHasta : "";
-    setItems(items.length, {
-      uid: UID++,
-      pieza,
-      horaDesde,
-    });
+    setItems(items.length, { uid: UID++, pieza, horaDesde, opOpen: false, maqOpen: false });
     setBusqueda("");
   };
 
@@ -162,8 +160,8 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                   <th class="p-2">Pieza</th>
                   <th class="p-2">Operario</th>
                   <th class="p-2">Máquina</th>
-                  <th class="p-2 w-[90px]">Hora desde</th>
-                  <th class="p-2 w-[90px]">Hora hasta</th>
+                  <th class="p-2 w-[120px]">Hora desde</th>
+                  <th class="p-2 w-[120px]">Hora hasta</th>
                   <th class="p-2 w-[100px]">Cantidad</th>
                   <th class="p-2 w-[100px]">Fallados</th>
                   <th class="p-2 w-[80px] text-right">Acciones</th>
@@ -172,21 +170,26 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
               <tbody>
                 <For each={items}>
                   {(item, i) => {
-                    // 🔎 Autocomplete Operarios (no borra el input al tipear)
+                    // OPERARIOS
                     const [operarios] = createResource(
                       () => (items[i()].operarioInput ?? "").trim(),
                       (texto) => texto ? buscarOperariosPorTexto(texto, 10) : Promise.resolve([])
                     );
-                    // 🔎 Autocomplete Máquinas
+                    // MÁQUINAS
                     const [maquinas] = createResource(
                       () => (items[i()].maquinaInput ?? "").trim(),
                       (texto) => texto ? buscarMaquinasPorTexto(texto) : Promise.resolve([])
                     );
 
                     const mostrarOps = () =>
-                      (items[i()].operarioInput ?? "").length > 0 && (operarios()?.length ?? 0) > 0;
+                      items[i()].opOpen === true &&
+                      (items[i()].operarioInput ?? "").length > 0 &&
+                      (operarios()?.length ?? 0) > 0;
+
                     const mostrarMaq = () =>
-                      (items[i()].maquinaInput ?? "").length > 0 && (maquinas()?.length ?? 0) > 0;
+                      items[i()].maqOpen === true &&
+                      (items[i()].maquinaInput ?? "").length > 0 &&
+                      (maquinas()?.length ?? 0) > 0;
 
                     return (
                       <tr class="border-t relative align-top">
@@ -200,22 +203,30 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                             placeholder="Buscar operario..."
                             class="border p-1 w-full text-sm"
                             value={items[i()].operarioInput ?? ""}
+                            onFocus={() => setItems(i(), "opOpen", true)}
                             onInput={(e) => {
-                              const v = e.currentTarget.value;
-                              setItems(i(), "operarioInput", v);          // ✅ mutación sin reemplazar el row
+                              setItems(i(), "operarioInput", e.currentTarget.value);
                               if (items[i()].operario) setItems(i(), "operario", undefined);
+                              setItems(i(), "opOpen", true); // sigue abierto mientras escribe
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Escape") setItems(i(), "opOpen", false);
+                            }}
+                            onBlur={() => {
+                              // pequeña demora para permitir click en opción
+                              setTimeout(() => setItems(i(), "opOpen", false), 120);
                             }}
                             autocomplete="off"
                           />
                           <Show when={mostrarOps()}>
-                            <div class="bg-white border-x border-b border-gray-300 max-h-32 overflow-y-auto z-40 shadow-xl absolute top-full left-0 right-0 rounded-b-md">
+                            <div class="bg-white border-x border-b border-gray-300 max-h-40 overflow-y-auto z-40 shadow-xl absolute top-full left-0 right-0 rounded-b-md">
                               <For each={operarios()}>
                                 {(op) => (
                                   <div
                                     class="px-2 py-1 hover:bg-gray-200 cursor-pointer"
+                                    onMouseDown={(e) => e.preventDefault()} // evita perder foco antes del click
                                     onClick={() => {
-                                      // ✅ selecciona pero NO limpia el texto; mantiene foco
-                                      setItems(i(), { operario: op, operarioInput: op.nombre });
+                                      setItems(i(), { operario: op, operarioInput: op.nombre, opOpen: false });
                                     }}
                                   >
                                     {op.nombre}
@@ -233,21 +244,29 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                             placeholder="Buscar máquina..."
                             class="border p-1 w-full text-sm"
                             value={items[i()].maquinaInput ?? ""}
+                            onFocus={() => setItems(i(), "maqOpen", true)}
                             onInput={(e) => {
-                              const v = e.currentTarget.value;
-                              setItems(i(), "maquinaInput", v);
+                              setItems(i(), "maquinaInput", e.currentTarget.value);
                               if (items[i()].maquina) setItems(i(), "maquina", undefined);
+                              setItems(i(), "maqOpen", true);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Escape") setItems(i(), "maqOpen", false);
+                            }}
+                            onBlur={() => {
+                              setTimeout(() => setItems(i(), "maqOpen", false), 120);
                             }}
                             autocomplete="off"
                           />
                           <Show when={mostrarMaq()}>
-                            <div class="bg-white border-x border-b border-gray-300 max-h-32 overflow-y-auto z-40 shadow-xl absolute top-full left-0 right-0 rounded-b-md">
+                            <div class="bg-white border-x border-b border-gray-300 max-h-40 overflow-y-auto z-40 shadow-xl absolute top-full left-0 right-0 rounded-b-md">
                               <For each={maquinas()}>
                                 {(m) => (
                                   <div
                                     class="px-2 py-1 hover:bg-gray-200 cursor-pointer"
+                                    onMouseDown={(e) => e.preventDefault()}
                                     onClick={() => {
-                                      setItems(i(), { maquina: m, maquinaInput: m.nombre });
+                                      setItems(i(), { maquina: m, maquinaInput: m.nombre, maqOpen: false }); // 👈 cierra
                                     }}
                                   >
                                     {m.nombre}
@@ -262,7 +281,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                         <td class="p-2">
                           <input
                             type="time"
-                            class="border p-1 w-full text-sm"
+                            class="border w-full text-base h-11 px-3 py-2 rounded"
                             value={items[i()].horaDesde ?? ""}
                             onChange={(e) => setItems(i(), "horaDesde", e.currentTarget.value)}
                           />
@@ -271,7 +290,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                         <td class="p-2">
                           <input
                             type="time"
-                            class="border p-1 w-full text-sm"
+                            class="border w-full text-base h-11 px-3 py-2 rounded"
                             value={items[i()].horaHasta ?? ""}
                             onChange={(e) => setItems(i(), "horaHasta", e.currentTarget.value)}
                           />
