@@ -2,14 +2,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import sequelize from './config/database.js';
-import { sincronizarSubcategoriasDesdeDux } from './services/dux.service.js';
+import { sincronizarComprasDesdeDux } from './services/duxCompras.service.js';
 
 async function ejecutar() {
   console.log(`[${new Date().toISOString()}] 🚀 Iniciando sincronización...`);
 
   try {
 
-    const resultado = await sincronizarSubcategoriasDesdeDux();
+    const resultado = await sincronizarComprasDesdeDux(5);
     console.log(`✅ Resultado: ${JSON.stringify(resultado, null, 2)}`);
 
   } catch (error) {

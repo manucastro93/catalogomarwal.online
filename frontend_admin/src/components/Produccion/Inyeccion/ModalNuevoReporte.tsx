@@ -35,12 +35,12 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
   const [fecha, setFecha] = createSignal(hoy);
 
   const agregarItem = (pieza: Pieza) => {
-    const yaExiste = items().find((item) => item.pieza.id === pieza.id);
-    if (!yaExiste) {
+    //const yaExiste = items().find((item) => item.pieza.id === pieza.id);
+    //if (!yaExiste) {
       const ultimo = items().length > 0 ? items()[items().length - 1] : undefined;
       const horaDesde = ultimo?.horaHasta && ultimo.horaHasta !== "" ? ultimo.horaHasta : "";
       setItems([...items(), { pieza, horaDesde }]);
-    }
+    //}
     setBusqueda("");
   };
 
