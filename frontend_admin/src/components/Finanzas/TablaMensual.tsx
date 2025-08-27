@@ -49,8 +49,8 @@ export default function TablaMensual(props: {
             <For each={monthsToShow()}>
               {(m) => (
                 <>
-                  <th class="px-3 py-2 text-right uppercase tracking-wide text-[11px] font-medium">{m}</th>
                   <th class="px-2 py-2 text-right text-[11px] font-medium">%</th>
+                  <th class="px-3 py-2 text-right uppercase tracking-wide text-[11px] font-medium">{m}</th>
                 </>
               )}
             </For>
