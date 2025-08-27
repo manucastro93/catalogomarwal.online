@@ -95,7 +95,7 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
 
   return (
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl md:w-[90vw] min-h-[600px] md:h-[98vh] p-6 border border-gray-300 flex flex-col overflow-y-auto">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl md:w-[90vw] min-h-[600px] md:h-[98vh] p-6 border border-gray-300 flex flex-col overflow-y-auto">
         <h2 class="text-xl font-bold mb-4">Nuevo Reporte de Producción (Inyección)</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4 text-sm">
@@ -158,13 +158,13 @@ export default function ModalNuevoReporteInyeccion(props: { onCerrar: () => void
                 <tr>
                   <th class="p-2 w-[100px]">Código</th>
                   <th class="p-2">Pieza</th>
-                  <th class="p-2">Operario</th>
-                  <th class="p-2">Máquina</th>
+                  <th class="p-2 w-[110px]">Operario</th>
+                  <th class="p-2 w-[110px]">Máquina</th>
                   <th class="p-2 w-[100px]">Hora desde</th>
                   <th class="p-2 w-[100px]">Hora hasta</th>
                   <th class="p-2 w-[80px]">Cantidad</th>
                   <th class="p-2 w-[80px]">Fallados</th>
-                  <th class="p-2 w-[60px] text-right">Acciones</th>
+                  <th class="p-2 w-[80px] text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>

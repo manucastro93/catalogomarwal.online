@@ -106,7 +106,10 @@ export const {
   Pieza,
   Maquina,
   CategoriaPieza,
-  Operario
+  Operario,
+  ComprobantesServicios,
+  CategoriasServicios,
+  ProveedoresServicios
 } = db;
 
 export { sequelize, Sequelize };

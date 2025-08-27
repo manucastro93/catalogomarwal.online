@@ -36,7 +36,7 @@ export default function Finanzas(props: { usuario: any; expandido: boolean }) {
       <Show when={open() && props.expandido}>
         <div class="mt-1 flex flex-col">
           <ConPermiso modulo="Finanzas" accion="ver">
-            <SidebarLink href="/Finanzas/" texto="-" activo={esActivo('/Finanzas/1')} />
+            <SidebarLink href="/Finanzas/ResumenAnual" texto="Resumen Anual" activo={esActivo('/Finanzas/1')} />
           </ConPermiso>
         </div>
       </Show>

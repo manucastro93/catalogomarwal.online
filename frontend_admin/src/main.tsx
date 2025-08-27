@@ -40,6 +40,7 @@ const Eficiencia = lazy(() => import("./pages/Graficos/Eficiencia"));
 const Vendedores = lazy(() => import("./pages/Vendedores"));
 const ConversacionesBot = lazy(() => import("./pages/ConversacionesBot"));
 const Facturas = lazy(() => import("./pages/Facturas"));
+const FinanzasResumenAnual = lazy(() => import("./pages/Finanzas/ResumenAnual"));
 const ProductosPedidosPendientes = lazy(() => import("./pages/ProductosPedidosPendientes"));
 const ConfiguracionGeneral = lazy(() => import('./pages/Pagina/ConfiguracionGeneral'));
 const InformeClientesDux = lazy(() => import('./pages/Informes/Ventas/InformeClientesDux'));
@@ -198,6 +199,17 @@ render(
           <ProtectedRoute>
             <Layout>
               <Operarios />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      />
+
+            <Route
+        path="/Finanzas/ResumenAnual"
+        component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <FinanzasResumenAnual />
             </Layout>
           </ProtectedRoute>
         )}

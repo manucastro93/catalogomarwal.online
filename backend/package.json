@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "node build.mjs"
   },
   "keywords": [],
   "author": "",
@@ -32,9 +33,11 @@
     "socket.io": "^4.8.1",
     "twilio": "^5.5.2",
     "xlsx": "^0.18.5",
-    "zod": "^3.24.3"
+    "zod": "^3.24.3",
+    "p-limit": "^5.0.0"
   },
   "devDependencies": {
+    "esbuild": "^0.23.1",
     "eslint-plugin-solid": "^0.14.5",
     "nodemon": "^3.1.9",
     "sequelize-cli": "^6.6.2"

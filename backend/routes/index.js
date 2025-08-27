@@ -37,6 +37,7 @@ import materialRoutes from './material.routes.js';
 import maquinaRoutes from './maquina.routes.js';
 import operarioRoutes from './operario.routes.js';
 import piezaRoutes from './pieza.routes.js';
+import finanzasRoutes from './finanzas.routes.js';
 
 const router = express.Router();
 
@@ -77,5 +78,6 @@ router.use('/materiales', materialRoutes);
 router.use('/maquinas', maquinaRoutes);
 router.use('/operarios', operarioRoutes);
 router.use('/piezas', piezaRoutes);
+router.use('/finanzas', finanzasRoutes);
 
 export default router;

@@ -11,7 +11,9 @@ import { createServer } from 'http';
 import { initSockets } from './sockets/index.js';
 import webhookRoutes from './routes/webhook.routes.js';
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config(); // usa .env local en dev
+}
 
 const app = express();
 
@@ -25,6 +27,7 @@ app.use(cors({
       'https://catalogomarwal.online',
       'https://www.catalogomarwal.online',
       'https://admin.catalogomarwal.online',
+      'https://marwal.online',
       'http://localhost:3001',
       'http://localhost:3002',
     ];
@@ -53,7 +56,7 @@ app.use('/api', rutas);
 app.use(errorHandler);
 
 // 🚀 INIT
-const PORT = 3000;
+const PORT = Number(process.env.PORT ?? 3000);
 
 async function init() {
   try {
