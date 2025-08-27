@@ -74,6 +74,11 @@ export default function TablaMensual(props: {
                 <For each={monthsToShow()}>
                   {(k) => (
                     <>
+                    <td class="px-2 py-2 text-right">
+                        {r.variacion
+                          ? <VariacionChip value={r.variacion[k] ?? 0} />
+                          : <span class="text-xs text-gray-400">—</span>}
+                      </td>
                       <td
                         class={`px-3 py-2 text-right ${r.emphasize ? "font-semibold" : ""} ${
                           props.onValueClick ? "cursor-pointer hover:underline" : ""
@@ -83,11 +88,7 @@ export default function TablaMensual(props: {
                       >
                         {formatearPrecio(r.valores[k] ?? 0)}
                       </td>
-                      <td class="px-2 py-2 text-right">
-                        {r.variacion
-                          ? <VariacionChip value={r.variacion[k] ?? 0} />
-                          : <span class="text-xs text-gray-400">—</span>}
-                      </td>
+                      
                     </>
                   )}
                 </For>
