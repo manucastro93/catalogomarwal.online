@@ -82,12 +82,12 @@ module.exports = {
     // ===================== PYTHON: Clientes Dux =====================
     // Mantengo tus horarios 11:00 y 17:00
     {
-      name: 'importar_clientes_dux',
+      name: 'importar_clientes_dux_con_vendedor',
       script: WRAPPER,
       args: [
-        'importar_clientes_dux',
+        'importar_clientes_dux_con_vendedor',
         PYTHON,
-        path.join(ROOT, 'scripts', 'importar_clientes_dux.py'),
+        path.join(ROOT, 'scripts', 'importar_clientes_dux_con_vendedor.py'),
       ],
       interpreter: '/bin/bash',         // ejecuta el wrapper (bash)
       cwd: ROOT,
@@ -97,8 +97,8 @@ module.exports = {
       watch: false,
       cron_restart: '0 11,17 * * *',    // 11:00 y 17:00
       kill_timeout: 900000,             // hasta 15 min
-      out_file: './logs/importar_clientes_dux-out.log',
-      error_file: './logs/importar_clientes_dux-error.log',
+      out_file: './logs/importar_clientes_dux_con_vendedor-out.log',
+      error_file: './logs/importar_clientes_dux_con_vendedor-error.log',
       merge_logs: true,
       time: true,
     },
