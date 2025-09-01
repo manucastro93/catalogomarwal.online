@@ -9,15 +9,16 @@ import {
   obtenerClientesDuxGeo,
   geocodificarBatchClientesDux,
 } from '../controllers/clienteDux.controller.js';
+import { verificarToken } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', listarClientesDux);
-router.get('/informes', obtenerInformeClientesDux);
-router.get('/listas-precio', obtenerListasPrecioClientesDux);
-router.get('/reporte-ejecutivo', reporteEjecutivoClientesDux);
-router.get('/informe-ultima-compra', obtenerInformeClientesUltimaCompra);
-router.get('/reporte-ejecutivo-ultima-compra', reporteEjecutivoUltimaCompra);
+router.get('/',verificarToken, listarClientesDux);
+router.get('/informes',verificarToken, obtenerInformeClientesDux);
+router.get('/listas-precio',verificarToken, obtenerListasPrecioClientesDux);
+router.get('/reporte-ejecutivo',verificarToken, reporteEjecutivoClientesDux);
+router.get('/informe-ultima-compra',verificarToken, obtenerInformeClientesUltimaCompra);
+router.get('/reporte-ejecutivo-ultima-compra',verificarToken, reporteEjecutivoUltimaCompra);
 router.get('/geo', obtenerClientesDuxGeo);
 router.post('/geocode', geocodificarBatchClientesDux);
 

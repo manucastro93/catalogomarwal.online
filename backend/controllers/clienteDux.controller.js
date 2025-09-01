@@ -5,29 +5,70 @@ import { formatearFechaCorta } from '../utils/fecha.js'
 import { geocodificarClienteDuxFila } from '../helpers/normalizarDireccion.js'
 import fetch from 'node-fetch';
 import pLimit from 'p-limit'; 
+import { resolverIdVendedor } from '../helpers/resolverIdVendedor.js';
 
 export const reporteEjecutivoUltimaCompra = async (req, res) => {
   try {
     const hoy = dayjs().format('YYYY-MM-DD');
     const inicioMes = dayjs().startOf('month').format('YYYY-MM-DD');
 
-    // Total de clientes con al menos un pedido
-    const totalClientes = await PedidoDux.aggregate('cliente', 'count', { distinct: true });
+    // 🔐 vendedor (param > logueado)
+    const { vendedor } = req.query;
+    let idVendedor = null;
+    if (vendedor) {
+      const encontrado = await PersonalDux.findOne({
+        attributes: ['id_personal'],
+        where: Sequelize.where(
+          Sequelize.fn('CONCAT', Sequelize.col('apellido_razon_social'), ', ', Sequelize.col('nombre')),
+          vendedor
+        ),
+        raw: true,
+      });
+      idVendedor = encontrado?.id_personal ?? null;
+    }
+    if (!idVendedor) {
+      const idVendedorLog = await resolverIdVendedor(req);
+      if (idVendedorLog) idVendedor = idVendedorLog;
+    }
 
-    // Clientes que compraron este mes
-    const clientesMes = await PedidoDux.aggregate('cliente', 'count', {
+    // where para pedidos del vendedor: EXISTS ClientesDux (cartera)
+    const whereVendedorPedidos = idVendedor
+      ? {
+          [Op.and]: Sequelize.literal(`
+            EXISTS (
+              SELECT 1
+              FROM ClientesDux c
+              WHERE c.cliente = PedidoDux.cliente
+                AND c.vendedorId = ${idVendedor}
+            )
+          `),
+        }
+      : undefined;
+
+    // Total de clientes con al menos un pedido (en el universo elegido)
+    const totalClientes = await PedidoDux.count({
       distinct: true,
+      col: 'cliente',
+      where: whereVendedorPedidos,
+    });
+
+    // Clientes que compraron este mes (según pedidos, no facturas)
+    const clientesMes = await PedidoDux.count({
+      distinct: true,
+      col: 'cliente',
       where: {
+        ...(whereVendedorPedidos || {}),
         fecha: { [Op.gte]: new Date(inicioMes + 'T00:00:00') },
       },
     });
 
-    // Día con más pedidos
+    // Día con más pedidos (según pedidos)
     const topDia = await PedidoDux.findAll({
       attributes: [
         [Sequelize.fn('DATE', Sequelize.col('fecha')), 'fecha'],
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
       ],
+      where: whereVendedorPedidos,
       group: [Sequelize.literal('DATE(fecha)')],
       order: [[Sequelize.literal('cantidad'), 'DESC']],
       limit: 1,
@@ -42,7 +83,7 @@ export const reporteEjecutivoUltimaCompra = async (req, res) => {
 
     res.json({ reporte });
   } catch (error) {
-    console.error('❌ Error en reporte ejecutivo última compra:', error);
+    console.error('❌ Error en reporte ejecutivo última compra (PedidosDux):', error);
     res.status(500).json({ message: 'Error al generar reporte ejecutivo de última compra' });
   }
 };
@@ -60,10 +101,10 @@ export const listarClientesDux = async (req, res) => {
       vendedor,
     } = req.query;
 
+    const idVendedor = await resolverIdVendedor(req);
     const offset = (page - 1) * limit;
     const where = {};
 
-    // 🔍 Filtro por texto libre
     if (buscar) {
       where[Op.or] = [
         { cliente: { [Op.like]: `%${buscar}%` } },
@@ -72,17 +113,16 @@ export const listarClientesDux = async (req, res) => {
         { correoElectronico: { [Op.like]: `%${buscar}%` } },
       ];
     }
-
-    // 🔍 Filtros específicos opcionales
     if (provincia) where.provincia = provincia;
     if (localidad) where.localidad = localidad;
     if (vendedor) where.vendedor = vendedor;
+    if (idVendedor) where.vendedorId = idVendedor; // filtro por vendedor logueado
 
     const { count, rows } = await ClienteDux.findAndCountAll({
       where,
       limit: Number(limit),
       offset,
-      order: [[orden, direccion.toUpperCase()]],
+      order: [[orden, String(direccion).toUpperCase()]],
     });
 
     res.json({
@@ -106,7 +146,7 @@ export const obtenerInformeClientesDux = async (req, res) => {
       fechaDesde,
       fechaHasta,
       listaPrecio,
-      vendedor, // "APELLIDO, NOMBRE" (para mapear a PersonalDux.id_personal)
+      vendedor,
       page = 1,
       limit = 10,
     } = req.query;
@@ -122,7 +162,11 @@ export const obtenerInformeClientesDux = async (req, res) => {
     if (listaPrecio) where.listaPrecioPorDefecto = listaPrecio;
     if (vendedor) where.vendedor = vendedor;
 
-    // Mapear vendedor ("APELLIDO, NOMBRE") -> id_personal (para usar en Facturas.id_vendedor)
+    // 🔐 si hay vendedor logueado, restringimos la data a ese vendedor
+    const idVendedorLog = await resolverIdVendedor(req);
+    if (idVendedorLog) where.vendedorId = idVendedorLog;
+
+    // 🎯 idVendedor a usar para "EXISTS (Facturas.id_vendedor)"
     let idVendedor = null;
     if (vendedor) {
       const encontrado = await PersonalDux.findOne({
@@ -134,35 +178,11 @@ export const obtenerInformeClientesDux = async (req, res) => {
         raw: true,
       });
       idVendedor = encontrado?.id_personal ?? null;
+    } else if (idVendedorLog) {
+      idVendedor = idVendedorLog;
     }
 
-    // 🔷 Clientes por mes (general)
-    const porMesGeneral = await ClienteDux.findAll({
-      attributes: [
-        [Sequelize.fn('DATE_FORMAT', Sequelize.col('fechaCreacion'), '%Y-%m'), 'mes'],
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
-      ],
-      group: [Sequelize.literal("DATE_FORMAT(fechaCreacion, '%Y-%m')")],
-      order: [[Sequelize.literal('mes'), 'ASC']],
-      raw: true,
-    });
-
-    // 🔶 Clientes por mes (vendedor)
-    let porMesVendedor = [];
-    if (vendedor) {
-      porMesVendedor = await ClienteDux.findAll({
-        attributes: [
-          [Sequelize.fn('DATE_FORMAT', Sequelize.col('fechaCreacion'), '%Y-%m'), 'mes'],
-          [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
-        ],
-        where: { vendedor },
-        group: [Sequelize.literal("DATE_FORMAT(fechaCreacion, '%Y-%m')")],
-        order: [[Sequelize.literal('mes'), 'ASC']],
-        raw: true,
-      });
-    }
-
-    // Rango para consultas sobre PedidosDux
+    // 📅 rango para PedidoDux
     const wherePedidosMes = {};
     if (fechaDesde && fechaHasta) {
       wherePedidosMes[PEDIDO_FECHA_COL] = {
@@ -170,88 +190,122 @@ export const obtenerInformeClientesDux = async (req, res) => {
       };
     }
 
-    // 💵 Monto de pedidos por mes (general)
-    const montosPorMesGeneral = await PedidoDux.findAll({
-      attributes: [
-        [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
-        [Sequelize.fn('SUM', Sequelize.col(PEDIDO_TOTAL_COL)), 'monto'],
-      ],
-      where: wherePedidosMes,
-      group: [Sequelize.literal(`DATE_FORMAT(${PEDIDO_FECHA_COL}, '%Y-%m')`)],
-      order: [[Sequelize.literal('mes'), 'ASC']],
-      raw: true,
-    });
+    // =========================
+    //   SERIES POR MES
+    // =========================
+    // 👉 Si HAY vendedor: NO calcular totales generales (porMesGeneral/montos/pedidos generales)
+    // 👉 Si NO hay vendedor: calcular totales generales normalmente
+    let porMesGeneral = [];
+    let montosPorMesGeneral = [];
+    let pedidosPorMesGeneral = [];
 
-    // 💵 Monto de pedidos por mes (vendedor) usando EXISTS con Facturas.id_vendedor
-    let montosPorMesVendedor = [];
-    if (idVendedor) {
-      montosPorMesVendedor = await PedidoDux.findAll({
+    if (!idVendedor) {
+      porMesGeneral = await ClienteDux.findAll({
+        attributes: [
+          [Sequelize.fn('DATE_FORMAT', Sequelize.col('fechaCreacion'), '%Y-%m'), 'mes'],
+          [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
+        ],
+        where,
+        group: [Sequelize.literal("DATE_FORMAT(fechaCreacion, '%Y-%m')")],
+        order: [[Sequelize.literal('mes'), 'ASC']],
+        raw: true,
+      });
+
+      montosPorMesGeneral = await PedidoDux.findAll({
         attributes: [
           [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
-          [
-            Sequelize.literal(
-              `SUM(CASE WHEN EXISTS (
-                 SELECT 1 FROM Facturas f
-                 WHERE f.nro_pedido = PedidoDux.id
-                   AND f.id_vendedor = ${idVendedor}
-               ) THEN PedidoDux.${PEDIDO_TOTAL_COL} ELSE 0 END)`
-            ),
-            'monto',
-          ],
+          [Sequelize.fn('SUM', Sequelize.col(PEDIDO_TOTAL_COL)), 'monto'],
         ],
         where: wherePedidosMes,
-        group: ['mes'],
-        order: [['mes', 'ASC']],
+        group: [Sequelize.literal(`DATE_FORMAT(${PEDIDO_FECHA_COL}, '%Y-%m')`)],
+        order: [[Sequelize.literal('mes'), 'ASC']],
+        raw: true,
+      });
+
+      pedidosPorMesGeneral = await PedidoDux.findAll({
+        attributes: [
+          [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
+          [Sequelize.fn('COUNT', Sequelize.col('PedidoDux.id')), 'pedidosTotal'],
+        ],
+        where: wherePedidosMes,
+        group: [Sequelize.literal(`DATE_FORMAT(${PEDIDO_FECHA_COL}, '%Y-%m')`)],
+        order: [[Sequelize.literal('mes'), 'ASC']],
         raw: true,
       });
     }
 
-    // 🧮 Cantidad de pedidos por mes (general)
-    const pedidosPorMesGeneral = await PedidoDux.findAll({
-      attributes: [
-        [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
-        [Sequelize.fn('COUNT', Sequelize.col('PedidoDux.id')), 'pedidosTotal'],
-      ],
-      where: wherePedidosMes,
-      group: [Sequelize.literal(`DATE_FORMAT(${PEDIDO_FECHA_COL}, '%Y-%m')`)],
-      order: [[Sequelize.literal('mes'), 'ASC']],
-      raw: true,
-    });
+    // 🔶 Vendedor (si aplica)
+    const porMesVendedor = idVendedor
+      ? await ClienteDux.findAll({
+          attributes: [
+            [Sequelize.fn('DATE_FORMAT', Sequelize.col('fechaCreacion'), '%Y-%m'), 'mes'],
+            [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
+          ],
+          where, // ya restringe por vendedorId si hay logueado
+          group: [Sequelize.literal("DATE_FORMAT(fechaCreacion, '%Y-%m')")],
+          order: [[Sequelize.literal('mes'), 'ASC']],
+          raw: true,
+        })
+      : [];
 
-    // 🧮 Cantidad de pedidos por mes (vendedor) — EXISTS con Facturas.id_vendedor
-    let pedidosPorMesVendedor = [];
-    if (idVendedor) {
-      pedidosPorMesVendedor = await PedidoDux.findAll({
-        attributes: [
-          [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
-          [
-            Sequelize.literal(
-              `SUM(
-                 EXISTS (
+    const montosPorMesVendedor = idVendedor
+      ? await PedidoDux.findAll({
+          attributes: [
+            [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
+            [
+              Sequelize.literal(
+                `SUM(CASE WHEN EXISTS (
                    SELECT 1 FROM Facturas f
                    WHERE f.nro_pedido = PedidoDux.id
                      AND f.id_vendedor = ${idVendedor}
-                 )
-               )`
-            ),
-            'pedidosVendedor',
+                 ) THEN PedidoDux.${PEDIDO_TOTAL_COL} ELSE 0 END)`
+              ),
+              'monto',
+            ],
           ],
-        ],
-        where: wherePedidosMes,
-        group: ['mes'],
-        order: [['mes', 'ASC']],
-        raw: true,
-      });
-    }
+          where: wherePedidosMes,
+          group: ['mes'],
+          order: [['mes', 'ASC']],
+          raw: true,
+        })
+      : [];
 
-    // 🧠 Merge porMes
+    const pedidosPorMesVendedor = idVendedor
+      ? await PedidoDux.findAll({
+          attributes: [
+            [Sequelize.fn('DATE_FORMAT', Sequelize.col(PEDIDO_FECHA_COL), '%Y-%m'), 'mes'],
+            [
+              Sequelize.literal(
+                `SUM(
+                   CASE WHEN EXISTS (
+                     SELECT 1 FROM Facturas f
+                     WHERE f.nro_pedido = PedidoDux.id
+                       AND f.id_vendedor = ${idVendedor}
+                   ) THEN 1 ELSE 0 END
+                 )`
+              ),
+              'pedidosVendedor',
+            ],
+          ],
+          where: wherePedidosMes,
+          group: ['mes'],
+          order: [['mes', 'ASC']],
+          raw: true,
+        })
+      : [];
+
+    // =========================
+    //   MERGE (sin totales si hay vendedor)
+    // =========================
+    const baseSeries = idVendedor ? porMesVendedor : porMesGeneral;
+
     const mapaGeneral = Object.fromEntries(
-      porMesGeneral.map((d) => [
+      baseSeries.map((d) => [
         d.mes,
         {
           mes: d.mes,
-          total: Number(d.cantidad),
-          vendedor: 0,
+          total: idVendedor ? 0 : Number(d.cantidad || 0), // 🔕 cero si hay vendedor
+          vendedor: idVendedor ? Number(d.cantidad || 0) : 0,
           montoTotal: 0,
           montoVendedor: 0,
           pedidosTotal: 0,
@@ -260,21 +314,22 @@ export const obtenerInformeClientesDux = async (req, res) => {
       ])
     );
 
-    for (const d of porMesVendedor) {
-      if (!mapaGeneral[d.mes]) mapaGeneral[d.mes] = { mes: d.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
-      mapaGeneral[d.mes].vendedor = Number(d.cantidad || 0);
+    // Completar campos generales SOLO si no hay vendedor
+    if (!idVendedor) {
+      for (const m of montosPorMesGeneral) {
+        if (!mapaGeneral[m.mes]) mapaGeneral[m.mes] = { mes: m.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
+        mapaGeneral[m.mes].montoTotal = Number(m.monto || 0);
+      }
+      for (const p of pedidosPorMesGeneral) {
+        if (!mapaGeneral[p.mes]) mapaGeneral[p.mes] = { mes: p.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
+        mapaGeneral[p.mes].pedidosTotal = Number(p.pedidosTotal || 0);
+      }
     }
-    for (const m of montosPorMesGeneral) {
-      if (!mapaGeneral[m.mes]) mapaGeneral[m.mes] = { mes: m.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
-      mapaGeneral[m.mes].montoTotal = Number(m.monto || 0);
-    }
+
+    // Completar campos del vendedor (si aplica)
     for (const m of montosPorMesVendedor) {
       if (!mapaGeneral[m.mes]) mapaGeneral[m.mes] = { mes: m.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
       mapaGeneral[m.mes].montoVendedor = Number(m.monto || 0);
-    }
-    for (const p of pedidosPorMesGeneral) {
-      if (!mapaGeneral[p.mes]) mapaGeneral[p.mes] = { mes: p.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
-      mapaGeneral[p.mes].pedidosTotal = Number(p.pedidosTotal || 0);
     }
     for (const p of pedidosPorMesVendedor) {
       if (!mapaGeneral[p.mes]) mapaGeneral[p.mes] = { mes: p.mes, total: 0, vendedor: 0, montoTotal: 0, montoVendedor: 0, pedidosTotal: 0, pedidosVendedor: 0 };
@@ -283,7 +338,9 @@ export const obtenerInformeClientesDux = async (req, res) => {
 
     const porMesFinal = Object.values(mapaGeneral).sort((a, b) => a.mes.localeCompare(b.mes));
 
-    // 📈 Por día (clientes + monto)
+    // =========================
+    //   POR DÍA
+    // =========================
     let desde = fechaDesde;
     let hasta = fechaHasta;
     if (!fechaDesde || !fechaHasta) {
@@ -291,6 +348,7 @@ export const obtenerInformeClientesDux = async (req, res) => {
       hasta = dayjs().format('YYYY-MM-DD');
     }
 
+    // clientes/día ya respeta where (que puede tener vendedorId)
     const porDia = await ClienteDux.findAll({
       attributes: [
         [Sequelize.fn('DATE', Sequelize.col('fechaCreacion')), 'fecha'],
@@ -307,7 +365,7 @@ export const obtenerInformeClientesDux = async (req, res) => {
       raw: true,
     });
 
-    // Monto por día (si hay vendedor, sumar solo pedidos con factura del id_vendedor)
+    // monto/día: si hay vendedor, solo sus pedidos; si no, totales
     const wherePedidosDia = {
       [PEDIDO_FECHA_COL]: {
         [Op.between]: [new Date(desde + 'T00:00:00'), new Date(hasta + 'T23:59:59')],
@@ -342,7 +400,9 @@ export const obtenerInformeClientesDux = async (req, res) => {
     }
     const porDiaFinal = Object.values(mapaDia).sort((a, b) => a.fecha.localeCompare(b.fecha));
 
-    // 📋 Tabla de detalle
+    // =========================
+    //   DETALLE (ya filtrado por vendedor si aplica)
+    // =========================
     const { rows: detalle, count } = await ClienteDux.findAndCountAll({
       where,
       limit: Number(limit),
@@ -351,8 +411,8 @@ export const obtenerInformeClientesDux = async (req, res) => {
     });
 
     res.json({
-      porMes: porMesFinal, // { mes, total, vendedor, montoTotal, montoVendedor, pedidosTotal, pedidosVendedor }
-      porDia: porDiaFinal, // { fecha, cantidad, monto }
+      porMes: porMesFinal, // si hay vendedor, los campos "generales" vienen en 0
+      porDia: porDiaFinal, // si hay vendedor, es del vendedor; si no, totales
       detalle,
       totalPaginas: Math.ceil(count / limit),
     });
@@ -385,117 +445,131 @@ export const obtenerListasPrecioClientesDux = async (req, res) => {
 
 export const reporteEjecutivoClientesDux = async (req, res) => {
   try {
-    // Total de clientes
-    const totalClientes = await ClienteDux.count();
+    // 🔎 detectar vendedor (param o logueado)
+    const { vendedor: vendedorParam } = req.query;
+    let idVendedor = null;
+    let vendedorLabel = null;
 
-    // Clientes creados este mes y hoy
+    if (vendedorParam) {
+      const encontrado = await PersonalDux.findOne({
+        attributes: ['id_personal', 'apellido_razon_social', 'nombre'],
+        where: Sequelize.where(
+          Sequelize.fn('CONCAT', Sequelize.col('apellido_razon_social'), ', ', Sequelize.col('nombre')),
+          vendedorParam
+        ),
+        raw: true,
+      });
+      if (encontrado) {
+        idVendedor = encontrado.id_personal;
+        vendedorLabel = `${encontrado.apellido_razon_social}, ${encontrado.nombre}`;
+      }
+    } else {
+      const idVendedorLog = await resolverIdVendedor(req);
+      if (idVendedorLog) {
+        idVendedor = idVendedorLog;
+        const datos = await PersonalDux.findOne({
+          attributes: ['apellido_razon_social', 'nombre'],
+          where: { id_personal: idVendedorLog },
+          raw: true,
+        });
+        if (datos) vendedorLabel = `${datos.apellido_razon_social}, ${datos.nombre}`;
+      }
+    }
+
+    // 📅 fechas
     const inicioMes = dayjs().startOf('month').format('YYYY-MM-DD');
     const hoy = dayjs().format('YYYY-MM-DD');
+    const inicioMesPasado = dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
+    const finMesPasado = dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
+
+    // 🔐 where base (si hay vendedor -> restringe TODO el informe a su cartera)
+    const whereBase = idVendedor ? { vendedorId: idVendedor } : {};
+
+    // =========================
+    //        MÉTRICAS
+    // =========================
+    // Totales (si hay vendedor, son de su cartera; si no hay, son globales)
+    const totalClientes = await ClienteDux.count({ where: { ...whereBase } });
 
     const clientesMesActual = await ClienteDux.count({
       where: {
-        fechaCreacion: {
-          [Op.gte]: new Date(inicioMes + 'T00:00:00'),
-        },
+        ...whereBase,
+        fechaCreacion: { [Op.gte]: new Date(inicioMes + 'T00:00:00') },
       },
     });
 
     const clientesHoy = await ClienteDux.count({
       where: {
+        ...whereBase,
         fechaCreacion: {
-          [Op.between]: [
-            new Date(hoy + 'T00:00:00'),
-            new Date(hoy + 'T23:59:59')
-          ],
+          [Op.between]: [new Date(hoy + 'T00:00:00'), new Date(hoy + 'T23:59:59')],
         },
       },
     });
 
-    // Crecimiento vs mes pasado
-    const inicioMesPasado = dayjs().subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
-    const finMesPasado = dayjs().subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
     const clientesMesPasado = await ClienteDux.count({
       where: {
+        ...whereBase,
         fechaCreacion: {
-          [Op.between]: [
-            new Date(inicioMesPasado + 'T00:00:00'),
-            new Date(finMesPasado + 'T23:59:59')
-          ],
+          [Op.between]: [new Date(inicioMesPasado + 'T00:00:00'), new Date(finMesPasado + 'T23:59:59')],
         },
       },
     });
 
     const crecimientoVsMesPasado = clientesMesPasado
       ? Math.round(((clientesMesActual - clientesMesPasado) / clientesMesPasado) * 100)
-      : 100;
+      : (clientesMesActual > 0 ? 100 : 0);
 
-    // Ranking vendedores (top 3, solo mes actual)
-    const rankingVendedores = await ClienteDux.findAll({
-      attributes: [
-        'vendedor',
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
-      ],
-      where: {
-        fechaCreacion: {
-          [Op.gte]: new Date(inicioMes + 'T00:00:00'),
-        },
-      },
-      group: ['vendedor'],
-      order: [[Sequelize.literal('cantidad'), 'DESC']],
-      limit: 3,
-      raw: true,
-    });
+    // Rankers (si hay vendedor => NO ranking de vendedores; sí rank por provincia/loc/zona pero dentro de su cartera)
+    const rankingVendedores = idVendedor
+      ? [] // oculto ranking de vendedores si hay vendedor
+      : await ClienteDux.findAll({
+          attributes: ['vendedor', [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad']],
+          where: { fechaCreacion: { [Op.gte]: new Date(inicioMes + 'T00:00:00') } },
+          group: ['vendedor'],
+          order: [[Sequelize.literal('cantidad'), 'DESC']],
+          limit: 3,
+          raw: true,
+        });
 
-    // Ranking provincias
     const rankingProvincias = await ClienteDux.findAll({
-      attributes: [
-        'provincia',
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
-      ],
+      attributes: ['provincia', [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad']],
+      where: { ...whereBase },
       group: ['provincia'],
       order: [[Sequelize.literal('cantidad'), 'DESC']],
       limit: 3,
       raw: true,
     });
 
-    // Ranking localidades
     const rankingLocalidades = await ClienteDux.findAll({
-      attributes: [
-        'localidad',
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
-      ],
+      attributes: ['localidad', [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad']],
+      where: { ...whereBase },
       group: ['localidad'],
       order: [[Sequelize.literal('cantidad'), 'DESC']],
       limit: 3,
       raw: true,
     });
 
-    // Ranking zonas
     const rankingZonas = await ClienteDux.findAll({
-      attributes: [
-        'zona',
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
-      ],
+      attributes: ['zona', [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad']],
+      where: { ...whereBase },
       group: ['zona'],
       order: [[Sequelize.literal('cantidad'), 'DESC']],
       limit: 3,
       raw: true,
     });
 
-    // Promedio por semana (mes actual)
     const semanasTranscurridas = Math.max(1, dayjs().diff(dayjs().startOf('month'), 'week') + 1);
     const promedioPorSemana = (clientesMesActual / semanasTranscurridas).toFixed(1);
 
-    // Día con mayor altas (mes actual)
     const diasMesActual = await ClienteDux.findAll({
       attributes: [
         [Sequelize.fn('DATE', Sequelize.col('fechaCreacion')), 'fecha'],
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
       ],
       where: {
-        fechaCreacion: {
-          [Op.gte]: new Date(inicioMes + 'T00:00:00'),
-        },
+        ...whereBase,
+        fechaCreacion: { [Op.gte]: new Date(inicioMes + 'T00:00:00') },
       },
       group: [Sequelize.literal('DATE(fechaCreacion)')],
       order: [[Sequelize.literal('cantidad'), 'DESC']],
@@ -504,58 +578,120 @@ export const reporteEjecutivoClientesDux = async (req, res) => {
     });
     const diaMayorAlta = diasMesActual[0];
 
-    // Habilitados/deshabilitados
-    const totalHabilitados = await ClienteDux.count({ where: { habilitado: true } });
+    const totalHabilitados = await ClienteDux.count({ where: { ...whereBase, habilitado: true } });
     const porcentajeHabilitados = totalClientes ? Math.round((totalHabilitados / totalClientes) * 100) : 0;
     const porcentajeDeshabilitados = 100 - porcentajeHabilitados;
 
-    // Provincias sin altas este mes
+    // Provincias sin altas este mes (dentro del filtro)
     const provinciasAltasEsteMes = await ClienteDux.findAll({
       attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('provincia')), 'provincia']],
       where: {
-        fechaCreacion: {
-          [Op.gte]: new Date(inicioMes + 'T00:00:00'),
-        },
+        ...whereBase,
+        fechaCreacion: { [Op.gte]: new Date(inicioMes + 'T00:00:00') },
       },
       raw: true,
     });
     const provinciasTodas = await ClienteDux.findAll({
       attributes: [[Sequelize.fn('DISTINCT', Sequelize.col('provincia')), 'provincia']],
+      where: { ...whereBase },
       raw: true,
     });
     const provinciasSinAltas = provinciasTodas
       .map((p) => p.provincia)
       .filter((p) => !provinciasAltasEsteMes.map((x) => x.provincia).includes(p));
 
-    // Distribución por lista de precio
     const distribucionListaPrecio = await ClienteDux.findAll({
-      attributes: [
-        'listaPrecioPorDefecto',
-        [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad'],
-      ],
+      attributes: ['listaPrecioPorDefecto', [Sequelize.fn('COUNT', Sequelize.col('id')), 'cantidad']],
+      where: { ...whereBase },
       group: ['listaPrecioPorDefecto'],
       order: [[Sequelize.literal('cantidad'), 'DESC']],
       raw: true,
     });
 
-    // --- Generar el string del reporte ejecutivo ---
-    const reporte =
-      `Reporte Ejecutivo de Clientes Dux — ${dayjs().format('YYYY-MM-DD')}\n\n` +
-      `1. Total de clientes registrados:\nActualmente existen ${totalClientes} clientes activos en la base de datos.\n\n` +
-      `2. Altas recientes:\nEn el mes actual se han creado ${clientesMesActual} nuevos clientes.\nEn el día de hoy se registraron ${clientesHoy} nuevos clientes.\n\n` +
-      `3. Crecimiento mensual:\nLa cantidad de clientes creció un ${crecimientoVsMesPasado >= 0 ? '+' : ''}${crecimientoVsMesPasado}% respecto al mes anterior.\n\n` +
-      `4. Ranking de vendedores por clientes creados en el mes:\n` +
-      rankingVendedores.map((v, i) => `${i + 1}. ${v.vendedor || 'Sin vendedor'} — ${v.cantidad} clientes`).join('\n') + '\n\n' +
-      `5. Provincia con mayor cantidad de clientes:\n` +
-      rankingProvincias.map((p, i) => `${i === 0 ? '•' : ' '} ${p.provincia || 'Sin provincia'}: ${p.cantidad} clientes`).join('\n') + '\n\n' +
-      `6. Localidad con mayor cantidad de clientes:\n` +
-      rankingLocalidades.map((l, i) => `${i === 0 ? '•' : ' '} ${l.localidad || 'Sin localidad'}: ${l.cantidad} clientes`).join('\n') + '\n\n' +
-      `7. Zona con mayor cantidad de clientes:\n` +
-      rankingZonas.map((z, i) => `${i === 0 ? '•' : ' '} ${z.zona || 'Sin zona'}: ${z.cantidad} clientes`).join('\n') + '\n\n' +
-      `8. Métricas de actividad:\nPromedio de ${promedioPorSemana} clientes creados por semana en el mes actual.\nDía con mayor altas: ${diaMayorAlta ? `${diaMayorAlta.fecha} (${diaMayorAlta.cantidad} clientes creados)` : 'Sin datos'}.\n\n` +
-      `9. Provincias sin nuevas altas:\n${provinciasSinAltas.length ? provinciasSinAltas.join(', ') : 'Todas tienen altas este mes'}\n\n` +
-      `10. Distribución por lista de precio:\n` +
-      distribucionListaPrecio.map((lp) => `• ${lp.listaPrecioPorDefecto || 'Sin lista'}: ${lp.cantidad} clientes`).join('\n') + '\n\n';
+    // =========================
+    //    RENDER DEL REPORTE
+    // =========================
+    const titulo = idVendedor
+      ? `Reporte Ejecutivo de Clientes Dux (Vendedor: ${vendedorLabel || idVendedor}) — ${dayjs().format('YYYY-MM-DD')}`
+      : `Reporte Ejecutivo de Clientes Dux — ${dayjs().format('YYYY-MM-DD')}`;
+
+    let reporte = `${titulo}\n\n`;
+
+    // Sección 1: Totales (si hay vendedor, son de su cartera; no son "globales")
+    reporte +=
+      `1. Resumen${
+        idVendedor ? " (tu cartera)" : ""
+      }:\n` +
+      `Total de clientes${idVendedor ? " de tu cartera" : ""}: ${totalClientes}\n` +
+      `Altas en el mes actual: ${clientesMesActual}\n` +
+      `Altas hoy: ${clientesHoy}\n\n`;
+
+    // Sección 2: Crecimiento (dentro del filtro actual)
+    reporte +=
+      `2. Crecimiento vs mes pasado${
+        idVendedor ? " (tu cartera)" : ""
+      }:\n` +
+      `Variación: ${crecimientoVsMesPasado >= 0 ? '+' : ''}${crecimientoVsMesPasado}%\n\n`;
+
+    // Sección 3: Ranking de vendedores (solo si NO hay vendedor seleccionado)
+    if (!idVendedor) {
+      reporte +=
+        `3. Ranking de vendedores (mes actual):\n` +
+        (rankingVendedores.length
+          ? rankingVendedores
+              .map((v, i) => `${i + 1}. ${v.vendedor || 'Sin vendedor'} — ${v.cantidad} clientes`)
+              .join('\n')
+          : 'Sin datos') +
+        '\n\n';
+    }
+
+    // Sección 4: Rankings geográficos (si hay vendedor: sobre su cartera)
+    reporte +=
+      `4. Provincias con más clientes${idVendedor ? " (tu cartera)" : ""}:\n` +
+      (rankingProvincias.length
+        ? rankingProvincias.map((p, i) => `${i === 0 ? '•' : ' '} ${p.provincia || 'Sin provincia'}: ${p.cantidad} clientes`).join('\n')
+        : 'Sin datos') +
+      '\n\n';
+
+    reporte +=
+      `5. Localidades con más clientes${idVendedor ? " (tu cartera)" : ""}:\n` +
+      (rankingLocalidades.length
+        ? rankingLocalidades.map((l, i) => `${i === 0 ? '•' : ' '} ${l.localidad || 'Sin localidad'}: ${l.cantidad} clientes`).join('\n')
+        : 'Sin datos') +
+      '\n\n';
+
+    reporte +=
+      `6. Zonas con más clientes${idVendedor ? " (tu cartera)" : ""}:\n` +
+      (rankingZonas.length
+        ? rankingZonas.map((z, i) => `${i === 0 ? '•' : ' '} ${z.zona || 'Sin zona'}: ${z.cantidad} clientes`).join('\n')
+        : 'Sin datos') +
+      '\n\n';
+
+    // Sección 7: Métricas de actividad
+    reporte +=
+      `7. Métricas de actividad${
+        idVendedor ? " (tu cartera)" : ""
+      }:\n` +
+      `Promedio semanal (mes actual): ${promedioPorSemana} clientes/semana\n` +
+      `Día con más altas (mes actual): ${diaMayorAlta ? `${diaMayorAlta.fecha} (${diaMayorAlta.cantidad} clientes)` : 'Sin datos'}\n\n`;
+
+    // Sección 8: Provincias sin nuevas altas
+    reporte +=
+      `8. Provincias sin nuevas altas${
+        idVendedor ? " en tu cartera" : ""
+      }:\n` +
+      (provinciasSinAltas.length ? provinciasSinAltas.join(', ') : 'Todas registran altas en el período') +
+      '\n\n';
+
+    // Sección 9: Distribución por lista de precio
+    reporte +=
+      `9. Distribución por lista de precio${
+        idVendedor ? " (tu cartera)" : ""
+      }:\n` +
+      (distribucionListaPrecio.length
+        ? distribucionListaPrecio.map((lp) => `• ${lp.listaPrecioPorDefecto || 'Sin lista'}: ${lp.cantidad} clientes`).join('\n')
+        : 'Sin datos') +
+      '\n\n';
 
     res.json({ reporte });
   } catch (error) {
@@ -570,7 +706,7 @@ export const obtenerInformeClientesUltimaCompra = async (req, res) => {
       fechaDesde,
       fechaHasta,
       listaPrecio,
-      vendedor,
+      vendedor,             // "APELLIDO, NOMBRE" (opcional)
       page = 1,
       limit = 20,
       orden = 'fechaUltimaCompra',
@@ -578,86 +714,123 @@ export const obtenerInformeClientesUltimaCompra = async (req, res) => {
     } = req.query;
 
     const offset = (page - 1) * limit;
+    const dir = String(direccion).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
-    // Subconsulta: fecha última compra por cliente
+    // 🔐 Resolver idVendedor: prioridad parámetro > logueado
+    let idVendedor = null;
+    if (vendedor) {
+      const encontrado = await PersonalDux.findOne({
+        attributes: ['id_personal'],
+        where: Sequelize.where(
+          Sequelize.fn('CONCAT', Sequelize.col('apellido_razon_social'), ', ', Sequelize.col('nombre')),
+          vendedor
+        ),
+        raw: true,
+      });
+      idVendedor = encontrado?.id_personal ?? null;
+    }
+    if (!idVendedor) {
+      const idVendedorLog = await resolverIdVendedor(req);
+      if (idVendedorLog) idVendedor = idVendedorLog;
+    }
+
+    // 🧠 Subconsulta: última fecha de pedido por cliente
+    // Si hay vendedor -> solo pedidos de clientes cuya cartera (ClientesDux.vendedorId) sea ese vendedor
+    const wherePedidos = {};
+    // (no ponemos filtro de fechas acá para la "última" real; filtramos más abajo sobre el resultado enriquecido)
+
     const subquery = await PedidoDux.findAll({
       attributes: [
         'cliente',
         [Sequelize.fn('MAX', Sequelize.col('fecha')), 'fechaUltimaCompra'],
       ],
+      where: idVendedor
+        ? {
+            ...wherePedidos,
+            [Op.and]: Sequelize.literal(`
+              EXISTS (
+                SELECT 1
+                FROM ClientesDux c
+                WHERE c.cliente = PedidoDux.cliente
+                  AND c.vendedorId = ${idVendedor}
+              )
+            `),
+          }
+        : wherePedidos,
       group: ['cliente'],
       raw: true,
     });
 
+    if (!subquery.length) {
+      return res.json({ detalle: [], totalPaginas: 0 });
+    }
+
     const clienteFechaMap = Object.fromEntries(
-      subquery.map((p) => [p.cliente, p.fechaUltimaCompra])
+      subquery.map(p => [p.cliente, p.fechaUltimaCompra])
     );
 
-    const where = {
+    // 🎯 WHERE para traer datos del cliente (ClienteDux)
+    // Si hay vendedor => filtrar por vendedorId (cartera)
+    const whereClientes = {
       cliente: { [Op.in]: Object.keys(clienteFechaMap) },
     };
-    if (listaPrecio) where.listaPrecioPorDefecto = listaPrecio;
-    if (vendedor) where.vendedor = vendedor;
+    if (idVendedor) whereClientes.vendedorId = idVendedor;
+    if (listaPrecio) whereClientes.listaPrecioPorDefecto = listaPrecio;
+    // ⚠️ Ya no usamos where.vendedor = "APELLIDO, NOMBRE" porque ahora resolvemos id y usamos vendedorId
 
-    const clientes = await ClienteDux.findAll({
-      where,
-      raw: true,
-    });
+    const clientes = await ClienteDux.findAll({ where: whereClientes, raw: true });
 
-    // Enriquecer y filtrar por fechaUltimaCompra
-    let clientesFiltrados = clientes.map((c) => ({
-      ...c,
-      fechaUltimaCompra: clienteFechaMap[c.cliente],
-    })).filter((c) => {
-      if (!c.fechaUltimaCompra) return false;
-      if (fechaDesde && dayjs(c.fechaUltimaCompra).isBefore(dayjs(fechaDesde))) return false;
-      if (fechaHasta && dayjs(c.fechaUltimaCompra).isAfter(dayjs(fechaHasta))) return false;
-      return true;
-    });
+    // 🧹 Enriquecer + filtrar por rango de fechas (si se pide)
+    let clientesFiltrados = clientes
+      .map(c => ({ ...c, fechaUltimaCompra: clienteFechaMap[c.cliente] }))
+      .filter(c => {
+        if (!c.fechaUltimaCompra) return false;
+        if (fechaDesde && dayjs(c.fechaUltimaCompra).isBefore(dayjs(fechaDesde))) return false;
+        if (fechaHasta && dayjs(c.fechaUltimaCompra).isAfter(dayjs(fechaHasta))) return false;
+        return true;
+      });
 
-    // 🔽 Ordenar por cualquier campo
+    // 🔽 Orden
     clientesFiltrados.sort((a, b) => {
-      const dir = direccion.toUpperCase() === 'ASC' ? 1 : -1;
       const valA = a[orden];
       const valB = b[orden];
-
-      if (!valA && !valB) return 0;
-      if (!valA) return -1 * dir;
-      if (!valB) return 1 * dir;
-
       if (orden === 'fechaUltimaCompra') {
-        return (new Date(valA).getTime() - new Date(valB).getTime()) * dir;
+        const aT = valA ? new Date(valA).getTime() : 0;
+        const bT = valB ? new Date(valB).getTime() : 0;
+        return dir === 'ASC' ? aT - bT : bT - aT;
       }
-
-      return valA.toString().localeCompare(valB.toString()) * dir;
+      // fallback string
+      const cmp = String(valA ?? '').localeCompare(String(valB ?? ''));
+      return dir === 'ASC' ? cmp : -cmp;
     });
 
+    // 📄 Paginación
     const total = clientesFiltrados.length;
-    const totalPaginas = Math.ceil(total / limit);
+    const totalPaginas = Math.ceil(total / Number(limit) || 1);
     const detalle = clientesFiltrados.slice(offset, offset + Number(limit));
 
     res.json({ detalle, totalPaginas });
   } catch (error) {
-    console.error('❌ Error en informe de última compra:', error);
+    console.error('❌ Error en informe de última compra (PedidosDux join ClientesDux):', error);
     res.status(500).json({ message: 'Error al obtener informe de última compra' });
   }
 };
 
 export const obtenerClientesDuxGeo = async (req, res) => {
   try {
+    const idVendedor = await resolverIdVendedor(req);
+
     const filas = await sequelize.query(
       `
-      /* Agregados por id_cliente desde Facturas */
       WITH agg_fact AS (
         SELECT 
           f.id_cliente,
-          COALESCE(SUM(f.total), 0)                            AS volumenTotal,
-          MAX(f.fecha_comp)                                    AS fechaUltimaCompra,
-          COUNT(DISTINCT f.nro_pedido)                         AS totalPedidos
+          COALESCE(SUM(f.total), 0) AS volumenTotal,
+          MAX(f.fecha_comp)         AS fechaUltimaCompra,
+          COUNT(DISTINCT f.nro_pedido) AS totalPedidos
         FROM Facturas f
         GROUP BY f.id_cliente
       ),
-      /* Último monto por id_cliente: tomamos la factura con fecha_comp máxima */
       ult_fact AS (
         SELECT x.id_cliente, f2.total AS montoUltimaCompra
         FROM (
@@ -669,32 +842,19 @@ export const obtenerClientesDuxGeo = async (req, res) => {
           ON f2.id_cliente = x.id_cliente
          AND f2.fecha_comp = x.max_fecha
       )
-
       SELECT
-        c.id,
-        c.cliente,
-        c.nombreFantasia,
-        c.domicilio,
-        c.localidad,
-        c.provincia,
-        c.latitud  AS lat,
-        c.longitud AS lng,
-        c.geoPrecision,
-        c.geoFuente,
-        c.geoActualizadoAt,
-        c.vendedorId,
-        CONCAT(pd.apellido_razon_social, ', ', pd.nombre) AS vendedorNombre,
-
-        COALESCE(af.volumenTotal, 0)   AS volumenTotal,
-        COALESCE(af.totalPedidos, 0)   AS totalPedidos,
-        af.fechaUltimaCompra           AS fechaUltimaCompra,
-        uf.montoUltimaCompra           AS montoUltimaCompra
-
+        c.id, c.cliente, c.nombreFantasia, c.domicilio, c.localidad, c.provincia,
+        c.latitud AS lat, c.longitud AS lng, c.geoPrecision, c.geoFuente, c.geoActualizadoAt,
+        c.vendedorId, CONCAT(pd.apellido_razon_social, ', ', pd.nombre) AS vendedorNombre,
+        COALESCE(af.volumenTotal, 0) AS volumenTotal,
+        COALESCE(af.totalPedidos, 0) AS totalPedidos,
+        af.fechaUltimaCompra AS fechaUltimaCompra,
+        uf.montoUltimaCompra AS montoUltimaCompra
       FROM ClientesDux c
-      LEFT JOIN agg_fact af ON af.id_cliente = c.id          -- 🔑 clave robusta
+      LEFT JOIN agg_fact af ON af.id_cliente = c.id
       LEFT JOIN ult_fact uf ON uf.id_cliente = c.id
       LEFT JOIN PersonalDux pd ON pd.id_personal = c.vendedorId
-      /* sin WHERE para no filtrar clientes */
+      ${idVendedor ? `WHERE c.vendedorId = ${idVendedor}` : ''}
       ORDER BY c.id
       `,
       { type: QueryTypes.SELECT }
@@ -702,36 +862,43 @@ export const obtenerClientesDuxGeo = async (req, res) => {
 
     res.json(filas);
   } catch (err) {
-    console.error("❌ Error en obtenerClientesDuxGeo:", err);
-    res.status(500).json({ error: "Error al obtener datos geográficos de clientes Dux" });
+    console.error('❌ Error en obtenerClientesDuxGeo:', err);
+    res.status(500).json({ error: 'Error al obtener datos geográficos de clientes Dux' });
   }
 };
 
 export const geocodificarBatchClientesDux = async (req, res) => {
   try {
-    const { limit = 500, onlyMissing = true, provincia, localidad } = req.body || {};
+    const idVendedor = await resolverIdVendedor(req);
+    const body = req.body || {};
+    const limit = Number(body.limit ?? 500);
+    const onlyMissing = body.onlyMissing !== false;
+    const { provincia, localidad } = body;
+
     const where = {};
     if (provincia) where.provincia = provincia;
     if (localidad) where.localidad = localidad;
     if (onlyMissing) where.latitud = { [Op.is]: null };
+    if (idVendedor) where.vendedorId = idVendedor;
 
-    const clientes = await ClienteDux.findAll({ where, limit: Number(limit) });
+    const clientes = await ClienteDux.findAll({ where, limit });
 
-    const limitConcurrente = pLimit(2); // evitar rate-limit de Nominatim
-    const tareas = clientes.map((c) => limitConcurrente(async () => {
-      if(c.geoActualizadoAt == null){
-        console.log("geolocalizando a: ", c.cliente)
-        const r = await geocodificarClienteDuxFila(c);
-        await c.update({
-          latitud: r.lat,
-          longitud: r.lon,
-          geoPrecision: r.precision,
-          geoFuente: r.fuente,
-          geoActualizadoAt: new Date(),
-        });
-        return { id: c.id, precision: r.precision };
-      }
-    }));
+    const limitConcurrente = pLimit(2);
+    const tareas = clientes.map((c) =>
+      limitConcurrente(async () => {
+        if (c.geoActualizadoAt == null) {
+          const r = await geocodificarClienteDuxFila(c);
+          await c.update({
+            latitud: r.lat,
+            longitud: r.lon,
+            geoPrecision: r.precision,
+            geoFuente: r.fuente,
+            geoActualizadoAt: new Date(),
+          });
+          return { id: c.id, precision: r.precision };
+        }
+      })
+    );
 
     const resultados = await Promise.all(tareas);
     res.json({ procesados: resultados.length, detalles: resultados });

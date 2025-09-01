@@ -11,7 +11,7 @@ import {
 import { obtenerPersonalDux } from "@/services/personalDux.service";
 
 import type { ClienteDuxConUltimaCompra } from "@/types/clienteDux";
-import type { VendedorOption } from "@/types/vendedor";
+import type { PersonalDux } from "@/types/usuario";
 
 export default function InformeClientesUltimaCompra() {
   const [fechaDesde, setFechaDesde] = createSignal<string | null>(null);
@@ -52,7 +52,7 @@ export default function InformeClientesUltimaCompra() {
           fechaHasta={fechaHasta()}
           vendedor={vendedor()}
           listaPrecio={listaPrecio()}
-          vendedores={vendedores() as VendedorOption[]}
+          vendedores={vendedores() as PersonalDux[]}
           listasPrecio={listasPrecio() as string[]}
           onFechaDesde={setFechaDesde}
           onFechaHasta={setFechaHasta}

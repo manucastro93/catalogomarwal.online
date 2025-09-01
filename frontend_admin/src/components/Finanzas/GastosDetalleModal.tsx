@@ -75,7 +75,7 @@ export default function GastosDetalleModal(props: { anio:number; onClose:()=>voi
 
   return (
     <div class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-6xl flex flex-col max-h-[90vh]">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-xxl flex flex-col max-h-[95vh]">
         <div class="flex items-center justify-between p-4 border-b">
           <h3 class="text-lg font-semibold">
             {categoriaSeleccionada()

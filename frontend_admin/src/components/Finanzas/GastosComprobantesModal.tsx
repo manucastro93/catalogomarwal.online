@@ -23,7 +23,7 @@ export default function GastosComprobantesModal(props: {
 
   return (
     <div class="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-xxl max-h-[95vh] overflow-hidden flex flex-col">
         <div class="flex items-center justify-between p-4 border-b">
           <h3 class="text-lg font-semibold">{props.titulo}</h3>
           <button class="px-3 py-1 rounded bg-gray-200" onClick={props.onClose}>Cerrar</button>

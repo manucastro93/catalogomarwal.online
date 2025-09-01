@@ -316,6 +316,7 @@ export const obtenerPedidosPorMesConVendedor = async (req, res) => {
   try {
     const { desde, hasta, vendedor } = req.query;
 
+    // ⏱️ Rango de fechas
     const whereFecha = {};
     if (desde && hasta) {
       whereFecha.fecha = {
@@ -323,40 +324,40 @@ export const obtenerPedidosPorMesConVendedor = async (req, res) => {
       };
     }
 
+    // 🧑‍💼 Resolver vendedor: prioridad querystring > logueado
     let idVendedor = null;
     if (vendedor) {
       const encontrado = await PersonalDux.findOne({
-        where: {
-          [Op.and]: [
-            Sequelize.where(
-              Sequelize.fn(
-                "CONCAT",
-                Sequelize.col("apellido_razon_social"),
-                ", ",
-                Sequelize.col("nombre")
-              ),
-              vendedor
-            ),
-          ],
-        },
+        attributes: ["id_personal"],
+        where: Sequelize.where(
+          Sequelize.fn(
+            "CONCAT",
+            Sequelize.col("apellido_razon_social"),
+            ", ",
+            Sequelize.col("nombre")
+          ),
+          vendedor
+        ),
+        raw: true,
       });
-
-      if (encontrado) {
-        idVendedor = encontrado.id_personal;
-      }
+      idVendedor = encontrado?.id_personal ?? null;
+    } else {
+      const idVendedorLog = await resolverIdVendedor(req);
+      if (idVendedorLog) idVendedor = idVendedorLog;
     }
 
+    // 📊 Agrupado por mes
     const resultados = await PedidoDux.findAll({
       attributes: [
         [Sequelize.fn("DATE_FORMAT", Sequelize.col("fecha"), "%Y-%m"), "mes"],
         [Sequelize.fn("COUNT", Sequelize.col("PedidoDux.id")), "totalPedidos"],
         [
           Sequelize.literal(`SUM(
-            EXISTS (
+            CASE WHEN EXISTS (
               SELECT 1 FROM Facturas f
               WHERE f.nro_pedido = PedidoDux.id
               ${idVendedor ? `AND f.id_vendedor = ${idVendedor}` : ""}
-            )
+            ) THEN 1 ELSE 0 END
           )`),
           "pedidosVendedor",
         ],
@@ -366,8 +367,6 @@ export const obtenerPedidosPorMesConVendedor = async (req, res) => {
       order: [["mes", "ASC"]],
       raw: true,
     });
-
-
 
     res.json(resultados);
   } catch (error) {
