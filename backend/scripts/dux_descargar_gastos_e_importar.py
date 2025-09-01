@@ -16,6 +16,7 @@ load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 DUX_USER = os.getenv("DUX_USER", "")
 DUX_PASS = os.getenv("DUX_PASS", "")
+DUX_SUCURSAL = os.getenv("DUX_API_SUCURSAL_CASA_CENTRAL", "").strip() or None
 
 # Rutas
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -33,31 +34,26 @@ SEL = {
     "login_user": 'input[name="formLogin:inputUsuario"]',
     "login_pass": 'input[name="formLogin:inputPassword"]',
     "login_btn":  '#formLogin\\:btnLoginBlock',
-    # selector y sucursal (igual que en clientes)
-    "sel_sucursal_btn":  '#formInicio\\:j_idt900_label',
-    "sel_sucursal_opt0": 'li[id="formInicio:j_idt900_0"]',
-    "sel_empresa_btn":   '#formInicio\\:j_idt905_label',
-    "sel_empresa_opt0":  'li[id="formInicio:j_idt905_0"]',
-    "entrar_btn":        '#formInicio\\:j_idt910',
+
+    # pantalla "Seleccione Sucursal"
+    "empresa_label":  '#formInicio\\:j_idt910_label',
+    "sucursal_label": '#formInicio\\:j_idt915_label',
+    "btn_aceptar":    '#formInicio\\:j_idt920',
 
     # menú lateral
     "menu_compras_text": 'text=COMPRAS',
     "menu_gastos_text":  'text=Gastos',
-
-    # página Gastos
-    # fallback: usar el href directo si el menú falla
     "gastos_href": 'a[href="/pages/compras/gestionServicio/gestionCompServicio.faces"]',
 
-    # Acciones → Exportar (ids pueden cambiar, así que usamos texto)
+    # Acciones → Exportar
     "acciones_btn_by_text": 'role=button[name="Acciones"]',
     "acciones_btn_any":     '#formCabecera\\:idAcciones',
     "exportar_text":        'text=Exportar',
 
-    # Ventana de descargas e ícono de bajar
-    "ventana_descargas":    '#ventana_descargas',
-    "btn_descarga":         '.btn-descarga',
+    # ventana de descargas
+    "ventana_descargas": '#ventana_descargas',
+    "btn_descarga":      '.btn-descarga',
 }
-
 
 async def goto_and_wait(page, url: str, **kwargs):
     await page.goto(url, **kwargs)
@@ -86,15 +82,44 @@ async def run():
         await page.click(SEL["login_btn"])
 
         print("🏬 Seleccionando sucursal/empresa…")
-        await page.wait_for_selector(SEL["sel_sucursal_btn"], timeout=15000)
-        await page.click(SEL["sel_sucursal_btn"])
-        await page.click(SEL["sel_sucursal_opt0"])
-        await page.wait_for_selector(SEL["sel_empresa_btn"], timeout=10000)
-        await page.click(SEL["sel_empresa_btn"])
-        await page.click(SEL["sel_empresa_opt0"])
-        await page.click(SEL["entrar_btn"])
-        await page.wait_for_load_state('networkidle')
-        await page.wait_for_timeout(400)
+
+        # helper para PrimeFaces SelectOneMenu
+        async def select_one_menu(page, label_selector: str, *, by_text: str | None = None, index: int = 0, timeout=10000):
+            # abre el dropdown clickeando el label
+            await page.wait_for_selector(label_selector, timeout=timeout)
+            await page.click(label_selector)
+
+            # aparece un <ul role="listbox"> con <li role="option">
+            listbox = page.locator('ul[role="listbox"]').first
+            await listbox.wait_for(state="visible", timeout=timeout)
+
+            if by_text:
+                opt = listbox.locator('li[role="option"]', has_text=by_text).first
+                await opt.click()
+            else:
+                opt = listbox.locator('li[role="option"]').nth(index)
+                await opt.click()
+
+            # pequeña pausa para que PrimeFaces haga el update
+            await page.wait_for_timeout(200)
+
+        # esta pantalla puede no aparecer si ya quedó sesión previa;
+        # chequeo rápido y, si no está, sigo
+        try:
+            await page.wait_for_selector(SEL["empresa_label"], timeout=8000)
+            # Empresa: dejá la seleccionada (o elegí por texto si querés)
+            # await select_one_menu(page, SEL["empresa_label"], by_text="INOXIDABLE MARWAL S.R.L.")
+            # Sucursal: elegí por texto o por índice (0=CASA CENTRAL, 1=ECOMMERCE según tu HTML)
+            # ⇒ Si querés ECOMMERCE:
+            await select_one_menu(page, SEL["sucursal_label"], by_text=DUX_SUCURSAL or None, index=1 if not DUX_SUCURSAL else 0)
+
+            # Aceptar
+            await page.click(SEL["btn_aceptar"])
+            await page.wait_for_load_state('networkidle')
+            await page.wait_for_timeout(400)
+        except PwTimeout:
+            # no apareció la pantalla, continuo como si ya estuvieras dentro
+            pass
 
         print("🧾 Menú COMPRAS → Gastos…")
         # Primero por texto (más estable)
