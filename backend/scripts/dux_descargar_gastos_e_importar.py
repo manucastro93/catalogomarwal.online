@@ -138,7 +138,7 @@ async def accept_sucursal(page, *, prefer_text: str | None, timeout: int = 6000)
     clicked = False
     for sel in candidatos:
         try:
-            fr, btn = await wait_locator_any_frame(page, sel, state="visible", timeout=1500)
+            fr, btn = await wait_locator_any_frame(page, sel, state="visible", timeout=400)
             await btn.first.scroll_into_view_if_needed()
             await btn.first.click()
             clicked = True
@@ -170,13 +170,13 @@ async def accept_sucursal(page, *, prefer_text: str | None, timeout: int = 6000)
 
     # Espera a que la pantalla de selección desaparezca o avance
     try:
-        fr_form, form = await wait_locator_any_frame(page, 'form#formInicio', timeout=1500)
+        fr_form, form = await wait_locator_any_frame(page, 'form#formInicio', timeout=400)
         try:
-            await form.first.wait_for(state='detached', timeout=4000)
+            await form.first.wait_for(state='detached', timeout=400)
         except Exception:
             # o que aparezca alguna UI de la siguiente vista
             try:
-                await wait_locator_any_frame(page, '#formCabecera', timeout=3000)
+                await wait_locator_any_frame(page, '#formCabecera', timeout=400)
             except Exception:
                 pass
     except Exception:
@@ -184,29 +184,144 @@ async def accept_sucursal(page, *, prefer_text: str | None, timeout: int = 6000)
         pass
 
 async def set_date_range_last_30(page):
-    desde = (datetime.now() - timedelta(days=30)).strftime("%d/%m/%y")
-    hasta = datetime.now().strftime("%d/%m/%y")
-    sel_desde = '#formCabecera\\:j_idt922_input'
-    posibles_hasta = [
+    # dd/mm/yy (2 dígitos)
+    desde_val = (datetime.now() - timedelta(days=30)).strftime("%d/%m/%y")
+    hasta_val = datetime.now().strftime("%d/%m/%y")
+
+    # 1) localizar inputs de forma robusta
+    candidatos_desde = [
+        '#formCabecera\\:j_idt922_input',
+        'label.ui-outputlabel:has-text("Fecha Desde") >> xpath=following::input[contains(@id,"_input")][1]'
+    ]
+    candidatos_hasta = [
         '#formCabecera\\:j_idt924_input',
         '#formCabecera\\:j_idt923_input',
+        'label.ui-outputlabel:has-text("Fecha Hasta") >> xpath=following::input[contains(@id,"_input")][1]',
         'input.ui-inputfield.ui-widget.ui-state-default.ui-corner-all.hasDatepicker >> nth=1'
     ]
+
+    async def set_value_and_fire(fr, el, value):
+        # limpiar y escribir
+        try:
+            await el.click()
+            for mod in ("Control", "Meta"):
+                try: await fr.keyboard.press(f"{mod}+A")
+                except: pass
+            await fr.keyboard.press("Backspace")
+            await el.type(value, delay=8)
+        except Exception:
+            pass
+
+        # asegurar por JS + eventos
+        await el.evaluate(
+            "(e, val) => { e.value = val; e.dispatchEvent(new Event('input', {bubbles:true})); e.dispatchEvent(new Event('change', {bubbles:true})); }",
+            value
+        )
+        # blur suave
+        try:
+            await fr.keyboard.press("Tab")
+        except Exception:
+            pass
+        await fr.wait_for_timeout(120)
+
+        # forzar el mismo PF AJAX que usa el input (id del componente sin '_input')
+        comp_id = await el.evaluate("e => e.id?.replace(/_input$/, '') || null")
+        if comp_id:
+            await fr.evaluate(
+                """(cid) => {
+                    try {
+                      if (window.PrimeFaces && PrimeFaces.ab) {
+                        PrimeFaces.ab({s: cid, e: "change", f: "formCabecera", p: cid, u: "formPrincipal formIndicadores"});
+                      }
+                    } catch(_) {}
+                }""",
+                comp_id
+            )
+            await fr.wait_for_timeout(150)
+
+    # setear DESDE
+    desde_fr = desde_el = None
+    for sel in candidatos_desde:
+        try:
+            desde_fr, loc = await wait_locator_any_frame(page, sel, timeout=2500)
+            desde_el = loc.first
+            break
+        except Exception:
+            continue
+
+    # setear HASTA
+    hasta_fr = hasta_el = None
+    for sel in candidatos_hasta:
+        try:
+            hasta_fr, loc = await wait_locator_any_frame(page, sel, timeout=2500)
+            hasta_el = loc.first
+            break
+        except Exception:
+            continue
+
+    if desde_el:
+        await set_value_and_fire(desde_fr, desde_el, desde_val)
+    if hasta_el:
+        await set_value_and_fire(hasta_fr, hasta_el, hasta_val)
+
+    # verificación rápida (opcional)
     try:
-        fr, desde_loc = await wait_locator_any_frame(page, sel_desde, timeout=2500)
-        await desde_loc.first.fill(desde)
-        await desde_loc.first.dispatch_event('change')
-        await fr.keyboard.press('Enter')
-        await fr.wait_for_timeout(80)
+        if desde_el:
+            v = await desde_el.evaluate("e => e.value")
+            # si aún no quedó, un segundo intento rápido
+            if (v or "").strip() != desde_val:
+                await set_value_and_fire(desde_fr, desde_el, desde_val)
+        if hasta_el:
+            v = await hasta_el.evaluate("e => e.value")
+            if (v or "").strip() != hasta_val:
+                await set_value_and_fire(hasta_fr, hasta_el, hasta_val)
     except Exception:
         pass
-    for sel in posibles_hasta:
+
+async def commit_fechas(page):
+    """Postea formCabecera para que el server tome DESDE/HASTA antes de exportar."""
+    candidatos = [
+        '#formCabecera\\:j_idt922_input',  # Desde
+        '#formCabecera\\:j_idt924_input',  # Hasta (variante 1)
+        '#formCabecera\\:j_idt923_input',  # Hasta (variante 2)
+    ]
+    for sel in candidatos:
         try:
-            fr, hasta_loc = await wait_locator_any_frame(page, sel, timeout=1500)
-            await hasta_loc.first.fill(hasta)
-            await hasta_loc.first.dispatch_event('change')
-            await fr.keyboard.press('Enter')
-            await fr.wait_for_timeout(80)
+            fr, loc = await wait_locator_any_frame(page, sel, timeout=1200)
+            el = loc.first
+            comp_id = await el.evaluate("e => (e.id||'').replace(/_input$/, '')")
+            if not comp_id:
+                continue
+            # Igual que el onchange del HTML, pero esperando oncomplete
+            await fr.evaluate(
+                """(cid) => new Promise(res => {
+                    try {
+                      if (window.PrimeFaces && PrimeFaces.ab) {
+                        PrimeFaces.ab({
+                          s: cid, e: "change", f: "formCabecera",
+                          p: cid + " formCabecera",
+                          u: "formCabecera formPrincipal formIndicadores",
+                          onco: function(){ res(true); }
+                        });
+                      } else { res(true); }
+                    } catch(e){ res(true); }
+                })""",
+                comp_id
+            )
+            # pequeña espera para que termine el re-render
+            await fr.wait_for_timeout(150)
+        except Exception:
+            pass
+
+    # plan B: si existe un botón "Buscar/Aplicar", clickealo
+    for btn_sel in [
+        'form#formCabecera button:has-text("Buscar")',
+        'form#formCabecera button:has-text("Aplicar")',
+        'form#formCabecera button.ui-button'
+    ]:
+        try:
+            await click_any_frame(page, btn_sel, timeout=600)
+            await page.wait_for_timeout(200)
             break
         except Exception:
             continue
@@ -373,9 +488,9 @@ async def run():
             try: await page.keyboard.press("Escape")
             except: pass
 
-            fr_user, user_inp = await wait_locator_any_frame(page, SEL["login_user"], state="visible", timeout=8000)
+            fr_user, user_inp = await wait_locator_any_frame(page, SEL["login_user"], state="visible", timeout=500)
             pass_inp = fr_user.locator(SEL["login_pass"]).first
-            await pass_inp.wait_for(state="visible", timeout=1500)
+            await pass_inp.wait_for(state="visible", timeout=500)
 
             await user_inp.click(); await user_inp.fill(""); await user_inp.type(DUX_USER, delay=10)
             await pass_inp.click(); await pass_inp.fill(""); await pass_inp.type(DUX_PASS, delay=10)
@@ -390,13 +505,13 @@ async def run():
                 await login_btn.click()
 
             # no esperes mucho: seguimos al selector rápido
-            await page.wait_for_timeout(300)
+            await page.wait_for_timeout(150)
         except PwTimeout:
             pass
 
         print("🏬 Seleccionando sucursal/empresa (fast)…")
         try:
-            await accept_sucursal(page, prefer_text=DUX_SUCURSAL, timeout=500)
+            await accept_sucursal(page, prefer_text=DUX_SUCURSAL, timeout=400)
         except Exception:
             # si no está la pantalla, seguimos
             pass
@@ -410,8 +525,9 @@ async def run():
 
         print("📦 Acciones → Exportar… (best effort; puede omitirse)")
         await set_date_range_last_30(page)
+        await commit_fechas(page)
         # si querés NO intentar Acciones, comentá la siguiente línea:
-        # await try_open_actions_and_export(page, timeout=5000)
+        await try_open_actions_and_export(page, timeout=6000)
 
         print("⬇️ Buscando fuente de descargas…")
         try:
@@ -427,8 +543,13 @@ async def run():
             await dump_debug(page, f"download_fail_{origen}")
             raise
 
-        hoy = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        xls_destino = DESCARGAS_DIR / f"gastos_dux_{hoy}.xls"
+        xls_destino = DESCARGAS_DIR / "temp_gastos_dux.xls"
+        try:
+            if xls_destino.exists():
+                xls_destino.unlink()
+        except Exception:
+            pass
+
         await dl.save_as(xls_destino)
         print(f"✅ XLS guardado en: {xls_destino}")
 

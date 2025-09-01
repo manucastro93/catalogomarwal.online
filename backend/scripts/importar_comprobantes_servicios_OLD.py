@@ -10,9 +10,8 @@ Importa una planilla de 'Comprobantes de Servicios' a la BD.
 - Hace UPSERT masivo en lotes:
   * ProveedoresServicios (crea proveedor si no existe)
   * CategoriasServicios (crea categoría si no existe, con normalización de duplicados "IMPUESTOS, IMPUESTOS" -> "IMPUESTOS")
-  * ComprobantesServicios
-    - Clave natural histórica: (tipoComprobante, comprobante, fecha)
-    - **Anti-duplicado fuerte por `comprobante`**: dedupe en DataFrame + índice UNIQUE opcional
+  * ComprobantesServicios (clave natural: tipoComprobante + comprobante + fecha)
+
 Requisitos:
   pip install pandas SQLAlchemy PyMySQL python-dotenv xlrd openpyxl
 """
@@ -119,22 +118,6 @@ def normalize_categoria_raw(cat: str) -> str:
             uniq.append(p)
     return ", ".join(uniq)
 
-def normalize_comprobante_value(x):
-    """Normaliza Nº de comprobante para evitar duplicados por pequeñas variaciones."""
-    if x is None:
-        return None
-    try:
-        if pd.isna(x):
-            return None
-    except Exception:
-        pass
-    s = str(x).strip()
-    if not s:
-        return None
-    # quitar espacios internos y extremos, mantener guiones/barra, usar mayúsculas
-    s = re.sub(r"\s+", "", s)
-    return s.upper()
-
 def noneify(x):
     """Convierte NaN/NaT a None para que PyMySQL no explote."""
     try:
@@ -225,18 +208,8 @@ def ensure_schema(engine: Engine):
         ).fetchone()
         return bool(row)
 
-    def index_exists(conn, table, index_name):
-        row = conn.execute(
-            text("""SELECT 1
-                    FROM information_schema.statistics
-                    WHERE table_schema=:db AND table_name=:t AND index_name=:i
-                    LIMIT 1"""),
-            {"db": DB_NAME, "t": table, "i": index_name}
-        ).fetchone()
-        return bool(row)
-
     with engine.begin() as conn:
-        # Crear tablas si faltan
+        # Crear solo si NO existen (evitamos DDL innecesario)
         if not table_exists(conn, "CategoriasServicios"):
             conn.execute(text("""
             CREATE TABLE IF NOT EXISTS CategoriasServicios (
@@ -291,23 +264,6 @@ def ensure_schema(engine: Engine):
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             """))
 
-        # ===== Índice UNIQUE extra por comprobante (anti-duplicado duro) =====
-        # Si ya existen duplicados, no lo creamos para no romper; igual el importador dedupea en DF.
-        dup = conn.execute(text("""
-            SELECT comprobante, COUNT(*) c
-            FROM ComprobantesServicios
-            WHERE comprobante IS NOT NULL AND comprobante <> ''
-            GROUP BY comprobante
-            HAVING c > 1
-            LIMIT 1
-        """)).fetchone()
-        if not dup and not index_exists(conn, "ComprobantesServicios", "uq_comprobantes_numero"):
-            try:
-                conn.execute(text("ALTER TABLE ComprobantesServicios ADD UNIQUE KEY uq_comprobantes_numero (comprobante)"))
-            except Exception:
-                # si falla por versión/permiso, lo ignoramos (DF dedupe igual)
-                pass
-
 def read_excel_raw(path: Path) -> pd.DataFrame:
     ext = path.suffix.lower()
     engine_name = "xlrd" if ext == ".xls" else "openpyxl"
@@ -360,17 +316,6 @@ def map_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     if faltantes:
         raise RuntimeError(f"Faltan columnas requeridas en el Excel: {faltantes}\nColumnas disponibles: {list(df.columns)}")
 
-    # Normalización de Nº de comprobante
-    df["comprobante"] = df["comprobante"].apply(normalize_comprobante_value)
-    # Filtrar vacíos
-    df = df[df["comprobante"].notna() & (df["comprobante"].astype(str).str.strip() != "")]
-    # Dedupe por comprobante (quedate con la última ocurrencia)
-    # Ordenamos por fecha para que 'keep=last' sea el más reciente
-    if "fecha" in df.columns:
-        df["_orden_fecha"] = df["fecha"].apply(lambda x: pd.to_datetime(x, dayfirst=True, errors="coerce"))
-        df = df.sort_values(by=["_orden_fecha"]).drop(columns=["_orden_fecha"])
-    df = df.drop_duplicates(subset=["comprobante"], keep="last")
-
     # Fechas
     for col in ["fecha", "fechaImputacion", "fechaVencimiento", "fechaRegistro", "fechaAnula"]:
         if col in df.columns:
@@ -416,16 +361,51 @@ def map_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 
     return df[final_cols]
 
+# ========= Cache + helpers de creación/búsqueda =========
+def precargar_caches(engine: Engine):
+    prov_by_name = {}  # nombre -> id
+    cat_by_name  = {}  # nombre_normalizado -> id
+    with engine.begin() as conn:
+        for row in conn.execute(text("SELECT id, nombre FROM ProveedoresServicios WHERE deletedAt IS NULL")):
+            prov_by_name[row[1]] = int(row[0])
+        for row in conn.execute(text("SELECT id, nombre FROM CategoriasServicios WHERE deletedAt IS NULL")):
+            cat_by_name[row[1]] = int(row[0])
+    return prov_by_name, cat_by_name
+
+def get_or_create_proveedor_cached(conn, prov_by_name: dict, nombre: str):
+    if not nombre:
+        return None
+    nombre = nombre.strip()
+    if nombre in prov_by_name:
+        return prov_by_name[nombre]
+    res = conn.execute(text("INSERT INTO ProveedoresServicios (nombre) VALUES (:n)"), {"n": nombre})
+    new_id = int(res.lastrowid)
+    prov_by_name[nombre] = new_id
+    return new_id
+
+def get_or_create_categoria_cached(conn, cat_by_name: dict, nombre: str):
+    if not nombre:
+        return None
+    nombre_norm = normalize_categoria_raw(nombre)
+    if not nombre_norm:
+        return None
+    if nombre_norm in cat_by_name:
+        return cat_by_name[nombre_norm]
+    res = conn.execute(text("INSERT INTO CategoriasServicios (nombre) VALUES (:n)"), {"n": nombre_norm})
+    new_id = int(res.lastrowid)
+    cat_by_name[nombre_norm] = new_id
+    return new_id
+
 # ========= UPSERT masivo en lotes =========
 def upsert_rows(df: pd.DataFrame, engine: Engine, batch_size: int = 250, max_retries: int = 5):
     """
-    UPSERT masivo con batches. Usa ON DUPLICATE KEY UPDATE.
-    Si existe índice UNIQUE por `comprobante`, se evita duplicar por número.
+    UPSERT masivo con batches: dentro de CADA transacción del batch
+    se resuelven proveedor/categoría y se hace el INSERT ... ON DUPLICATE.
+    Evita transacciones abiertas antes del begin() del batch.
     """
     from sqlalchemy.exc import OperationalError
     import time
 
-    # Orden estable pero ya dedupeado por comprobante antes
     df = df.sort_values(by=["tipoComprobante", "fecha", "comprobante"], kind="stable").reset_index(drop=True)
 
     insert_sql = text("""
