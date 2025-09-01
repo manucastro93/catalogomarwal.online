@@ -45,6 +45,7 @@ const ProductosPedidosPendientes = lazy(() => import("./pages/ProductosPedidosPe
 const ConfiguracionGeneral = lazy(() => import('./pages/Pagina/ConfiguracionGeneral'));
 const InformeClientesDux = lazy(() => import('./pages/Informes/Ventas/InformeClientesDux'));
 const InformeClientesUltimaCompra = lazy(() => import('./pages/Informes/Ventas/InformeClientesUltimaCompra'));
+const InformeVentaPorProducto = lazy(() => import('./pages/Informes/Ventas/VentasPorProducto'));
 const PedidoRapido = lazy(() => import('./pages/PedidoRapido'))
 
 // ✅ Restaurar sesión si existe
@@ -276,6 +277,18 @@ render(
           </ProtectedRoute>
         )}
       />
+
+      <Route
+        path="/Informes/Ventas/VentasPorProducto"
+        component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <InformeVentaPorProducto />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      />
+
       <Route
         path="/Informes/InformeClientesDux"
         component={() => (

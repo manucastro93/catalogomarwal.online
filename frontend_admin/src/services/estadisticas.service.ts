@@ -62,3 +62,69 @@ export const obtenerPedidosPorMesConVendedor = async (
   });
   return data as { mes: string; totalPedidos: number; pedidosVendedor: number }[];
 };
+
+export type FilaVentasProducto = {
+  productoId: number;
+  codigo: string;
+  descripcion: string;
+  cant_mes_actual: number;
+  monto_mes_actual: number;
+  cant_mes_anterior: number;
+  monto_mes_anterior: number;
+  cant_3m: number;
+  monto_3m: number;
+  cant_12m: number;
+  monto_12m: number;
+};
+
+export type RespuestaVentasProducto = {
+  data: FilaVentasProducto[];
+  pagina: number;
+  totalPaginas: number;
+};
+
+export type ResumenVentasProducto = {
+  top12m: FilaVentasProducto[];
+  crecimientoUltimoMes: Array<FilaVentasProducto & { variacion_mes: number }>;
+  enAlza: Array<FilaVentasProducto & { delta_vs_prom3m: number; estado: "sube" | "estable" | "baja" }>;
+  enBaja: Array<FilaVentasProducto & { delta_vs_prom3m: number; estado: "sube" | "estable" | "baja" }>;
+  proyeccion30d: { codigo: string; descripcion: string; monto_proyectado_30d: number; cant_proyectada_30d: number }[];
+  oportunidades: { codigo: string; descripcion: string; monto_12m: number }[];
+  texto?: string;
+};
+
+/**
+ * Lista agregada de ventas por producto con filtros y paginación.
+ * GET /estadisticas/ventas-producto
+ */
+export const listarVentasPorProducto = async (params: {
+  q?: string;
+  categoriaId?: number;
+  vendedor?: string;          // "Apellido, Nombre" (igual que en otros endpoints)
+  personalDuxId?: number;     // alternativa directa por ID
+  page?: number;
+  limit?: number;
+  orderBy?: string;           // ej: "monto_12m", "codigo", etc.
+  orderDir?: "ASC" | "DESC";  // default "DESC"
+}) => {
+  const { data } = await api.get<RespuestaVentasProducto>('/estadisticas/ventas-producto', {
+    params,
+  });
+  return data;
+};
+
+/**
+ * Resumen ejecutivo (top, tendencias, proyección).
+ * GET /estadisticas/ventas-producto/resumen
+ */
+export const obtenerVentasPorProductoResumen = async (params?: {
+  q?: string;
+  categoriaId?: number;
+  vendedor?: string;
+  personalDuxId?: number;
+}) => {
+  const { data } = await api.get<ResumenVentasProducto>('/estadisticas/ventas-producto/resumen', {
+    params,
+  });
+  return data;
+};
