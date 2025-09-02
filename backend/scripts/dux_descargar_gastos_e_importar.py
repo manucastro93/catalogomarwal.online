@@ -390,86 +390,60 @@ async def ensure_download_source(page, *, timeout=15000):
             raise
         return "historial"
 
-async def download_latest_from_listing(page, prefer_texts=("Gestion de Gastos", "Gestión de Gastos")):
+async def download_latest_from_listing(page, prefer_texts=("Gestion de Gastos", "Gestión de Gastos", "GASTOS", "Gestión de Servicios")):
     """
-    Descarga usando .btn-descarga / .fa-cloud-download / onclick*="descargarArchivo(" en TODOS los frames.
+    Descarga SOLO si el registro corresponde a Gestión de Gastos.
+    Busca en todos los frames y valida por texto en ancestros.
     """
+    def match_text(t: str) -> bool:
+        t = (t or "").upper()
+        return any(p.upper() in t for p in prefer_texts)
+
     cont_sel = [
         '#id-lista-archivos > div',
         '.lista-archivos > div',
         '#id-lista-archivos div[style*="display: flex"]',
         '.lista-archivos div[style*="display: flex"]'
     ]
-    filas = None
-    frame_with_rows = None
+
+    # 1) Botones sueltos
+    for fr in all_frames(page):
+        btns = fr.locator(SEL["btn_descarga"])
+        n = await btns.count()
+        for i in range(n):
+            txt = await btns.nth(i).evaluate("""(el) => {
+                let p = el, out = '';
+                for (let k=0;k<6 && p;k++){ out += (p.innerText||''); p = p.parentElement; }
+                return out;
+            }""")
+            if match_text(txt):
+                async with page.expect_download() as dl_info:
+                    try:
+                        await btns.nth(i).click()
+                    except Exception:
+                        await btns.nth(i).evaluate("(e) => (typeof e.onclick === 'function') ? e.onclick() : e.click()")
+                return await dl_info.value
+
+    # 2) Filas de listados
     for fr in all_frames(page):
         for sel in cont_sel:
-            loc = fr.locator(sel)
-            if await loc.count():
-                filas = loc
-                frame_with_rows = fr
-                break
-        if filas:
-            break
+            cont = fr.locator(sel)
+            m = await cont.count()
+            for i in range(m):
+                txt = await cont.nth(i).inner_text()
+                if not match_text(txt):
+                    continue
+                icono = cont.nth(i).locator(SEL["btn_descarga"]).first
+                if await icono.count():
+                    async with page.expect_download() as dl_info:
+                        try:
+                            await icono.click()
+                        except Exception:
+                            await icono.evaluate("(e) => (typeof e.onclick === 'function') ? e.onclick() : e.click()")
+                    return await dl_info.value
 
-    async def execute_onclick(elem, fr):
-        async with page.expect_download() as dl_info:
-            await elem.evaluate("(el) => (typeof el.onclick === 'function') ? el.onclick() : el.click()")
-        return await dl_info.value
-
-    if not filas:
-        best_btn = None
-        best_fr = None
-        for fr in all_frames(page):
-            btns = fr.locator(SEL["btn_descarga"])
-            n = await btns.count()
-            if n == 0:
-                continue
-            pick = 0
-            for i in range(n):
-                txt = await btns.nth(i).evaluate("""(el) => {
-                    let p = el, out = '';
-                    for (let k=0;k<6 && p;k++){ out += (p.innerText||''); p = p.parentElement; }
-                    return out;
-                }""")
-                if any(t in txt for t in prefer_texts):
-                    pick = i
-                    break
-            best_btn = btns.nth(pick)
-            best_fr = fr
-            if pick != 0:
-                break
-        if not best_btn:
-            await dump_debug(page, "sin_filas_y_sin_btn")
-            raise PwTimeout("No hay botones de descarga.")
-
-        try:
-            async with page.expect_download() as dl_info:
-                await best_btn.click()
-            return await dl_info.value
-        except Exception:
-            return await execute_onclick(best_btn, best_fr)
-
-    count = await filas.count()
-    target = 0
-    for i in range(count):
-        txt = await filas.nth(i).inner_text()
-        if any(t in txt for t in prefer_texts):
-            target = i
-            break
-
-    fila = filas.nth(target)
-    icono = fila.locator(SEL["btn_descarga"]).first
-    if await icono.count():
-        try:
-            async with page.expect_download() as dl_info:
-                await icono.click()
-            return await dl_info.value
-        except Exception:
-            return await execute_onclick(icono, frame_with_rows)
-
-    await dump_debug(page, "fila_sin_boton")
-    raise PwTimeout("No encontré botón de descarga en la fila.")
+    # 3) Nada matcheó “Gastos”
+    raise PwTimeout("No encontré exportación de **Gestión de Gastos** en la ventana/Historial.")
 
 # -------------------- Main --------------------
 
@@ -551,6 +525,16 @@ async def run():
             pass
 
         await dl.save_as(xls_destino)
+        # 🔍 Smoke test rápido: la primera fila debería contener textos de Gastos
+        try:
+            import pandas as pd
+            df_test = pd.read_excel(xls_destino, header=None, nrows=3)
+            primera_fila = " ".join([str(x) for x in df_test.iloc[0].tolist() if str(x) != "nan"]).upper()
+            pistas = ("COMPROBANTE", "COMPRA", "FACTURA", "PROVEEDOR")  # típicos campos de Gastos/Compras
+            if not any(p in primera_fila for p in pistas):
+                raise PwTimeout(f"El XLS descargado no parece ser de Gastos. Pista fila 0: {primera_fila[:180]}")
+        except Exception as _e:
+            raise
         print(f"✅ XLS guardado en: {xls_destino}")
 
         print("🚚 Ejecutando importador…")
