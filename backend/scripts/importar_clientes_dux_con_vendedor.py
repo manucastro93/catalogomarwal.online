@@ -46,16 +46,29 @@ def armar_claves_nombre(apellido: str, nombre: str):
     return claves
 
 def ensure_schema(engine):
-    """Asegura columna vendedorId e índice (si no existen)."""
+    """Asegura columna vendedorId e índice, compatible con MySQL/MariaDB viejos."""
     with engine.begin() as conn:
-        conn.execute(text("""
-            ALTER TABLE ClientesDux
-            ADD COLUMN IF NOT EXISTS vendedorId INT NULL
-        """))
-        existe_idx = conn.execute(text("""
-            SELECT COUNT(1) FROM INFORMATION_SCHEMA.STATISTICS
-            WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'ClientesDux' AND INDEX_NAME = 'idx_clientesdux_vendedorId'
+        # Verificar si la columna ya existe
+        existe_col = conn.execute(text("""
+            SELECT COUNT(*)
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = :db
+              AND TABLE_NAME = 'ClientesDux'
+              AND COLUMN_NAME = 'vendedorId'
         """), {"db": DB_NAME}).scalar()
+
+        if not existe_col:
+            conn.execute(text("ALTER TABLE ClientesDux ADD vendedorId INT NULL"))
+
+        # Verificar si el índice ya existe
+        existe_idx = conn.execute(text("""
+            SELECT COUNT(1)
+            FROM INFORMATION_SCHEMA.STATISTICS
+            WHERE TABLE_SCHEMA = :db
+              AND TABLE_NAME = 'ClientesDux'
+              AND INDEX_NAME = 'idx_clientesdux_vendedorId'
+        """), {"db": DB_NAME}).scalar()
+
         if not existe_idx:
             conn.execute(text("CREATE INDEX idx_clientesdux_vendedorId ON ClientesDux (vendedorId)"))
 
