@@ -8,7 +8,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import subprocess
 from dotenv import load_dotenv
-from playwright.async_api import async_playwright, TimeoutError as PwTimeout
+from playwright.async_api import async_playwright, TimeoutError as PwTimeout, Error as PwError
 
 # 📦 .env
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -80,15 +80,33 @@ def all_frames(page):
             frames.append(fr)
     return frames
 
+async def safe_count(locator):
+    try:
+        return await locator.count()
+    except PwError:
+        return 0
+
+async def safe_click(locator, timeout=800):
+    try:
+        await locator.first.click(timeout=timeout)
+        return True
+    except (PwError, Exception):
+        return False
+
 async def wait_locator_any_frame(page, selector: str, *, state: str | None = None, timeout: int = 8000):
-    """Espera y devuelve (frame, locator) del primer match en cualquier frame."""
+    """Espera y devuelve (frame, locator) del primer match en cualquier frame, inmune a navigations."""
     elapsed = 0
     step = 200
     while elapsed < timeout:
         for fr in all_frames(page):
             try:
                 loc = fr.locator(selector)
-                if await loc.count():
+                c = 0
+                try:
+                    c = await loc.count()
+                except PwError:
+                    c = 0
+                if c:
                     if state:
                         try:
                             await loc.first.wait_for(state=state, timeout=step)
@@ -127,14 +145,11 @@ async def accept_sucursal(page, *, prefer_text: str | None, timeout: int = 6000)
     Selecciona sucursal (si aparece) y hace click en Aceptar de forma robusta
     en la pantalla 'Seleccione Sucursal'.
     """
-
-    # Click Aceptar por varias variantes
     candidatos = [
         '#formInicio\\:j_idt920',
         'form#formInicio button.ui-button:has-text("Aceptar")',
         'button:has(span.ui-button-text:has-text("Aceptar"))'
     ]
-
     clicked = False
     for sel in candidatos:
         try:
@@ -147,7 +162,7 @@ async def accept_sucursal(page, *, prefer_text: str | None, timeout: int = 6000)
             continue
 
     if not clicked:
-        # Último recurso: ejecutar el onclick desde JS
+        # Último recurso: onclick por JS
         for fr in all_frames(page):
             try:
                 ok = await fr.evaluate("""
@@ -168,19 +183,17 @@ async def accept_sucursal(page, *, prefer_text: str | None, timeout: int = 6000)
     if not clicked:
         raise PwTimeout("No pude clickear Aceptar en el selector de empresa/sucursal.")
 
-    # Espera a que la pantalla de selección desaparezca o avance
+    # Espera a que desaparezca el form o cambie la vista
     try:
         fr_form, form = await wait_locator_any_frame(page, 'form#formInicio', timeout=400)
         try:
             await form.first.wait_for(state='detached', timeout=400)
         except Exception:
-            # o que aparezca alguna UI de la siguiente vista
             try:
                 await wait_locator_any_frame(page, '#formCabecera', timeout=400)
             except Exception:
                 pass
     except Exception:
-        # si no encontramos el form, ya desapareció
         pass
 
 async def set_date_range_last_30(page):
@@ -188,7 +201,6 @@ async def set_date_range_last_30(page):
     desde_val = (datetime.now() - timedelta(days=30)).strftime("%d/%m/%y")
     hasta_val = datetime.now().strftime("%d/%m/%y")
 
-    # 1) localizar inputs de forma robusta
     candidatos_desde = [
         '#formCabecera\\:j_idt922_input',
         'label.ui-outputlabel:has-text("Fecha Desde") >> xpath=following::input[contains(@id,"_input")][1]'
@@ -201,7 +213,6 @@ async def set_date_range_last_30(page):
     ]
 
     async def set_value_and_fire(fr, el, value):
-        # limpiar y escribir
         try:
             await el.click()
             for mod in ("Control", "Meta"):
@@ -212,19 +223,16 @@ async def set_date_range_last_30(page):
         except Exception:
             pass
 
-        # asegurar por JS + eventos
         await el.evaluate(
             "(e, val) => { e.value = val; e.dispatchEvent(new Event('input', {bubbles:true})); e.dispatchEvent(new Event('change', {bubbles:true})); }",
             value
         )
-        # blur suave
         try:
             await fr.keyboard.press("Tab")
         except Exception:
             pass
         await fr.wait_for_timeout(120)
 
-        # forzar el mismo PF AJAX que usa el input (id del componente sin '_input')
         comp_id = await el.evaluate("e => e.id?.replace(/_input$/, '') || null")
         if comp_id:
             await fr.evaluate(
@@ -264,11 +272,10 @@ async def set_date_range_last_30(page):
     if hasta_el:
         await set_value_and_fire(hasta_fr, hasta_el, hasta_val)
 
-    # verificación rápida (opcional)
+    # verificación
     try:
         if desde_el:
             v = await desde_el.evaluate("e => e.value")
-            # si aún no quedó, un segundo intento rápido
             if (v or "").strip() != desde_val:
                 await set_value_and_fire(desde_fr, desde_el, desde_val)
         if hasta_el:
@@ -281,9 +288,9 @@ async def set_date_range_last_30(page):
 async def commit_fechas(page):
     """Postea formCabecera para que el server tome DESDE/HASTA antes de exportar."""
     candidatos = [
-        '#formCabecera\\:j_idt922_input',  # Desde
-        '#formCabecera\\:j_idt924_input',  # Hasta (variante 1)
-        '#formCabecera\\:j_idt923_input',  # Hasta (variante 2)
+        '#formCabecera\\:j_idt922_input',
+        '#formCabecera\\:j_idt924_input',
+        '#formCabecera\\:j_idt923_input',
     ]
     for sel in candidatos:
         try:
@@ -292,7 +299,6 @@ async def commit_fechas(page):
             comp_id = await el.evaluate("e => (e.id||'').replace(/_input$/, '')")
             if not comp_id:
                 continue
-            # Igual que el onchange del HTML, pero esperando oncomplete
             await fr.evaluate(
                 """(cid) => new Promise(res => {
                     try {
@@ -308,12 +314,10 @@ async def commit_fechas(page):
                 })""",
                 comp_id
             )
-            # pequeña espera para que termine el re-render
             await fr.wait_for_timeout(150)
         except Exception:
             pass
 
-    # plan B: si existe un botón "Buscar/Aplicar", clickealo
     for btn_sel in [
         'form#formCabecera button:has-text("Buscar")',
         'form#formCabecera button:has-text("Aplicar")',
@@ -328,9 +332,7 @@ async def commit_fechas(page):
 
 async def try_open_actions_and_export(page, *, timeout=7000):
     """Best-effort: intenta Acciones→Exportar. Si falla, seguimos por historial."""
-    # (lo dejamos por si algún día querés volver a usarlo; no se invoca en este flujo)
     try:
-        # abrir rápido por varias variantes
         for s in [
             '#formNorth\\:idBtnGear',
             '#formCabecera\\:idAcciones',
@@ -343,15 +345,17 @@ async def try_open_actions_and_export(page, *, timeout=7000):
                 break
             except Exception:
                 continue
-        # menú
         for fr in all_frames(page):
             menu = fr.locator(
                 '#formNorth\\:j_idt911, div[role="menubar"].ui-menu-overlay, .ui-tieredmenu.ui-menu-overlay, .ui-menu.ui-menu-overlay'
             ).first
-            if await menu.count():
-                await menu.wait_for(state="visible", timeout=1200)
+            if await safe_count(menu):
+                try:
+                    await menu.wait_for(state="visible", timeout=1200)
+                except Exception:
+                    pass
                 link = menu.locator('a.ui-menuitem-link:has(span.ui-menuitem-text:has-text("Exportar"))').first
-                if await link.count():
+                if await safe_count(link):
                     await link.click()
                     return True
         return False
@@ -365,7 +369,6 @@ async def ensure_download_source(page, *, timeout=20000):
     """
     await goto_and_wait(page, "https://erp.duxsoftware.com.ar/pages/estadisticas/historialExportaciones.faces")
 
-    # intentá botones de "Actualizar/Refrescar" si existen (en cualquier frame)
     for fr in all_frames(page):
         for s in [
             'button:has-text("Actualizar")',
@@ -375,19 +378,17 @@ async def ensure_download_source(page, *, timeout=20000):
         ]:
             try:
                 btn = fr.locator(s).first
-                if await btn.count():
+                if await safe_count(btn):
                     await btn.click()
                     await fr.wait_for_timeout(400)
             except Exception:
                 continue
 
-    # pequeña espera a que aparezcan filas o botones
     try:
         await wait_locator_any_frame(page, '#id-lista-archivos, .lista-archivos', timeout=6000)
     except Exception:
-        pass  # puede que los botones estén sueltos
+        pass
 
-    # si no hay contenedor, exigimos que haya al menos un botón-compatible
     try:
         await wait_locator_any_frame(page, '.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]', timeout=timeout)
     except Exception:
@@ -405,13 +406,13 @@ async def download_latest_from_listing(page, prefer_texts=("Gestion de Gastos", 
         return any(p.upper() in t for p in prefer_texts)
 
     async def try_once():
-        # 1) Botones sueltos con validación por texto en ancestros
+        # 1) Botones sueltos
         for fr in all_frames(page):
             btns = fr.locator('.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]')
             try:
                 n = await btns.count()
             except Exception:
-                continue  # navegación en medio del conteo, probá otro frame
+                continue
             for i in range(n):
                 try:
                     txt = await btns.nth(i).evaluate("""(el) => {
@@ -430,7 +431,7 @@ async def download_latest_from_listing(page, prefer_texts=("Gestion de Gastos", 
                         await btns.nth(i).evaluate("(e) => (typeof e.onclick === 'function') ? e.onclick() : e.click()")
                 return await dl_info.value
 
-        # 2) Filas de listados
+        # 2) Filas listadas
         cont_sel = [
             '#id-lista-archivos > div',
             '.lista-archivos > div',
@@ -452,7 +453,7 @@ async def download_latest_from_listing(page, prefer_texts=("Gestion de Gastos", 
                     if not match_text(txt):
                         continue
                     icono = cont.nth(i).locator('.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]').first
-                    if await icono.count():
+                    if await safe_count(icono):
                         async with page.expect_download() as dl_info:
                             try:
                                 await icono.click()
@@ -461,29 +462,26 @@ async def download_latest_from_listing(page, prefer_texts=("Gestion de Gastos", 
                         return await dl_info.value
         return None
 
-    # Hasta 3 intentos si la UI se está re-renderizando
     for intento in range(3):
         try:
             dl = await try_once()
             if dl:
                 return dl
-            # si no encontró nada, probá refrescar el historial
             try:
                 await ensure_download_source(page, timeout=6000)
             except Exception:
                 pass
             await page.wait_for_timeout(600)
         except Exception:
-            # navegación en medio del conteo / render — backoff suave
             await page.wait_for_timeout(800 + intento * 400)
 
     await dump_debug(page, "fila_sin_boton_gastos")
     raise PwTimeout("No encontré botón de descarga para **Gestión de Gastos**.")
+
 # -------------------- Main --------------------
 
 async def run():
     async with async_playwright() as p:
-        # 👀 visible para debug rápido; poné True si querés headless
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(accept_downloads=True, viewport={"width": 1400, "height": 900})
         page = await context.new_page()
@@ -491,50 +489,62 @@ async def run():
         print("🔐 Login Dux…")
         await goto_and_wait(page, "https://erp.duxsoftware.com.ar", wait="domcontentloaded")
 
-        # login multi-frame rápido
-        try:
-            try: await page.keyboard.press("Escape")
-            except: pass
-
-            fr_user, user_inp = await wait_locator_any_frame(page, SEL["login_user"], state="visible", timeout=500)
-            pass_inp = fr_user.locator(SEL["login_pass"]).first
-            await pass_inp.wait_for(state="visible", timeout=500)
-
-            await user_inp.click(); await user_inp.fill(""); await user_inp.type(DUX_USER, delay=10)
-            await pass_inp.click(); await pass_inp.fill(""); await pass_inp.type(DUX_PASS, delay=10)
-
+        # login multi-frame robusto sin .count()
+        for intento in range(3):
             try:
-                await pass_inp.press("Enter")
+                try:
+                    await page.keyboard.press("Escape")
+                except Exception:
+                    pass
+
+                fr_user, user_inp = await wait_locator_any_frame(page, SEL["login_user"], state="visible", timeout=1500)
+                pass_inp = fr_user.locator(SEL["login_pass"]).first
+                await pass_inp.wait_for(state="visible", timeout=1500)
+
+                await user_inp.fill("")
+                await user_inp.type(DUX_USER, delay=10)
+                await pass_inp.fill("")
+                await pass_inp.type(DUX_PASS, delay=10)
+
+                try:
+                    await pass_inp.press("Enter")
+                except Exception:
+                    pass
+                await page.wait_for_timeout(200)
+
+                btn = fr_user.locator(SEL["login_btn"])
+                await safe_click(btn, timeout=800)
+
+                # Espera a que aparezca la siguiente vista
+                avanzó = False
+                for _ in range(12):  # ~3s
+                    try:
+                        await wait_locator_any_frame(page, 'form#formInicio, #formCabecera, #formNorth', timeout=250)
+                        avanzó = True
+                        break
+                    except Exception:
+                        await page.wait_for_timeout(250)
+                if avanzó:
+                    break
+            except (PwTimeout, PwError):
                 await page.wait_for_timeout(400)
-            except: pass
 
-            login_btn = fr_user.locator(SEL["login_btn"]).first
-            if await login_btn.count():
-                await login_btn.click()
-
-            # no esperes mucho: seguimos al selector rápido
-            await page.wait_for_timeout(150)
-        except PwTimeout:
-            pass
+        await page.wait_for_load_state("domcontentloaded")
+        await page.wait_for_timeout(200)
 
         print("🏬 Seleccionando sucursal/empresa (fast)…")
         try:
             await accept_sucursal(page, prefer_text=DUX_SUCURSAL, timeout=400)
         except Exception:
-            # si no está la pantalla, seguimos
             pass
 
-        # ⚡️ directo a Gastos (sin menú)
         print("➡️ Yendo directo a Gastos…")
         await goto_and_wait(page, "https://erp.duxsoftware.com.ar/pages/compras/gestionServicio/gestionCompServicio.faces")
-
-        # listo, pequeña pausa de estabilización
         await page.wait_for_timeout(250)
 
         print("📦 Acciones → Exportar… (best effort; puede omitirse)")
         await set_date_range_last_30(page)
         await commit_fechas(page)
-        # si querés NO intentar Acciones, comentá la siguiente línea:
         await try_open_actions_and_export(page, timeout=6000)
 
         print("⬇️ Buscando fuente de descargas…")
@@ -559,16 +569,18 @@ async def run():
             pass
 
         await dl.save_as(xls_destino)
-        # 🔍 Smoke test rápido: la primera fila debería contener textos de Gastos
+
+        # 🔍 Smoke test: ¿parece realmente Gastos?
         try:
             import pandas as pd
             df_test = pd.read_excel(xls_destino, header=None, nrows=3)
-            primera_fila = " ".join([str(x) for x in df_test.iloc[0].tolist() if str(x) != "nan"]).upper()
-            pistas = ("COMPROBANTE", "COMPRA", "FACTURA", "PROVEEDOR")  # típicos campos de Gastos/Compras
-            if not any(p in primera_fila for p in pistas):
-                raise PwTimeout(f"El XLS descargado no parece ser de Gastos. Pista fila 0: {primera_fila[:180]}")
+            fila0 = " ".join([str(x) for x in df_test.iloc[0].tolist() if str(x) != "nan"]).upper()
+            pistas = ("COMPROBANTE", "COMPRA", "FACTURA", "PROVEEDOR", "SERVICIO")
+            if not any(p in fila0 for p in pistas):
+                raise PwTimeout(f"El XLS descargado no luce como 'Gestión de Gastos'. Pista fila 0: {fila0[:200]}")
         except Exception as _e:
             raise
+
         print(f"✅ XLS guardado en: {xls_destino}")
 
         print("🚚 Ejecutando importador…")
