@@ -16,11 +16,11 @@ type ItemRow = {
 
   operario?: Operario;
   operarioInput?: string;
-  opOpen?: boolean;       // 👈 controla apertura del dropdown Operario
+  opOpen?: boolean;
 
   maquina?: Maquina;
   maquinaInput?: string;
-  maqOpen?: boolean;      // 👈 controla apertura del dropdown Máquina
+  maqOpen?: boolean;
 
   horaDesde?: string;
   horaHasta?: string;

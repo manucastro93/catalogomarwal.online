@@ -34,7 +34,7 @@ export default function Pedidos() {
 
   const [verPedido, setVerPedido] = createSignal<Pedido | null>(null);
   const [verPedidoDux, setVerPedidoDux] = createSignal<PedidoDux | null>(null);
-  const [mostrarPedidosDux, setMostrarPedidosDux] = createSignal(false);
+  const [mostrarPedidosDux, setMostrarPedidosDux] = createSignal(true);
   const [fechaDesde, setFechaDesde] = createSignal("");
   const [fechaHasta, setFechaHasta] = createSignal("");
 
