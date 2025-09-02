@@ -346,56 +346,65 @@ async def run():
         except Exception:
             pass
 
-        # Buscar botón de descarga en cualquier frame
-        async def descargar_primero(prefer_texts=("Clientes", "CLIENTES")):
+        # Buscar botón de descarga en cualquier frame (solo CLIENTES)
+        async def descargar_primero(prefer_texts=("Clientes", "CLIENTES", "Base de Datos - Clientes")):
+            def match_text(t: str) -> bool:
+                t = (t or "").upper()
+                return any(p.upper() in t for p in prefer_texts)
+
             candidatos_contenedor = [
                 '#id-lista-archivos > div',
                 '.lista-archivos > div',
                 '#id-lista-archivos div[style*="display: flex"]',
                 '.lista-archivos div[style*="display: flex"]'
             ]
-            for fr in all_frames(page):
-                # si hay botones sueltos
-                btns = fr.locator('.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]')
-                if await btns.count():
-                    # pick por preferencia textual
-                    pick = 0
-                    for i in range(await btns.count()):
-                        txt = await btns.nth(i).evaluate("""(el) => {
-                            let p = el, out = '';
-                            for (let k=0;k<6 && p;k++){ out += (p.innerText||''); p = p.parentElement; }
-                            return out;
-                        }""")
-                        if any(t in txt for t in prefer_texts):
-                            pick = i
-                            break
-                    async with page.expect_download() as dl_info:
-                        await btns.nth(pick).click()
-                    return await dl_info.value
 
-                # o listados
+            # 1) Botones sueltos con texto en ancestros
+            best_btn = None
+            for fr in all_frames(page):
+                btns = fr.locator('.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]')
+                n = await btns.count()
+                for i in range(n):
+                    txt = await btns.nth(i).evaluate("""(el) => {
+                        let p = el, out = '';
+                        for (let k=0;k<6 && p;k++){ out += (p.innerText||''); p = p.parentElement; }
+                        return out;
+                    }""")
+                    if match_text(txt):
+                        best_btn = (fr, btns.nth(i))
+                        break
+                if best_btn:
+                    break
+
+            if best_btn:
+                fr, el = best_btn
+                async with page.expect_download() as dl_info:
+                    try:
+                        await el.click()
+                    except Exception:
+                        await el.evaluate("(e) => (typeof e.onclick === 'function') ? e.onclick() : e.click()")
+                return await dl_info.value
+
+            # 2) Listados (filas); elegir SOLO si matchea “Clientes”
+            for fr in all_frames(page):
                 for sel in candidatos_contenedor:
                     cont = fr.locator(sel)
-                    if await cont.count():
-                        n = await cont.count()
-                        target = 0
-                        for i in range(n):
-                            txt = await cont.nth(i).inner_text()
-                            if any(t in txt for t in prefer_texts):
-                                target = i
-                                break
-                        fila = cont.nth(target)
-                        icono = fila.locator('.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]').first
+                    m = await cont.count()
+                    for i in range(m):
+                        txt = await cont.nth(i).inner_text()
+                        if not match_text(txt):
+                            continue
+                        icono = cont.nth(i).locator('.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]').first
                         if await icono.count():
-                            try:
-                                async with page.expect_download() as dl_info:
+                            async with page.expect_download() as dl_info:
+                                try:
                                     await icono.click()
-                                return await dl_info.value
-                            except Exception:
-                                async with page.expect_download() as dl_info:
-                                    await icono.evaluate("(el) => (typeof el.onclick === 'function') ? el.onclick() : el.click()")
-                                return await dl_info.value
-            raise PwTimeout("No encontré botón/ícono de descarga.")
+                                except Exception:
+                                    await icono.evaluate("(e) => (typeof e.onclick === 'function') ? e.onclick() : e.click()")
+                            return await dl_info.value
+
+            # 3) Si llegamos acá, NO encontramos export de Clientes
+            raise PwTimeout("No encontré exportación de **Clientes** en la ventana/Historial. Generá una exportación de Clientes y reintentá.")
 
         try:
             download = await descargar_primero(prefer_texts=("Clientes", "CLIENTES"))
@@ -458,6 +467,19 @@ def procesar_excel(ruta_archivo, mapa_vendedores: dict, engine):
     print("🧪 Primeras filas:")
     print(df.head())
 
+    # Validación de layout esperado (Clientes = 27 columnas)
+    cols = df.shape[1]
+    if cols != 27:
+        # pista rápida para diagnosticar qué bajó
+        primeras_vals = [str(x).upper() for x in df.iloc[0, :min(cols, 6)].tolist()]
+        msg = (
+            f"❌ Layout inesperado: el XLS tiene {cols} columnas y esperaba 27 (Clientes).\n"
+            f"Pista primeras celdas fila 0: {primeras_vals}\n"
+            f"➡️ Probablemente descargó otro informe (p.ej. Facturas/Comprobantes). "
+            f"Refrescá el Historial y asegurate de clickear la exportación de **Clientes**."
+        )
+        raise ValueError(msg)
+
     df.columns = [
         "id", "fechaCreacion", "cliente", "categoriaFiscal", "tipoDocumento", "numeroDocumento",
         "cuitCuil", "cobrador", "tipoCliente", "personaContacto", "noEditable",
@@ -465,7 +487,7 @@ def procesar_excel(ruta_archivo, mapa_vendedores: dict, engine):
         "habilitado", "nombreFantasia", "codigo", "correoElectronico", "vendedor",
         "provincia", "localidad", "barrio", "domicilio", "telefono", "celular", "zona", "condicionPago"
     ]
-    df = df.iloc[:, :27]
+
     df['fechaCreacion'] = pd.to_datetime(df['fechaCreacion'], format="%d/%m/%Y", errors="coerce")
     df["habilitado"] = df["habilitado"].map(lambda x: 1 if str(x).strip().upper() == "S" else 0)
 
