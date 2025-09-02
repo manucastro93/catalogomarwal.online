@@ -71,13 +71,13 @@ module.exports = {
 
     // --- Importar clientes Dux (Python) ---
     {
-      name: 'importar_clientes_dux',
+      name: 'importar_clientes_dux_con_vendedor',
       script: WRAPPER,
       interpreter: '/bin/bash',              // <- IMPORTANTE
       args: [
-        'importar_clientes_dux',
+        'importar_clientes_dux_con_vendedor',
         PYTHON,
-        path.join(ROOT, 'scripts', 'importar_clientes_dux.py'),
+        path.join(ROOT, 'scripts', 'importar_clientes_dux_con_vendedor.py'),
       ],
       cwd: ROOT,
       exec_mode: 'fork',
@@ -86,8 +86,8 @@ module.exports = {
       watch: false,
       cron_restart: '0 11,17 * * *',
       kill_timeout: 900000,
-      out_file: './logs/importar_clientes_dux-out.log',
-      error_file: './logs/importar_clientes_dux-error.log',
+      out_file: './logs/importar_clientes_dux_con_vendedor-out.log',
+      error_file: './logs/importar_clientes_dux_con_vendedor-error.log',
       merge_logs: true,
       time: true,
     },
