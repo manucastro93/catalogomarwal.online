@@ -358,65 +358,71 @@ async def try_open_actions_and_export(page, *, timeout=7000):
     except Exception:
         return False
 
-async def ensure_download_source(page, *, timeout=15000):
+async def ensure_download_source(page, *, timeout=20000):
     """
-    Garantiza una fuente de descarga:
-    - Intenta abrir la ventana flotante si existe (en cualquier frame).
-    - Si no, navega al historial y busca botones en cualquier frame.
-    Retorna "ventana" o "historial".
+    Va directo al historial y fuerza refresco. Retorna "historial" si hay
+    al menos algún contenedor o botón de descarga visible.
     """
-    try:
-        for fr in all_frames(page):
+    await goto_and_wait(page, "https://erp.duxsoftware.com.ar/pages/estadisticas/historialExportaciones.faces")
+
+    # intentá botones de "Actualizar/Refrescar" si existen (en cualquier frame)
+    for fr in all_frames(page):
+        for s in [
+            'button:has-text("Actualizar")',
+            'button:has-text("Refrescar")',
+            '#formPrincipal\\:btnActualizar',
+            '#formPrincipal\\:btnRefrescar'
+        ]:
             try:
-                await fr.evaluate("""
-                    () => {
-                        try { if (typeof window.visibleVentanaDescargas === 'function') window.visibleVentanaDescargas(true); } catch(_) {}
-                        try { if (typeof window.rcProcesarRespuestaWsInformes === 'function') window.rcProcesarRespuestaWsInformes({}); } catch(_) {}
-                    }
-                """)
+                btn = fr.locator(s).first
+                if await btn.count():
+                    await btn.click()
+                    await fr.wait_for_timeout(400)
             except Exception:
                 continue
-        await wait_locator_any_frame(page, SEL["ventana_descargas"], timeout=3000)
-        return "ventana"
+
+    # pequeña espera a que aparezcan filas o botones
+    try:
+        await wait_locator_any_frame(page, '#id-lista-archivos, .lista-archivos', timeout=6000)
     except Exception:
-        await goto_and_wait(page, "https://erp.duxsoftware.com.ar/pages/estadisticas/historialExportaciones.faces")
-        try:
-            try:
-                await wait_locator_any_frame(page, SEL["lista_archivos"], timeout=4000)
-            except Exception:
-                await wait_locator_any_frame(page, SEL["btn_descarga"], timeout=timeout)
-        except Exception:
-            await dump_debug(page, "historial_timeout")
-            raise
-        return "historial"
+        pass  # puede que los botones estén sueltos
+
+    # si no hay contenedor, exigimos que haya al menos un botón-compatible
+    try:
+        await wait_locator_any_frame(page, '.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]', timeout=timeout)
+    except Exception:
+        await dump_debug(page, "historial_timeout")
+        raise PwTimeout("Historial sin descargas visibles (ni contenedor ni botones).")
+
+    return "historial"
 
 async def download_latest_from_listing(page, prefer_texts=("Gestion de Gastos", "Gestión de Gastos", "GASTOS", "Gestión de Servicios")):
     """
-    Descarga SOLO si el registro corresponde a Gestión de Gastos.
-    Busca en todos los frames y valida por texto en ancestros.
+    Busca y descarga SOLO 'Gestión de Gastos'. Reintenta si hay navegación durante el conteo.
     """
     def match_text(t: str) -> bool:
         t = (t or "").upper()
         return any(p.upper() in t for p in prefer_texts)
 
-    cont_sel = [
-        '#id-lista-archivos > div',
-        '.lista-archivos > div',
-        '#id-lista-archivos div[style*="display: flex"]',
-        '.lista-archivos div[style*="display: flex"]'
-    ]
-
-    # 1) Botones sueltos
-    for fr in all_frames(page):
-        btns = fr.locator(SEL["btn_descarga"])
-        n = await btns.count()
-        for i in range(n):
-            txt = await btns.nth(i).evaluate("""(el) => {
-                let p = el, out = '';
-                for (let k=0;k<6 && p;k++){ out += (p.innerText||''); p = p.parentElement; }
-                return out;
-            }""")
-            if match_text(txt):
+    async def try_once():
+        # 1) Botones sueltos con validación por texto en ancestros
+        for fr in all_frames(page):
+            btns = fr.locator('.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]')
+            try:
+                n = await btns.count()
+            except Exception:
+                continue  # navegación en medio del conteo, probá otro frame
+            for i in range(n):
+                try:
+                    txt = await btns.nth(i).evaluate("""(el) => {
+                        let p = el, out = '';
+                        for (let k=0;k<6 && p;k++){ out += (p.innerText||''); p = p.parentElement; }
+                        return out;
+                    }""")
+                except Exception:
+                    continue
+                if not match_text(txt):
+                    continue
                 async with page.expect_download() as dl_info:
                     try:
                         await btns.nth(i).click()
@@ -424,27 +430,55 @@ async def download_latest_from_listing(page, prefer_texts=("Gestion de Gastos", 
                         await btns.nth(i).evaluate("(e) => (typeof e.onclick === 'function') ? e.onclick() : e.click()")
                 return await dl_info.value
 
-    # 2) Filas de listados
-    for fr in all_frames(page):
-        for sel in cont_sel:
-            cont = fr.locator(sel)
-            m = await cont.count()
-            for i in range(m):
-                txt = await cont.nth(i).inner_text()
-                if not match_text(txt):
+        # 2) Filas de listados
+        cont_sel = [
+            '#id-lista-archivos > div',
+            '.lista-archivos > div',
+            '#id-lista-archivos div[style*="display: flex"]',
+            '.lista-archivos div[style*="display: flex"]'
+        ]
+        for fr in all_frames(page):
+            for sel in cont_sel:
+                cont = fr.locator(sel)
+                try:
+                    m = await cont.count()
+                except Exception:
                     continue
-                icono = cont.nth(i).locator(SEL["btn_descarga"]).first
-                if await icono.count():
-                    async with page.expect_download() as dl_info:
-                        try:
-                            await icono.click()
-                        except Exception:
-                            await icono.evaluate("(e) => (typeof e.onclick === 'function') ? e.onclick() : e.click()")
-                    return await dl_info.value
+                for i in range(m):
+                    try:
+                        txt = await cont.nth(i).inner_text()
+                    except Exception:
+                        continue
+                    if not match_text(txt):
+                        continue
+                    icono = cont.nth(i).locator('.btn-descarga, .fa-cloud-download, [onclick*="descargarArchivo("]').first
+                    if await icono.count():
+                        async with page.expect_download() as dl_info:
+                            try:
+                                await icono.click()
+                            except Exception:
+                                await icono.evaluate("(e) => (typeof e.onclick === 'function') ? e.onclick() : e.click()")
+                        return await dl_info.value
+        return None
 
-    # 3) Nada matcheó “Gastos”
-    raise PwTimeout("No encontré exportación de **Gestión de Gastos** en la ventana/Historial.")
+    # Hasta 3 intentos si la UI se está re-renderizando
+    for intento in range(3):
+        try:
+            dl = await try_once()
+            if dl:
+                return dl
+            # si no encontró nada, probá refrescar el historial
+            try:
+                await ensure_download_source(page, timeout=6000)
+            except Exception:
+                pass
+            await page.wait_for_timeout(600)
+        except Exception:
+            # navegación en medio del conteo / render — backoff suave
+            await page.wait_for_timeout(800 + intento * 400)
 
+    await dump_debug(page, "fila_sin_boton_gastos")
+    raise PwTimeout("No encontré botón de descarga para **Gestión de Gastos**.")
 # -------------------- Main --------------------
 
 async def run():
