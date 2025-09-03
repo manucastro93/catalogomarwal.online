@@ -405,7 +405,7 @@ export const obtenerPedidosPorMesConVendedor = async (req, res) => {
   }
 };
 
-
+// -------------------- Helpers de vendedor y orden --------------------
 async function resolverVendedor(req) {
   const { vendedor, personalDuxId } = req.query || {};
   if (personalDuxId) return Number(personalDuxId);
@@ -430,7 +430,7 @@ function vendedorClause(idVendedor) {
   return idVendedor ? ` AND f.id_vendedor = ${Number(idVendedor)} ` : '';
 }
 
-// Orden permitido
+// Campos permitidos para ordenamiento
 const ORDER_FIELDS = new Set([
   'codigo','descripcion',
   'cant_mes_actual','monto_mes_actual',
@@ -438,6 +438,7 @@ const ORDER_FIELDS = new Set([
   'cant_3m','monto_3m','cant_12m','monto_12m'
 ]);
 
+// -------------------- Endpoint: ventasPorProducto --------------------
 export const ventasPorProducto = async (req, res) => {
   try {
     const {
@@ -454,17 +455,18 @@ export const ventasPorProducto = async (req, res) => {
       inicioMesActual, finHoy,
       inicioMesAnterior, finMesAnterior,
       inicio3m, inicio12m,
-      inicio3mPrev, fin3mPrev, // 👈 nuevo
+      inicio3mPrev, fin3mPrev, // 3 meses previos completos
     } = rangosFechas();
 
+    // Usamos una sola collation "neutral" para comparaciones y agrupaciones de texto
     const COLL = 'utf8mb4_general_ci';
 
     const buscar = String(q || '').trim();
     const filtroQ = buscar
       ? ` AND (
-            p.sku COLLATE ${COLL} LIKE :like COLLATE ${COLL}
-         OR p.nombre COLLATE ${COLL} LIKE :like COLLATE ${COLL}
-         OR p.descripcion COLLATE ${COLL} LIKE :like COLLATE ${COLL}
+            p.sku         COLLATE ${COLL} LIKE :like
+         OR p.nombre      COLLATE ${COLL} LIKE :like
+         OR p.descripcion COLLATE ${COLL} LIKE :like
         ) `
       : '';
     const filtroCategoria = categoriaId ? ` AND p.categoriaId = :categoriaId ` : '';
@@ -476,16 +478,25 @@ export const ventasPorProducto = async (req, res) => {
       ${idVendedor ? vendedorClause(idVendedor) : ''}
     `;
 
+    // Signo: notas de crédito en negativo, resto positivo
     const signo = `CASE
       WHEN UPPER(TRIM(f.tipo_comp)) IN (${NC_TIPOS.map(t=>`'${t}'`).join(',')}) THEN -1
       ELSE 1
     END`;
 
+    // SELECT principal (sin agregados de texto -> ANY_VALUE) y con collation unificada
     const sql = `
       SELECT
         p.id AS productoId,
-        p.sku AS codigo,
-        COALESCE(p.nombre, p.descripcion, '') AS descripcion,
+        (p.sku COLLATE ${COLL}) AS codigo,
+
+        ANY_VALUE(
+          CASE
+            WHEN p.nombre IS NOT NULL AND p.nombre <> '' THEN p.nombre COLLATE ${COLL}
+            WHEN p.descripcion IS NOT NULL AND p.descripcion <> '' THEN p.descripcion COLLATE ${COLL}
+            ELSE ''
+          END
+        ) AS descripcion,
 
         -- Cantidades
         SUM(CASE WHEN f.fecha_comp BETWEEN :inicioMesActual AND :finHoy
@@ -496,7 +507,7 @@ export const ventasPorProducto = async (req, res) => {
                  THEN df.cantidad * ${signo} ELSE 0 END) AS cant_3m,
         SUM(CASE WHEN f.fecha_comp >= :inicio12m
                  THEN df.cantidad * ${signo} ELSE 0 END) AS cant_12m,
-        -- 👇 3 meses previos completos (M-3..M-1)
+        -- 3 meses previos completos (M-3..M-1)
         SUM(CASE WHEN f.fecha_comp BETWEEN :inicio3mPrev AND :fin3mPrev
                  THEN df.cantidad * ${signo} ELSE 0 END) AS cant_3m_prev,
 
@@ -509,29 +520,28 @@ export const ventasPorProducto = async (req, res) => {
                  THEN df.subtotal * ${signo} ELSE 0 END) AS monto_3m,
         SUM(CASE WHEN f.fecha_comp >= :inicio12m
                  THEN df.subtotal * ${signo} ELSE 0 END) AS monto_12m,
-        -- 👇 3 meses previos completos (M-3..M-1)
+        -- 3 meses previos completos (M-3..M-1)
         SUM(CASE WHEN f.fecha_comp BETWEEN :inicio3mPrev AND :fin3mPrev
                  THEN df.subtotal * ${signo} ELSE 0 END) AS monto_3m_prev
 
       FROM DetalleFacturas df
-      JOIN Facturas f       ON f.id = df.facturaId
-      JOIN Productos p      ON (p.sku COLLATE ${COLL}) = (df.codItem COLLATE ${COLL})
-      LEFT JOIN Categorias c ON c.id = p.categoriaId
+      JOIN Facturas f
+        ON f.id = df.facturaId
+      JOIN Productos p
+        ON (p.sku COLLATE ${COLL}) = (df.codItem COLLATE ${COLL})
+      LEFT JOIN Categorias c
+        ON c.id = p.categoriaId
       WHERE ${whereBase}
-      GROUP BY p.id, p.sku, p.nombre, p.descripcion
+
+      -- Agrupamos por clave y código collationado
+      GROUP BY p.id, codigo
     `;
 
+    // Conteo para paginar
     const sqlCount = `
       SELECT COUNT(*) AS total
       FROM (${sql}) AS t
     `;
-
-    const ORDER_FIELDS = new Set([
-      'codigo','descripcion',
-      'cant_mes_actual','monto_mes_actual',
-      'cant_mes_anterior','monto_mes_anterior',
-      'cant_3m','monto_3m','cant_12m','monto_12m'
-    ]);
 
     const safeOrderBy = ORDER_FIELDS.has(String(orderBy)) ? String(orderBy) : 'monto_12m';
     const safeOrderDir = String(orderDir).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
@@ -541,7 +551,7 @@ export const ventasPorProducto = async (req, res) => {
       like: `%${buscar}%`,
       categoriaId: categoriaId ? Number(categoriaId) : null,
       inicioMesActual, finHoy, inicioMesAnterior, finMesAnterior, inicio3m, inicio12m,
-      inicio3mPrev, fin3mPrev, // 👈 nuevo
+      inicio3mPrev, fin3mPrev,
     };
 
     const [{ total }] = await sequelize.query(sqlCount, {
@@ -585,6 +595,7 @@ export const ventasPorProducto = async (req, res) => {
   }
 };
 
+// -------------------- Endpoint: ventasPorProductoResumen --------------------
 export const ventasPorProductoResumen = async (req, res) => {
   try {
     // Forzamos consulta base consistente
@@ -634,79 +645,77 @@ export const ventasPorProductoResumen = async (req, res) => {
       .sort((a, b) => b.variacion_mes - a.variacion_mes)
       .slice(0, 10);
 
-// ---------- Tendencia inteligente (alza/baja) ----------
-// Baseline robusto = 60% (promedio 3 meses previos completos) + 40% (promedio 12m).
-// Clasificación: sube si delta_$ > +15% **y** delta_cant > +15%.
-//                baja si delta_$ < -15% **y** delta_cant < -15%.
-//                si no, estable.
-// Evita sesgo por mes parcial usando mensualizado del mes actual.
+    // ---------- Tendencia inteligente (alza/baja) ----------
+    // Baseline robusto = 60% (promedio 3 meses previos completos) + 40% (promedio 12m).
+    // Clasificación: sube si delta_$ > +15% **y** delta_cant > +15%.
+    //                baja si delta_$ < -15% **y** delta_cant < -15%.
+    //                si no, estable.
+    // Evita sesgo por mes parcial usando mensualizado del mes actual.
 
-const TH = 0.15; // umbral 15%
+    const TH = 0.15; // umbral 15%
 
-const tendenciaCalc = items.map(p => {
-  const now = new Date();
-  const diasTranscurridosMesActual = now.getDate();
+    const tendenciaCalc = items.map(p => {
+      // Mensualizado actual ($ y cant)
+      const curMontoMens = ((p.monto_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
+      const curCantMens  = ((p.cant_mes_actual  || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
 
-  // Mensualizado actual ($ y cant)
-  const curMontoMens = ((p.monto_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
-  const curCantMens  = ((p.cant_mes_actual  || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
+      // Baselines ($ y cant)
+      const base3mMonto = (p.monto_3m_prev || 0) / 3; // 3 meses previos COMPLETOS
+      const base3mCant  = (p.cant_3m_prev  || 0) / 3;
 
-  // Baselines ($ y cant)
-  const base3mMonto = (p.monto_3m_prev || 0) / 3; // 3 meses previos COMPLETOS
-  const base3mCant  = (p.cant_3m_prev  || 0) / 3;
+      const base12Monto = (p.monto_12m || 0) / 12;
+      const base12Cant  = (p.cant_12m  || 0) / 12;
 
-  const base12Monto = (p.monto_12m || 0) / 12;
-  const base12Cant  = (p.cant_12m  || 0) / 12;
+      const baseMonto = 0.6 * base3mMonto + 0.4 * base12Monto;
+      const baseCant  = 0.6 * base3mCant  + 0.4 * base12Cant;
 
-  const baseMonto = 0.6 * base3mMonto + 0.4 * base12Monto;
-  const baseCant  = 0.6 * base3mCant  + 0.4 * base12Cant;
+      // Deltas relativos
+      const dMonto = baseMonto === 0 ? (curMontoMens > 0 ? 1 : 0) : (curMontoMens - baseMonto) / baseMonto;
+      const dCant  = baseCant  === 0 ? (curCantMens  > 0 ? 1 : 0) : (curCantMens  - baseCant)  / baseCant;
 
-  // Deltas relativos
-  const dMonto = baseMonto === 0 ? (curMontoMens > 0 ? 1 : 0) : (curMontoMens - baseMonto) / baseMonto;
-  const dCant  = baseCant  === 0 ? (curCantMens  > 0 ? 1 : 0) : (curCantMens  - baseCant)  / baseCant;
+      let estado = 'estable';
+      if (dMonto > TH && dCant > TH) estado = 'sube';
+      else if (dMonto < -TH && dCant < -TH) estado = 'baja';
 
-  let estado = 'estable';
-  if (dMonto > TH && dCant > TH) estado = 'sube';
-  else if (dMonto < -TH && dCant < -TH) estado = 'baja';
+      // puntaje mixto para ordenar y mostrar %
+      const delta_pct_mixto = 100 * ((dMonto + dCant) / 2);
 
-  // puntaje mixto para ordenar y mostrar %
-  const delta_pct_mixto = 100 * ((dMonto + dCant) / 2);
+      return { ...p, estado, delta_vs_prom3m: delta_pct_mixto };
+    });
 
-  return { ...p, estado, delta_vs_prom3m: delta_pct_mixto };
-});
+    const enAlza = tendenciaCalc.filter(t => t.estado === 'sube')
+      .sort((a,b)=>b.delta_vs_prom3m - a.delta_vs_prom3m)
+      .slice(0,10);
 
-const enAlza = tendenciaCalc.filter(t => t.estado === 'sube')
-  .sort((a,b)=>b.delta_vs_prom3m - a.delta_vs_prom3m)
-  .slice(0,10);
+    const enBaja = tendenciaCalc.filter(t => t.estado === 'baja')
+      .sort((a,b)=>a.delta_vs_prom3m - b.delta_vs_prom3m) // más negativa primero
+      .slice(0,10);
 
-const enBaja = tendenciaCalc.filter(t => t.estado === 'baja')
-  .sort((a,b)=>a.delta_vs_prom3m - b.delta_vs_prom3m) // más negativa primero
-  .slice(0,10);
-
-    // Proyección 30 días: pondero (mes actual mensualizado 0.5, último mes 0.3, promedio 3m 0.2)
+    // ---------- Proyección 30 días: en $ y en cantidad ----------
+    // Ponderación: actual mensualizado 0.5, último mes 0.3, promedio 3m 0.2
     const proyeccion30d = items
-  .map(p => {
-    // MONTO
-    const mensualizadoActualMonto =
-      ((p.monto_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
-    const prom3mMonto = (p.monto_3m || 0) / 3;
-    const projMonto = (mensualizadoActualMonto * 0.5) + (p.monto_mes_anterior * 0.3) + (prom3mMonto * 0.2);
+      .map(p => {
+        // MONTO
+        const mensualizadoActualMonto =
+          ((p.monto_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
+        const prom3mMonto = (p.monto_3m || 0) / 3;
+        const projMonto = (mensualizadoActualMonto * 0.5) + (p.monto_mes_anterior * 0.3) + (prom3mMonto * 0.2);
 
-    // CANTIDAD
-    const mensualizadoActualCant =
-      ((p.cant_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
-    const prom3mCant = (p.cant_3m || 0) / 3;
-    const projCant = (mensualizadoActualCant * 0.5) + (p.cant_mes_anterior * 0.3) + (prom3mCant * 0.2);
+        // CANTIDAD
+        const mensualizadoActualCant =
+          ((p.cant_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
+        const prom3mCant = (p.cant_3m || 0) / 3;
+        const projCant = (mensualizadoActualCant * 0.5) + (p.cant_mes_anterior * 0.3) + (prom3mCant * 0.2);
 
-    return {
-      codigo: p.codigo,
-      descripcion: p.descripcion,
-      monto_proyectado_30d: Math.max(0, Math.round(projMonto)),
-      cant_proyectada_30d: Math.max(0, Math.round(projCant)),
-    };
-  })
-  .sort((a,b)=>b.monto_proyectado_30d - a.monto_proyectado_30d) // orden principal por $ (podés cambiar a gusto)
-  .slice(0, 10);
+        return {
+          codigo: p.codigo,
+          descripcion: p.descripcion,
+          monto_proyectado_30d: Math.max(0, Math.round(projMonto)),
+          cant_proyectada_30d: Math.max(0, Math.round(projCant)),
+        };
+      })
+      .sort((a,b)=>b.monto_proyectado_30d - a.monto_proyectado_30d) // orden principal por $
+      .slice(0, 10);
 
     // Oportunidades: 12m>0 y 3m=0
     const oportunidades = items
@@ -724,12 +733,10 @@ const enBaja = tendenciaCalc.filter(t => t.estado === 'baja')
       ? (totalMesActualMensualizado > 0 ? 100 : 0)
       : ((totalMesActualMensualizado - totalMesAnterior) / totalMesAnterior) * 100;
 
-    // ---------- Redacción ejecutiva (PRO) ----------
-const fmt = (n) => Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(n || 0);
-const topProj = [...proyeccion30d].slice(0,3);
-const topProjCant = [...proyeccion30d].sort((a,b)=>b.cant_proyectada_30d-a.cant_proyectada_30d).slice(0,3);
+    const fmt = (n) => Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(n || 0);
+    const topProjCant = [...proyeccion30d].sort((a,b)=>b.cant_proyectada_30d-a.cant_proyectada_30d).slice(0,3);
 
-const texto =
+    const texto =
 `Visión general
 • Ingresos últimos 12 meses: **${fmt(total12m)}**.
 • Ritmo mensual *mensualizado*: **${fmt(totalMesActualMensualizado)}**, vs último mes **${fmt(totalMesAnterior)}** (**${variacionMensualizada >= 0 ? '↑' : '↓'} ${variacionMensualizada.toFixed(1)}%**).
@@ -742,10 +749,11 @@ Tendencias
 • En baja: <br> ${enBaja.slice(0,3).map(p=>`- ${p.codigo} ${p.descripcion}`).join('<br>') || "s/d"}.
 
 Proyección próximos 30 días
-• Top proyectados: ${topProjCant.map(p=>`${p.codigo} (${p.cant_proyectada_30d} u.)`).join(', ') || "s/d"}.
-• Sugerencia: priorizar visibilidad y reposición de estos SKUs.
+• Top por **cantidad**: ${topProjCant.map(p=>`${p.codigo} (${p.cant_proyectada_30d} u.)`).join(', ') || "s/d"}.
+• Top por **monto**: ${proyeccion30d.slice(0,3).map(p=>`${p.codigo} (${fmt(p.monto_proyectado_30d)})`).join(', ') || "s/d"}.
+• Acción sugerida: priorizar reposición/visibilidad de estos SKUs y coordinar con vendedores foco en clientes con historial 12m alto.
 
-Oportunidades/Riesgos
+Oportunidades / Riesgos
 • SKUs sin ventas en 3m pero con 12m>0: ${oportunidades.slice(0,5).map(o=>o.codigo).join(', ') || "ninguno"}.
 • Acción: revisar pricing, stock y activación comercial en clientes clave.`;
 
@@ -765,7 +773,7 @@ Oportunidades/Riesgos
         totalMesActualMensualizado,
         variacionMensualizada
       },
-      texto // 👈 texto redactado listo para mostrar
+      texto // listo para el componente colapsable
     });
   } catch (error) {
     console.error('❌ Error en ventasPorProductoResumen:', error);
