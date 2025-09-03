@@ -573,7 +573,6 @@ export const ventasPorProducto = async (req, res) => {
         monto_3m: Number(r.monto_3m || 0),
         cant_12m: Number(r.cant_12m || 0),
         monto_12m: Number(r.monto_12m || 0),
-        // 👇 nuevos (solo para cálculo de tendencias)
         cant_3m_prev: Number(r.cant_3m_prev || 0),
         monto_3m_prev: Number(r.monto_3m_prev || 0),
       })),
