@@ -100,7 +100,7 @@ export default function TablaProductos(props: {
                     >
                       Ver
                     </button>
-                    <ConPermiso modulo="productos" accion="editar">
+                    <ConPermiso modulo="BaseDatos_Ventas_Productos" accion="editar">
                         <button
                           class="text-green-600 hover:underline"
                           onClick={() => props.onEditar(p.id)}

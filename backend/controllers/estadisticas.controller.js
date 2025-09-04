@@ -408,6 +408,10 @@ export const obtenerPedidosPorMesConVendedor = async (req, res) => {
 // -------------------- Helpers de vendedor y orden --------------------
 async function resolverVendedor(req) {
   const { vendedor, personalDuxId } = req.query || {};
+
+  // 👉 Si NO viene filtro explícito desde el front, no limitar por vendedor.
+  if (vendedor === undefined && personalDuxId === undefined) return null;
+
   if (personalDuxId) return Number(personalDuxId);
 
   if (vendedor) {
@@ -421,9 +425,12 @@ async function resolverVendedor(req) {
     });
     if (encontrado?.id_personal) return encontrado.id_personal;
   }
+
+  // fallback solo si el front intentó filtrar y no resolvimos
   const idLog = await resolverIdVendedor(req);
   return idLog || null;
 }
+
 
 // Construye el WHERE adicional de vendedor para inyectar en el SQL
 function vendedorClause(idVendedor) {
@@ -455,21 +462,25 @@ export const ventasPorProducto = async (req, res) => {
       inicioMesActual, finHoy,
       inicioMesAnterior, finMesAnterior,
       inicio3m, inicio12m,
-      inicio3mPrev, fin3mPrev, // 3 meses previos completos
+      inicio3mPrev, fin3mPrev,
     } = rangosFechas();
 
-    // Usamos una sola collation "neutral" para comparaciones y agrupaciones de texto
+    // Usamos un collation único para evitar mezclas en expresiones
     const COLL = 'utf8mb4_general_ci';
 
     const buscar = String(q || '').trim();
     const filtroQ = buscar
       ? ` AND (
-            p.sku         COLLATE ${COLL} LIKE :like
-         OR p.nombre      COLLATE ${COLL} LIKE :like
-         OR p.descripcion COLLATE ${COLL} LIKE :like
+            (p.sku COLLATE ${COLL}) LIKE :like
+         OR (p.nombre COLLATE ${COLL}) LIKE :like
+         OR (p.descripcion COLLATE ${COLL}) LIKE :like
+         OR (df.codItem COLLATE ${COLL}) LIKE :like
+         OR (df.descripcion COLLATE ${COLL}) LIKE :like
         ) `
       : '';
-    const filtroCategoria = categoriaId ? ` AND p.categoriaId = :categoriaId ` : '';
+
+    // Si el usuario filtra por categoría, sólo aplica cuando hay producto asociado
+    const filtroCategoria = categoriaId ? ` AND (p.categoriaId = :categoriaId)` : '';
 
     const whereBase = `
       f.anulada_boolean IS NOT TRUE
@@ -478,25 +489,17 @@ export const ventasPorProducto = async (req, res) => {
       ${idVendedor ? vendedorClause(idVendedor) : ''}
     `;
 
-    // Signo: notas de crédito en negativo, resto positivo
     const signo = `CASE
       WHEN UPPER(TRIM(f.tipo_comp)) IN (${NC_TIPOS.map(t=>`'${t}'`).join(',')}) THEN -1
       ELSE 1
     END`;
 
-    // SELECT principal (sin agregados de texto -> ANY_VALUE) y con collation unificada
-    const sql = `
+    // Nota: LEFT JOIN para no perder líneas sin match con Productos
+    const sqlBase = `
       SELECT
-        p.id AS productoId,
-        (p.sku COLLATE ${COLL}) AS codigo,
-
-        ANY_VALUE(
-          CASE
-            WHEN p.nombre IS NOT NULL AND p.nombre <> '' THEN p.nombre COLLATE ${COLL}
-            WHEN p.descripcion IS NOT NULL AND p.descripcion <> '' THEN p.descripcion COLLATE ${COLL}
-            ELSE ''
-          END
-        ) AS descripcion,
+        COALESCE(p.id, NULL)                               AS productoId,
+        COALESCE(p.sku COLLATE ${COLL}, df.codItem COLLATE ${COLL}) AS codigo,
+        COALESCE(p.nombre, p.descripcion, df.descripcion, '')        AS descripcion,
 
         -- Cantidades
         SUM(CASE WHEN f.fecha_comp BETWEEN :inicioMesActual AND :finHoy
@@ -511,7 +514,7 @@ export const ventasPorProducto = async (req, res) => {
         SUM(CASE WHEN f.fecha_comp BETWEEN :inicio3mPrev AND :fin3mPrev
                  THEN df.cantidad * ${signo} ELSE 0 END) AS cant_3m_prev,
 
-        -- Montos (neto de IVA: df.subtotal ya viene neto)
+        -- Montos (df.subtotal ya viene neto de IVA)
         SUM(CASE WHEN f.fecha_comp BETWEEN :inicioMesActual AND :finHoy
                  THEN df.subtotal * ${signo} ELSE 0 END) AS monto_mes_actual,
         SUM(CASE WHEN f.fecha_comp BETWEEN :inicioMesAnterior AND :finMesAnterior
@@ -525,23 +528,22 @@ export const ventasPorProducto = async (req, res) => {
                  THEN df.subtotal * ${signo} ELSE 0 END) AS monto_3m_prev
 
       FROM DetalleFacturas df
-      JOIN Facturas f
-        ON f.id = df.facturaId
-      JOIN Productos p
-        ON (p.sku COLLATE ${COLL}) = (df.codItem COLLATE ${COLL})
-      LEFT JOIN Categorias c
-        ON c.id = p.categoriaId
+      JOIN Facturas f  ON f.id = df.facturaId
+      LEFT JOIN Productos p
+           ON (p.sku COLLATE ${COLL}) = (df.codItem COLLATE ${COLL})
+      LEFT JOIN Categorias c ON c.id = p.categoriaId
       WHERE ${whereBase}
-
-      -- Agrupamos por clave y código collationado
-      GROUP BY p.id, codigo
+      GROUP BY codigo, descripcion, productoId
     `;
 
-    // Conteo para paginar
-    const sqlCount = `
-      SELECT COUNT(*) AS total
-      FROM (${sql}) AS t
-    `;
+    const sqlCount = `SELECT COUNT(*) AS total FROM (${sqlBase}) t`;
+
+    const ORDER_FIELDS = new Set([
+      'codigo','descripcion',
+      'cant_mes_actual','monto_mes_actual',
+      'cant_mes_anterior','monto_mes_anterior',
+      'cant_3m','monto_3m','cant_12m','monto_12m'
+    ]);
 
     const safeOrderBy = ORDER_FIELDS.has(String(orderBy)) ? String(orderBy) : 'monto_12m';
     const safeOrderDir = String(orderDir).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
@@ -550,8 +552,8 @@ export const ventasPorProducto = async (req, res) => {
     const replacements = {
       like: `%${buscar}%`,
       categoriaId: categoriaId ? Number(categoriaId) : null,
-      inicioMesActual, finHoy, inicioMesAnterior, finMesAnterior, inicio3m, inicio12m,
-      inicio3mPrev, fin3mPrev,
+      inicioMesActual, finHoy, inicioMesAnterior, finMesAnterior,
+      inicio3m, inicio12m, inicio3mPrev, fin3mPrev,
     };
 
     const [{ total }] = await sequelize.query(sqlCount, {
@@ -560,7 +562,7 @@ export const ventasPorProducto = async (req, res) => {
     });
 
     const rows = await sequelize.query(
-      `${sql} ORDER BY ${safeOrderBy} ${safeOrderDir} LIMIT :limit OFFSET :offset`,
+      `${sqlBase} ORDER BY ${safeOrderBy} ${safeOrderDir} LIMIT :limit OFFSET :offset`,
       {
         type: Sequelize.QueryTypes.SELECT,
         replacements: { ...replacements, limit: Number(limit), offset },
@@ -572,7 +574,7 @@ export const ventasPorProducto = async (req, res) => {
 
     res.json({
       data: rows.map(r => ({
-        productoId: Number(r.productoId),
+        productoId: r.productoId !== null ? Number(r.productoId) : null,
         codigo: r.codigo,
         descripcion: r.descripcion,
         cant_mes_actual: Number(r.cant_mes_actual || 0),
@@ -598,13 +600,11 @@ export const ventasPorProducto = async (req, res) => {
 // -------------------- Endpoint: ventasPorProductoResumen --------------------
 export const ventasPorProductoResumen = async (req, res) => {
   try {
-    // Forzamos consulta base consistente
     req.query.page = '1';
     req.query.limit = '2000';
     req.query.orderBy = 'monto_12m';
     req.query.orderDir = 'DESC';
 
-    // Fake res compatible con .status().json()
     const fakeRes = {
       statusCode: 200,
       jsonPayload: null,
@@ -619,93 +619,70 @@ export const ventasPorProductoResumen = async (req, res) => {
 
     const items = fakeRes.jsonPayload.data || [];
 
-    // ---------- Métricas auxiliares para normalizar mes parcial ----------
+    // ---------- Métricas auxiliares ----------
     const now = new Date();
-    const y = now.getFullYear(), m = now.getMonth();         // 0..11
-    const diasTranscurridosMesActual = now.getDate();
-    const diasTotalesMesActual = new Date(y, m + 1, 0).getDate();
-    const fechaMesAnterior = new Date(y, m, 0);              // último día del mes anterior
-    const diasTotalesMesAnterior = fechaMesAnterior.getDate();
+    const y = now.getFullYear(), m = now.getMonth();
+    const diasAct = now.getDate();
+    const diasMesAnt = new Date(y, m, 0).getDate();
 
-    // ---------- Rankings base ----------
-    const top12m = [...items]
-      .sort((a, b) => b.monto_12m - a.monto_12m)
-      .slice(0, 10);
+    // ---------- Rankings ----------
+    const top12m = [...items].sort((a,b)=>(b.monto_12m||0)-(a.monto_12m||0)).slice(0,10);
 
-    // Crecimiento normalizado: (promedio diario actual vs promedio diario último mes)
     const crecimientoUltimoMes = items
       .map(p => {
-        const promDiaActual = (p.monto_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual);
-        const promDiaMesAnterior = (p.monto_mes_anterior || 0) / Math.max(1, diasTotalesMesAnterior);
-        const delta = promDiaMesAnterior === 0
-          ? (promDiaActual > 0 ? 100 : 0)
-          : ((promDiaActual - promDiaMesAnterior) / promDiaMesAnterior) * 100;
+        const promDiaAct = (p.monto_mes_actual || 0) / Math.max(1, diasAct);
+        const promDiaAnt = (p.monto_mes_anterior || 0) / Math.max(1, diasMesAnt);
+        const delta = promDiaAnt === 0 ? (promDiaAct > 0 ? 100 : 0) : ((promDiaAct - promDiaAnt) / promDiaAnt) * 100;
         return { ...p, variacion_mes: delta };
       })
-      .sort((a, b) => b.variacion_mes - a.variacion_mes)
-      .slice(0, 10);
+      .sort((a,b)=>(b.variacion_mes||0)-(a.variacion_mes||0))
+      .slice(0,10);
 
-    // ---------- Tendencia inteligente (alza/baja) ----------
-    // Baseline robusto = 60% (promedio 3 meses previos completos) + 40% (promedio 12m).
-    // Clasificación: sube si delta_$ > +15% **y** delta_cant > +15%.
-    //                baja si delta_$ < -15% **y** delta_cant < -15%.
-    //                si no, estable.
-    // Evita sesgo por mes parcial usando mensualizado del mes actual.
-
-    const TH = 0.15; // umbral 15%
-
+    // ---------- Tendencias (baseline 0.6*3m prev + 0.4*12m) ----------
+    const TH = 0.15;
     const tendenciaCalc = items.map(p => {
-      // Mensualizado actual ($ y cant)
-      const curMontoMens = ((p.monto_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
-      const curCantMens  = ((p.cant_mes_actual  || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
+      const curMontoMens = ((p.monto_mes_actual||0)/Math.max(1,diasAct))*30;
+      const curCantMens  = ((p.cant_mes_actual ||0)/Math.max(1,diasAct))*30;
 
-      // Baselines ($ y cant)
-      const base3mMonto = (p.monto_3m_prev || 0) / 3; // 3 meses previos COMPLETOS
-      const base3mCant  = (p.cant_3m_prev  || 0) / 3;
+      const base3mMonto = (p.monto_3m_prev||0)/3;
+      const base3mCant  = (p.cant_3m_prev ||0)/3;
+      const base12Monto = (p.monto_12m||0)/12;
+      const base12Cant  = (p.cant_12m ||0)/12;
 
-      const base12Monto = (p.monto_12m || 0) / 12;
-      const base12Cant  = (p.cant_12m  || 0) / 12;
+      const baseMonto = 0.6*base3mMonto + 0.4*base12Monto;
+      const baseCant  = 0.6*base3mCant  + 0.4*base12Cant;
 
-      const baseMonto = 0.6 * base3mMonto + 0.4 * base12Monto;
-      const baseCant  = 0.6 * base3mCant  + 0.4 * base12Cant;
-
-      // Deltas relativos
-      const dMonto = baseMonto === 0 ? (curMontoMens > 0 ? 1 : 0) : (curMontoMens - baseMonto) / baseMonto;
-      const dCant  = baseCant  === 0 ? (curCantMens  > 0 ? 1 : 0) : (curCantMens  - baseCant)  / baseCant;
+      const dMonto = baseMonto===0 ? (curMontoMens>0?1:0) : (curMontoMens-baseMonto)/baseMonto;
+      const dCant  = baseCant ===0 ? (curCantMens >0?1:0) : (curCantMens -baseCant )/baseCant;
 
       let estado = 'estable';
-      if (dMonto > TH && dCant > TH) estado = 'sube';
-      else if (dMonto < -TH && dCant < -TH) estado = 'baja';
+      if (dMonto>TH && dCant>TH) estado='sube';
+      else if (dMonto<-TH && dCant<-TH) estado='baja';
 
-      // puntaje mixto para ordenar y mostrar %
-      const delta_pct_mixto = 100 * ((dMonto + dCant) / 2);
-
-      return { ...p, estado, delta_vs_prom3m: delta_pct_mixto };
+      const score=(dMonto+dCant)/2;
+      return { ...p, estado, score, delta_vs_prom3m: 100*score };
     });
 
-    const enAlza = tendenciaCalc.filter(t => t.estado === 'sube')
-      .sort((a,b)=>b.delta_vs_prom3m - a.delta_vs_prom3m)
-      .slice(0,10);
+    let enAlza = tendenciaCalc.filter(t=>t.estado==='sube').sort((a,b)=>b.score-a.score);
+    let enBaja = tendenciaCalc.filter(t=>t.estado==='baja').sort((a,b)=>a.score-b.score);
+    if (enAlza.length<3) { // fallback adaptativo
+      const pos=tendenciaCalc.filter(t=>t.score>0).sort((a,b)=>b.score-a.score);
+      const k=Math.max(0,Math.floor(pos.length*0.25));
+      enAlza = pos.slice(0, Math.max(3, pos.length-k));
+    }
+    enAlza = enAlza.slice(0,10);
+    enBaja = enBaja.slice(0,10);
 
-    const enBaja = tendenciaCalc.filter(t => t.estado === 'baja')
-      .sort((a,b)=>a.delta_vs_prom3m - b.delta_vs_prom3m) // más negativa primero
-      .slice(0,10);
-
-    // ---------- Proyección 30 días: en $ y en cantidad ----------
-    // Ponderación: actual mensualizado 0.5, último mes 0.3, promedio 3m 0.2
+    // ---------- Proyección 30 días ----------
     const proyeccion30d = items
       .map(p => {
-        // MONTO
-        const mensualizadoActualMonto =
-          ((p.monto_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
-        const prom3mMonto = (p.monto_3m || 0) / 3;
-        const projMonto = (mensualizadoActualMonto * 0.5) + (p.monto_mes_anterior * 0.3) + (prom3mMonto * 0.2);
+        const monMens = ((p.monto_mes_actual||0)/Math.max(1,diasAct))*30;
+        const canMens = ((p.cant_mes_actual ||0)/Math.max(1,diasAct))*30;
+        const prom3mM = (p.monto_3m||0)/3;
+        const prom3mC = (p.cant_3m ||0)/3;
 
-        // CANTIDAD
-        const mensualizadoActualCant =
-          ((p.cant_mes_actual || 0) / Math.max(1, diasTranscurridosMesActual)) * 30;
-        const prom3mCant = (p.cant_3m || 0) / 3;
-        const projCant = (mensualizadoActualCant * 0.5) + (p.cant_mes_anterior * 0.3) + (prom3mCant * 0.2);
+        const projMonto = monMens*0.5 + (p.monto_mes_anterior||0)*0.3 + prom3mM*0.2;
+        const projCant  = canMens*0.5 + (p.cant_mes_anterior ||0)*0.3 + prom3mC*0.2;
 
         return {
           codigo: p.codigo,
@@ -714,48 +691,60 @@ export const ventasPorProductoResumen = async (req, res) => {
           cant_proyectada_30d: Math.max(0, Math.round(projCant)),
         };
       })
-      .sort((a,b)=>b.monto_proyectado_30d - a.monto_proyectado_30d) // orden principal por $
-      .slice(0, 10);
+      .sort((a,b)=>b.monto_proyectado_30d - a.monto_proyectado_30d)
+      .slice(0,10);
 
-    // Oportunidades: 12m>0 y 3m=0
     const oportunidades = items
-      .filter(p => (p.monto_3m || 0) === 0 && (p.monto_12m || 0) > 0)
-      .slice(0, 10)
-      .map(p => ({ codigo: p.codigo, descripcion: p.descripcion, monto_12m: p.monto_12m }));
+      .filter(p => (p.monto_3m||0)===0 && (p.monto_12m||0)>0)
+      .slice(0,10)
+      .map(p => ({ codigo:p.codigo, descripcion:p.descripcion, monto_12m:p.monto_12m }));
 
-    // ---------- Redacción ejecutiva ----------
-    const total12m = items.reduce((acc, p) => acc + (p.monto_12m || 0), 0);
-    const totalMesAnterior = items.reduce((acc, p) => acc + (p.monto_mes_anterior || 0), 0);
-    const totalMesActualMensualizado =
-      ((items.reduce((acc, p) => acc + (p.monto_mes_actual || 0), 0) / Math.max(1, diasTranscurridosMesActual)) * 30);
+    // ---------- KPIs agregados para el texto ----------
+    const total12m = items.reduce((a,p)=>a+(p.monto_12m||0),0);
+    const totalMesAnterior = items.reduce((a,p)=>a+(p.monto_mes_anterior||0),0);
+    const totalMensualizado = ((items.reduce((a,p)=>a+(p.monto_mes_actual||0),0)/Math.max(1,diasAct))*30);
 
-    const variacionMensualizada = totalMesAnterior === 0
-      ? (totalMesActualMensualizado > 0 ? 100 : 0)
-      : ((totalMesActualMensualizado - totalMesAnterior) / totalMesAnterior) * 100;
+    const variacionMens = totalMesAnterior===0 ? (totalMensualizado>0?100:0)
+                         : ((totalMensualizado-totalMesAnterior)/totalMesAnterior)*100;
 
-    const fmt = (n) => Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(n || 0);
+    const top10Sum12m = top12m.reduce((a,p)=>a+(p.monto_12m||0),0);
+    const top10Share = total12m>0 ? (top10Sum12m/total12m)*100 : 0;
+
+    const skus12m = items.filter(p=>(p.monto_12m||0)>0).length;
+    const totalSkus = items.length;
+
+    const totalProjMonto = proyeccion30d.reduce((a,p)=>a+p.monto_proyectado_30d,0);
+    const totalProjCant  = proyeccion30d.reduce((a,p)=>a+p.cant_proyectada_30d,0);
+
+    const pctAlza = totalSkus>0 ? (tendenciaCalc.filter(t=>t.estado==='sube').length/totalSkus)*100 : 0;
+    const pctBaja = totalSkus>0 ? (tendenciaCalc.filter(t=>t.estado==='baja').length/totalSkus)*100 : 0;
+    const pctEst  = 100 - pctAlza - pctBaja;
+
+    const fmt = n => Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(n||0);
+
     const topProjCant = [...proyeccion30d].sort((a,b)=>b.cant_proyectada_30d-a.cant_proyectada_30d).slice(0,3);
 
+    // ---------- Texto ejecutivo mejorado ----------
     const texto =
 `Visión general
-• Ingresos últimos 12 meses: **${fmt(total12m)}**.
-• Ritmo mensual *mensualizado*: **${fmt(totalMesActualMensualizado)}**, vs último mes **${fmt(totalMesAnterior)}** (**${variacionMensualizada >= 0 ? '↑' : '↓'} ${variacionMensualizada.toFixed(1)}%**).
+• Ingresos últimos 12 meses (líneas de producto): **${fmt(total12m)}**.
+• Ritmo del mes (mensualizado a 30 días): **${fmt(totalMensualizado)}**, vs **${fmt(totalMesAnterior)}** del mes previo (**${variacionMens >= 0 ? '↑' : '↓'} ${variacionMens.toFixed(1)}%**).
+• Catálogo activo: **${skus12m}** SKUs con ventas en 12m sobre **${totalSkus}** totales.
+• Concentración: el Top 10 explica **${top10Share.toFixed(1)}%** de las ventas 12m.
 
-Producto líder
-• ${top12m[0] ? `${top12m[0].codigo} – ${top12m[0].descripcion} (${fmt(top12m[0].monto_12m)} en 12m).` : "s/d."}
-
-Tendencias
-• En alza: <br> ${enAlza.slice(0,3).map(p=>`- ${p.codigo} ${p.descripcion}`).join('<br> ') || "s/d"}.
-• En baja: <br> ${enBaja.slice(0,3).map(p=>`- ${p.codigo} ${p.descripcion}`).join('<br>') || "s/d"}.
+Mix y tendencia
+• Estado de los SKUs (cantidad): **${pctAlza.toFixed(0)}%** en *alza*, **${pctBaja.toFixed(0)}%** en *baja*, **${pctEst.toFixed(0)}%** *estables*.
+• Principales en *alza*: ${enAlza.slice(0,3).map(p=>`${p.codigo}`).join(', ') || 's/d'}.
+• Principales en *baja*: ${enBaja.slice(0,3).map(p=>`${p.codigo}`).join(', ') || 's/d'}.
 
 Proyección próximos 30 días
+• Proyección total: **${fmt(totalProjMonto)}** y **${totalProjCant} u.** (ponderado por ritmo actual, último mes y 3m).
 • Top por **cantidad**: ${topProjCant.map(p=>`${p.codigo} (${p.cant_proyectada_30d} u.)`).join(', ') || "s/d"}.
 • Top por **monto**: ${proyeccion30d.slice(0,3).map(p=>`${p.codigo} (${fmt(p.monto_proyectado_30d)})`).join(', ') || "s/d"}.
-• Acción sugerida: priorizar reposición/visibilidad de estos SKUs y coordinar con vendedores foco en clientes con historial 12m alto.
 
-Oportunidades / Riesgos
-• SKUs sin ventas en 3m pero con 12m>0: ${oportunidades.slice(0,5).map(o=>o.codigo).join(', ') || "ninguno"}.
-• Acción: revisar pricing, stock y activación comercial en clientes clave.`;
+Oportunidades / riesgos
+• SKUs con historial (12m>0) y sin rotación reciente (3m=0): ${oportunidades.slice(0,5).map(o=>o.codigo).join(', ') || "ninguno"}.
+• Acciones sugeridas: reposición prioritaria en Top 10, activación de clientes de alta recurrencia, revisión de precios en SKUs en baja y campañas de recuperación para los de 12m>0/3m=0.`;
 
     res.json({
       top12m,
@@ -765,18 +754,20 @@ Oportunidades / Riesgos
       proyeccion30d,
       oportunidades,
       meta: {
-        diasTranscurridosMesActual,
-        diasTotalesMesActual,
-        diasTotalesMesAnterior,
         total12m,
         totalMesAnterior,
-        totalMesActualMensualizado,
-        variacionMensualizada
+        totalMensualizado,
+        top10Share,
+        skus12m,
+        totalSkus,
+        totalProjMonto,
+        totalProjCant
       },
-      texto // listo para el componente colapsable
+      texto
     });
   } catch (error) {
     console.error('❌ Error en ventasPorProductoResumen:', error);
     res.status(500).json({ message: 'Error interno' });
   }
 };
+
